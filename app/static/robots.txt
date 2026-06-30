@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin-*
+Disallow: /auth/logout
+Disallow: /messages/*
+Sitemap: http://localhost:5050/sitemap.xml

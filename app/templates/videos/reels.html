@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5><i class="fas fa-play-circle text-primary"></i> الريلزات</h5>
+    <a href="{{ url_for('videos.upload') }}" class="btn btn-primary btn-sm">
+        <i class="fas fa-upload"></i> رفع فيديو
+    </a>
+</div>
+{% if videos %}
+<div class="row g-2">
+    {% for video in videos %}
+    <div class="col-6">
+        <a href="{{ url_for('videos.watch', video_id=video.id) }}" class="text-decoration-none">
+            <div class="card shadow-sm position-relative" style="aspect-ratio: 9/16;">
+                <img src="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}" class="card-img-top" style="height: 100%; object-fit: cover;">
+                <div class="position-absolute top-50 start-50 translate-middle">
+                    <i class="fas fa-play-circle text-white" style="font-size: 3rem; opacity: 0.8;"></i>
+                </div>
+                <div class="position-absolute bottom-0 start-0 end-0 p-1" style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+                    <h6 class="text-white small mb-0">{{ video.title }}</h6>
+                    <small class="text-white-50">{{ video.views }} مشاهد</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center text-muted mt-5">
+    <i class="fas fa-video fa-4x mb-3"></i>
+    <h5>لا توجد ريلزات بعد</h5>
+    <p>كن أول من يرفع ريلز!</p>
+    <a href="{{ url_for('videos.upload') }}" class="btn btn-primary">رفع ريلز</a>
+</div>
+{% endif %}
+{% endblock %}

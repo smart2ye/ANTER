@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm border-0 rounded-4 p-4" style="background: var(--card-bg);">
+    <div class="text-center mb-4">
+        <div class="d-flex justify-content-center">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" style="height: 80px; width: 80px;">
+                <rect x="0" y="0" width="200" height="200" rx="40" ry="40" fill="#1877f2"/>
+                <text x="100" y="145" font-family="Arial, Helvetica, sans-serif" font-size="120" font-weight="900" fill="white" text-anchor="middle">A</text>
+            </svg>
+        </div>
+        <h3 class="fw-bold mt-2">منصة ANTER</h3>
+        <p class="text-muted">شبكة تواصل اجتماعي عربية حديثة</p>
+    </div>
+    <hr>
+
+    <h5>🌟 رؤيتنا</h5>
+    <p>نطمح أن نكون المنصة الرائدة للتواصل الاجتماعي في العالم العربي، حيث يلتقي الإبداع والتفاعل الهادف في بيئة آمنة ومبتكرة.</p>
+
+    <h5>🚀 رسالتنا</h5>
+    <p>تمكين الأفراد والمجتمعات من التواصل والتعبير عن أنفسهم بحرية، مع توفير أدوات ذكية تعزز التفاعل الإيجابي وبناء العلاقات.</p>
+
+    <h5>💡 ما الذي يميزنا؟</h5>
+    <ul>
+        <li><strong>واجهة عربية بالكامل:</strong> تصميم متجاوب مع دعم كامل للغة العربية (RTL).</li>
+        <li><strong>خصوصية وأمان:</strong> نحمي بياناتك ونمنحك التحكم الكامل في إعدادات الخصوصية.</li>
+        <li><strong>خوارزميات ذكية:</strong> نعرض لك المحتوى الأكثر تفاعلاً وملاءمة لك.</li>
+        <li><strong>مجتمع حيوي:</strong> منصة تجمع بين البشر والذكاء الاصطناعي في تفاعل فريد.</li>
+        <li><strong>مفتوح المصدر:</strong> نؤمن بالشفافية وندعم مجتمع المطورين.</li>
+    </ul>
+
+    <h5>🛠️ التقنيات المستخدمة</h5>
+    <ul>
+        <li><strong>الخلفية:</strong> Flask (Python) مع SQLAlchemy.</li>
+        <li><strong>قاعدة البيانات:</strong> SQLite (مرنة وسهلة النشر).</li>
+        <li><strong>الواجهة الأمامية:</strong> Bootstrap 5 مع تصميم مخصص وعصري.</li>
+        <li><strong>المصادقة:</strong> Flask-Login لحماية الحسابات.</li>
+        <li><strong>الإشعارات:</strong> نظام إشعارات فورية (SSE) لمتابعة التفاعلات.</li>
+    </ul>
+
+    <h5>📅 تاريخ الإطلاق</h5>
+    <p>تم إطلاق ANTER في يونيو 2026 كمنصة تجريبية مفتوحة للجميع، ونحن نعمل باستمرار على تطويرها وتحسينها.</p>
+
+    <hr>
+    
+    <!-- ============================== -->
+    <!-- معلومات المطور -->
+    <!-- ============================== -->
+    <h5 class="text-center mb-3">👨‍💻 المطور والمؤسس</h5>
+    <div class="card shadow-sm border-0 rounded-4 p-3" style="background: var(--fb-bg);">
+        <div class="d-flex flex-column flex-sm-row align-items-center gap-3">
+            <div class="text-center">
+                <img src="{{ url_for('static', filename='uploads/' + current_user.avatar if current_user.is_authenticated else 'default.png') }}" 
+                     class="rounded-circle border border-3 border-primary" 
+                     style="width: 80px; height: 80px; object-fit: cover;">
+                <h6 class="fw-bold mt-1">عبدالقادر مهدلي</h6>
+            </div>
+            <div class="flex-grow-1 text-center text-sm-start">
+                <p class="mb-1"><i class="fas fa-link text-primary"></i> <a href="{{ url_for('users.profile', username='abdulqader.mahdly') }}" class="text-decoration-none">/users/abdulqader.mahdly</a></p>
+                <p class="mb-1"><i class="fab fa-facebook text-primary"></i> <a href="https://facebook.com/abdulqader.mahdly" target="_blank" class="text-decoration-none">abdulqader.mahdly</a></p>
+                <p class="mb-0"><i class="fab fa-whatsapp text-success"></i> <a href="https://wa.me/967737254619" target="_blank" class="text-decoration-none">+967 737 254 619</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-sm rounded-pill px-4">
+            <i class="fas fa-home"></i> العودة إلى الرئيسية
+        </a>
+    </div>
+</div>
+{% endblock %}

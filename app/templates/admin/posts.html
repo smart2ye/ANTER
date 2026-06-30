@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="fas fa-file-alt"></i> إدارة المنشورات</h4>
+    <span class="badge bg-primary">{{ posts|length }}</span>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>المحتوى</th>
+                <th>الكاتب</th>
+                <th>التاريخ</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in posts %}
+            <tr>
+                <td>{{ post.id }}</td>
+                <td>{{ post.content[:80] }}{% if post.content|length > 80 %}...{% endif %}</td>
+                <td>{{ post.author.name }}<br><small class="text-muted">@{{ post.author.username }}</small></td>
+                <td>{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <a href="{{ url_for('admin.view_post', post_id=post.id) }}" class="btn btn-sm btn-outline-info">عرض</a>
+                    <button class="btn btn-sm btn-outline-danger delete-post" data-url="{{ url_for('admin.delete_post', post_id=post.id) }}">حذف</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.querySelectorAll('.delete-post').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!confirm('هل أنت متأكد من حذف هذا المنشور نهائياً؟')) return;
+            const url = this.dataset.url;
+            fetch(url, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) location.reload();
+                });
+        });
+    });
+</script>
+{% endblock %}

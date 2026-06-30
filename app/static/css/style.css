@@ -1,0 +1,540 @@
+/* ========================================
+   تصميم ANTER - متجاوب بالكامل
+   ======================================== */
+
+:root {
+    --fb-blue: #1877f2;
+    --fb-blue-dark: #0d65d9;
+    --fb-bg: #f0f2f5;
+    --fb-card: #ffffff;
+    --fb-text: #050505;
+    --fb-text-muted: #65676b;
+    --fb-border: #ced0d4;
+    --fb-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --fb-radius: 12px;
+}
+
+body {
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+    background: var(--fb-bg);
+    color: var(--fb-text);
+    padding-bottom: 60px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* ========================================
+   الشريط العلوي
+   ======================================== */
+
+.fb-navbar {
+    background: var(--fb-blue);
+    padding: 8px 0;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.1);
+}
+
+.fb-navbar .navbar-brand {
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+}
+
+.fb-navbar .navbar-brand i {
+    font-size: 1.8rem;
+}
+
+.fb-navbar .btn-light {
+    color: var(--fb-blue);
+    font-weight: 700;
+    border-radius: 8px;
+}
+
+.fb-avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    cursor: pointer;
+}
+
+/* ========================================
+   الشريط الجانبي الأيمن (للشاشات الكبيرة)
+   ======================================== */
+
+.fb-sidebar-right {
+    background: var(--fb-card);
+    border-left: 1px solid var(--fb-border);
+    min-height: calc(100vh - 56px);
+}
+
+.fb-sidebar-right .nav-link {
+    color: var(--fb-text);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.fb-sidebar-right .nav-link i {
+    width: 24px;
+    margin-left: 8px;
+}
+
+.fb-sidebar-right .nav-link:hover {
+    background: #f0f2f5;
+}
+
+.fb-sidebar-right .nav-link.active {
+    background: #e7f3ff;
+    color: var(--fb-blue);
+}
+
+/* ========================================
+   الشريط الجانبي الأيسر (للشاشات الكبيرة)
+   ======================================== */
+
+.fb-sidebar-left {
+    background: var(--fb-card);
+    border-right: 1px solid var(--fb-border);
+    min-height: calc(100vh - 56px);
+}
+
+.fb-avatar-lg {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--fb-blue);
+}
+
+/* ========================================
+   الخلاصة المركزية
+   ======================================== */
+
+.fb-feed {
+    background: var(--fb-bg);
+    min-height: calc(100vh - 56px);
+}
+
+/* ========================================
+   بطاقات المنشورات
+   ======================================== */
+
+.fb-post {
+    background: var(--fb-card);
+    border-radius: var(--fb-radius);
+    box-shadow: var(--fb-shadow);
+    margin-bottom: 16px;
+    padding: 0;
+    transition: box-shadow 0.2s;
+}
+
+.fb-post:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+.fb-post .card-body {
+    padding: 16px 18px;
+}
+
+.fb-post .post-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.fb-post .post-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.fb-post .post-author {
+    font-weight: 700;
+    color: var(--fb-text);
+}
+
+.fb-post .post-author:hover {
+    text-decoration: underline;
+}
+
+.fb-post .post-time {
+    font-size: 0.75rem;
+    color: var(--fb-text-muted);
+}
+
+.fb-post .post-content {
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 10px;
+}
+
+.fb-post .post-image {
+    border-radius: var(--fb-radius);
+    max-height: 400px;
+    object-fit: cover;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.fb-post .post-actions {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--fb-border);
+    padding-top: 10px;
+    margin-top: 6px;
+}
+
+.fb-post .post-actions .btn {
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    color: var(--fb-text-muted);
+    transition: all 0.2s;
+}
+
+.fb-post .post-actions .btn:hover {
+    background: #f0f2f5;
+}
+
+.fb-post .post-actions .btn i {
+    margin-left: 4px;
+}
+
+/* ========================================
+   التبويب السفلي (للشاشات الصغيرة)
+   ======================================== */
+
+.fb-mobile-nav {
+    background: var(--fb-card);
+    border-top: 1px solid var(--fb-border);
+    padding: 4px 0;
+}
+
+.fb-mobile-nav .nav-link {
+    color: var(--fb-text-muted);
+    font-size: 0.6rem;
+    padding: 4px 8px;
+    text-align: center;
+}
+
+.fb-mobile-nav .nav-link i {
+    font-size: 1.4rem;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.fb-mobile-nav .nav-link.active {
+    color: var(--fb-blue);
+}
+
+.fb-mobile-nav .nav-link.active i {
+    color: var(--fb-blue);
+}
+
+.fb-mobile-nav .nav-link span {
+    display: block;
+    font-size: 0.55rem;
+}
+
+/* ========================================
+   التعليقات
+   ======================================== */
+
+.fb-comment {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #f0f2f5;
+    border-radius: var(--fb-radius);
+}
+
+.fb-comment .comment-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.fb-comment .comment-author {
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.fb-comment .comment-text {
+    font-size: 0.9rem;
+    margin: 2px 0 0 0;
+}
+
+/* ========================================
+   الحقول والنماذج
+   ======================================== */
+
+.form-control {
+    border-radius: var(--fb-radius);
+    border: 1px solid var(--fb-border);
+    padding: 10px 14px;
+    background: #f0f2f5;
+}
+
+.form-control:focus {
+    border-color: var(--fb-blue);
+    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15);
+    background: #fff;
+}
+
+/* ========================================
+   الأزرار
+   ======================================== */
+
+.btn-primary {
+    background: var(--fb-blue);
+    border: none;
+    font-weight: 700;
+}
+
+.btn-primary:hover {
+    background: var(--fb-blue-dark);
+}
+
+.btn-outline-primary {
+    color: var(--fb-blue);
+    border-color: var(--fb-blue);
+}
+
+.btn-outline-primary:hover {
+    background: var(--fb-blue);
+    color: #fff;
+}
+
+/* ========================================
+   الملف الشخصي
+   ======================================== */
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--fb-blue);
+}
+
+.profile-name {
+    font-weight: 700;
+    font-size: 1.3rem;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 20px;
+    margin-top: 8px;
+}
+
+.profile-stats .stat-number {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+/* ========================================
+   الرسائل والإشعارات
+   ======================================== */
+
+.chat-box {
+    background: #f0f2f5;
+    border-radius: var(--fb-radius);
+    padding: 16px;
+    height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.notification-item.unread {
+    border-right: 4px solid var(--fb-blue);
+    background: #f0f7ff;
+}
+
+/* ========================================
+   الوضع الليلي
+   ======================================== */
+
+[data-theme="dark"] {
+    --fb-bg: #18191a;
+    --fb-card: #242526;
+    --fb-text: #e4e6eb;
+    --fb-text-muted: #b0b3b8;
+    --fb-border: #3e4042;
+}
+
+[data-theme="dark"] .fb-sidebar-right .nav-link:hover,
+[data-theme="dark"] .fb-post .post-actions .btn:hover {
+    background: #3a3b3c;
+}
+
+[data-theme="dark"] .fb-comment {
+    background: #3a3b3c;
+}
+
+[data-theme="dark"] .form-control {
+    background: #3a3b3c;
+    color: #e4e6eb;
+    border-color: #3e4042;
+}
+
+[data-theme="dark"] .form-control:focus {
+    background: #242526;
+    border-color: var(--fb-blue);
+}
+
+[data-theme="dark"] .fb-sidebar-right .nav-link.active {
+    background: #3a3b3c;
+    color: var(--fb-blue);
+}
+
+/* ========================================
+   زر الوضع الليلي
+   ======================================== */
+
+.theme-toggle {
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    z-index: 999;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    background: var(--fb-card);
+    border: 1px solid var(--fb-border);
+    box-shadow: var(--fb-shadow);
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: var(--fb-text);
+}
+
+.theme-toggle:hover {
+    transform: scale(1.05);
+}
+
+/* ========================================
+   تأثيرات التفاعل
+   ======================================== */
+
+.like-btn {
+    transition: all 0.2s ease;
+}
+
+.like-btn.liked {
+    color: #e74c3c !important;
+    border-color: #e74c3c !important;
+    background: rgba(231, 76, 60, 0.08) !important;
+}
+
+.like-btn.liked .fa-thumbs-up {
+    animation: likePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes likePop {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.6) rotate(-10deg); }
+    60% { transform: scale(0.9) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+.comment-section {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+    opacity: 0;
+}
+
+.comment-section.open {
+    max-height: 2000px;
+    opacity: 1;
+}
+
+/* ========================================
+   التجاوب مع الشاشات
+   ======================================== */
+
+/* شاشات صغيرة (جوال) */
+@media (max-width: 991.98px) {
+    .fb-sidebar-right,
+    .fb-sidebar-left {
+        display: none !important;
+    }
+    .fb-feed {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    .fb-mobile-nav {
+        display: flex !important;
+    }
+}
+
+/* شاشات كبيرة (كمبيوتر) */
+@media (min-width: 992px) {
+    .fb-sidebar-right,
+    .fb-sidebar-left {
+        display: block !important;
+    }
+    .fb-mobile-nav {
+        display: none !important;
+    }
+}
+
+/* شاشات متوسطة (تابلت) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .fb-feed {
+        max-width: 600px !important;
+        margin: 0 auto !important;
+    }
+}
+
+/* ========================================
+   ميزة التفاعلات المتعددة
+   ======================================== */
+
+.reaction-btn {
+    min-width: 60px;
+    transition: all 0.2s ease;
+}
+
+.reaction-btn.btn-primary {
+    background: #e7f3ff;
+    border-color: #1877f2;
+    color: #1877f2;
+}
+
+.reaction-menu .dropdown-item {
+    font-size: 0.9rem;
+    padding: 6px 14px;
+    transition: all 0.15s ease;
+}
+
+.reaction-menu .dropdown-item:hover {
+    background: #f0f2f5;
+    transform: scale(1.02);
+}
+
+.reaction-summary {
+    font-size: 0.75rem;
+    color: var(--fb-text-muted);
+    padding: 2px 4px;
+}
+
+.reaction-summary span {
+    margin-left: 6px;
+    background: var(--fb-bg);
+    padding: 1px 8px;
+    border-radius: 12px;
+    display: inline-block;
+}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm p-4 mb-3">
+    <h5><i class="fas fa-cog text-primary"></i> الإعدادات</h5>
+    
+    <!-- تغيير كلمة المرور -->
+    <div class="mt-4">
+        <h6 class="border-bottom pb-2"><i class="fas fa-key"></i> تغيير كلمة المرور</h6>
+        <form method="POST" action="{{ url_for('users.settings') }}">
+            <div class="mb-2">
+                <label class="form-label">كلمة المرور الحالية</label>
+                <input type="password" name="current_password" class="form-control" required>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">كلمة المرور الجديدة</label>
+                <input type="password" name="new_password" class="form-control" required minlength="6">
+            </div>
+            <div class="mb-2">
+                <label class="form-label">تأكيد كلمة المرور</label>
+                <input type="password" name="confirm_password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">تغيير كلمة المرور</button>
+        </form>
+    </div>
+
+    <!-- المعلومات الشخصية -->
+    <div class="mt-4">
+        <h6 class="border-bottom pb-2"><i class="fas fa-user-edit"></i> المعلومات الشخصية</h6>
+        <form method="POST" action="{{ url_for('users.settings') }}">
+            <div class="mb-2">
+                <label class="form-label">الجنس</label>
+                <select name="gender" class="form-control">
+                    <option value="">اختر</option>
+                    <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>ذكر</option>
+                    <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>أنثى</option>
+                    <option value="other" {% if current_user.gender == 'other' %}selected{% endif %}>أخرى</option>
+                </select>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">تاريخ الميلاد</label>
+                <input type="date" name="birth_date" class="form-control" value="{{ current_user.birth_date.strftime('%Y-%m-%d') if current_user.birth_date else '' }}">
+            </div>
+            <div class="mb-2">
+                <label class="form-label">السيرة الذاتية</label>
+                <textarea name="bio" class="form-control" rows="3" maxlength="200">{{ current_user.bio }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">حفظ المعلومات</button>
+        </form>
+    </div>
+
+    <!-- إعدادات الخصوصية -->
+    <div class="mt-4">
+        <h6 class="border-bottom pb-2"><i class="fas fa-lock"></i> إعدادات الخصوصية</h6>
+        <form method="POST" action="{{ url_for('users.settings') }}">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="show_email" id="show_email" {% if current_user.show_email %}checked{% endif %}>
+                <label class="form-check-label" for="show_email">إظهار البريد الإلكتروني في الملف الشخصي</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_private" id="is_private" {% if current_user.is_private %}checked{% endif %}>
+                <label class="form-check-label" for="is_private">حساب خاص (يجب الموافقة على المتابعين)</label>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">من يمكنه إرسال رسائل إليك</label>
+                <select name="message_privacy" class="form-control">
+                    <option value="everyone" {% if current_user.message_privacy == 'everyone' %}selected{% endif %}>الجميع</option>
+                    <option value="followers" {% if current_user.message_privacy == 'followers' %}selected{% endif %}>المتابعون فقط</option>
+                    <option value="none" {% if current_user.message_privacy == 'none' %}selected{% endif %}>لا أحد</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">حفظ الخصوصية</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

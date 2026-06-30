@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm p-4 mt-2">
+    <h5><i class="fas fa-user-edit text-primary"></i> تعديل الملف الشخصي</h5>
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+            {% for error in form.name.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.bio.label(class="form-label") }}
+            {{ form.bio(class="form-control", rows=3) }}
+        </div>
+        <div class="mb-3">
+            {{ form.avatar.label(class="form-label") }}
+            {{ form.avatar(class="form-control") }}
+            {% if current_user.avatar %}
+                <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" class="img-fluid mt-2" style="max-height: 150px; border-radius: 50%;">
+            {% endif %}
+        </div>
+        {{ form.submit(class="btn btn-primary w-100") }}
+    </form>
+    <a href="{{ url_for('users.profile', username=current_user.username) }}" class="btn btn-outline-secondary w-100 mt-2">إلغاء</a>
+</div>
+{% endblock %}

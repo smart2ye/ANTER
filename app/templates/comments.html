@@ -1,0 +1,92 @@
+{% macro render_comment(comment, post_id) %}
+<div class="card mb-2 shadow-sm" id="comment-{{ comment.id }}">
+    <div class="card-body">
+        <div class="d-flex align-items-start">
+            <img src="{{ url_for('static', filename='uploads/' + comment.author.avatar) }}" width="30" height="30" class="rounded-circle me-2">
+            <div class="flex-grow-1">
+                <div>
+                    <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="text-decoration-none text-dark">
+                        <strong>{{ comment.author.name }}</strong>
+                    </a>
+                    <small class="text-muted">@{{ comment.author.username }}</small>
+                    <small class="text-muted float-end">{{ comment.created_at.strftime('%H:%M') }}</small>
+                </div>
+                <p class="mb-1">{{ comment.content|safe }}</p>
+                <div class="d-flex gap-3">
+                    <button class="btn btn-sm btn-outline-primary like-comment-btn" data-comment="{{ comment.id }}">
+                        <i class="fas fa-heart"></i> <span class="like-count">{{ comment.like_count() }}</span>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary reply-btn" data-comment="{{ comment.id }}" data-username="{{ comment.author.username }}">
+                        <i class="fas fa-reply"></i> رد
+                    </button>
+                </div>
+                {% if comment.replies.count() > 0 %}
+                    <div class="mt-2 me-3">
+                        {% for reply in comment.replies.order_by('created_at').all() %}
+                            {{ render_comment(reply, post_id) }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% for comment in comments %}
+    {{ render_comment(comment, post.id) }}
+{% endfor %}
+
+<!-- نموذج إضافة تعليق جديد -->
+<div class="card mt-3">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('posts.comment', post_id=post.id) }}" id="commentForm">
+            <input type="hidden" name="parent_id" id="parent_id" value="">
+            <div class="input-group">
+                <input type="text" name="content" id="commentContent" class="form-control" placeholder="أضف تعليقاً... (استخدم @username للإشارة)" required>
+                <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i></button>
+            </div>
+            <div id="replyInfo" class="mt-1 small text-muted" style="display: none;">
+                رد على <span id="replyToName"></span>
+                <button type="button" class="btn btn-sm btn-link" onclick="cancelReply()">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.reply-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.dataset.comment;
+            const username = this.dataset.username;
+            document.getElementById('parent_id').value = commentId;
+            document.getElementById('replyToName').textContent = username;
+            document.getElementById('replyInfo').style.display = 'block';
+            document.getElementById('commentContent').placeholder = 'رد على @' + username + '...';
+            document.getElementById('commentContent').focus();
+        });
+    });
+
+    function cancelReply() {
+        document.getElementById('parent_id').value = '';
+        document.getElementById('replyInfo').style.display = 'none';
+        document.getElementById('commentContent').placeholder = 'أضف تعليقاً... (استخدم @username للإشارة)';
+    }
+
+    document.querySelectorAll('.like-comment-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.dataset.comment;
+            fetch('/posts/like_comment/' + commentId, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    this.querySelector('.like-count').textContent = data.count;
+                    this.classList.toggle('btn-primary');
+                    this.classList.toggle('btn-outline-primary');
+                });
+        });
+    });
+
+    document.querySelectorAll('.card-text').forEach(el => {
+        el.innerHTML = el.innerHTML.replace(/@(\w+)/g, '<a href="/users/$1" class="mention text-primary">@$1</a>');
+    });
+</script>

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+    <a href="{{ url_for('messages.inbox') }}" class="btn btn-outline-secondary btn-sm me-2"><i class="fas fa-arrow-right"></i></a>
+    <img src="{{ url_for('static', filename='uploads/' + other.avatar) }}" width="40" height="40" class="rounded-circle me-2" style="object-fit: cover;">
+    <h6 class="mb-0">{{ other.name }}</h6>
+    <span class="badge bg-secondary ms-2">@{{ other.username }}</span>
+</div>
+
+<div class="chat-box border rounded p-2" style="height: 400px; overflow-y: auto; background: #f8f9fa;">
+    {% if messages %}
+        {% for msg in messages %}
+            <div class="d-flex mb-2 {% if msg.sender_id == current_user.id %}justify-content-end{% endif %}">
+                <div class="p-2 rounded {% if msg.sender_id == current_user.id %}bg-primary text-white{% else %}bg-white border{% endif %}" style="max-width: 75%;">
+                    {{ msg.content }}
+                    <br><small class="{% if msg.sender_id == current_user.id %}text-light{% else %}text-muted{% endif %}">{{ msg.created_at.strftime('%H:%M') }}</small>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center text-muted mt-5">
+            <i class="fas fa-comment-dots fa-3x mb-2"></i>
+            <p>لا توجد رسائل بعد. ابدأ المحادثة!</p>
+        </div>
+    {% endif %}
+</div>
+
+<form method="POST" action="{{ url_for('messages.send', user_id=other.id) }}" class="mt-2" id="messageForm">
+    <div class="input-group">
+        <input type="text" name="content" id="messageInput" class="form-control" placeholder="اكتب رسالة..." required autofocus>
+        <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</form>
+
+<script>
+    // تمرير إلى الأسفل عند تحميل الصفحة
+    const chatBox = document.querySelector('.chat-box');
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // إرسال الرسالة عند الضغط على Enter (مع منع إعادة التحميل)
+    document.getElementById('messageInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById('messageForm').submit();
+        }
+    });
+
+    // تحديث ارتفاع الشات تلقائياً عند تغيير حجم النافذة
+    function adjustChatHeight() {
+        const headerHeight = document.querySelector('.navbar').offsetHeight || 56;
+        const footerHeight = document.querySelector('.fixed-bottom')?.offsetHeight || 70;
+        const availableHeight = window.innerHeight - headerHeight - footerHeight - 180;
+        const chatBox = document.querySelector('.chat-box');
+        if (chatBox) {
+            chatBox.style.height = Math.max(300, availableHeight) + 'px';
+        }
+    }
+    window.addEventListener('resize', adjustChatHeight);
+    setTimeout(adjustChatHeight, 300);
+</script>
+<style>
+    .chat-box {
+        background: #f1f3f5;
+        scroll-behavior: smooth;
+    }
+</style>
+{% endblock %}

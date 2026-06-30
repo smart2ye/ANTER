@@ -1,0 +1,90 @@
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from flask_login import login_user, logout_user, login_required, current_user
+from app.extensions import db
+from app.models import User
+from app.forms.auth import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
+from itsdangerous import URLSafeTimedSerializer
+
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=True)  # تذكر المستخدم
+            next_page = request.args.get('next')
+            flash('✅ تم تسجيل الدخول بنجاح!', 'success')
+            return redirect(next_page or url_for('main.index'))
+        else:
+            flash('❌ اسم المستخدم أو كلمة المرور غير صحيحة.', 'danger')
+    return render_template('auth/login.html', form=form)
+
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(
+            username=form.username.data.strip(),
+            email=form.email.data.strip(),
+            name=form.name.data.strip(),
+            terms_agreed=form.terms_agreed.data
+        )
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('✅ تم التسجيل بنجاح، يمكنك الدخول الآن.', 'success')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/register.html', form=form)
+
+@auth_bp.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('👋 تم تسجيل الخروج.', 'info')
+    return redirect(url_for('auth.login'))
+
+@auth_bp.route('/reset_password_request', methods=['GET', 'POST'])
+def reset_password_request():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    form = ResetPasswordRequestForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+            token = s.dumps(user.id, salt='password-reset')
+            reset_url = url_for('auth.reset_password', token=token, _external=True)
+            flash(f'🔗 رابط إعادة التعيين: {reset_url}', 'info')
+            flash('📌 انسخ الرابط والصقه في المتصفح.', 'info')
+        else:
+            flash('❌ لا يوجد حساب مرتبط بهذا البريد الإلكتروني.', 'danger')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/reset_password_request.html', form=form)
+
+@auth_bp.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    try:
+        user_id = s.loads(token, salt='password-reset', max_age=3600)
+    except:
+        flash('❌ الرابط غير صالح أو انتهت صلاحيته.', 'danger')
+        return redirect(url_for('auth.reset_password_request'))
+    user = User.query.get(user_id)
+    if not user:
+        flash('❌ المستخدم غير موجود.', 'danger')
+        return redirect(url_for('auth.reset_password_request'))
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        db.session.commit()
+        flash('✅ تم تغيير كلمة المرور بنجاح.', 'success')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/reset_password.html', form=form)

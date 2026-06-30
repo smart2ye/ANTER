@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- ============================== -->
+<!-- بطاقة الملف الشخصي -->
+<!-- ============================== -->
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4" style="background: var(--card-bg);">
+    <!-- غلاف (Cover) -->
+    <div class="position-relative" style="height: 120px; background: linear-gradient(135deg, var(--fb-blue), #0d65d9);"></div>
+    
+    <div class="px-4 pb-4" style="margin-top: -50px;">
+        <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-3">
+            <!-- الصورة -->
+            <div class="position-relative" style="flex-shrink: 0;">
+                <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" 
+                     class="border border-3 border-white shadow-sm" 
+                     style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; background: var(--card-bg);">
+                {% if user.is_verified %}
+                    <span class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-1" style="font-size: 0.7rem; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--card-bg);">
+                        <i class="fas fa-check"></i>
+                    </span>
+                {% endif %}
+            </div>
+            
+            <!-- المعلومات -->
+            <div class="text-center text-sm-start flex-grow-1">
+                <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-2">
+                    <h4 class="mb-0 fw-bold">{{ user.name }}</h4>
+                    {% if user.is_verified %}
+                        <i class="fas fa-check-circle text-primary" style="font-size: 1.2rem;" title="حساب موثق"></i>
+                    {% endif %}
+                    <span class="text-muted small">@{{ user.username }}</span>
+                </div>
+                
+                {% if user.bio %}
+                    <p class="mt-2 mb-0" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-color);">{{ user.bio }}</p>
+                {% else %}
+                    <p class="text-muted small mt-2 mb-0">✨ لا توجد سيرة ذاتية</p>
+                {% endif %}
+                
+                <!-- الإحصائيات -->
+                <div class="d-flex gap-4 mt-2">
+                    <div>
+                        <a href="{{ url_for('users.followers', username=user.username) }}" class="text-decoration-none text-dark">
+                            <span class="fw-bold fs-5">{{ user.follower_count() }}</span>
+                            <span class="text-muted small">متابع</span>
+                        </a>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('users.following', username=user.username) }}" class="text-decoration-none text-dark">
+                            <span class="fw-bold fs-5">{{ user.following_count() }}</span>
+                            <span class="text-muted small">يتبع</span>
+                        </a>
+                    </div>
+                    <div>
+                        <span class="fw-bold fs-5">{{ user.posts.count() }}</span>
+                        <span class="text-muted small">منشور</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- الأزرار -->
+            <div class="d-flex flex-wrap gap-2" style="flex-shrink: 0;">
+                {% if current_user.id == user.id %}
+                    <a href="{{ url_for('users.edit_profile') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                        <i class="fas fa-edit me-1"></i> تعديل
+                    </a>
+                    <a href="{{ url_for('posts.create') }}" class="btn btn-primary btn-sm rounded-pill px-3">
+                        <i class="fas fa-plus-circle me-1"></i> جديد
+                    </a>
+                    <button class="btn btn-outline-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                        <i class="fas fa-trash-alt me-1"></i>
+                    </button>
+                {% else %}
+                    {% if is_following %}
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 follow-btn" 
+                                data-user="{{ user.id }}" data-following="true">
+                            <i class="fas fa-user-check me-1"></i> متابعة
+                        </button>
+                    {% else %}
+                        <button class="btn btn-primary btn-sm rounded-pill px-3 follow-btn" 
+                                data-user="{{ user.id }}" data-following="false">
+                            <i class="fas fa-user-plus me-1"></i> متابعة
+                        </button>
+                    {% endif %}
+                    <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="btn btn-success btn-sm rounded-pill px-3">
+                        <i class="fas fa-envelope me-1"></i> رسالة
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================== -->
+<!-- تبويبات الملف الشخصي -->
+<!-- ============================== -->
+<ul class="nav nav-pills nav-fill mb-4 gap-1" style="background: var(--fb-bg); border-radius: 12px; padding: 4px;">
+    <li class="nav-item">
+        <a class="nav-link active rounded-pill fw-semibold" href="{{ url_for('users.profile', username=user.username) }}" style="background: var(--fb-blue); color: #fff;">
+            <i class="fas fa-file-alt me-1"></i> المنشورات
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill fw-semibold" href="{{ url_for('users.user_videos', username=user.username) }}" style="color: var(--text-muted);">
+            <i class="fas fa-play-circle me-1"></i> الريلزات
+        </a>
+    </li>
+</ul>
+
+<!-- ============================== -->
+<!-- عرض المنشورات -->
+<!-- ============================== -->
+{% if posts %}
+    <div class="row g-2">
+        {% for post in posts %}
+        <div class="col-6 col-md-4">
+            <div class="card shadow-sm border-0 rounded-3 overflow-hidden position-relative" style="aspect-ratio: 1/1; transition: transform 0.2s;">
+                <a href="{{ url_for('posts.view_post', post_id=post.id) }}" class="text-decoration-none">
+                    {% if post.image %}
+                        <img src="{{ url_for('static', filename='uploads/' + post.image) }}" 
+                             class="w-100 h-100" style="object-fit: cover;">
+                    {% else %}
+                        <div class="w-100 h-100 d-flex align-items-center justify-content-center p-2" 
+                             style="background: var(--fb-bg);">
+                            <span class="text-muted small text-center">{{ post.content[:60] }}</span>
+                        </div>
+                    {% endif %}
+                    <div class="position-absolute bottom-0 start-0 end-0 p-2" 
+                         style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+                        <small class="text-white">
+                            <i class="fas fa-heart text-danger"></i> {{ post.like_count() }}
+                            <i class="fas fa-comment ms-2"></i> {{ post.comment_count() }}
+                        </small>
+                    </div>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center text-muted py-5">
+        <i class="fas fa-file-alt fa-3x mb-3" style="opacity: 0.3;"></i>
+        <h5>لا توجد منشورات</h5>
+        <p class="small">أنشئ أول منشور لك!</p>
+        <a href="{{ url_for('posts.create') }}" class="btn btn-primary btn-sm rounded-pill px-4">
+            <i class="fas fa-plus-circle"></i> منشور جديد
+        </a>
+    </div>
+{% endif %}
+
+<!-- ============================== -->
+<!-- نافذة حذف الحساب -->
+<!-- ============================== -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-4 shadow-lg" style="background: var(--card-bg);">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i> تأكيد الحذف</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="small">هل أنت متأكد من حذف حسابك؟</p>
+                <p class="text-danger small">سيتم حذف جميع بياناتك نهائياً.</p>
+                <form method="POST" action="{{ url_for('users.delete_account') }}">
+                    <div class="mb-2">
+                        <input type="password" name="password" class="form-control form-control-sm rounded-3" 
+                               placeholder="كلمة المرور" required>
+                    </div>
+                    <button type="submit" class="btn btn-danger btn-sm w-100 rounded-pill">تأكيد الحذف</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // متابعة / إلغاء متابعة
+    document.querySelectorAll('.follow-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const userId = this.dataset.user;
+            const following = this.dataset.following === 'true';
+            const url = following ? `/users/unfollow/${userId}` : `/users/follow/${userId}`;
+            
+            fetch(url, { method: 'POST' })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        this.dataset.following = data.following ? 'true' : 'false';
+                        this.innerHTML = data.following 
+                            ? '<i class="fas fa-user-check me-1"></i> متابعة' 
+                            : '<i class="fas fa-user-plus me-1"></i> متابعة';
+                        this.classList.toggle('btn-primary');
+                        this.classList.toggle('btn-outline-secondary');
+                        location.reload();
+                    }
+                }.bind(this));
+        });
+    });
+</script>
+{% endblock %}

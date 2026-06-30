@@ -1,0 +1,155 @@
+{% set post_url = url_for('posts.view_post', post_id=post.id, _external=true) %}
+<div class="fb-post" id="post-{{ post.id }}">
+    <div class="card-body">
+        <!-- رأس المنشور مع زر النقاط الثلاث -->
+        <div class="d-flex align-items-start justify-content-between mb-1">
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('users.profile', username=post.author.username) }}">
+                    <img src="{{ url_for('static', filename='uploads/' + post.author.avatar) }}" class="post-avatar me-2" width="32" height="32" style="border-radius: 50%; object-fit: cover;">
+                </a>
+                <div>
+                    <a href="{{ url_for('users.profile', username=post.author.username) }}" class="text-decoration-none">
+                        <strong class="post-author-name" style="font-size: 0.9rem;">
+                            {{ post.author.name }}
+                            {% if post.author.is_verified %}
+                                <i class="fas fa-check-circle text-primary" style="font-size: 0.6rem;" title="حساب موثق"></i>
+                            {% endif %}
+                        </strong>
+                    </a>
+                    <small class="post-username d-block" style="font-size: 0.65rem;">@{{ post.author.username }}</small>
+                </div>
+                <small class="text-muted ms-2" style="font-size: 0.6rem;">{{ post.created_at.strftime('%H:%M · %d/%m') }}</small>
+            </div>
+            
+            <!-- ============================== -->
+            <!-- زر النقاط الثلاث (المزيد) -->
+            <!-- ============================== -->
+            <div class="dropdown">
+                <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.2rem;">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <!-- تعديل (لصاحب المنشور فقط) -->
+                    {% if current_user.id == post.author_id %}
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('posts.edit', post_id=post.id) }}">
+                                <i class="fas fa-edit text-primary"></i> تعديل
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    <!-- إخفاء (لجميع المستخدمين عدا صاحب المنشور) -->
+                    {% if current_user.id != post.author_id %}
+                        <li>
+                            <button class="dropdown-item hide-post-btn" data-post="{{ post.id }}">
+                                <i class="fas fa-eye-slash text-warning"></i> إخفاء
+                            </button>
+                        </li>
+                    {% endif %}
+                    
+                    <!-- إبلاغ (لجميع المستخدمين عدا صاحب المنشور) -->
+                    {% if current_user.id != post.author_id %}
+                        <li>
+                            <button class="dropdown-item report-btn" data-post="{{ post.id }}" data-bs-toggle="modal" data-bs-target="#reportModal">
+                                <i class="fas fa-flag text-danger"></i> إبلاغ
+                            </button>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- محتوى المنشور -->
+        <p class="post-content" style="font-size: 0.9rem;">{{ post.content }}</p>
+        {% if post.image %}
+            <img src="{{ url_for('static', filename='uploads/' + post.image) }}" class="post-image" style="max-height: 200px; width: 100%; object-fit: cover; border-radius: 8px;">
+        {% endif %}
+
+        <!-- عدادات التفاعلات -->
+        <div class="reaction-summary d-flex gap-2 small text-muted mb-1" id="reaction-summary-{{ post.id }}">
+            {% set reactions = get_reaction_counts(post.id) %}
+            {% if reactions.like > 0 %}<span>👍 {{ reactions.like }}</span>{% endif %}
+            {% if reactions.love > 0 %}<span>🥰 {{ reactions.love }}</span>{% endif %}
+            {% if reactions.haha > 0 %}<span>🤣 {{ reactions.haha }}</span>{% endif %}
+            {% if reactions.angry > 0 %}<span>😡 {{ reactions.angry }}</span>{% endif %}
+            {% if reactions.sad > 0 %}<span>😢 {{ reactions.sad }}</span>{% endif %}
+        </div>
+
+        <!-- أزرار التفاعل -->
+        <div class="post-actions mt-1 pt-1">
+            <div class="d-flex gap-1 flex-wrap">
+                <!-- زر التفاعل (قائمة منسدلة) -->
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-0 px-2 reaction-btn" 
+                            style="font-size: 0.7rem;" 
+                            type="button" 
+                            data-bs-toggle="dropdown"
+                            data-post="{{ post.id }}">
+                        <span id="reaction-icon-{{ post.id }}">👍</span>
+                        <span class="reaction-count" id="reaction-count-{{ post.id }}">
+                            {{ reactions.like + reactions.love + reactions.haha + reactions.angry + reactions.sad }}
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu reaction-menu">
+                        <li><a class="dropdown-item reaction-option" data-post="{{ post.id }}" data-reaction="like">👍 إعجاب</a></li>
+                        <li><a class="dropdown-item reaction-option" data-post="{{ post.id }}" data-reaction="love">🥰 حب</a></li>
+                        <li><a class="dropdown-item reaction-option" data-post="{{ post.id }}" data-reaction="haha">🤣 أضحكني</a></li>
+                        <li><a class="dropdown-item reaction-option" data-post="{{ post.id }}" data-reaction="angry">😡 أغضبني</a></li>
+                        <li><a class="dropdown-item reaction-option" data-post="{{ post.id }}" data-reaction="sad">😢 أحزنني</a></li>
+                    </ul>
+                </div>
+
+                <!-- زر التعليق -->
+                <button class="btn btn-sm btn-outline-secondary toggle-comments-btn py-0 px-2" style="font-size: 0.7rem;" data-post="{{ post.id }}">
+                    <i class="fas fa-comment"></i> (<span class="comment-count">{{ post.comment_count() }}</span>)
+                </button>
+
+                <!-- زر المشاركة -->
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-0 px-2" style="font-size: 0.7rem;" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-share"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item small" href="#" onclick="copyLink('{{ post_url }}')"><i class="fas fa-copy"></i> نسخ الرابط</a></li>
+                        <li><a class="dropdown-item small" href="https://wa.me/?text={{ post_url }}" target="_blank"><i class="fab fa-whatsapp"></i> واتساب</a></li>
+                        <li><a class="dropdown-item small" href="https://twitter.com/intent/tweet?url={{ post_url }}" target="_blank"><i class="fab fa-twitter"></i> تويتر</a></li>
+                        <li><a class="dropdown-item small" href="https://www.facebook.com/sharer/sharer.php?u={{ post_url }}" target="_blank"><i class="fab fa-facebook"></i> فيسبوك</a></li>
+                    </ul>
+                </div>
+
+                <!-- رابط المنشور -->
+                <a href="{{ url_for('posts.view_post', post_id=post.id) }}" class="btn btn-sm btn-outline-info py-0 px-2" style="font-size: 0.7rem;">
+                    <i class="fas fa-external-link-alt"></i>
+                </a>
+            </div>
+
+            <!-- أزرار التعديل والحذف (للمالك فقط) -->
+            {% if current_user.id == post.author_id %}
+                <div class="d-flex gap-1">
+                    <a href="{{ url_for('posts.edit', post_id=post.id) }}" class="btn btn-sm btn-warning py-0 px-2" style="font-size: 0.7rem;"><i class="fas fa-edit"></i></a>
+                    <button class="btn btn-sm btn-danger delete-post py-0 px-2" style="font-size: 0.7rem;" data-post="{{ post.id }}"><i class="fas fa-trash"></i></button>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- التعليقات -->
+        <div id="comments-{{ post.id }}" class="mt-2 comment-section" style="display: none;">
+            {% for comment in post.comments.order_by('created_at').all() %}
+                <div class="comment-item d-flex align-items-start" style="font-size: 0.8rem;">
+                    <img src="{{ url_for('static', filename='uploads/' + comment.author.avatar) }}" class="comment-avatar me-2" width="24" height="24" style="border-radius: 50%; object-fit: cover;">
+                    <div>
+                        <strong class="post-author-name">{{ comment.author.name }}</strong>
+                        <small class="post-username">@{{ comment.author.username }}</small>
+                        <p class="mb-0">{{ comment.content }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+            <form method="POST" action="{{ url_for('posts.comment', post_id=post.id) }}" class="mt-2">
+                <div class="input-group input-group-sm">
+                    <input type="text" name="content" class="form-control form-control-sm" placeholder="أضف تعليقاً..." required>
+                    <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

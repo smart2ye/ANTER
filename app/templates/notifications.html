@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+<h5><i class="fas fa-bell text-primary"></i> الإشعارات</h5>
+
+{% if notifications %}
+    {% for notif in notifications %}
+        {% set link = '#' %}
+        {% if notif.action == 'like' or notif.action == 'comment' or notif.action == 'reply' %}
+            {% if notif.post_id %}
+                {% set link = url_for('posts.view_post', post_id=notif.post_id) %}
+            {% endif %}
+        {% elif notif.action == 'follow' %}
+            {% set link = url_for('users.profile', username=notif.actor.username) %}
+        {% elif notif.action == 'message' %}
+            {% set link = url_for('messages.chat', user_id=notif.actor.id) %}
+        {% endif %}
+
+        <a href="{{ link }}" class="text-decoration-none text-dark notification-link" data-id="{{ notif.id }}">
+            <div class="card mb-2 shadow-sm notification-item {% if not notif.is_read %}unread{% else %}read{% endif %}" 
+                 style="transition: all 0.2s; cursor: pointer; 
+                        {% if not notif.is_read %}border-right: 4px solid #1877f2; background: #f0f7ff;{% endif %}">
+                <div class="card-body d-flex align-items-center">
+                    <img src="{{ url_for('static', filename='uploads/' + notif.actor.avatar) }}" 
+                         width="40" height="40" class="rounded-circle me-2" style="object-fit: cover;">
+                    <div class="flex-grow-1">
+                        <div {% if not notif.is_read %}style="font-weight: 600;"{% endif %}>
+                            <strong>{{ notif.actor.name }}</strong>
+                            {% if notif.action == 'like' %}
+                                أعجب بمنشورك.
+                            {% elif notif.action == 'comment' %}
+                                علّق على منشورك.
+                            {% elif notif.action == 'reply' %}
+                                رد على تعليقك.
+                            {% elif notif.action == 'follow' %}
+                                تابعك.
+                            {% elif notif.action == 'message' %}
+                                أرسل لك رسالة.
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                    {% if not notif.is_read %}
+                        <span class="badge bg-primary rounded-pill">جديد</span>
+                    {% else %}
+                        <span class="badge bg-secondary rounded-pill">مقروء</span>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+    {% endfor %}
+{% else %}
+    <div class="text-center text-muted mt-4">
+        <i class="fas fa-bell-slash fa-3x mb-2"></i>
+        <p>لا توجد إشعارات جديدة.</p>
+    </div>
+{% endif %}
+
+<script>
+    // ==============================
+    // تحديد الإشعار كمقروء عند النقر عليه
+    // ==============================
+    document.querySelectorAll('.notification-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            const notifId = this.dataset.id;
+            // إرسال طلب لتحديد الإشعار كمقروء (بشكل غير متزامن)
+            fetch('/notifications/mark_read/' + notifId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    // تحديث واجهة المستخدم (إزالة علامة "جديد")
+                    const badge = this.querySelector('.badge');
+                    if (badge) {
+                        badge.textContent = 'مقروء';
+                        badge.className = 'badge bg-secondary rounded-pill';
+                    }
+                    // إزالة الخلفية الزرقاء
+                    const card = this.querySelector('.notification-item');
+                    if (card) {
+                        card.classList.remove('unread');
+                        card.classList.add('read');
+                        card.style.borderRight = '4px solid transparent';
+                        card.style.background = 'transparent';
+                    }
+                    // تحديث عداد الإشعارات في الشريط العلوي
+                    updateBadge();
+                }
+            }.bind(this));
+        });
+    });
+
+    // ==============================
+    // تحديث عداد الإشعارات
+    // ==============================
+    function updateBadge() {
+        fetch('/notifications/unread_count')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                const badge = document.getElementById('notif-badge');
+                if (badge) {
+                    badge.textContent = data.count;
+                    badge.style.display = data.count > 0 ? 'block' : 'none';
+                }
+            });
+    }
+</script>
+{% endblock %}

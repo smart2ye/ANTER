@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow-lg border-0 rounded-4 p-4" style="max-width: 420px; width: 100%; background: var(--card-bg);">
+        <div class="text-center mb-4">
+            <div class="d-flex justify-content-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="height: 60px; width: 60px;">
+                    <rect x="0" y="0" width="100" height="100" rx="20" ry="20" fill="#1877f2"/>
+                    <text x="50" y="72" font-family="Arial, Helvetica, sans-serif" font-size="60" font-weight="900" fill="white" text-anchor="middle">A</text>
+                </svg>
+            </div>
+            <h4 class="fw-bold mt-2">مرحباً بعودتك</h4>
+            <p class="text-muted small">سجل الدخول إلى حسابك في ANTER</p>
+        </div>
+
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">{{ form.username.label }}</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0" style="border-radius: 12px 0 0 12px;">
+                        <i class="fas fa-user text-muted"></i>
+                    </span>
+                    {{ form.username(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.username.errors else ""), 
+                                     placeholder="أدخل اسم المستخدم", style="border-radius: 0 12px 12px 0;") }}
+                </div>
+                {% for error in form.username.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">{{ form.password.label }}</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0" style="border-radius: 12px 0 0 12px;">
+                        <i class="fas fa-lock text-muted"></i>
+                    </span>
+                    {{ form.password(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.password.errors else ""), 
+                                     placeholder="أدخل كلمة المرور", style="border-radius: 0 12px 12px 0;") }}
+                </div>
+                {% for error in form.password.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="form-check">
+                    {{ form.remember_me(class="form-check-input") }}
+                    {{ form.remember_me.label(class="form-check-label small") }}
+                </div>
+                <a href="{{ url_for('auth.reset_password_request') }}" class="small text-decoration-none">نسيت كلمة المرور؟</a>
+            </div>
+
+            {{ form.submit(class="btn btn-primary w-100 py-2 fw-bold rounded-pill") }}
+        </form>
+
+        <hr class="my-3">
+        
+        <p class="text-center small mb-0">
+            ليس لديك حساب؟ 
+            <a href="{{ url_for('auth.register') }}" class="fw-bold text-decoration-none">سجل الآن</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="fas fa-crown text-warning"></i> لوحة التحكم</h4>
+    <span class="badge bg-primary">{{ current_user.name }}</span>
+</div>
+
+<div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card bg-primary text-white p-2 text-center">
+            <h5>{{ users_count }}</h5>
+            <small>مستخدمين</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card bg-success text-white p-2 text-center">
+            <h5>{{ posts_count }}</h5>
+            <small>منشورات</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card bg-info text-white p-2 text-center">
+            <h5>{{ comments_count }}</h5>
+            <small>تعليقات</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card bg-danger text-white p-2 text-center">
+            <h5>{{ reports_count }}</h5>
+            <small>بلاغات معلقة</small>
+        </div>
+    </div>
+</div>
+
+<div class="row g-2">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">📝 آخر المنشورات</div>
+            <div class="card-body p-2">
+                {% for post in recent_posts %}
+                <div class="border-bottom py-1 small">
+                    <strong>{{ post.author.name }}</strong>: {{ post.content[:50] }}...
+                    <a href="{{ url_for('admin.view_post', post_id=post.id) }}" class="text-primary">عرض</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-danger text-white">🚨 آخر البلاغات</div>
+            <div class="card-body p-2">
+                {% for report in recent_reports %}
+                <div class="border-bottom py-1 small">
+                    من: <strong>{{ report.reporter.name }}</strong> على منشور {{ report.post.author.name }}
+                    <span class="badge bg-warning">معلق</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3 d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('admin.users') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-users"></i> إدارة المستخدمين</a>
+    <a href="{{ url_for('admin.posts') }}" class="btn btn-outline-success btn-sm"><i class="fas fa-file-alt"></i> إدارة المنشورات</a>
+    <a href="{{ url_for('admin.reports') }}" class="btn btn-outline-danger btn-sm"><i class="fas fa-flag"></i> إدارة البلاغات</a>
+</div>
+{% endblock %}

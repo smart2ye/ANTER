@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card shadow-sm p-3 mb-3">
+    <div class="d-flex align-items-center gap-3">
+        <a href="{{ url_for('users.profile', username=user.username) }}" class="text-decoration-none">
+            <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" class="rounded-circle" width="50" height="50" style="object-fit: cover;">
+        </a>
+        <div>
+            <h5 class="mb-0">
+                <a href="{{ url_for('users.profile', username=user.username) }}" class="text-decoration-none text-dark">
+                    {{ user.name }}
+                </a>
+                {% if user.is_verified %}
+                    <i class="fas fa-check-circle text-primary" style="font-size: 0.8rem;"></i>
+                {% endif %}
+            </h5>
+            <small class="text-muted">@{{ user.username }}</small>
+        </div>
+        <div class="ms-auto">
+            <span class="badge bg-primary">{{ users|length }}</span>
+            {% if type == 'followers' %}
+                <span class="text-muted small">متابع</span>
+            {% else %}
+                <span class="text-muted small">يتبع</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<h5 class="mb-3">
+    <i class="fas fa-users text-primary"></i>
+    {% if type == 'followers' %}
+        من يتابع {{ user.name }}
+    {% else %}
+        من يتابعهم {{ user.name }}
+    {% endif %}
+</h5>
+
+{% if users %}
+    <div class="list-group">
+        {% for u in users %}
+        <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 border-0 shadow-sm mb-2 rounded-3" style="background: var(--card-bg);">
+            <a href="{{ url_for('users.profile', username=u.username) }}" class="text-decoration-none">
+                <img src="{{ url_for('static', filename='uploads/' + u.avatar) }}" class="rounded-circle" width="44" height="44" style="object-fit: cover;">
+            </a>
+            <div class="flex-grow-1">
+                <a href="{{ url_for('users.profile', username=u.username) }}" class="text-decoration-none text-dark">
+                    <strong>{{ u.name }}</strong>
+                    {% if u.is_verified %}
+                        <i class="fas fa-check-circle text-primary" style="font-size: 0.7rem;"></i>
+                    {% endif %}
+                </a>
+                <br>
+                <small class="text-muted">@{{ u.username }}</small>
+            </div>
+            <div>
+                {% if current_user.id != u.id %}
+                    {% if current_user.is_following(u) %}
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill follow-btn" 
+                                data-user="{{ u.id }}" data-following="true">
+                            <i class="fas fa-user-check"></i> متابعة
+                        </button>
+                    {% else %}
+                        <button class="btn btn-sm btn-primary rounded-pill follow-btn" 
+                                data-user="{{ u.id }}" data-following="false">
+                            <i class="fas fa-user-plus"></i> متابعة
+                        </button>
+                    {% endif %}
+                {% endif %}
+                <a href="{{ url_for('messages.chat', user_id=u.id) }}" class="btn btn-sm btn-outline-success rounded-pill">
+                    <i class="fas fa-envelope"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center text-muted mt-5">
+        <i class="fas fa-users fa-3x mb-3"></i>
+        <h5>لا يوجد مستخدمون</h5>
+        <p>{% if type == 'followers' %}لا يتابع {{ user.name }} أحد بعد.{% else %}{{ user.name }} لا يتابع أحداً بعد.{% endif %}</p>
+    </div>
+{% endif %}
+
+<script>
+    // متابعة / إلغاء متابعة
+    document.querySelectorAll('.follow-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.dataset.user;
+            const following = this.dataset.following === 'true';
+            const url = following ? `/users/unfollow/${userId}` : `/users/follow/${userId}`;
+            
+            fetch(url, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        this.dataset.following = data.following ? 'true' : 'false';
+                        this.innerHTML = data.following 
+                            ? '<i class="fas fa-user-check"></i> متابعة' 
+                            : '<i class="fas fa-user-plus"></i> متابعة';
+                        this.classList.toggle('btn-primary');
+                        this.classList.toggle('btn-outline-secondary');
+                    }
+                });
+        });
+    });
+</script>
+
+{% endblock %}

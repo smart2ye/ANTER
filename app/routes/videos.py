@@ -1,0 +1,129 @@
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import login_required, current_user
+from app.extensions import db, csrf
+from app.models import Video, VideoLike, VideoComment, VideoCommentLike, Notification
+from app.utils.helpers import save_video_file, create_thumbnail
+
+videos_bp = Blueprint('videos', __name__, url_prefix='/videos')
+
+@videos_bp.route('/reels')
+@login_required
+def reels():
+    videos = Video.query.filter_by(is_reel=True).order_by(Video.created_at.desc()).all()
+    return render_template('videos/reels.html', videos=videos)
+
+@videos_bp.route('/upload', methods=['GET', 'POST'])
+@login_required
+@csrf.exempt
+def upload():
+    if request.method == 'POST':
+        description = request.form.get('description', '').strip()
+        if not description:
+            description = "فيديو جديد"
+        is_reel = request.form.get('is_reel') == 'on'
+        video_file = request.files.get('video')
+        thumbnail_file = request.files.get('thumbnail')
+
+        if not video_file or not video_file.filename:
+            flash('الرجاء اختيار فيديو.', 'danger')
+            return redirect(url_for('videos.upload'))
+
+        video_path = save_video_file(video_file, is_reel)
+        if not video_path:
+            flash('فشل في حفظ الفيديو. تأكد من الصيغة والحجم.', 'danger')
+            return redirect(url_for('videos.upload'))
+
+        thumbnail_path = ''
+        if thumbnail_file and thumbnail_file.filename:
+            from app.utils.helpers import save_uploaded_image
+            thumbnail_path = save_uploaded_image(thumbnail_file, 'thumbnails')
+        else:
+            thumbnail_path = create_thumbnail(video_path, is_reel)
+
+        video = Video(
+            title=description,
+            description=description,
+            file_path=video_path,
+            thumbnail_path=thumbnail_path or 'default_thumb.png',
+            is_reel=is_reel,
+            author_id=current_user.id
+        )
+        db.session.add(video)
+        db.session.commit()
+
+        flash('تم رفع الفيديو بنجاح!', 'success')
+        return redirect(url_for('videos.reels' if is_reel else 'videos.watch', video_id=video.id))
+
+    return render_template('videos/upload.html')
+
+@videos_bp.route('/watch/<int:video_id>')
+@login_required
+def watch(video_id):
+    video = Video.query.get_or_404(video_id)
+    video.views += 1
+    db.session.commit()
+    comments = video.comments.filter_by(parent_id=None).order_by(VideoComment.created_at.asc()).all()
+    return render_template('videos/watch.html', video=video, comments=comments)
+
+@videos_bp.route('/like/<int:video_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def like(video_id):
+    video = Video.query.get_or_404(video_id)
+    like = VideoLike.query.filter_by(video_id=video_id, user_id=current_user.id).first()
+    if like:
+        db.session.delete(like)
+        liked = False
+    else:
+        like = VideoLike(video_id=video_id, user_id=current_user.id)
+        db.session.add(like)
+        liked = True
+        if video.author_id != current_user.id:
+            notif = Notification(user_id=video.author_id, actor_id=current_user.id, action='like_video')
+            db.session.add(notif)
+    db.session.commit()
+    return jsonify({'liked': liked, 'count': video.like_count()})
+
+@videos_bp.route('/comment/<int:video_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def comment(video_id):
+    video = Video.query.get_or_404(video_id)
+    content = request.form.get('content', '').strip()
+    parent_id = request.form.get('parent_id', type=int)
+    if not content:
+        flash('التعليق لا يمكن أن يكون فارغاً.', 'danger')
+        return redirect(url_for('videos.watch', video_id=video.id))
+
+    comment = VideoComment(content=content, author_id=current_user.id, video_id=video.id)
+    if parent_id:
+        comment.parent_id = parent_id
+        parent_comment = VideoComment.query.get(parent_id)
+        if parent_comment and parent_comment.author_id != current_user.id:
+            notif = Notification(user_id=parent_comment.author_id, actor_id=current_user.id, action='reply_video')
+            db.session.add(notif)
+    else:
+        if video.author_id != current_user.id:
+            notif = Notification(user_id=video.author_id, actor_id=current_user.id, action='comment_video')
+            db.session.add(notif)
+
+    db.session.add(comment)
+    db.session.commit()
+    flash('تم إضافة التعليق.', 'success')
+    return redirect(url_for('videos.watch', video_id=video.id))
+
+@videos_bp.route('/like_comment/<int:comment_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def like_comment(comment_id):
+    comment = VideoComment.query.get_or_404(comment_id)
+    like = VideoCommentLike.query.filter_by(comment_id=comment_id, user_id=current_user.id).first()
+    if like:
+        db.session.delete(like)
+        liked = False
+    else:
+        like = VideoCommentLike(comment_id=comment_id, user_id=current_user.id)
+        db.session.add(like)
+        liked = True
+    db.session.commit()
+    return jsonify({'liked': liked, 'count': comment.like_count()})

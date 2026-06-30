@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-lg border-0 rounded-4 p-4" style="max-width: 600px; margin: 0 auto;">
+    <h5><i class="fas fa-upload text-primary"></i> رفع فيديو جديد</h5>
+    
+    <form method="POST" enctype="multipart/form-data">
+        <!-- حقل نصي واحد (مثل منشور) -->
+        <div class="mb-3">
+            <textarea name="description" class="form-control border-0 shadow-none" 
+                      rows="4" placeholder="ماذا يحدث في ذهنك؟... (اختياري)" 
+                      style="background: var(--fb-bg); border-radius: 16px; resize: none; font-size: 1rem;"></textarea>
+        </div>
+
+        <!-- رفع الفيديو -->
+        <div class="mb-3">
+            <div class="border rounded-3 p-4 text-center" id="videoUploadArea" 
+                 style="border: 2px dashed var(--fb-border); cursor: pointer; transition: all 0.3s;">
+                <i class="fas fa-video fa-2x text-muted mb-2"></i>
+                <p class="text-muted small mb-0">اضغط لرفع فيديو</p>
+                <input type="file" name="video" id="videoInput" class="d-none" accept="video/*" required>
+            </div>
+            <div id="videoPreview" class="mt-2" style="display: none; position: relative;">
+                <video id="previewVideo" controls class="w-100 rounded-3" style="max-height: 300px; background: #000;"></video>
+                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-circle" id="removeVideo" style="width: 30px; height: 30px; padding: 0; border: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <small class="text-muted">الصيغ المدعومة: MP4, WebM, AVI, MOV, MKV (حتى 200 ميجابايت)</small>
+        </div>
+
+        <!-- صورة مصغرة (اختياري) -->
+        <div class="mb-3">
+            <label class="form-label small">صورة مصغرة (اختياري)</label>
+            <input type="file" name="thumbnail" class="form-control" accept="image/*">
+            <small class="text-muted">سيتم إنشاء صورة تلقائياً إذا لم ترفع واحدة</small>
+        </div>
+
+        <!-- خيار الريلز -->
+        <div class="mb-3 form-check">
+            <input type="checkbox" name="is_reel" class="form-check-input" id="isReel" checked>
+            <label class="form-check-label" for="isReel">فيديو عمودي (ريلز)</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">رفع الفيديو</button>
+    </form>
+</div>
+
+<script>
+    // ==============================
+    // معاينة الفيديو
+    // ==============================
+    const videoInput = document.getElementById('videoInput');
+    const videoArea = document.getElementById('videoUploadArea');
+    const videoPreview = document.getElementById('videoPreview');
+    const previewVideo = document.getElementById('previewVideo');
+    const removeVideoBtn = document.getElementById('removeVideo');
+
+    videoArea.addEventListener('click', () => videoInput.click());
+
+    videoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            previewVideo.src = url;
+            videoPreview.style.display = 'block';
+            videoArea.style.display = 'none';
+        }
+    });
+
+    removeVideoBtn.addEventListener('click', function() {
+        videoInput.value = '';
+        videoPreview.style.display = 'none';
+        videoArea.style.display = 'block';
+        previewVideo.src = '';
+    });
+
+    // سحب وإفلات
+    videoArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+    videoArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+    });
+    videoArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            videoInput.files = files;
+            videoInput.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+{% endblock %}

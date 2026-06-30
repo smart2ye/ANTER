@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h5><i class="fas fa-envelope text-primary"></i> الرسائل</h5>
+{% if conversations %}
+    {% for user, last_msg in conversations %}
+    <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="text-decoration-none text-dark">
+        <div class="card mb-2 shadow-sm rounded-4 border-0">
+            <div class="card-body d-flex align-items-center">
+                <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" width="50" height="50" class="rounded-circle me-2" style="object-fit: cover;">
+                <div class="flex-grow-1">
+                    <strong>{{ user.name }}</strong>
+                    <p class="text-muted small mb-0">
+                        {% if last_msg.sender_id == current_user.id %}
+                            <span class="text-muted">أنت: </span>
+                        {% endif %}
+                        {{ last_msg.content[:50] }}
+                    </p>
+                </div>
+                <small class="text-muted">{{ last_msg.created_at.strftime('%H:%M') }}</small>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+{% else %}
+    <div class="text-center text-muted mt-4">
+        <i class="fas fa-inbox fa-3x mb-2"></i>
+        <p>لا توجد محادثات بعد.</p>
+    </div>
+{% endif %}
+{% endblock %}

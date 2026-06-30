@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-lg p-4 mb-4" style="background: var(--card-bg); border: 1px solid var(--primary);">
+    <div class="d-flex align-items-center">
+        <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" class="profile-avatar me-4">
+        <div class="flex-grow-1">
+            <h4 class="profile-name">{{ user.name }}{% if user.is_verified %} <i class="fas fa-check-circle text-primary" style="font-size: 1rem;" title="حساب موثق"></i>{% endif %}</h4>
+            <p class="post-username">@{{ user.username }}</p>
+            <p>{{ user.bio or '✨ لا توجد سيرة ذاتية' }}</p>
+            <div class="profile-stats">
+                <span><span class="stat-number">{{ user.follower_count() }}</span> متابع</span>
+                <span><span class="stat-number">{{ user.following_count() }}</span> يتابع</span>
+            </div>
+        </div>
+        <div class="d-flex flex-column gap-2">
+            {% if current_user.id == user.id %}
+                <a href="{{ url_for('users.edit_profile') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-edit"></i> تعديل</a>
+                <a href="{{ url_for('posts.create') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus-circle"></i> جديد</a>
+                <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAccountModal"><i class="fas fa-trash-alt"></i> حذف</button>
+            {% else %}
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="btn btn-success btn-sm"><i class="fas fa-envelope"></i> رسالة</a>
+                    {% if is_following %}
+                        <button class="btn btn-outline-secondary btn-sm follow-btn" data-user="{{ user.id }}" data-following="true">غير متابعة</button>
+                    {% else %}
+                        <button class="btn btn-primary btn-sm follow-btn" data-user="{{ user.id }}" data-following="false">متابعة</button>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('users.profile', username=user.username) }}"><i class="fas fa-file-alt"></i> المنشورات</a></li>
+    <li class="nav-item"><a class="nav-link active" href="{{ url_for('users.user_videos', username=user.username) }}"><i class="fas fa-play-circle"></i> الريلزات</a></li>
+</ul>
+{% if videos %}
+<div class="row g-2">
+    {% for video in videos %}
+    <div class="col-6">
+        <a href="{{ url_for('videos.watch', video_id=video.id) }}" class="text-decoration-none">
+            <div class="card shadow-sm position-relative" style="aspect-ratio: 9/16;">
+                <img src="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}" class="card-img-top" style="height: 100%; object-fit: cover;">
+                <div class="position-absolute top-50 start-50 translate-middle"><i class="fas fa-play-circle text-white" style="font-size: 3rem; opacity: 0.8;"></i></div>
+                <div class="position-absolute bottom-0 start-0 end-0 p-1" style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+                    <h6 class="text-white small mb-0">{{ video.title }}</h6>
+                    <small class="text-white-50">{{ video.views }} مشاهد</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center text-muted mt-4">
+    <i class="fas fa-video fa-4x mb-3"></i>
+    <h5>لا توجد فيديوهات</h5>
+    <p>{{ user.name }} لم يرفع أي فيديو بعد.</p>
+</div>
+{% endif %}
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="background: var(--card-bg); color: var(--text-light);">
+            <div class="modal-header border-0 py-2"><h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle"></i> تأكيد الحذف</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body py-2">
+                <p class="small">هل أنت متأكد من حذف حسابك؟</p>
+                <p class="text-danger small">سيتم حذف جميع بياناتك نهائياً.</p>
+                <form method="POST" action="{{ url_for('users.delete_account') }}">
+                    <div class="mb-2"><input type="password" name="password" class="form-control form-control-sm" placeholder="كلمة المرور" required></div>
+                    <button type="submit" class="btn btn-danger btn-sm w-100">تأكيد الحذف</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.querySelectorAll('.follow-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.dataset.user, following = this.dataset.following === 'true', url = following ? `/users/unfollow/${userId}` : `/users/follow/${userId}`;
+            fetch(url, { method: 'POST' }).then(res => res.json()).then(data => { if (data.success) { this.dataset.following = data.following ? 'true' : 'false'; this.textContent = data.following ? 'غير متابعة' : 'متابعة'; this.classList.toggle('btn-primary'); this.classList.toggle('btn-outline-secondary'); location.reload(); } });
+        });
+    });
+</script>
+{% endblock %}

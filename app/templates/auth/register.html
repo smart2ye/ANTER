@@ -2,7 +2,7 @@
 {% block content %}
 
 <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card shadow-lg border-0 rounded-4 p-4" style="max-width: 480px; width: 100%; background: var(--card-bg);">
+    <div class="card shadow-lg border-0 rounded-4 p-4" style="max-width: 460px; width: 100%; background: var(--card-bg);">
         
         <div class="text-center mb-4">
             <div class="d-flex justify-content-center">
@@ -18,36 +18,20 @@
         <form method="POST">
             {{ form.hidden_tag() }}
             
-            <!-- ========== اسم المستخدم ========== -->
             <div class="mb-3">
-                <label class="form-label fw-semibold small">
-                    {{ form.username.label }}
-                    <span class="text-muted fw-normal">(اختياري)</span>
-                </label>
+                <label class="form-label fw-semibold small">{{ form.username.label }}</label>
                 <div class="input-group">
                     <span class="input-group-text bg-transparent border-end-0" style="border-radius: 12px 0 0 12px;">
                         <i class="fas fa-user text-muted"></i>
                     </span>
                     {{ form.username(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.username.errors else ""), 
-                                     placeholder="مثال: Ahmed_2026", 
-                                     style="border-radius: 0 12px 12px 0;",
-                                     id="usernameInput") }}
-                </div>
-                <!-- تعليمات اسم المستخدم -->
-                <div class="small text-muted mt-1" id="usernameHelp">
-                    <i class="fas fa-info-circle"></i>
-                    <span>يمكنك استخدام الحروف (a-z)، الأرقام (0-9)، والشرطة السفلية (_)</span>
-                </div>
-                <div class="small text-muted mt-1" id="usernameLength">
-                    <i class="fas fa-ruler"></i>
-                    <span>الطول: من 3 إلى 80 حرفاً</span>
+                                     placeholder="اختر اسم مستخدم", style="border-radius: 0 12px 12px 0;") }}
                 </div>
                 {% for error in form.username.errors %}
                     <div class="invalid-feedback d-block">{{ error }}</div>
                 {% endfor %}
             </div>
 
-            <!-- ========== البريد الإلكتروني ========== -->
             <div class="mb-3">
                 <label class="form-label fw-semibold small">{{ form.email.label }}</label>
                 <div class="input-group">
@@ -55,19 +39,13 @@
                         <i class="fas fa-envelope text-muted"></i>
                     </span>
                     {{ form.email(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.email.errors else ""), 
-                                  placeholder="example@email.com", 
-                                  style="border-radius: 0 12px 12px 0;") }}
-                </div>
-                <div class="small text-muted mt-1">
-                    <i class="fas fa-info-circle"></i>
-                    <span>سيتم استخدامه لتسجيل الدخول واستعادة كلمة المرور</span>
+                                  placeholder="example@email.com", style="border-radius: 0 12px 12px 0;") }}
                 </div>
                 {% for error in form.email.errors %}
                     <div class="invalid-feedback d-block">{{ error }}</div>
                 {% endfor %}
             </div>
 
-            <!-- ========== الاسم الكامل ========== -->
             <div class="mb-3">
                 <label class="form-label fw-semibold small">{{ form.name.label }}</label>
                 <div class="input-group">
@@ -75,15 +53,13 @@
                         <i class="fas fa-id-card text-muted"></i>
                     </span>
                     {{ form.name(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.name.errors else ""), 
-                                 placeholder="الاسم الكامل", 
-                                 style="border-radius: 0 12px 12px 0;") }}
+                                 placeholder="الاسم الكامل", style="border-radius: 0 12px 12px 0;") }}
                 </div>
                 {% for error in form.name.errors %}
                     <div class="invalid-feedback d-block">{{ error }}</div>
                 {% endfor %}
             </div>
 
-            <!-- ========== كلمة المرور ========== -->
             <div class="mb-3">
                 <label class="form-label fw-semibold small">{{ form.password.label }}</label>
                 <div class="input-group">
@@ -91,65 +67,31 @@
                         <i class="fas fa-key text-muted"></i>
                     </span>
                     {{ form.password(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.password.errors else ""), 
-                                     placeholder="********", 
-                                     id="passwordInput", 
-                                     style="border-radius: 0 12px 12px 0;") }}
+                                     placeholder="********", id="passwordInput", style="border-radius: 0 12px 12px 0;") }}
                 </div>
-                
-                <!-- مؤشر قوة كلمة المرور -->
-                <div class="d-flex justify-content-between align-items-center mt-1">
-                    <small class="text-muted">كلمة مرور قوية = آمان أكبر</small>
+                <div class="d-flex justify-content-between mt-1">
+                    <small class="text-muted">يجب أن تحتوي على 8 أحرف، حرف كبير، رقم، رمز خاص</small>
                     <span id="passwordStrength" class="badge bg-secondary">ضعيف</span>
                 </div>
-                
-                <!-- متطلبات كلمة المرور -->
-                <div class="small text-muted mt-2" id="passwordRequirements">
-                    <div class="d-flex flex-wrap gap-2">
-                        <span class="badge bg-light text-dark border" id="reqLength">
-                            <i class="fas fa-circle text-secondary" style="font-size: 0.5rem;"></i> 8 أحرف
-                        </span>
-                        <span class="badge bg-light text-dark border" id="reqUppercase">
-                            <i class="fas fa-circle text-secondary" style="font-size: 0.5rem;"></i> حرف كبير
-                        </span>
-                        <span class="badge bg-light text-dark border" id="reqLowercase">
-                            <i class="fas fa-circle text-secondary" style="font-size: 0.5rem;"></i> حرف صغير
-                        </span>
-                        <span class="badge bg-light text-dark border" id="reqNumber">
-                            <i class="fas fa-circle text-secondary" style="font-size: 0.5rem;"></i> رقم
-                        </span>
-                        <span class="badge bg-light text-dark border" id="reqSpecial">
-                            <i class="fas fa-circle text-secondary" style="font-size: 0.5rem;"></i> رمز خاص (@$!%*?&)
-                        </span>
-                    </div>
-                </div>
-                
                 {% for error in form.password.errors %}
                     <div class="invalid-feedback d-block">{{ error }}</div>
                 {% endfor %}
             </div>
 
-            <!-- ========== تأكيد كلمة المرور ========== -->
             <div class="mb-3">
                 <label class="form-label fw-semibold small">{{ form.confirm_password.label }}</label>
                 <div class="input-group">
                     <span class="input-group-text bg-transparent border-end-0" style="border-radius: 12px 0 0 12px;">
                         <i class="fas fa-check-double text-muted"></i>
                     </span>
-                    {{ form.confirm_password(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.confirm_password.errors else ""), 
-                                             placeholder="أعد كتابة كلمة المرور", 
-                                             style="border-radius: 0 12px 12px 0;",
-                                             id="confirmPasswordInput") }}
-                </div>
-                <div id="passwordMatch" class="small mt-1" style="display: none;">
-                    <i class="fas fa-check-circle text-success"></i>
-                    <span class="text-success">كلمة المرور متطابقة</span>
+                    {{ form.confirm_password(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.confirm_password.errors else""), 
+                                             placeholder="أعد كتابة كلمة المرور", style="border-radius: 0 12px 12px 0;") }}
                 </div>
                 {% for error in form.confirm_password.errors %}
                     <div class="invalid-feedback d-block">{{ error }}</div>
                 {% endfor %}
             </div>
 
-            <!-- ========== الموافقة على الشروط ========== -->
             <div class="mb-3 form-check">
                 {{ form.terms_agreed(class="form-check-input" + (" is-invalid" if form.terms_agreed.errors else "")) }}
                 {{ form.terms_agreed.label(class="form-check-label small") }}
@@ -162,13 +104,12 @@
                 {% endfor %}
             </div>
 
-            <!-- ========== زر التسجيل ========== -->
             {{ form.submit(class="btn btn-primary w-100 py-2 fw-bold rounded-pill mb-3") }}
         </form>
 
         <hr class="my-3">
         
-        <!-- ========== زر تسجيل الدخول ========== -->
+        <!-- زر تسجيل الدخول -->
         <div class="text-center">
             <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill">
                 <i class="fas fa-sign-in-alt me-2"></i> لديك حساب؟ سجل الدخول
@@ -178,94 +119,26 @@
 </div>
 
 <script>
-    // ==============================
-    // مؤشر قوة كلمة المرور مع تحديث المتطلبات
-    // ==============================
+    // مؤشر قوة كلمة المرور
     const passwordInput = document.getElementById('passwordInput');
-    const confirmInput = document.getElementById('confirmPasswordInput');
     const strengthBadge = document.getElementById('passwordStrength');
-    const passwordMatch = document.getElementById('passwordMatch');
 
-    // عناصر المتطلبات
-    const reqLength = document.getElementById('reqLength');
-    const reqUppercase = document.getElementById('reqUppercase');
-    const reqLowercase = document.getElementById('reqLowercase');
-    const reqNumber = document.getElementById('reqNumber');
-    const reqSpecial = document.getElementById('reqSpecial');
+    if (passwordInput && strengthBadge) {
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[@$!%*?&]/.test(password)) strength++;
 
-    function updateRequirements(password) {
-        // تحديث كل متطلب
-        const hasLength = password.length >= 8;
-        const hasUppercase = /[A-Z]/.test(password);
-        const hasLowercase = /[a-z]/.test(password);
-        const hasNumber = /[0-9]/.test(password);
-        const hasSpecial = /[@$!%*?&]/.test(password);
-
-        // تحديث الألوان
-        updateRequirementBadge(reqLength, hasLength);
-        updateRequirementBadge(reqUppercase, hasUppercase);
-        updateRequirementBadge(reqLowercase, hasLowercase);
-        updateRequirementBadge(reqNumber, hasNumber);
-        updateRequirementBadge(reqSpecial, hasSpecial);
-
-        // حساب القوة
-        let strength = 0;
-        if (hasLength) strength++;
-        if (hasUppercase) strength++;
-        if (hasLowercase) strength++;
-        if (hasNumber) strength++;
-        if (hasSpecial) strength++;
-
-        const levels = ['ضعيف جداً', 'ضعيف', 'متوسط', 'جيد', 'قوي جداً'];
-        const colors = ['bg-danger', 'bg-danger', 'bg-warning', 'bg-info', 'bg-success'];
-        
-        strengthBadge.textContent = levels[strength] || 'ضعيف';
-        strengthBadge.className = `badge ${colors[strength] || 'bg-secondary'}`;
-    }
-
-    function updateRequirementBadge(element, isMet) {
-        if (isMet) {
-            element.className = 'badge bg-success text-white border-0';
-            element.innerHTML = '<i class="fas fa-check-circle"></i> ' + element.textContent.replace(/^[^\s]+\s/, '');
-        } else {
-            element.className = 'badge bg-light text-dark border';
-            element.innerHTML = '<i class="fas fa-circle text-secondary" style="font-size: 0.5rem;"></i> ' + element.textContent.replace(/^[^\s]+\s/, '');
-        }
-    }
-
-    // عند كتابة كلمة المرور
-    passwordInput.addEventListener('input', function() {
-        const password = this.value;
-        updateRequirements(password);
-        
-        // التحقق من تطابق كلمة المرور
-        if (confirmInput.value.length > 0) {
-            checkPasswordMatch();
-        }
-    });
-
-    // عند كتابة تأكيد كلمة المرور
-    confirmInput.addEventListener('input', function() {
-        checkPasswordMatch();
-    });
-
-    function checkPasswordMatch() {
-        const password = passwordInput.value;
-        const confirm = confirmInput.value;
-        
-        if (confirm.length === 0) {
-            passwordMatch.style.display = 'none';
-            return;
-        }
-        
-        if (password === confirm) {
-            passwordMatch.style.display = 'block';
-            passwordMatch.innerHTML = '<i class="fas fa-check-circle text-success"></i> <span class="text-success">كلمة المرور متطابقة</span>';
-        } else {
-            passwordMatch.style.display = 'block';
-            passwordMatch.innerHTML = '<i class="fas fa-times-circle text-danger"></i> <span class="text-danger">كلمة المرور غير متطابقة</span>';
-        }
+            const levels = ['ضعيف', 'ضعيف', 'متوسط', 'جيد', 'قوي جداً'];
+            const colors = ['bg-secondary', 'bg-danger', 'bg-warning', 'bg-info', 'bg-success'];
+            
+            strengthBadge.textContent = levels[strength] || 'ضعيف';
+            strengthBadge.className = `badge ${colors[strength] || 'bg-secondary'}`;
+        });
     }
 </script>
-
 {% endblock %}

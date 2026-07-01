@@ -1,10 +1,10 @@
-from app.utils.helpers import log_user_activity
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
 from app.models import User
 from app.forms.auth import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from itsdangerous import URLSafeTimedSerializer
+from app.utils.helpers import log_user_activity
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -16,7 +16,7 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
-            login_user(user, remember=True)  # تذكر المستخدم
+            login_user(user, remember=True)
             log_user_activity(user.id, "login")
             next_page = request.args.get('next')
             flash('✅ تم تسجيل الدخول بنجاح!', 'success')
@@ -38,20 +38,21 @@ def register():
             terms_agreed=form.terms_agreed.data
         )
         user.set_password(form.password.data)
-        log_user_activity(user.id, "password_change")
         db.session.add(user)
         db.session.commit()
         flash('✅ تم التسجيل بنجاح، يمكنك الدخول الآن.', 'success')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('main.index'))
     return render_template('auth/register.html', form=form)
 
 @auth_bp.route('/logout')
 @login_required
 def logout():
-    logout_user()
+    # تسجيل النشاط أولاً (قبل تسجيل الخروج)
+    # ثم تسجيل الخروج
     log_user_activity(current_user.id, "logout")
+    logout_user()
     flash('👋 تم تسجيل الخروج.', 'info')
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('main.index'))
 
 @auth_bp.route('/reset_password_request', methods=['GET', 'POST'])
 def reset_password_request():
@@ -68,7 +69,7 @@ def reset_password_request():
             flash('📌 انسخ الرابط والصقه في المتصفح.', 'info')
         else:
             flash('❌ لا يوجد حساب مرتبط بهذا البريد الإلكتروني.', 'danger')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('main.index'))
     return render_template('auth/reset_password_request.html', form=form)
 
 @auth_bp.route('/reset_password/<token>', methods=['GET', 'POST'])
@@ -91,5 +92,5 @@ def reset_password(token):
         log_user_activity(user.id, "password_change")
         db.session.commit()
         flash('✅ تم تغيير كلمة المرور بنجاح.', 'success')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('main.index'))
     return render_template('auth/reset_password.html', form=form)

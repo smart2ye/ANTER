@@ -10,6 +10,9 @@
                 <div class="flex-grow-1">
                     <strong>{{ user.name }}</strong>
                     <p class="text-muted small mb-0">
+                    <div class="post-status mt-1">
+                        {{ get_status_icon(user)|safe }}
+                    </div>
                         {% if last_msg.sender_id == current_user.id %}
                             <span class="text-muted">أنت: </span>
                         {% endif %}

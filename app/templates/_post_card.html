@@ -17,6 +17,9 @@
                         </strong>
                     </a>
                     <small class="post-username d-block" style="font-size: 0.65rem;">@{{ post.author.username }}</small>
+                    <div class="post-status mt-1">
+                        {{ get_status_icon(post.author)|safe }}
+                    </div>
                 </div>
                 <small class="text-muted ms-2" style="font-size: 0.6rem;">{{ post.created_at.strftime('%H:%M · %d/%m') }}</small>
             </div>

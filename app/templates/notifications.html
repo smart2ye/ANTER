@@ -25,6 +25,9 @@
                     <div class="flex-grow-1">
                         <div {% if not notif.is_read %}style="font-weight: 600;"{% endif %}>
                             <strong>{{ notif.actor.name }}</strong>
+                    <div class="post-status mt-1">
+                        {{ get_status_icon(notif.actor)|safe }}
+                    </div>
                             {% if notif.action == 'like' %}
                                 أعجب بمنشورك.
                             {% elif notif.action == 'comment' %}

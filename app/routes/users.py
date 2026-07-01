@@ -3,7 +3,7 @@ from flask_login import login_required, current_user, logout_user
 from app.extensions import db, csrf
 from app.models import User, Post, Video, Notification, Follow
 from app.forms.profile import ProfileForm
-from app.utils.helpers import save_uploaded_image, log_user_activity, get_user_activity_summary
+from app.utils.helpers import save_uploaded_image, log_user_activity, get_user_activity_summary, get_status_icon
 import os
 from datetime import datetime
 
@@ -15,7 +15,7 @@ def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     posts = user.posts.order_by(Post.created_at.desc()).all()
     is_following = current_user.is_following(user)
-    return render_template('profile.html', user=user, posts=posts, is_following=is_following)
+    return render_template('profile.html', user=user, posts=posts, is_following=is_following, get_status_icon=get_status_icon)
 
 @users_bp.route('/<username>/followers')
 @login_required

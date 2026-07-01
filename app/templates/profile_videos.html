@@ -6,6 +6,9 @@
         <div class="flex-grow-1">
             <h4 class="profile-name">{{ user.name }}{% if user.is_verified %} <i class="fas fa-check-circle text-primary" style="font-size: 1rem;" title="حساب موثق"></i>{% endif %}</h4>
             <p class="post-username">@{{ user.username }}</p>
+            <div class="profile-status mt-1">
+                {{ get_status_icon(user)|safe }}
+            </div>
             <p>{{ user.bio or '✨ لا توجد سيرة ذاتية' }}</p>
             <div class="profile-stats">
                 <span><span class="stat-number">{{ user.follower_count() }}</span> متابع</span>

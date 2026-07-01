@@ -38,6 +38,7 @@
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{{ url_for('users.profile', username=current_user.username) }}"><i class="fas fa-user"></i> ملفي</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('users.settings') }}"><i class="fas fa-cog"></i> الإعدادات</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('users.activity_log') }}"><i class="fas fa-history"></i> سجل النشاط</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('posts.create') }}"><i class="fas fa-plus-circle"></i> منشور جديد</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</a></li>

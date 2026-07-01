@@ -1,0 +1,12 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "ANTER",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "anter",
+  "start_url": "/",
+  "theme_color": "#1877f2",
+  "description": "A modern Arabic social networking platform"
+}

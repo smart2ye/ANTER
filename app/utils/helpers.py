@@ -164,3 +164,36 @@ def log_user_activity(user_id, action, details=None):
 def get_user_activity_summary(user_id, limit=50):
     from app.models import UserActivity
     return UserActivity.query.filter_by(user_id=user_id).order_by(UserActivity.created_at.desc()).limit(limit).all()
+
+# ============================================
+# دوال حالة الاتصال
+# ============================================
+from datetime import datetime, timedelta
+
+def get_user_status(user):
+    """إرجاع حالة المستخدم (متصل / غير متصل)"""
+    if not user or not user.last_seen:
+        return {'status': 'offline', 'last_seen': 'منذ فترة'}
+    
+    now = datetime.utcnow()
+    diff = now - user.last_seen
+    
+    if diff.total_seconds() < 300:  # 5 دقائق
+        return {'status': 'online', 'last_seen': 'متصل الآن'}
+    elif diff.total_seconds() < 3600:  # أقل من ساعة
+        minutes = int(diff.total_seconds() / 60)
+        return {'status': 'offline', 'last_seen': f'منذ {minutes} دقيقة'}
+    elif diff.total_seconds() < 86400:  # أقل من يوم
+        hours = int(diff.total_seconds() / 3600)
+        return {'status': 'offline', 'last_seen': f'منذ {hours} ساعة'}
+    else:
+        days = int(diff.total_seconds() / 86400)
+        return {'status': 'offline', 'last_seen': f'منذ {days} يوم'}
+
+def get_status_icon(user):
+    """إرجاع أيقونة الحالة مع اللون (HTML)"""
+    status = get_user_status(user)
+    if status['status'] == 'online':
+        return f'<span class="status-indicator online"><span class="status-dot"></span> 🟢 متصل الآن</span>'
+    else:
+        return f'<span class="status-indicator offline"><span class="status-dot"></span> 🔴 {status["last_seen"]}</span>'

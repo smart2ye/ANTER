@@ -27,6 +27,63 @@
 </div>
 
 <!-- ============================== -->
+<!-- نافذة إنشاء المنشور (بدون CSRF لأن المسار معفى) -->
+<!-- ============================== -->
+<div class="modal fade" id="quickPostModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg" style="background: var(--card-bg);">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold"><i class="fas fa-pen-fancy text-primary me-1"></i> إنشاء منشور</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <div class="d-flex align-items-center mb-3">
+                    <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" 
+                         class="rounded-circle me-2" width="40" height="40" style="object-fit: cover; border: 2px solid var(--fb-blue);">
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ current_user.name }}</h6>
+                        <small class="text-muted">@{{ current_user.username }}</small>
+                    </div>
+                </div>
+                
+                <form method="POST" action="{{ url_for('posts.create') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <textarea name="content" class="form-control border-0 shadow-none" 
+                                  rows="4" placeholder="ماذا يحدث في ذهنك؟..." 
+                                  style="background: var(--fb-bg); border-radius: 16px; resize: none; font-size: 0.95rem;"></textarea>
+                        <div class="d-flex justify-content-between mt-1 px-2">
+                            <small class="text-muted" id="quickCharCount">0 / 2000</small>
+                            <small class="text-muted"><i class="fas fa-at"></i> @للإشارة</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="border rounded-3 p-3 text-center" style="border: 2px dashed var(--fb-border); cursor: pointer; transition: all 0.3s;" onclick="document.getElementById('quickImageInput').click()">
+                            <i class="fas fa-image fa-2x text-muted mb-2"></i>
+                            <p class="text-muted small mb-0">اضغط لرفع صورة</p>
+                            <input type="file" name="image" id="quickImageInput" class="d-none" accept="image/*" onchange="previewImage(this)">
+                        </div>
+                        <div id="quickImagePreview" class="mt-2" style="display: none; position: relative;">
+                            <img id="quickPreviewImg" src="#" alt="معاينة" class="img-fluid rounded-3" style="max-height: 250px; width: 100%; object-fit: cover;">
+                            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-circle" style="width: 30px; height: 30px; padding: 0; border: none;" onclick="removeImage()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1 py-2 fw-bold rounded-pill">
+                            <i class="fas fa-paper-plane me-1"></i> نشر
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">إلغاء</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================== -->
 <!-- تبويبات الصفحة الرئيسية -->
 <!-- ============================== -->
 <ul class="nav nav-pills nav-fill mb-4 gap-1" style="background: var(--fb-bg); border-radius: 12px; padding: 4px;">
@@ -64,7 +121,9 @@
     {% endif %}
 </div>
 
+<!-- ============================== -->
 <!-- نافذة الإبلاغ -->
+<!-- ============================== -->
 <div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 rounded-4 shadow-lg">
@@ -102,63 +161,37 @@
     </div>
 </div>
 
-<!-- نافذة إنشاء المنشور -->
-<div class="modal fade" id="quickPostModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg" style="background: var(--card-bg);">
-            <div class="modal-header border-0 pb-0">
-                <h6 class="modal-title fw-bold"><i class="fas fa-pen-fancy text-primary me-1"></i> إنشاء منشور</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body pt-2">
-                <div class="d-flex align-items-center mb-3">
-                    <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" 
-                         class="rounded-circle me-2" width="40" height="40" style="object-fit: cover; border: 2px solid var(--fb-blue);">
-                    <div>
-                        <h6 class="mb-0 fw-bold">{{ current_user.name }}</h6>
-                        <small class="text-muted">@{{ current_user.username }}</small>
-                    </div>
-                </div>
-                
-                <form id="quickPostForm" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <textarea name="content" id="quickPostContent" class="form-control border-0 shadow-none" 
-                                  rows="4" placeholder="ماذا يحدث في ذهنك؟..." 
-                                  style="background: var(--fb-bg); border-radius: 16px; resize: none; font-size: 0.95rem;"></textarea>
-                        <div class="d-flex justify-content-between mt-1 px-2">
-                            <small class="text-muted" id="quickCharCount">0 / 2000</small>
-                            <small class="text-muted"><i class="fas fa-at"></i> @للإشارة</small>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="border rounded-3 p-3 text-center" id="quickImageUploadArea" 
-                             style="border: 2px dashed var(--fb-border); cursor: pointer; transition: all 0.3s;">
-                            <i class="fas fa-image fa-2x text-muted mb-2"></i>
-                            <p class="text-muted small mb-0">اضغط لرفع صورة</p>
-                            <input type="file" name="image" id="quickImageInput" class="d-none" accept="image/*">
-                        </div>
-                        <div id="quickImagePreview" class="mt-2" style="display: none; position: relative;">
-                            <img id="quickPreviewImage" src="#" alt="معاينة" class="img-fluid rounded-3" style="max-height: 250px; width: 100%; object-fit: cover;">
-                            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-circle" id="quickRemoveImage" style="width: 30px; height: 30px; padding: 0; border: none;">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-grow-1 py-2 fw-bold rounded-pill" id="quickSubmitBtn">
-                            <i class="fas fa-paper-plane me-1"></i> نشر
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">إلغاء</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
+    // عداد الأحرف
+    document.querySelector('textarea[name="content"]').addEventListener('input', function() {
+        const count = this.value.length;
+        document.getElementById('quickCharCount').textContent = count + ' / 2000';
+        if (count > 2000) {
+            this.value = this.value.substring(0, 2000);
+            document.getElementById('quickCharCount').textContent = '2000 / 2000';
+        }
+    });
+
+    // معاينة الصورة
+    function previewImage(input) {
+        const preview = document.getElementById('quickImagePreview');
+        const img = document.getElementById('quickPreviewImg');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                img.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function removeImage() {
+        document.getElementById('quickImageInput').value = '';
+        document.getElementById('quickImagePreview').style.display = 'none';
+        document.getElementById('quickPreviewImg').src = '#';
+    }
+
     // تبديل التعليقات
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.toggle-comments-btn').forEach(function(btn) {
@@ -253,123 +286,5 @@
             }
         }.bind(this));
     });
-
-    // نافذة إنشاء المنشور
-    var modal = new bootstrap.Modal(document.getElementById('quickPostModal'));
-
-    var quickContent = document.getElementById('quickPostContent');
-    var quickCharCount = document.getElementById('quickCharCount');
-    var maxChars = 2000;
-
-    if (quickContent && quickCharCount) {
-        quickContent.addEventListener('input', function() {
-            var len = this.value.length;
-            quickCharCount.textContent = len + ' / ' + maxChars;
-            if (len > maxChars) {
-                this.value = this.value.substring(0, maxChars);
-                quickCharCount.textContent = maxChars + ' / ' + maxChars;
-                quickCharCount.classList.add('text-danger');
-            } else {
-                quickCharCount.classList.remove('text-danger');
-            }
-        });
-    }
-
-    var quickImageInput = document.getElementById('quickImageInput');
-    var quickImageArea = document.getElementById('quickImageUploadArea');
-    var quickPreview = document.getElementById('quickImagePreview');
-    var quickPreviewImg = document.getElementById('quickPreviewImage');
-    var quickRemoveBtn = document.getElementById('quickRemoveImage');
-
-    if (quickImageArea && quickImageInput) {
-        quickImageArea.addEventListener('click', function() { quickImageInput.click(); });
-
-        quickImageInput.addEventListener('change', function(e) {
-            var file = e.target.files[0];
-            if (file) {
-                var reader = new FileReader();
-                reader.onload = function(event) {
-                    quickPreviewImg.src = event.target.result;
-                    quickPreview.style.display = 'block';
-                    quickImageArea.style.display = 'none';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        quickRemoveBtn.addEventListener('click', function() {
-            quickImageInput.value = '';
-            quickPreview.style.display = 'none';
-            quickImageArea.style.display = 'block';
-            quickPreviewImg.src = '#';
-        });
-
-        quickImageArea.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            this.classList.add('dragover');
-        });
-        quickImageArea.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            this.classList.remove('dragover');
-        });
-        quickImageArea.addEventListener('drop', function(e) {
-            e.preventDefault();
-            this.classList.remove('dragover');
-            var files = e.dataTransfer.files;
-            if (files.length > 0) {
-                quickImageInput.files = files;
-                quickImageInput.dispatchEvent(new Event('change'));
-            }
-        });
-    }
-
-    var quickForm = document.getElementById('quickPostForm');
-    var quickSubmitBtn = document.getElementById('quickSubmitBtn');
-
-    if (quickForm && quickSubmitBtn) {
-        quickForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            quickSubmitBtn.disabled = true;
-            quickSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> جاري النشر...';
-
-            var formData = new FormData(this);
-
-            fetch('/posts/create', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    alert('✅ تم نشر المنشور بنجاح!');
-                    modal.hide();
-                    location.reload();
-                } else {
-                    alert('❌ حدث خطأ: ' + (data.message || 'غير معروف'));
-                    quickSubmitBtn.disabled = false;
-                    quickSubmitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> نشر';
-                }
-            })
-            .catch(function() {
-                alert('❌ حدث خطأ غير متوقع.');
-                quickSubmitBtn.disabled = false;
-                quickSubmitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> نشر';
-            });
-        });
-
-        document.getElementById('quickPostModal').addEventListener('hidden.bs.modal', function() {
-            quickForm.reset();
-            quickPreview.style.display = 'none';
-            quickImageArea.style.display = 'block';
-            quickPreviewImg.src = '#';
-            quickContent.value = '';
-            quickCharCount.textContent = '0 / ' + maxChars;
-            quickSubmitBtn.disabled = false;
-            quickSubmitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> نشر';
-        });
-    }
 </script>
 {% endblock %}

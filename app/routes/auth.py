@@ -1,3 +1,4 @@
+from app.utils.helpers import log_user_activity
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
@@ -16,6 +17,7 @@ def login():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=True)  # تذكر المستخدم
+            log_user_activity(user.id, "login")
             next_page = request.args.get('next')
             flash('✅ تم تسجيل الدخول بنجاح!', 'success')
             return redirect(next_page or url_for('main.index'))
@@ -36,6 +38,7 @@ def register():
             terms_agreed=form.terms_agreed.data
         )
         user.set_password(form.password.data)
+        log_user_activity(user.id, "password_change")
         db.session.add(user)
         db.session.commit()
         flash('✅ تم التسجيل بنجاح، يمكنك الدخول الآن.', 'success')
@@ -46,6 +49,7 @@ def register():
 @login_required
 def logout():
     logout_user()
+    log_user_activity(current_user.id, "logout")
     flash('👋 تم تسجيل الخروج.', 'info')
     return redirect(url_for('auth.login'))
 
@@ -84,6 +88,7 @@ def reset_password(token):
     form = ResetPasswordForm()
     if form.validate_on_submit():
         user.set_password(form.password.data)
+        log_user_activity(user.id, "password_change")
         db.session.commit()
         flash('✅ تم تغيير كلمة المرور بنجاح.', 'success')
         return redirect(url_for('auth.login'))

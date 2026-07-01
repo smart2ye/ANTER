@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm border-0 rounded-4 p-4" style="background: var(--card-bg);">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5><i class="fas fa-history text-primary"></i> سجل نشاطي</h5>
+        <a href="{{ url_for('users.download_data') }}" class="btn btn-primary btn-sm rounded-pill px-3">
+            <i class="fas fa-download"></i> تنزيل بياناتي
+        </a>
+    </div>
+    <p class="text-muted small">آخر 100 نشاط</p>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>النشاط</th>
+                    <th>المتصفح</th>
+                    <th>نظام التشغيل</th>
+                    <th>الجهاز</th>
+                    <th>التاريخ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in activities %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if activity.action == 'login' %}bg-success{% endif %}
+                            {% if activity.action == 'logout' %}bg-secondary{% endif %}
+                            {% if activity.action == 'password_change' %}bg-warning text-dark{% endif %}
+                            {% if activity.action == 'profile_update' %}bg-info{% endif %}
+                            {% if activity.action == 'download_data' %}bg-primary{% endif %}
+                        ">
+                            {{ activity.action|replace('_', ' ') }}
+                        </span>
+                    </td>
+                    <td>{{ activity.browser or 'غير معروف' }}</td>
+                    <td>{{ activity.os or 'غير معروف' }}</td>
+                    <td>{{ activity.device_type or 'غير معروف' }}</td>
+                    <td>{{ activity.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted">لا يوجد نشاط مسجل بعد.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-3">
+        <a href="{{ url_for('users.profile', username=current_user.username) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="fas fa-arrow-right"></i> العودة للملف الشخصي
+        </a>
+    </div>
+</div>
+{% endblock %}

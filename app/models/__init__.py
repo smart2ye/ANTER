@@ -1,4 +1,6 @@
 from .user import User
+from .user_activity import UserActivity
+from .user_activity import UserActivity
 from .post import Post
 from .comment import Comment
 from .like import Like

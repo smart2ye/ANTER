@@ -100,3 +100,67 @@ def process_hashtags(post_id, content):
             ph = PostHashtag(post_id=post_id, hashtag_id=hashtag.id)
             db.session.add(ph)
     db.session.commit()
+
+# ============================================
+# دوال تسجيل نشاط المستخدم
+# ============================================
+from flask import request
+from user_agents import parse
+import json
+
+def log_user_activity(user_id, action, details=None):
+    """تسجيل نشاط المستخدم في قاعدة البيانات"""
+    from app.models import UserActivity
+    from app.extensions import db
+    
+    user_agent_string = request.headers.get('User-Agent', '')
+    ua = parse(user_agent_string) if user_agent_string else None
+    
+    activity = UserActivity(
+        user_id=user_id,
+        action=action,
+        ip_address=request.remote_addr,
+        user_agent=user_agent_string[:500],
+        browser=f"{ua.browser.family} {ua.browser.version_string}" if ua and ua.browser else '',
+        os=f"{ua.os.family} {ua.os.version_string}" if ua and ua.os else '',
+        device_type=ua.device.family if ua else '',
+        details=json.dumps(details) if details else None
+    )
+    db.session.add(activity)
+    db.session.commit()
+    return activity
+
+def get_user_activity_summary(user_id, limit=50):
+    """استرجاع آخر الأنشطة للمستخدم"""
+    from app.models import UserActivity
+    return UserActivity.query.filter_by(user_id=user_id).order_by(UserActivity.created_at.desc()).limit(limit).all()
+
+# ============================================
+# دوال تسجيل نشاط المستخدم
+# ============================================
+from flask import request
+from user_agents import parse
+import json
+
+def log_user_activity(user_id, action, details=None):
+    from app.models import UserActivity
+    from app.extensions import db
+    user_agent_string = request.headers.get('User-Agent', '')
+    ua = parse(user_agent_string) if user_agent_string else None
+    activity = UserActivity(
+        user_id=user_id,
+        action=action,
+        ip_address=request.remote_addr,
+        user_agent=user_agent_string[:500],
+        browser=f"{ua.browser.family} {ua.browser.version_string}" if ua and ua.browser else '',
+        os=f"{ua.os.family} {ua.os.version_string}" if ua and ua.os else '',
+        device_type=ua.device.family if ua else '',
+        details=json.dumps(details) if details else None
+    )
+    db.session.add(activity)
+    db.session.commit()
+    return activity
+
+def get_user_activity_summary(user_id, limit=50):
+    from app.models import UserActivity
+    return UserActivity.query.filter_by(user_id=user_id).order_by(UserActivity.created_at.desc()).limit(limit).all()

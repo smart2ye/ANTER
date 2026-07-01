@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
+
 <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
     <div class="card shadow-lg border-0 rounded-4 p-4" style="max-width: 420px; width: 100%; background: var(--card-bg);">
+        
+        <!-- الشعار -->
         <div class="text-center mb-4">
             <div class="d-flex justify-content-center">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="height: 60px; width: 60px;">
@@ -13,6 +16,7 @@
             <p class="text-muted small">سجل الدخول إلى حسابك في ANTER</p>
         </div>
 
+        <!-- نموذج الدخول -->
         <form method="POST">
             {{ form.hidden_tag() }}
             
@@ -52,15 +56,25 @@
                 <a href="{{ url_for('auth.reset_password_request') }}" class="small text-decoration-none">نسيت كلمة المرور؟</a>
             </div>
 
-            {{ form.submit(class="btn btn-primary w-100 py-2 fw-bold rounded-pill") }}
+            <!-- زر الدخول -->
+            {{ form.submit(class="btn btn-primary w-100 py-2 fw-bold rounded-pill mb-3") }}
         </form>
 
         <hr class="my-3">
         
-        <p class="text-center small mb-0">
-            ليس لديك حساب؟ 
-            <a href="{{ url_for('auth.register') }}" class="fw-bold text-decoration-none">سجل الآن</a>
+        <!-- زر إنشاء حساب جديد (بدلاً من النص العادي) -->
+        <div class="text-center">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary w-100 py-2 fw-bold rounded-pill">
+                <i class="fas fa-user-plus me-2"></i> إنشاء حساب جديد
+            </a>
+        </div>
+        
+        <p class="text-center small text-muted mt-3">
+            بالانضمام، أنت توافق على 
+            <a href="{{ url_for('main.terms') }}" class="text-decoration-none">الشروط</a> و 
+            <a href="{{ url_for('main.privacy') }}" class="text-decoration-none">سياسة الخصوصية</a>
         </p>
     </div>
 </div>
+
 {% endblock %}

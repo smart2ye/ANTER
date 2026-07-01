@@ -1,9 +1,9 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app, session
 from flask_login import login_required, current_user, logout_user
 from app.extensions import db, csrf
 from app.models import User, Post, Video, Notification, Follow
 from app.forms.profile import ProfileForm
-from app.utils.helpers import save_uploaded_image, log_user_activity
+from app.utils.helpers import save_uploaded_image, log_user_activity, get_user_activity_summary
 import os
 from datetime import datetime
 
@@ -57,7 +57,7 @@ def edit_profile():
                     if os.path.exists(old_path):
                         os.remove(old_path)
         db.session.commit()
-        log_user_activity(current_user.id, "profile_update", {"name": form.name.data, "bio": form.bio.data})
+        log_user_activity(current_user.id, 'profile_update', {'name': form.name.data, 'bio': form.bio.data})
         flash('تم تحديث الملف الشخصي بنجاح.', 'success')
         return redirect(url_for('users.profile', username=current_user.username))
     return render_template('profile_edit.html', form=form)
@@ -86,9 +86,8 @@ def settings():
                 flash('كلمة المرور يجب أن تكون 6 أحرف على الأقل.', 'danger')
                 return redirect(url_for('users.settings'))
             current_user.set_password(new_password)
-                log_user_activity(current_user.id, "password_change")
             db.session.commit()
-        log_user_activity(current_user.id, "profile_update", {"name": form.name.data, "bio": form.bio.data})
+            log_user_activity(current_user.id, 'password_change')
             flash('تم تغيير كلمة المرور بنجاح.', 'success')
             return redirect(url_for('users.settings'))
         
@@ -116,7 +115,6 @@ def settings():
             current_user.message_privacy = message_privacy
         
         db.session.commit()
-        log_user_activity(current_user.id, "profile_update", {"name": form.name.data, "bio": form.bio.data})
         flash('تم تحديث الإعدادات بنجاح.', 'success')
         return redirect(url_for('users.settings'))
     
@@ -133,7 +131,6 @@ def follow(user_id):
     notif = Notification(user_id=user.id, actor_id=current_user.id, action='follow')
     db.session.add(notif)
     db.session.commit()
-        log_user_activity(current_user.id, "profile_update", {"name": form.name.data, "bio": form.bio.data})
     return jsonify({'success': True, 'following': True})
 
 @users_bp.route('/unfollow/<int:user_id>', methods=['POST'])
@@ -143,7 +140,6 @@ def unfollow(user_id):
     user = User.query.get_or_404(user_id)
     current_user.unfollow(user)
     db.session.commit()
-        log_user_activity(current_user.id, "profile_update", {"name": form.name.data, "bio": form.bio.data})
     return jsonify({'success': True, 'following': False})
 
 @users_bp.route('/delete_account', methods=['POST'])
@@ -166,11 +162,13 @@ def delete_account():
     
     db.session.delete(current_user)
     db.session.commit()
-        log_user_activity(current_user.id, "profile_update", {"name": form.name.data, "bio": form.bio.data})
     logout_user()
     flash('تم حذف حسابك بنجاح.', 'success')
     return redirect(url_for('auth.login'))
 
+# ============================================
+# سجل النشاط وتنزيل البيانات
+# ============================================
 @users_bp.route('/activity')
 @login_required
 def activity_log():

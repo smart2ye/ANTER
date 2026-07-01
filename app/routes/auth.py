@@ -14,7 +14,12 @@ def login():
         return redirect(url_for('main.index'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        # البحث باستخدام اسم المستخدم أو البريد أو رقم الهاتف
+        user = User.query.filter(
+            (User.username == form.username.data) |
+            (User.email == form.username.data) |
+            (User.phone == form.username.data)
+        ).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=True)
             log_user_activity(user.id, "login")
@@ -35,23 +40,24 @@ def register():
             username=form.username.data.strip(),
             email=form.email.data.strip(),
             name=form.name.data.strip(),
+            country_code=form.country_code.data,
+            phone=form.country_code.data + form.phone.data if form.phone.data else None,
+            phone_verified=False,
             terms_agreed=form.terms_agreed.data
         )
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
         flash('✅ تم التسجيل بنجاح، يمكنك الدخول الآن.', 'success')
-        return redirect(url_for('main.index'))
+        return redirect(url_for('auth.login'))
     return render_template('auth/register.html', form=form)
 
 @auth_bp.route('/logout')
 @login_required
 def logout():
-    # تسجيل النشاط أولاً (قبل تسجيل الخروج)
-    # ثم تسجيل الخروج
     log_user_activity(current_user.id, "logout")
     logout_user()
-    flash('👋 تم تسجيل الخروج.', 'info')
+    flash('✅ تم تسجيل الخروج بنجاح، نراكم قريباً!', 'success')
     return redirect(url_for('main.index'))
 
 @auth_bp.route('/reset_password_request', methods=['GET', 'POST'])
@@ -69,7 +75,7 @@ def reset_password_request():
             flash('📌 انسخ الرابط والصقه في المتصفح.', 'info')
         else:
             flash('❌ لا يوجد حساب مرتبط بهذا البريد الإلكتروني.', 'danger')
-        return redirect(url_for('main.index'))
+        return redirect(url_for('auth.login'))
     return render_template('auth/reset_password_request.html', form=form)
 
 @auth_bp.route('/reset_password/<token>', methods=['GET', 'POST'])
@@ -92,5 +98,5 @@ def reset_password(token):
         log_user_activity(user.id, "password_change")
         db.session.commit()
         flash('✅ تم تغيير كلمة المرور بنجاح.', 'success')
-        return redirect(url_for('main.index'))
+        return redirect(url_for('auth.login'))
     return render_template('auth/reset_password.html', form=form)

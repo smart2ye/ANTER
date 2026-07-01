@@ -28,6 +28,13 @@ class User(UserMixin, db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
+    country_code = db.Column(db.String(10), default=+966)
+    phone = db.Column(db.String(20), unique=True, nullable=True, index=True)
+    phone_verified = db.Column(db.Boolean, default=False)
+    country_code = db.Column(db.String(10), default=+966)
+    phone = db.Column(db.String(20), unique=True, nullable=True, index=True)
+    phone_verified = db.Column(db.Boolean, default=False)
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     theme_preference = db.Column(db.String(20), default='light')
     terms_agreed = db.Column(db.Boolean, default=False)
 

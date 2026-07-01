@@ -538,3 +538,103 @@ body {
     border-radius: 12px;
     display: inline-block;
 }
+
+/* ========================================
+   حالة الاتصال (Online / Offline)
+   ======================================== */
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 2px 10px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.04);
+}
+
+.status-indicator .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-indicator.online .status-dot {
+    background: #22c55e;
+    animation: pulse-dot 2s infinite;
+}
+
+.status-indicator.offline .status-dot {
+    background: #94a3b8;
+}
+
+@keyframes pulse-dot {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.profile-status {
+    font-size: 0.85rem;
+}
+
+.post-status {
+    font-size: 0.7rem;
+}
+
+/* ========================================
+   حالة الاتصال - تظهر في كل مكان
+   ======================================== */
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 2px 10px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.04);
+    transition: all 0.2s ease;
+}
+
+.status-indicator .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-indicator.online .status-dot {
+    background: #22c55e;
+    animation: pulse-dot 2s infinite;
+}
+
+.status-indicator.offline .status-dot {
+    background: #94a3b8;
+}
+
+@keyframes pulse-dot {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* أماكن ظهور الحالة */
+.profile-status,
+.post-status {
+    font-size: 0.75rem;
+    margin-top: 2px;
+}
+
+/* في القائمة المنسدلة */
+.dropdown-item .post-status {
+    font-size: 0.65rem;
+    margin-top: 0;
+}
+
+/* في بطاقات الاستكشاف */
+.explore-card .post-status {
+    font-size: 0.7rem;
+    margin-top: 4px;
+}

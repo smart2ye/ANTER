@@ -1,3 +1,4 @@
+from app.utils.helpers import get_status_icon
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from app.extensions import db, csrf
@@ -19,7 +20,7 @@ def inbox():
         if last_msg:
             conversations.append((u, last_msg))
     conversations.sort(key=lambda x: x[1].created_at, reverse=True)
-    return render_template('messages/inbox.html', conversations=conversations)
+    return render_template('messages/inbox.html', conversations=conversations, get_status_icon=get_status_icon)
 
 @messages_bp.route('/<int:user_id>')
 @login_required
@@ -34,7 +35,7 @@ def chat(user_id):
         if m.receiver_id == current_user.id and not m.is_read:
             m.is_read = True
     db.session.commit()
-    return render_template('messages/chat.html', other=other, messages=messages)
+    return render_template('messages/chat.html', other=other, messages=messages, get_status_icon=get_status_icon)
 
 @messages_bp.route('/send/<int:user_id>', methods=['POST'])
 @login_required

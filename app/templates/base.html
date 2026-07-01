@@ -121,6 +121,9 @@
                         <div class="card-body text-center">
                             <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" class="fb-avatar-lg mb-2">
                             <h6 class="fw-bold">{{ current_user.name }}</h6>
+                                    <div class="post-status mt-1">
+                                        {{ get_status_icon(current_user)|safe }}
+                                    </div>
                             <p class="text-muted small">@{{ current_user.username }}</p>
                             <div class="d-flex justify-content-around">
                                 <div><span class="fw-bold">{{ current_user.follower_count() }}</span><br><small>متابع</small></div>

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import Notification
@@ -8,8 +8,15 @@ notifications_bp = Blueprint('notifications', __name__, url_prefix='/notificatio
 @notifications_bp.route('/')
 @login_required
 def index():
-    # جلب الإشعارات دون تحديثها إلى مقروءة
+    # جلب جميع الإشعارات
     notifs = current_user.notifications.order_by(Notification.created_at.desc()).all()
+    
+    # تعيين جميع الإشعارات غير المقروءة إلى مقروءة
+    for n in notifs:
+        if not n.is_read:
+            n.is_read = True
+    db.session.commit()
+    
     return render_template('notifications.html', notifications=notifs)
 
 @notifications_bp.route('/unread_count')

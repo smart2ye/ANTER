@@ -1,6 +1,5 @@
 from .user import User
 from .user_activity import UserActivity
-from .user_activity import UserActivity
 from .post import Post
 from .comment import Comment
 from .like import Like
@@ -14,6 +13,7 @@ from .video import Video
 from .hidden_post import HiddenPost
 from .hashtag import Hashtag
 from .post_hashtag import PostHashtag
+from .hashtag_stat import HashtagStat
 from .video_like import VideoLike
 from .video_comment import VideoComment
 from .video_comment_like import VideoCommentLike

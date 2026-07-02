@@ -15,12 +15,23 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/static/uploads/posts/9ae407e3-5dc9-4cea-9091-901b90b0e843.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "المنشورات"
     },
     {
-      "src": "/static/icons/anter-icon-512.png",
-      "sizes": "192x192",
+      "src": "/static/uploads/default.png",
+      "sizes": "1080x1920",
       "type": "image/png",
-      "purpose": "any"
+      "form_factor": "narrow",
+      "label": "الملف الشخصي"
     }
-  ]
+  ],
+  "categories": ["social", "communication"]
 }

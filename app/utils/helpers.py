@@ -4,6 +4,8 @@ import re
 import subprocess
 from flask import current_app, url_for
 from werkzeug.utils import secure_filename
+from datetime import datetime, timedelta
+from sqlalchemy import func
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
@@ -70,17 +72,18 @@ def create_thumbnail(video_path, is_reel=False):
         return ''
 
 # ============================================
-# دوال الوسوم (Hashtags)
+# دوال الوسوم (Hashtags) - محسّنة
 # ============================================
 
 def extract_hashtags(text):
     """استخراج جميع الوسوم (#hashtag) من النص"""
-    import re
+    if not text:
+        return []
     return re.findall(r'#([\w\u0600-\u06FF]+)', text)
 
 def process_hashtags(post_id, content):
-    """معالجة الوسوم في المنشور (إنشاء وربط)"""
-    from app.models import Hashtag, PostHashtag
+    """معالجة الوسوم مع التحديث الإحصائي"""
+    from app.models import Hashtag, PostHashtag, HashtagStat
     from app.extensions import db
     
     if not content:
@@ -88,18 +91,71 @@ def process_hashtags(post_id, content):
     
     tags = extract_hashtags(content)
     for tag_name in tags:
-        # بحث أو إنشاء الوسم
+        # البحث أو الإنشاء
         hashtag = Hashtag.query.filter_by(name=tag_name.lower()).first()
         if not hashtag:
             hashtag = Hashtag(name=tag_name.lower())
             db.session.add(hashtag)
             db.session.flush()
-        # ربط المنشور بالوسم (إذا لم يكن موجوداً)
+        
+        # ربط المنشور بالوسم
         existing = PostHashtag.query.filter_by(post_id=post_id, hashtag_id=hashtag.id).first()
         if not existing:
             ph = PostHashtag(post_id=post_id, hashtag_id=hashtag.id)
             db.session.add(ph)
+        
+        # تحديث الإحصائيات
+        hashtag.usage_count += 1
+        hashtag.last_used = datetime.utcnow()
+        
+        # تسجيل الإحصائيات اليومية
+        HashtagStat.record_usage(hashtag.id)
+    
     db.session.commit()
+
+def get_trending_hashtags(limit=10, hours=24):
+    """احصل على الوسوم الرائجة"""
+    from app.models import Hashtag, PostHashtag, Post
+    from app.extensions import db
+    
+    since = datetime.utcnow() - timedelta(hours=hours)
+    
+    trending = db.session.query(
+        Hashtag,
+        func.count(PostHashtag.id).label('usage'),
+        func.count(Post.id).label('posts')
+    ).join(
+        PostHashtag, Hashtag.id == PostHashtag.hashtag_id
+    ).join(
+        Post, Post.id == PostHashtag.post_id
+    ).filter(
+        Post.created_at >= since
+    ).group_by(Hashtag.id).order_by(
+        func.count(PostHashtag.id).desc()
+    ).limit(limit).all()
+    
+    return trending
+
+def search_hashtags(query, limit=10):
+    """البحث عن وسوم"""
+    from app.models import Hashtag
+    
+    if not query or len(query) < 1:
+        return []
+    
+    return Hashtag.query.filter(
+        Hashtag.name.contains(query.lower())
+    ).order_by(
+        Hashtag.usage_count.desc()
+    ).limit(limit).all()
+
+def format_hashtag_html(text):
+    """تنسيق النص لعرض الوسوم كروابط"""
+    def replace_hashtag(match):
+        tag = match.group(1)
+        return f'<a href="{url_for("hashtags.view", tag=tag)}" class="hashtag-link">#{tag}</a>'
+    pattern = r'#([\w\u0600-\u06FF]+)'
+    return re.sub(pattern, replace_hashtag, text)
 
 # ============================================
 # دوال تسجيل نشاط المستخدم
@@ -136,39 +192,8 @@ def get_user_activity_summary(user_id, limit=50):
     return UserActivity.query.filter_by(user_id=user_id).order_by(UserActivity.created_at.desc()).limit(limit).all()
 
 # ============================================
-# دوال تسجيل نشاط المستخدم
-# ============================================
-from flask import request
-from user_agents import parse
-import json
-
-def log_user_activity(user_id, action, details=None):
-    from app.models import UserActivity
-    from app.extensions import db
-    user_agent_string = request.headers.get('User-Agent', '')
-    ua = parse(user_agent_string) if user_agent_string else None
-    activity = UserActivity(
-        user_id=user_id,
-        action=action,
-        ip_address=request.remote_addr,
-        user_agent=user_agent_string[:500],
-        browser=f"{ua.browser.family} {ua.browser.version_string}" if ua and ua.browser else '',
-        os=f"{ua.os.family} {ua.os.version_string}" if ua and ua.os else '',
-        device_type=ua.device.family if ua else '',
-        details=json.dumps(details) if details else None
-    )
-    db.session.add(activity)
-    db.session.commit()
-    return activity
-
-def get_user_activity_summary(user_id, limit=50):
-    from app.models import UserActivity
-    return UserActivity.query.filter_by(user_id=user_id).order_by(UserActivity.created_at.desc()).limit(limit).all()
-
-# ============================================
 # دوال حالة الاتصال
 # ============================================
-from datetime import datetime, timedelta
 
 def get_user_status(user):
     """إرجاع حالة المستخدم (متصل / غير متصل)"""

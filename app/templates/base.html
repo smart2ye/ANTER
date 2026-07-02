@@ -228,3 +228,22 @@ if ('serviceWorker' in navigator) {
     });
 }
 </script>
+<script>
+    // ==============================
+    // تحديث عداد الإشعارات (دالة عامة)
+    // ==============================
+    function updateBadge() {
+        fetch('/notifications/unread_count')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                var badge = document.getElementById('notif-badge');
+                if (badge) {
+                    badge.textContent = data.count;
+                    badge.style.display = data.count > 0 ? 'block' : 'none';
+                }
+            });
+    }
+
+    // تحديث العداد كل 15 ثانية
+    setInterval(updateBadge, 15000);
+</script>

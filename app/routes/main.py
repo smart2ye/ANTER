@@ -209,3 +209,21 @@ def update_interests():
 @main_bp.route('/google-site-verification-7Uaxo4sE9avUI6VqAsGp-ldxoslHE10dRIa2Q-Skak0.html')
 def google_verification():
     return "google-site-verification=7Uaxo4sE9avUI6VqAsGp-ldxoslHE10dRIa2Q-Skak0"
+
+@main_bp.route('/api/users')
+@login_required
+def api_users():
+    """عرض جميع المستخدمين (للمشرفين فقط)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'غير مصرح'}), 403
+    
+    users = User.query.order_by(User.created_at.desc()).all()
+    return jsonify([{
+        'id': u.id,
+        'username': u.username,
+        'name': u.name,
+        'email': u.email,
+        'created_at': u.created_at.isoformat() if u.created_at else None,
+        'is_verified': u.is_verified,
+        'is_admin': u.is_admin
+    } for u in users])

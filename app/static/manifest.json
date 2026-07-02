@@ -9,6 +9,8 @@
   "start_url": "/",
   "theme_color": "#1877f2",
   "description": "A modern Arabic social networking platform",
+  "id": "anter-app",
+  "lang": "ar",
   "icons": [
     {
       "src": "/static/icons/anter-icon-512.png",
@@ -23,14 +25,14 @@
       "sizes": "1080x1920",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "المنشورات"
+      "label": "شاشة المنشورات"
     },
     {
       "src": "/static/uploads/default.png",
-      "sizes": "1080x1920",
+      "sizes": "1920x1080",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "الملف الشخصي"
+      "form_factor": "wide",
+      "label": "شاشة الترحيب"
     }
   ],
   "categories": ["social", "communication"]

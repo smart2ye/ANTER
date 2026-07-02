@@ -1,10 +1,12 @@
 const CACHE_NAME = 'anter-v1';
+const OFFLINE_URL = '/offline.html';
 const urlsToCache = [
   '/',
   '/static/css/style.css',
   '/static/js/main.js',
   '/static/uploads/default.png',
-  '/static/icons/anter-icon-512.png'
+  '/static/icons/anter-icon-512.png',
+  OFFLINE_URL
 ];
 
 // تثبيت Service Worker
@@ -15,36 +17,34 @@ self.addEventListener('install', event => {
         console.log('Cache opened');
         return cache.addAll(urlsToCache);
       })
+      .then(() => self.skipWaiting())
   );
 });
 
-// استرجاع الملفات من الكاش
+// استرجاع الملفات (Cache First)
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // إذا وجد الملف في الكاش، استخدمه
         if (response) {
           return response;
         }
-        // وإلا حمّله من الشبكة
-        return fetch(event.request);
+        return fetch(event.request)
+          .catch(() => {
+            return caches.match(OFFLINE_URL);
+          });
       })
   );
 });
 
-// تحديث الكاش عند تفعيل SW جديد
+// تنشيط وتنظيف الكاش القديم
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
+        cacheNames.filter(name => name !== CACHE_NAME)
+          .map(name => caches.delete(name))
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });

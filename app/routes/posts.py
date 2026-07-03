@@ -15,6 +15,8 @@ def create():
     if request.method == 'POST':
         content = request.form.get('content', '').strip()
         if not content:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'المحتوى مطلوب'}), 400
             flash('المحتوى مطلوب.', 'danger')
             return redirect(url_for('posts.create'))
         
@@ -29,7 +31,6 @@ def create():
         # معالجة الوسوم
         process_hashtags(post.id, content)
         
-        # إذا كان طلب AJAX
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': True, 'post_id': post.id})
         
@@ -39,9 +40,6 @@ def create():
     form = PostForm()
     return render_template('posts/create.html', form=form)
 
-# ============================================
-# باقي المسارات (like, comment, react, etc.)
-# ============================================
 @posts_bp.route('/edit/<int:post_id>', methods=['GET', 'POST'])
 @login_required
 def edit(post_id):
@@ -83,6 +81,7 @@ def react(post_id):
         return jsonify({'success': False, 'message': 'نوع تفاعل غير صالح'}), 400
     
     existing_like = Like.query.filter_by(post_id=post_id, user_id=current_user.id).first()
+    
     if existing_like:
         if existing_like.reaction_type == reaction_type:
             db.session.delete(existing_like)
@@ -104,6 +103,12 @@ def react(post_id):
         if post.author_id != current_user.id:
             notif = Notification(user_id=post.author_id, actor_id=current_user.id, action=f'react_{reaction_type}', post_id=post.id)
             db.session.add(notif)
+            # إشعار push خارجي
+            try:
+                from app.routes.notifications import send_push_notification
+                send_push_notification(post.author_id, "تفاعل جديد", f"{current_user.name} تفاعل مع منشورك")
+            except:
+                pass
         db.session.commit()
         return jsonify({
             'success': True, 'action': 'added', 'reaction': reaction_type,
@@ -125,10 +130,20 @@ def comment(post_id):
             if parent_comment and parent_comment.author_id != current_user.id:
                 notif = Notification(user_id=parent_comment.author_id, actor_id=current_user.id, action='reply', post_id=post.id)
                 db.session.add(notif)
+                try:
+                    from app.routes.notifications import send_push_notification
+                    send_push_notification(parent_comment.author_id, "رد جديد", f"{current_user.name} رد على تعليقك")
+                except:
+                    pass
         else:
             if post.author_id != current_user.id:
                 notif = Notification(user_id=post.author_id, actor_id=current_user.id, action='comment', post_id=post.id)
                 db.session.add(notif)
+                try:
+                    from app.routes.notifications import send_push_notification
+                    send_push_notification(post.author_id, "تعليق جديد", f"{current_user.name} علق على منشورك")
+                except:
+                    pass
         db.session.add(comment)
         db.session.commit()
         flash('تم إضافة التعليق.', 'success')

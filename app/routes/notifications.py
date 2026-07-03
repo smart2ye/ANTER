@@ -35,3 +35,79 @@ def mark_read(notification_id):
         db.session.commit()
         return jsonify({'success': True})
     return jsonify({'success': False}), 403
+
+@notifications_bp.route('/subscribe', methods=['POST'])
+@login_required
+def subscribe():
+    """تسجيل اشتراك الإشعارات (من Service Worker)"""
+    from app.models import PushSubscription
+    data = request.get_json()
+    endpoint = data.get('endpoint')
+    p256dh = data.get('keys', {}).get('p256dh')
+    auth = data.get('keys', {}).get('auth')
+
+    if not all([endpoint, p256dh, auth]):
+        return jsonify({'success': False, 'message': 'بيانات ناقصة'}), 400
+
+    # حذف الاشتراك القديم (إن وجد)
+    PushSubscription.query.filter_by(endpoint=endpoint).delete()
+
+    sub = PushSubscription(
+        user_id=current_user.id,
+        endpoint=endpoint,
+        p256dh=p256dh,
+        auth=auth
+    )
+    db.session.add(sub)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@notifications_bp.route('/unsubscribe', methods=['POST'])
+@login_required
+def unsubscribe():
+    """إلغاء اشتراك الإشعارات"""
+    from app.models import PushSubscription
+    data = request.get_json()
+    endpoint = data.get('endpoint')
+    if endpoint:
+        PushSubscription.query.filter_by(endpoint=endpoint, user_id=current_user.id).delete()
+        db.session.commit()
+    return jsonify({'success': True})
+
+def send_push_notification(user_id, title, body, icon='/static/icons/anter-icon-512.png'):
+    """إرسال إشعار push لمستخدم معين"""
+    from app.models import PushSubscription
+    from pywebpush import webpush, WebPushException
+    import os
+
+    subscriptions = PushSubscription.query.filter_by(user_id=user_id).all()
+    if not subscriptions:
+        return
+
+    vapid_private_key = os.environ.get('VAPID_PRIVATE_KEY')
+    vapid_public_key = os.environ.get('VAPID_PUBLIC_KEY')
+
+    if not vapid_private_key or not vapid_public_key:
+        print('⚠️ VAPID keys not configured')
+        return
+
+    for sub in subscriptions:
+        try:
+            webpush(
+                subscription_info=sub.to_dict(),
+                data=json.dumps({
+                    'title': title,
+                    'body': body,
+                    'icon': icon,
+                    'badge': '/static/uploads/default.png'
+                }),
+                vapid_private_key=vapid_private_key,
+                vapid_claims={'sub': 'mailto:smart2ye@gmail.com'}
+            )
+        except WebPushException as e:
+            if '410' in str(e) or '404' in str(e):
+                # الاشتراك منتهي الصلاحية
+                db.session.delete(sub)
+                db.session.commit()
+            else:
+                print(f'Push error: {e}')

@@ -446,3 +446,218 @@ document.addEventListener('click', function(e) {
         });
     }
 });
+
+// ==============================
+// نظام الأصوات (Web Audio)
+// ==============================
+class SoundManager {
+    constructor() {
+        this.enabled = localStorage.getItem('soundEnabled') !== 'false';
+        this.ctx = null;
+    }
+
+    _getContext() {
+        if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        return this.ctx;
+    }
+
+    _playTone(frequency, duration, type = 'sine', volume = 0.3) {
+        if (!this.enabled) return;
+        try {
+            const ctx = this._getContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type;
+            osc.frequency.value = frequency;
+            gain.gain.value = volume;
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + duration);
+        } catch (e) {
+            // تجاهل الأخطاء
+        }
+    }
+
+    // صوت الإشعار (نغمة مزدوجة)
+    notification() {
+        this._playTone(800, 0.15, 'sine', 0.3);
+        setTimeout(() => this._playTone(1000, 0.15, 'sine', 0.25), 150);
+    }
+
+    // صوت الإعجاب (نغمة قصيرة)
+    like() {
+        this._playTone(1200, 0.1, 'sine', 0.2);
+    }
+
+    // صوت النشر (نغمة تصاعدية)
+    publish() {
+        this._playTone(600, 0.1, 'sine', 0.2);
+        setTimeout(() => this._playTone(800, 0.1, 'sine', 0.2), 100);
+        setTimeout(() => this._playTone(1000, 0.15, 'sine', 0.25), 200);
+    }
+
+    // صوت المتابعة
+    follow() {
+        this._playTone(700, 0.12, 'sine', 0.2);
+        setTimeout(() => this._playTone(900, 0.12, 'sine', 0.2), 120);
+    }
+
+    toggle() {
+        this.enabled = !this.enabled;
+        localStorage.setItem('soundEnabled', this.enabled);
+        return this.enabled;
+    }
+}
+
+const sounds = new SoundManager();
+
+// ==============================
+// ربط الأصوات بالأحداث
+// ==============================
+
+// عند الإعجاب
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.like-btn, .reaction-option')) {
+        sounds.like();
+    }
+});
+
+// عند النشر (مراقبة نجاح النشر)
+document.addEventListener('DOMContentLoaded', function() {
+    const quickForm = document.getElementById('quickPostForm');
+    if (quickForm) {
+        const originalSubmit = quickForm.submit;
+        quickForm.addEventListener('submit', function() {
+            setTimeout(() => sounds.publish(), 300);
+        });
+    }
+});
+
+// عند متابعة
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.follow-btn')) {
+        setTimeout(() => sounds.follow(), 300);
+    }
+});
+
+// عند وصول إشعار (SSE)
+if (typeof EventSource !== 'undefined') {
+    const eventSource = new EventSource('/sse/notifications');
+    eventSource.onmessage = function(e) {
+        try {
+            const data = JSON.parse(e.data);
+            if (data.count > 0) {
+                sounds.notification();
+            }
+        } catch (err) {}
+    };
+}
+
+// تبديل الصوت (زر مخفي في الإعدادات)
+// يمكن إضافة زر في settings.html
+
+// ============================================
+// نظام الأصوات (Sound Effects)
+// ============================================
+const SoundManager = {
+    sounds: {},
+    isMuted: localStorage.getItem('sound_muted') === 'true',
+
+    init() {
+        // تحميل الأصوات
+        this.sounds = {
+            notification: new Audio('/static/sounds/notification.mp3'),
+            like: new Audio('/static/sounds/like.mp3'),
+            comment: new Audio('/static/sounds/comment.mp3'),
+            post: new Audio('/static/sounds/post.mp3')
+        };
+
+        // زر التحكم بالصوت
+        this.createToggleButton();
+    },
+
+    createToggleButton() {
+        const btn = document.createElement('button');
+        btn.className = 'sound-toggle';
+        btn.innerHTML = this.isMuted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+        btn.title = 'تشغيل/إيقاف الأصوات';
+        document.body.appendChild(btn);
+
+        btn.addEventListener('click', () => {
+            this.isMuted = !this.isMuted;
+            localStorage.setItem('sound_muted', this.isMuted);
+            btn.innerHTML = this.isMuted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+            if (!this.isMuted) {
+                this.play('notification'); // اختبار الصوت
+            }
+        });
+    },
+
+    play(soundName) {
+        if (this.isMuted) return;
+        const sound = this.sounds[soundName];
+        if (sound) {
+            sound.currentTime = 0;
+            sound.play().catch(() => {});
+        }
+    }
+};
+
+// ==============================
+// تشغيل الأصوات عند الأحداث
+// ==============================
+document.addEventListener('DOMContentLoaded', () => {
+    SoundManager.init();
+
+    // صوت عند الإعجاب
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.reaction-option') || e.target.closest('.like-btn')) {
+            SoundManager.play('like');
+        }
+    });
+
+    // صوت عند التعليق
+    document.addEventListener('submit', function(e) {
+        if (e.target.closest('.comment-form')) {
+            setTimeout(() => SoundManager.play('comment'), 200);
+        }
+    });
+
+    // صوت عند النشر
+    document.addEventListener('submit', function(e) {
+        if (e.target.closest('#quickPostForm') || e.target.closest('form[action*="/posts/create"]')) {
+            setTimeout(() => SoundManager.play('post'), 300);
+        }
+    });
+});
+
+// ==============================
+// استقبال الإشعارات عبر SSE
+// ==============================
+if (document.getElementById('notif-badge')) {
+    const eventSource = new EventSource('/sse/notifications');
+    eventSource.onmessage = function(e) {
+        try {
+            const data = JSON.parse(e.data);
+            const badge = document.getElementById('notif-badge');
+            if (badge) {
+                badge.textContent = data.count;
+                badge.style.display = data.count > 0 ? 'block' : 'none';
+            }
+            // تشغيل صوت الإشعار
+            if (data.count > 0) {
+                SoundManager.play('notification');
+            }
+        } catch(err) {}
+    };
+    eventSource.onerror = function() {
+        setTimeout(() => {
+            const newSource = new EventSource('/sse/notifications');
+            eventSource.close();
+        }, 5000);
+    };
+}

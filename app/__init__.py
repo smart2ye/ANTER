@@ -36,7 +36,7 @@ def create_app():
         db.create_all()
 
     # ============================================
-    # دالة عامة لحساب التفاعلات (متاحة في كل القوالب)
+    # دالة عامة لحساب التفاعلات
     # ============================================
     from sqlalchemy import func
 
@@ -54,7 +54,13 @@ def create_app():
     app.add_template_global(get_reaction_counts, name='get_reaction_counts')
 
     # ============================================
-    # معالج السياق (سياق التطبيق)
+    # جعل get_status_icon متاحة في جميع القوالب
+    # ============================================
+    from app.utils.helpers import get_status_icon
+    app.add_template_global(get_status_icon, name='get_status_icon')
+
+    # ============================================
+    # تحديث آخر ظهور للمستخدم عند كل طلب
     # ============================================
     @app.before_request
     def update_last_seen():
@@ -63,13 +69,5 @@ def create_app():
         if current_user.is_authenticated:
             current_user.last_seen = datetime.utcnow()
             db.session.commit()
-
-    # ============================================
-    # جعل get_status_icon متاحة في كل القوالب
-    # ============================================
-    @app.context_processor
-    def inject_status_icon():
-        from app.utils.helpers import get_status_icon
-        return dict(get_status_icon=get_status_icon)
 
     return app

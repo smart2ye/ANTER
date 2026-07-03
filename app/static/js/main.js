@@ -284,3 +284,57 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+// ==============================
+// تفعيل قائمة المشاركة
+// ==============================
+document.querySelectorAll('.share-dropdown').forEach(el => {
+    el.addEventListener('mouseenter', function() {
+        this.querySelector('.share-options').style.display = 'block';
+    });
+    el.addEventListener('mouseleave', function() {
+        this.querySelector('.share-options').style.display = 'none';
+    });
+});
+
+// ==============================
+// تفعيل قائمة التفاعلات
+// ==============================
+document.querySelectorAll('.reaction-toggle').forEach(el => {
+    el.addEventListener('mouseenter', function() {
+        this.querySelector('.reaction-dropdown').style.display = 'flex';
+    });
+    el.addEventListener('mouseleave', function() {
+        this.querySelector('.reaction-dropdown').style.display = 'none';
+    });
+});
+
+// ==============================
+// تفعيل التعليقات (toggle)
+// ==============================
+document.querySelectorAll('.comment-toggle').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const postId = this.dataset.post;
+        const section = document.getElementById('comments-' + postId);
+        if (section) {
+            section.classList.toggle('open');
+        }
+    });
+});
+
+// ==============================
+// نسخ الرابط
+// ==============================
+window.copyLink = function(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        alert('✅ تم نسخ الرابط!');
+    }).catch(() => {
+        const input = document.createElement('input');
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        alert('✅ تم نسخ الرابط!');
+    });
+};

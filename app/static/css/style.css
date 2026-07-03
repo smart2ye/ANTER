@@ -638,3 +638,383 @@ body {
     font-size: 0.7rem;
     margin-top: 4px;
 }
+
+/* ========================================
+   بطاقات المنشورات المحسّنة
+   ======================================== */
+
+.post-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    transition: all 0.25s ease;
+    border: 1px solid var(--border-color);
+}
+
+.post-card:hover {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.10);
+    transform: translateY(-2px);
+}
+
+/* رأس المنشور */
+.post-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.post-author-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.post-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--fb-blue);
+    transition: all 0.2s ease;
+}
+
+.post-avatar:hover {
+    transform: scale(1.05);
+    border-color: var(--primary-dark);
+}
+
+.post-author-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.post-author-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-color);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.post-author-name:hover {
+    text-decoration: underline;
+}
+
+.verified-badge {
+    color: #1877f2;
+    font-size: 0.75rem;
+}
+
+.post-username {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.post-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+/* محتوى المنشور */
+.post-content {
+    font-size: 1rem;
+    line-height: 1.8;
+    margin-bottom: 12px;
+    color: var(--text-color);
+}
+
+.post-content p {
+    margin: 0;
+}
+
+/* الصور */
+.post-image-wrapper {
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    background: var(--fb-bg);
+}
+
+.post-image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    transition: all 0.3s ease;
+    display: block;
+}
+
+.post-image:hover {
+    transform: scale(1.02);
+}
+
+/* إحصائيات التفاعل */
+.post-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 10px;
+}
+
+.reactions-summary {
+    display: flex;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.reaction-item {
+    background: var(--fb-bg);
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+
+.comments-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* أزرار التفاعل */
+.post-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: var(--fb-bg);
+    color: var(--fb-blue);
+}
+
+.action-btn i {
+    font-size: 1.1rem;
+}
+
+.reaction-toggle {
+    position: relative;
+}
+
+.reaction-dropdown {
+    display: none;
+    position: absolute;
+    top: -45px;
+    left: 0;
+    background: var(--card-bg);
+    border-radius: 30px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+    padding: 6px 12px;
+    gap: 6px;
+    z-index: 10;
+    border: 1px solid var(--border-color);
+}
+
+.reaction-toggle:hover .reaction-dropdown {
+    display: flex;
+}
+
+.reaction-option {
+    border: none;
+    background: transparent;
+    font-size: 1.6rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 2px 4px;
+    border-radius: 50%;
+}
+
+.reaction-option:hover {
+    transform: scale(1.4);
+    background: var(--fb-bg);
+}
+
+.share-dropdown {
+    position: relative;
+}
+
+.share-options {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+    padding: 8px 0;
+    min-width: 160px;
+    border: 1px solid var(--border-color);
+    z-index: 10;
+}
+
+.share-dropdown:hover .share-options {
+    display: block;
+}
+
+.share-options a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: all 0.15s ease;
+}
+
+.share-options a:hover {
+    background: var(--fb-bg);
+}
+
+/* أزرار إدارية */
+.post-admin-actions {
+    display: flex;
+    gap: 4px;
+    margin-right: auto;
+}
+
+.edit-btn {
+    color: #f39c12;
+}
+
+.edit-btn:hover {
+    background: #fef9e7;
+    color: #f39c12;
+}
+
+.delete-btn {
+    color: #e74c3c;
+}
+
+.delete-btn:hover {
+    background: #fdedec;
+    color: #e74c3c;
+}
+
+/* التعليقات */
+.comments-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+    display: none;
+}
+
+.comments-section.open {
+    display: block;
+}
+
+.comment-item {
+    display: flex;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.comment-item:last-child {
+    border-bottom: none;
+}
+
+.comment-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.comment-content {
+    flex: 1;
+}
+
+.comment-author {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-color);
+}
+
+.comment-text {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    margin: 2px 0 0 0;
+}
+
+.comment-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.comment-form input {
+    flex: 1;
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background: var(--fb-bg);
+    color: var(--text-color);
+    font-size: 0.85rem;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.comment-form input:focus {
+    border-color: var(--fb-blue);
+    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.12);
+}
+
+.comment-form button {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--fb-blue);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.comment-form button:hover {
+    transform: scale(1.05);
+    background: var(--fb-blue-dark);
+}
+
+/* ========================================
+   الوضع الليلي
+   ======================================== */
+
+[data-theme="dark"] .post-card {
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .post-card:hover {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .action-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}

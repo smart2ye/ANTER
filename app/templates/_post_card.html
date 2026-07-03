@@ -1,5 +1,6 @@
 {% set post_url = url_for('posts.view_post', post_id=post.id, _external=true) %}
 <div class="post-card" data-post-id="{{ post.id }}">
+    <!-- رأس المنشور -->
     <div class="post-card-header">
         <div class="post-author-info">
             <a href="{{ url_for('users.profile', username=post.author.username) }}" class="post-avatar-link">
@@ -13,9 +14,6 @@
                     {% endif %}
                 </a>
                 <span class="post-username">@{{ post.author.username }}</span>
-                <div class="post-status">
-                    {{ get_status_icon(post.author)|safe }}
-                </div>
             </div>
         </div>
         <div class="post-time">
@@ -24,6 +22,7 @@
         </div>
     </div>
 
+    <!-- محتوى المنشور -->
     <div class="post-content">
         <p>{{ post.content }}</p>
     </div>
@@ -34,6 +33,7 @@
     </div>
     {% endif %}
 
+    <!-- إحصائيات التفاعل -->
     <div class="post-stats">
         <div class="reactions-summary" id="reaction-summary-{{ post.id }}">
             {% set reactions = get_reaction_counts(post.id) %}
@@ -48,26 +48,37 @@
         </div>
     </div>
 
+    <!-- أزرار التفاعل -->
     <div class="post-actions">
-        <button class="action-btn reaction-toggle" data-post="{{ post.id }}">
-            <span id="reaction-icon-{{ post.id }}">👍</span>
-            <span class="reaction-count" id="reaction-count-{{ post.id }}">
-                {{ reactions.like + reactions.love + reactions.haha + reactions.angry + reactions.sad }}
-            </span>
-            <div class="reaction-dropdown">
-                <button class="reaction-option" data-post="{{ post.id }}" data-reaction="like">👍</button>
-                <button class="reaction-option" data-post="{{ post.id }}" data-reaction="love">🥰</button>
-                <button class="reaction-option" data-post="{{ post.id }}" data-reaction="haha">🤣</button>
-                <button class="reaction-option" data-post="{{ post.id }}" data-reaction="angry">😡</button>
-                <button class="reaction-option" data-post="{{ post.id }}" data-reaction="sad">😢</button>
+        <!-- زر التفاعل -->
+        <div class="reaction-wrapper">
+            <button class="action-btn reaction-toggle" data-post="{{ post.id }}">
+                <span class="reaction-display" id="reaction-display-{{ post.id }}">
+                    <span class="reaction-icon" id="reaction-icon-{{ post.id }}">👍</span>
+                    <span class="reaction-label" id="reaction-label-{{ post.id }}">إعجاب</span>
+                </span>
+                <span class="reaction-count" id="reaction-count-{{ post.id }}">
+                    {{ reactions.like + reactions.love + reactions.haha + reactions.angry + reactions.sad }}
+                </span>
+            </button>
+            <div class="reaction-picker" id="reaction-picker-{{ post.id }}">
+                <button class="reaction-option" data-post="{{ post.id }}" data-reaction="like" title="إعجاب">👍</button>
+                <button class="reaction-option" data-post="{{ post.id }}" data-reaction="love" title="حب">🥰</button>
+                <button class="reaction-option" data-post="{{ post.id }}" data-reaction="haha" title="أضحكني">🤣</button>
+                <button class="reaction-option" data-post="{{ post.id }}" data-reaction="angry" title="أغضبني">😡</button>
+                <button class="reaction-option" data-post="{{ post.id }}" data-reaction="sad" title="أحزنني">😢</button>
             </div>
-        </button>
+        </div>
+
+        <!-- زر التعليق -->
         <button class="action-btn comment-toggle" data-post="{{ post.id }}">
             <i class="far fa-comment"></i>
             <span>{{ post.comment_count() }}</span>
         </button>
-        <div class="action-btn share-dropdown">
-            <button class="share-toggle"><i class="fas fa-share-alt"></i></button>
+
+        <!-- زر المشاركة -->
+        <div class="share-dropdown">
+            <button class="action-btn share-toggle"><i class="fas fa-share-alt"></i></button>
             <div class="share-options">
                 <a href="#" onclick="copyLink('{{ post_url }}')"><i class="fas fa-copy"></i> نسخ الرابط</a>
                 <a href="https://wa.me/?text={{ post_url }}" target="_blank"><i class="fab fa-whatsapp"></i> واتساب</a>
@@ -75,9 +86,13 @@
                 <a href="https://www.facebook.com/sharer/sharer.php?u={{ post_url }}" target="_blank"><i class="fab fa-facebook"></i> فيسبوك</a>
             </div>
         </div>
+
+        <!-- رابط المنشور -->
         <a href="{{ url_for('posts.view_post', post_id=post.id) }}" class="action-btn view-post">
             <i class="fas fa-external-link-alt"></i>
         </a>
+
+        <!-- أزرار إدارية (للمالك فقط) -->
         {% if current_user.id == post.author_id %}
         <div class="post-admin-actions">
             <a href="{{ url_for('posts.edit', post_id=post.id) }}" class="action-btn edit-btn"><i class="fas fa-edit"></i></a>
@@ -86,6 +101,7 @@
         {% endif %}
     </div>
 
+    <!-- قسم التعليقات -->
     <div class="comments-section" id="comments-{{ post.id }}">
         {% for comment in post.comments.order_by('created_at').all() %}
         <div class="comment-item">

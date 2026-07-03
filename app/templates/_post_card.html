@@ -13,15 +13,19 @@
                         <i class="fas fa-check-circle verified-badge" title="حساب موثق"></i>
                     {% endif %}
                 </a>
-                <span class="post-username">@{{ post.author.username }}</span>
-                <div class="post-status">
-                    {{ get_status_icon(post.author)|safe }}
+                <div class="post-meta-row">
+                    <span class="post-username">@{{ post.author.username }}</span>
+                    <span class="post-time-separator">·</span>
+                    <span class="post-time-text">{{ post.created_at.strftime('%H:%M · %d/%m') }}</span>
+                    <span class="post-status">
+                        {{ get_status_icon(post.author)|safe }}
+                    </span>
                 </div>
             </div>
         </div>
         <div class="post-time">
             <i class="far fa-clock"></i>
-            <span>{{ post.created_at.strftime('%H:%M · %d/%m/%Y') }}</span>
+            <span>{{ post.created_at.strftime('%H:%M') }}</span>
         </div>
     </div>
 

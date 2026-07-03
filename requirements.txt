@@ -5,8 +5,12 @@ Flask-WTF==1.1.1
 Werkzeug==2.3.7
 WTForms==3.0.1
 python-dotenv==1.0.0
-Pillow==10.4.0
+Pillow==10.1.0
 email-validator==2.1.0
 gunicorn==21.2.0
 user-agents==2.2.0
 user-agents==2.2.0
+pywebpush==1.14.1
+pywebpush==1.14.1
+pywebpush==1.14.1
+pywebpush==1.14.1

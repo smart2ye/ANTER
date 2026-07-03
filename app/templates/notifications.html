@@ -1,96 +1,87 @@
 {% extends "base.html" %}
 {% block content %}
-<h5><i class="fas fa-bell text-primary"></i> الإشعارات</h5>
-
-{% if notifications %}
-    {% for notif in notifications %}
-        {% set link = '#' %}
-        {% if notif.action == 'like' or notif.action == 'comment' or notif.action == 'reply' %}
-            {% if notif.post_id %}
-                {% set link = url_for('posts.view_post', post_id=notif.post_id) %}
-            {% endif %}
-        {% elif notif.action == 'follow' %}
-            {% set link = url_for('users.profile', username=notif.actor.username) %}
-        {% elif notif.action == 'message' %}
-            {% set link = url_for('messages.chat', user_id=notif.actor.id) %}
-        {% endif %}
-
-        <a href="{{ link }}" class="text-decoration-none text-dark notification-link" 
-           data-id="{{ notif.id }}" 
-           onclick="markAsRead({{ notif.id }})">
-            <div class="card mb-2 shadow-sm notification-item {% if not notif.is_read %}unread{% else %}read{% endif %}" 
-                 style="transition: all 0.2s; cursor: pointer; 
-                        {% if not notif.is_read %}border-right: 4px solid #1877f2; background: #f0f7ff;{% endif %}">
-                <div class="card-body d-flex align-items-center">
-                    <img src="{{ url_for('static', filename='uploads/' + notif.actor.avatar) }}" 
-                         width="40" height="40" class="rounded-circle me-2" style="object-fit: cover;">
-                    <div class="flex-grow-1">
-                        <div {% if not notif.is_read %}style="font-weight: 600;"{% endif %}>
-                            <strong>{{ notif.actor.name }}</strong>
-                            {% if notif.action == 'like' %}
-                                أعجب بمنشورك.
-                            {% elif notif.action == 'comment' %}
-                                علّق على منشورك.
-                            {% elif notif.action == 'reply' %}
-                                رد على تعليقك.
-                            {% elif notif.action == 'follow' %}
-                                تابعك.
-                            {% elif notif.action == 'message' %}
-                                أرسل لك رسالة.
-                            {% endif %}
-                        </div>
-                        <small class="text-muted">{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                    </div>
-                    {% if not notif.is_read %}
-                        <span class="badge bg-primary rounded-pill">جديد</span>
-                    {% else %}
-                        <span class="badge bg-secondary rounded-pill">مقروء</span>
-                    {% endif %}
-                </div>
-            </div>
-        </a>
-    {% endfor %}
-{% else %}
-    <div class="text-center text-muted mt-4">
-        <i class="fas fa-bell-slash fa-3x mb-2"></i>
-        <p>لا توجد إشعارات جديدة.</p>
+<div class="notifications-container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5><i class="fas fa-bell text-primary"></i> الإشعارات</h5>
+        <span class="badge bg-primary rounded-pill">{{ notifications|selectattr('is_read', 'equalto', False)|list|length }}</span>
     </div>
-{% endif %}
+
+    {% if notifications %}
+        <div class="list-group">
+            {% for notif in notifications %}
+                {% set link = '#' %}
+                {% if notif.action in ['like', 'comment', 'reply'] and notif.post_id %}
+                    {% set link = url_for('posts.view_post', post_id=notif.post_id) %}
+                {% elif notif.action == 'follow' %}
+                    {% set link = url_for('users.profile', username=notif.actor.username) %}
+                {% elif notif.action == 'message' %}
+                    {% set link = url_for('messages.chat', user_id=notif.actor.id) %}
+                {% endif %}
+
+                <a href="{{ link }}" class="list-group-item list-group-item-action notification-item {% if not notif.is_read %}unread{% endif %}" 
+                   data-id="{{ notif.id }}" onclick="markAsRead({{ notif.id }})">
+                    <div class="d-flex align-items-center gap-3">
+                        <img src="{{ url_for('static', filename='uploads/' + notif.actor.avatar) }}" 
+                             class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold {% if not notif.is_read %}text-primary{% endif %}">
+                                {{ notif.actor.name }}
+                                {% if notif.action == 'like' %}
+                                    <span class="text-muted fw-normal">أعجب بمنشورك</span>
+                                {% elif notif.action == 'comment' %}
+                                    <span class="text-muted fw-normal">علّق على منشورك</span>
+                                {% elif notif.action == 'reply' %}
+                                    <span class="text-muted fw-normal">رد على تعليقك</span>
+                                {% elif notif.action == 'follow' %}
+                                    <span class="text-muted fw-normal">تابعك</span>
+                                {% elif notif.action == 'message' %}
+                                    <span class="text-muted fw-normal">أرسل لك رسالة</span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                        {% if not notif.is_read %}
+                            <span class="badge bg-danger rounded-pill">جديد</span>
+                        {% endif %}
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-bell-slash fa-4x mb-3"></i>
+            <h5>لا توجد إشعارات</h5>
+            <p>ستظهر الإشعارات هنا عند حدوث تفاعلات جديدة.</p>
+        </div>
+    {% endif %}
+</div>
 
 <script>
-    // ==============================
-    // تحديث الإشعار كمقروء عند النقر عليه
-    // ==============================
-    function markAsRead(notificationId) {
-        fetch('/notifications/mark_read/' + notificationId, {
+    function markAsRead(notifId) {
+        fetch('/notifications/mark_read/' + notifId, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
+        .then(res => res.json())
+        .then(data => {
             if (data.success) {
-                // تحديث العداد فوراً
-                updateBadge();
+                // تحديث العداد
+                fetch('/notifications/unread_count')
+                    .then(r => r.json())
+                    .then(d => {
+                        const badge = document.querySelector('.badge.bg-primary.rounded-pill');
+                        if (badge) badge.textContent = d.count;
+                        // تحديث البادج في الشريط العلوي
+                        updateBadge();
+                    });
+                // إزالة علامة "جديد" من العنصر
+                const item = document.querySelector(`.notification-item[data-id="${notifId}"]`);
+                if (item) {
+                    item.classList.remove('unread');
+                    item.querySelector('.badge.bg-danger')?.remove();
+                }
             }
         });
-    }
-
-    // ==============================
-    // تحديث عداد الإشعارات
-    // ==============================
-    function updateBadge() {
-        fetch('/notifications/unread_count')
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                var badge = document.getElementById('notif-badge');
-                if (badge) {
-                    badge.textContent = data.count;
-                    badge.style.display = data.count > 0 ? 'block' : 'none';
-                }
-            });
     }
 </script>
 {% endblock %}

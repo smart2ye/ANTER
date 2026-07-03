@@ -76,3 +76,24 @@
     </div>
 </div>
 {% endblock %}
+<script>
+    // تبديل الصوت من الإعدادات
+    const soundToggle = document.getElementById('soundToggle');
+    if (soundToggle) {
+        // قراءة الحالة من localStorage
+        const soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+        soundToggle.checked = soundEnabled;
+
+        soundToggle.addEventListener('change', function() {
+            localStorage.setItem('soundEnabled', this.checked);
+            // تحديث مدير الصوت
+            if (typeof sounds !== 'undefined') {
+                sounds.enabled = this.checked;
+            }
+            // تشغيل صوت تجريبي
+            if (this.checked && typeof sounds !== 'undefined') {
+                sounds.notification();
+            }
+        });
+    }
+</script>

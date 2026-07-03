@@ -14,9 +14,6 @@
                     {% endif %}
                 </a>
                 <span class="post-username">@{{ post.author.username }}</span>
-                <!-- ============================== -->
-                <!-- علامة النشاط (مضافة هنا)      -->
-                <!-- ============================== -->
                 <div class="post-status">
                     {{ get_status_icon(post.author)|safe }}
                 </div>

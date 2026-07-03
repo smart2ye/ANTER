@@ -338,3 +338,111 @@ window.copyLink = function(url) {
         alert('✅ تم نسخ الرابط!');
     });
 };
+
+// ==============================
+// معالجة اختيار التفاعل
+// ==============================
+document.addEventListener('click', function(e) {
+    const option = e.target.closest('.reaction-option');
+    if (!option) return;
+
+    e.stopPropagation();
+    const postId = option.dataset.post;
+    const reaction = option.dataset.reaction;
+
+    // أسماء التفاعلات
+    const reactionNames = {
+        'like': 'إعجاب',
+        'love': 'حب',
+        'haha': 'أضحكني',
+        'angry': 'أغضبني',
+        'sad': 'أحزنني'
+    };
+
+    const reactionIcons = {
+        'like': '👍',
+        'love': '🥰',
+        'haha': '🤣',
+        'angry': '😡',
+        'sad': '😢'
+    };
+
+    fetch(`/posts/react/${postId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ reaction: reaction })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // تحديث الأيقونة والاسم
+            const iconEl = document.getElementById(`reaction-icon-${postId}`);
+            const labelEl = document.getElementById(`reaction-label-${postId}`);
+            const countEl = document.getElementById(`reaction-count-${postId}`);
+            const displayEl = document.getElementById(`reaction-display-${postId}`);
+            const picker = document.getElementById(`reaction-picker-${postId}`);
+            const summary = document.getElementById(`reaction-summary-${postId}`);
+
+            if (data.action === 'removed') {
+                iconEl.textContent = '👍';
+                labelEl.textContent = 'إعجاب';
+                if (displayEl) displayEl.parentElement.classList.remove('reaction-active');
+            } else {
+                iconEl.textContent = reactionIcons[data.reaction] || '👍';
+                labelEl.textContent = reactionNames[data.reaction] || 'إعجاب';
+                if (displayEl) displayEl.parentElement.classList.add('reaction-active');
+            }
+
+            // تحديث العدد الإجمالي
+            const total = Object.values(data.counts).reduce((a, b) => a + b, 0);
+            countEl.textContent = total;
+
+            // تحديث ملخص التفاعلات
+            if (summary) {
+                let html = '';
+                const icons = {
+                    'like': '👍',
+                    'love': '🥰',
+                    'haha': '🤣',
+                    'angry': '😡',
+                    'sad': '😢'
+                };
+                for (const [key, count] of Object.entries(data.counts)) {
+                    if (count > 0) {
+                        html += `<span class="reaction-item">${icons[key]} ${count}</span>`;
+                    }
+                }
+                summary.innerHTML = html;
+            }
+
+            // إغلاق القائمة بعد الاختيار
+            if (picker) {
+                picker.style.display = 'none';
+                setTimeout(() => { picker.style.display = ''; }, 100);
+            }
+
+            // تأثير صوتي أو بصري
+            const icon = document.getElementById(`reaction-icon-${postId}`);
+            if (icon) {
+                icon.style.animation = 'none';
+                setTimeout(() => {
+                    icon.style.animation = 'reactionPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                }, 10);
+            }
+        }
+    });
+});
+
+// ==============================
+// إغلاق قائمة التفاعلات عند النقر خارجها
+// ==============================
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.reaction-wrapper')) {
+        document.querySelectorAll('.reaction-picker').forEach(picker => {
+            picker.style.display = '';
+        });
+    }
+});

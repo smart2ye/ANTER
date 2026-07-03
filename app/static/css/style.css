@@ -1018,3 +1018,133 @@ body {
 [data-theme="dark"] .action-btn:hover {
     background: rgba(255, 255, 255, 0.05);
 }
+
+/* ========================================
+   قائمة التفاعلات المحسّنة
+   ======================================== */
+
+.reaction-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.reaction-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 24px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.reaction-toggle:hover {
+    background: var(--fb-bg);
+    color: var(--fb-blue);
+}
+
+.reaction-display {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.reaction-icon {
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+.reaction-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.reaction-count {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-left: 2px;
+}
+
+/* Picker (القائمة المنسدلة) */
+.reaction-picker {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    background: var(--card-bg);
+    backdrop-filter: blur(8px);
+    border-radius: 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    padding: 8px 14px;
+    gap: 4px;
+    border: 1px solid var(--border-color);
+    z-index: 50;
+    opacity: 0;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.reaction-wrapper:hover .reaction-picker {
+    display: flex;
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+    pointer-events: auto;
+}
+
+.reaction-option {
+    border: none;
+    background: transparent;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 4px 6px;
+    border-radius: 50%;
+    line-height: 1;
+    position: relative;
+}
+
+.reaction-option:hover {
+    transform: scale(1.4) rotate(-8deg);
+    background: var(--fb-bg);
+}
+
+.reaction-option:active {
+    transform: scale(0.8);
+}
+
+/* التفاعل المختار */
+.reaction-active .reaction-icon {
+    animation: reactionPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.reaction-active .reaction-label {
+    color: var(--fb-blue);
+}
+
+@keyframes reactionPop {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.6) rotate(-10deg); }
+    60% { transform: scale(0.9) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+/* ========================================
+   الوضع الليلي للتفاعلات
+   ======================================== */
+
+[data-theme="dark"] .reaction-picker {
+    background: #2d2d3a;
+    border-color: #3e4042;
+}
+
+[data-theme="dark"] .reaction-picker {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}

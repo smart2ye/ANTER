@@ -1,5 +1,6 @@
 from .user import User
 from .user_activity import UserActivity
+from .push_subscription import PushSubscription
 from .post import Post
 from .comment import Comment
 from .like import Like

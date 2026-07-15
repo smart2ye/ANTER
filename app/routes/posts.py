@@ -10,7 +10,6 @@ import secrets
 
 posts_bp = Blueprint('posts', __name__)
 
-$(cat /tmp/create_new.py)
 @posts_bp.route('/edit/<int:post_id>', methods=['GET', 'POST'])
 @login_required
 def edit(post_id):
@@ -215,3 +214,38 @@ def hide(post_id):
     flash('تم إخفاء المنشور', 'info')
     return redirect(url_for('main.index'))
 
+
+@posts_bp.route('/create', methods=['GET', 'POST'])
+@login_required
+def create():
+    form = PostForm()
+    if form.validate_on_submit():
+        content = form.content.data
+        if not content:
+            flash('المنشور لا يمكن أن يكون فارغاً', 'danger')
+            return redirect(url_for('posts.create'))
+
+        hashtags = extract_hashtags(content)
+
+        post = Post(content=content, user_id=current_user.id)
+        db.session.add(post)
+        db.session.flush()
+
+        for tag_name in hashtags:
+            tag = Hashtag.query.filter_by(name=tag_name).first()
+            if not tag:
+                tag = Hashtag(name=tag_name)
+                db.session.add(tag)
+                db.session.flush()
+            post.hashtags.append(tag)
+
+        db.session.commit()
+        flash('تم نشر المنشور بنجاح!', 'success')
+        return redirect(url_for('main.index'))
+
+    return render_template('posts/create.html', form=form)
+
+@posts_bp.route('/post/<int:post_id>')
+def view_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    return render_template('post_detail.html', post=post)

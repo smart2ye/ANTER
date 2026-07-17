@@ -1,0 +1,28 @@
+name: Build ANTER APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build APK from PWA
+        uses: sudo-self/pwa-to-apk-action@main
+        with:
+          app_url: "https://anter-1.onrender.com/"
+          app_name: "ANTER"
+          app_package: "com.smart2ye.anter"
+          app_icon: ""  # اختياري: ضع رابط أيقونة 512x512 (مثل https://example.com/icon.png)
+
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ANTER-App
+          path: ./app.apk

@@ -1,4 +1,4 @@
-name: Build ANTER APK
+name: Build WebView APK
 
 on:
   push:
@@ -8,21 +8,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build APK from PWA
-        uses: youseftarekdev/pwa-to-apk-action@main
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          app_url: "https://anter-1.onrender.com/"
-          app_name: "ANTER"
-          app_package: "com.smart2ye.anter"
-          app_icon_path: "./icon.png"
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Upload APK as Artifact
+      - name: Build WebView APK
+        run: |
+          git clone https://github.com/youssef-devx/webview-apk.git
+          cd webview-apk
+          echo "const WEB_URL = 'https://anter-1.onrender.com/';" > app/src/main/java/com/webview/app/Config.java
+          # إنشاء ملف الأيقونة (اختياري)
+          cp ../icon.png app/src/main/res/drawable/icon.png || true
+          ./gradlew assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk ../ANTER-App.apk
+          cd ..
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ANTER-App
-          path: ./app.apk
+          path: ./ANTER-App.apk

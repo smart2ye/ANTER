@@ -19,7 +19,7 @@ jobs:
           app_url: "https://anter-1.onrender.com/"
           app_name: "ANTER"
           app_package: "com.smart2ye.anter"
-          app_icon: ""  # اتركه فارغاً أو ضع رابط الأيقونة 512x512
+          app_icon_path: "./icon.png"   # استخدم الصورة المحلية بدلاً من الرابط
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4

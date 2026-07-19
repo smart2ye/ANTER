@@ -8,10 +8,10 @@ let hasMore = true;
 function loadMorePosts() {
     if (loading || !hasMore) return;
     loading = true;
-    
+
     const spinner = document.getElementById('loading-spinner');
     if (spinner) spinner.style.display = 'block';
-    
+
     fetch(`/api/posts?page=${page}`)
         .then(res => res.json())
         .then(data => {
@@ -103,223 +103,56 @@ window.addEventListener('scroll', function() {
 });
 
 // ==============================
-// تأثير الإعجاب
+// تأثير الإعجاب (like-btn) - يعمل مع الأزرار الديناميكية
 // ==============================
 document.addEventListener('click', function(e) {
-    if (e.target.closest('.like-btn')) {
-        const btn = e.target.closest('.like-btn');
-        const postId = btn.dataset.post;
-        fetch(`/posts/like/${postId}`, { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                btn.querySelector('.like-count').textContent = data.count;
-                btn.classList.toggle('btn-primary');
-                btn.classList.toggle('btn-outline-primary');
-                btn.classList.toggle('liked');
-            });
-    }
-});
-
-// ==============================
-// تبديل التعليقات
-// ==============================
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.toggle-comments-btn')) {
-        const btn = e.target.closest('.toggle-comments-btn');
-        const postId = btn.dataset.post;
-        const commentsDiv = document.getElementById('comments-' + postId);
-        if (commentsDiv) {
-            if (commentsDiv.style.display === 'none' || commentsDiv.style.display === '') {
-                commentsDiv.style.display = 'block';
-                // تحميل التعليقات إذا كانت فارغة
-                if (commentsDiv.innerHTML.trim() === '') {
-                    fetch(`/posts/post/${postId}`)
-                        .then(res => res.text())
-                        .then(html => {
-                            const temp = document.createElement('div');
-                            temp.innerHTML = html;
-                            const comments = temp.querySelector('.comment-section');
-                            if (comments) {
-                                commentsDiv.innerHTML = comments.innerHTML;
-                            }
-                        });
-                }
-                btn.innerHTML = '<i class="fas fa-comment"></i> إخفاء التعليقات';
-            } else {
-                commentsDiv.style.display = 'none';
-                const count = commentsDiv.querySelectorAll('.comment-item').length;
-                btn.innerHTML = `<i class="fas fa-comment"></i> (${count})`;
-            }
-        }
-    }
-});
-
-// ==============================
-// نسخ الرابط
-// ==============================
-window.copyLink = function(url) {
-    navigator.clipboard.writeText(url).then(() => {
-        alert('✅ تم نسخ الرابط!');
-    }).catch(() => {
-        const input = document.createElement('input');
-        input.value = url;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-        alert('✅ تم نسخ الرابط!');
+    const btn = e.target.closest('.like-btn');
+    if (!btn) return;
+    const postId = btn.dataset.post;
+    fetch(`/like/${postId}`, {
+        method: 'POST',
+        credentials: 'include'
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.querySelector('.like-count').textContent = data.count;
+        btn.classList.toggle('btn-primary');
+        btn.classList.toggle('btn-outline-primary');
+        btn.classList.toggle('liked');
     });
-};
+});
 
 // ==============================
-// معالجة التفاعلات المتعددة
+// تبديل التعليقات - يعمل مع الأزرار الديناميكية
 // ==============================
 document.addEventListener('click', function(e) {
-    if (e.target.closest('.reaction-option')) {
-        e.preventDefault();
-        const option = e.target.closest('.reaction-option');
-        const postId = option.dataset.post;
-        const reaction = option.dataset.reaction;
-        
-        fetch(`/posts/react/${postId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ reaction: reaction })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                // تحديث أيقونة التفاعل
-                const reactionIcon = document.getElementById(`reaction-icon-${postId}`);
-                const reactionCount = document.getElementById(`reaction-count-${postId}`);
-                const summary = document.getElementById(`reaction-summary-${postId}`);
-                
-                // تحديث الأيقونة
-                const icons = {
-                    'like': '👍',
-                    'love': '🥰',
-                    'haha': '🤣',
-                    'angry': '😡',
-                    'sad': '😢'
-                };
-                
-                if (data.action === 'removed') {
-                    reactionIcon.textContent = '👍'; // أيقونة افتراضية
-                } else {
-                    reactionIcon.textContent = icons[data.reaction] || '👍';
-                }
-                
-                // تحديث العدد الإجمالي
-                const total = Object.values(data.counts).reduce((a, b) => a + b, 0);
-                reactionCount.textContent = total;
-                
-                // تحديث ملخص التفاعلات
-                if (summary) {
-                    let html = '';
-                    for (const [key, count] of Object.entries(data.counts)) {
-                        if (count > 0) {
-                            html += `<span>${icons[key] || '👍'} ${count}</span>`;
+    const btn = e.target.closest('.toggle-comments-btn');
+    if (!btn) return;
+    const postId = btn.dataset.post;
+    const commentsDiv = document.getElementById('comments-' + postId);
+    if (commentsDiv) {
+        if (commentsDiv.style.display === 'none' || commentsDiv.style.display === '') {
+            commentsDiv.style.display = 'block';
+            if (commentsDiv.innerHTML.trim() === '') {
+                fetch(`/api/comments/${postId}`)
+                    .then(res => res.text())
+                    .then(html => {
+                        const temp = document.createElement('div');
+                        temp.innerHTML = html;
+                        const comments = temp.querySelector('.comment-section');
+                        if (comments) {
+                            commentsDiv.innerHTML = comments.innerHTML;
+                            commentsDiv.style.display = "block";
                         }
-                    }
-                    summary.innerHTML = html;
-                }
-                
-                // تحديث لون الزر (إذا كان هناك تفاعل)
-                const btn = option.closest('.dropdown').querySelector('.reaction-btn');
-                if (data.action !== 'removed') {
-                    btn.classList.add('btn-primary');
-                    btn.classList.remove('btn-outline-secondary');
-                } else {
-                    btn.classList.remove('btn-primary');
-                    btn.classList.add('btn-outline-secondary');
-                }
+                    });
             }
-        });
-    }
-});
-
-// ==============================
-// إخفاء المنشور
-// ==============================
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.hide-post-btn')) {
-        const btn = e.target.closest('.hide-post-btn');
-        const postId = btn.dataset.post;
-        
-        if (confirm('هل أنت متأكد من إخفاء هذا المنشور؟')) {
-            fetch(`/posts/hide/${postId}`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // إزالة المنشور من الواجهة
-                    const postElement = document.getElementById(`post-${postId}`);
-                    if (postElement) {
-                        postElement.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                        postElement.style.opacity = '0';
-                        postElement.style.transform = 'scale(0.9)';
-                        setTimeout(() => {
-                            postElement.remove();
-                            // إعادة تحميل الصفحة إذا لم يتبق منشورات
-                            const remainingPosts = document.querySelectorAll('.fb-post');
-                            if (remainingPosts.length === 0) {
-                                location.reload();
-                            }
-                        }, 350);
-                    }
-                } else {
-                    alert('❌ ' + (data.message || 'حدث خطأ أثناء إخفاء المنشور'));
-                }
-            })
-            .catch(() => {
-                alert('❌ حدث خطأ غير متوقع');
-            });
+            btn.innerHTML = '<i class="fas fa-comment"></i> إخفاء التعليقات';
+        } else {
+            commentsDiv.style.display = 'none';
+            const count = commentsDiv.querySelectorAll('.comment-item').length;
+            btn.innerHTML = `<i class="fas fa-comment"></i> (${count})`;
         }
     }
-});
-
-// ==============================
-// تفعيل قائمة المشاركة
-// ==============================
-document.querySelectorAll('.share-dropdown').forEach(el => {
-    el.addEventListener('mouseenter', function() {
-        this.querySelector('.share-options').style.display = 'block';
-    });
-    el.addEventListener('mouseleave', function() {
-        this.querySelector('.share-options').style.display = 'none';
-    });
-});
-
-// ==============================
-// تفعيل قائمة التفاعلات
-// ==============================
-document.querySelectorAll('.reaction-toggle').forEach(el => {
-    el.addEventListener('mouseenter', function() {
-        this.querySelector('.reaction-dropdown').style.display = 'flex';
-    });
-    el.addEventListener('mouseleave', function() {
-        this.querySelector('.reaction-dropdown').style.display = 'none';
-    });
-});
-
-// ==============================
-// تفعيل التعليقات (toggle)
-// ==============================
-document.querySelectorAll('.comment-toggle').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const postId = this.dataset.post;
-        const section = document.getElementById('comments-' + postId);
-        if (section) {
-            section.classList.toggle('open');
-        }
-    });
 });
 
 // ==============================
@@ -340,98 +173,119 @@ window.copyLink = function(url) {
 };
 
 // ==============================
-// معالجة اختيار التفاعل
+// تفعيل قائمة المشاركة (Dropdown)
 // ==============================
+document.addEventListener('mouseenter', function(e) {
+    const el = e.target.closest('.share-dropdown');
+    if (el) {
+        const options = el.querySelector('.share-options');
+        if (options) options.style.display = 'block';
+    }
+}, true);
+document.addEventListener('mouseleave', function(e) {
+    const el = e.target.closest('.share-dropdown');
+    if (el) {
+        const options = el.querySelector('.share-options');
+        if (options) options.style.display = 'none';
+    }
+}, true);
+
+// ==============================
+// تفعيل قائمة التفاعلات (reaction-picker) - يعمل مع الأزرار الديناميكية
+// ==============================
+document.addEventListener('mouseenter', function(e) {
+    const toggle = e.target.closest('.reaction-toggle');
+    if (toggle) {
+        const picker = toggle.querySelector('.reaction-picker');
+        if (picker) picker.style.display = 'flex';
+    }
+}, true);
+document.addEventListener('mouseleave', function(e) {
+    const toggle = e.target.closest('.reaction-toggle');
+    if (toggle) {
+        const picker = toggle.querySelector('.reaction-picker');
+        if (picker) picker.style.display = 'none';
+    }
+}, true);
+
+// ==============================
+// معالجة اختيار التفاعل (reaction-option) - يعمل مع الأزرار الديناميكية
+// ==============================
+const reactionNames = {
+    'like': 'إعجاب',
+    'love': 'حب',
+    'haha': 'أضحكني',
+    'angry': 'أغضبني',
+    'sad': 'أحزنني'
+};
+const reactionIcons = {
+    'like': '👍',
+    'love': '🥰',
+    'haha': '🤣',
+    'angry': '😡',
+    'sad': '😢'
+};
+
 document.addEventListener('click', function(e) {
     const option = e.target.closest('.reaction-option');
     if (!option) return;
-
     e.stopPropagation();
+
     const postId = option.dataset.post;
     const reaction = option.dataset.reaction;
 
-    // أسماء التفاعلات
-    const reactionNames = {
-        'like': 'إعجاب',
-        'love': 'حب',
-        'haha': 'أضحكني',
-        'angry': 'أغضبني',
-        'sad': 'أحزنني'
-    };
-
-    const reactionIcons = {
-        'like': '👍',
-        'love': '🥰',
-        'haha': '🤣',
-        'angry': '😡',
-        'sad': '😢'
-    };
-
-    fetch(`/posts/react/${postId}`, {
+    fetch(`/like/${postId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         },
+        credentials: 'include',
         body: JSON.stringify({ reaction: reaction })
     })
     .then(res => res.json())
     .then(data => {
-        if (data.success) {
-            // تحديث الأيقونة والاسم
-            const iconEl = document.getElementById(`reaction-icon-${postId}`);
-            const labelEl = document.getElementById(`reaction-label-${postId}`);
-            const countEl = document.getElementById(`reaction-count-${postId}`);
-            const displayEl = document.getElementById(`reaction-display-${postId}`);
-            const picker = document.getElementById(`reaction-picker-${postId}`);
-            const summary = document.getElementById(`reaction-summary-${postId}`);
+        // تحديث العدد
+        const countEl = document.getElementById(`reaction-count-${postId}`);
+        if (countEl) countEl.textContent = data.count;
 
-            if (data.action === 'removed') {
-                iconEl.textContent = '👍';
-                labelEl.textContent = 'إعجاب';
-                if (displayEl) displayEl.parentElement.classList.remove('reaction-active');
-            } else {
-                iconEl.textContent = reactionIcons[data.reaction] || '👍';
-                labelEl.textContent = reactionNames[data.reaction] || 'إعجاب';
-                if (displayEl) displayEl.parentElement.classList.add('reaction-active');
-            }
+        // تحديث الأيقونة والاسم
+        const iconEl = document.getElementById(`reaction-icon-${postId}`);
+        const labelEl = document.getElementById(`reaction-label-${postId}`);
+        const summary = document.getElementById(`reaction-summary-${postId}`);
+        const picker = option.closest('.reaction-picker');
 
-            // تحديث العدد الإجمالي
-            const total = Object.values(data.counts).reduce((a, b) => a + b, 0);
-            countEl.textContent = total;
+        if (data.liked) {
+            // تم الإعجاب: اعرض الرمز المختار
+            if (iconEl) iconEl.textContent = reactionIcons[reaction] || '👍';
+            if (labelEl) labelEl.textContent = reactionNames[reaction] || 'إعجاب';
+            const display = iconEl?.closest('.reaction-display');
+            if (display) display.parentElement.classList.add('reaction-active');
+        } else {
+            // تم إزالة الإعجاب: ارجع للرمز الافتراضي
+            if (iconEl) iconEl.textContent = '👍';
+            if (labelEl) labelEl.textContent = 'إعجاب';
+            const display = iconEl?.closest('.reaction-display');
+            if (display) display.parentElement.classList.remove('reaction-active');
+        }
 
-            // تحديث ملخص التفاعلات
-            if (summary) {
-                let html = '';
-                const icons = {
-                    'like': '👍',
-                    'love': '🥰',
-                    'haha': '🤣',
-                    'angry': '😡',
-                    'sad': '😢'
-                };
-                for (const [key, count] of Object.entries(data.counts)) {
-                    if (count > 0) {
-                        html += `<span class="reaction-item">${icons[key]} ${count}</span>`;
-                    }
-                }
-                summary.innerHTML = html;
-            }
+        // تحديث ملخص التفاعلات
+        if (summary) {
+            summary.innerHTML = `<span class="reaction-item">${iconEl ? iconEl.textContent : '👍'} ${data.count}</span>`;
+        }
 
-            // إغلاق القائمة بعد الاختيار
-            if (picker) {
-                picker.style.display = 'none';
-                setTimeout(() => { picker.style.display = ''; }, 100);
-            }
+        // إغلاق القائمة بعد الاختيار
+        if (picker) {
+            picker.style.display = 'none';
+            setTimeout(() => { picker.style.display = ''; }, 100);
+        }
 
-            // تأثير صوتي أو بصري
-            const icon = document.getElementById(`reaction-icon-${postId}`);
-            if (icon) {
-                icon.style.animation = 'none';
-                setTimeout(() => {
-                    icon.style.animation = 'reactionPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                }, 10);
-            }
+        // تأثير حركي
+        if (iconEl) {
+            iconEl.style.animation = 'none';
+            setTimeout(() => {
+                iconEl.style.animation = 'reactionPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            }, 10);
         }
     });
 });
@@ -448,21 +302,54 @@ document.addEventListener('click', function(e) {
 });
 
 // ==============================
-// نظام الأصوات (Web Audio)
+// إخفاء المنشور
+// ==============================
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.hide-post-btn');
+    if (!btn) return;
+    const postId = btn.dataset.post;
+    if (confirm('هل أنت متأكد من إخفاء هذا المنشور؟')) {
+        fetch(`/posts/hide/${postId}`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'include'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const postElement = document.getElementById(`post-${postId}`);
+                if (postElement) {
+                    postElement.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    postElement.style.opacity = '0';
+                    postElement.style.transform = 'scale(0.9)';
+                    setTimeout(() => {
+                        postElement.remove();
+                        const remainingPosts = document.querySelectorAll('.fb-post');
+                        if (remainingPosts.length === 0) location.reload();
+                    }, 350);
+                }
+            } else {
+                alert('❌ ' + (data.message || 'حدث خطأ أثناء إخفاء المنشور'));
+            }
+        })
+        .catch(() => alert('❌ حدث خطأ غير متوقع'));
+    }
+});
+
+// ==============================
+// نظام الأصوات (SoundManager)
 // ==============================
 class SoundManager {
     constructor() {
         this.enabled = localStorage.getItem('soundEnabled') !== 'false';
         this.ctx = null;
     }
-
     _getContext() {
         if (!this.ctx) {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         }
         return this.ctx;
     }
-
     _playTone(frequency, duration, type = 'sine', volume = 0.3) {
         if (!this.enabled) return;
         try {
@@ -477,162 +364,19 @@ class SoundManager {
             gain.connect(ctx.destination);
             osc.start();
             osc.stop(ctx.currentTime + duration);
-        } catch (e) {
-            // تجاهل الأخطاء
-        }
+        } catch (e) {}
     }
-
-    // صوت الإشعار (نغمة مزدوجة)
-    notification() {
-        this._playTone(800, 0.15, 'sine', 0.3);
-        setTimeout(() => this._playTone(1000, 0.15, 'sine', 0.25), 150);
-    }
-
-    // صوت الإعجاب (نغمة قصيرة)
-    like() {
-        this._playTone(1200, 0.1, 'sine', 0.2);
-    }
-
-    // صوت النشر (نغمة تصاعدية)
-    publish() {
-        this._playTone(600, 0.1, 'sine', 0.2);
-        setTimeout(() => this._playTone(800, 0.1, 'sine', 0.2), 100);
-        setTimeout(() => this._playTone(1000, 0.15, 'sine', 0.25), 200);
-    }
-
-    // صوت المتابعة
-    follow() {
-        this._playTone(700, 0.12, 'sine', 0.2);
-        setTimeout(() => this._playTone(900, 0.12, 'sine', 0.2), 120);
-    }
-
-    toggle() {
-        this.enabled = !this.enabled;
-        localStorage.setItem('soundEnabled', this.enabled);
-        return this.enabled;
-    }
+    notification() { this._playTone(800, 0.15, 'sine', 0.3); setTimeout(() => this._playTone(1000, 0.15, 'sine', 0.25), 150); }
+    like() { this._playTone(1200, 0.1, 'sine', 0.2); }
+    publish() { this._playTone(600, 0.1, 'sine', 0.2); setTimeout(() => this._playTone(800, 0.1, 'sine', 0.2), 100); setTimeout(() => this._playTone(1000, 0.15, 'sine', 0.25), 200); }
+    follow() { this._playTone(700, 0.12, 'sine', 0.2); setTimeout(() => this._playTone(900, 0.12, 'sine', 0.2), 120); }
+    toggle() { this.enabled = !this.enabled; localStorage.setItem('soundEnabled', this.enabled); return this.enabled; }
 }
-
 const sounds = new SoundManager();
 
-// ==============================
 // ربط الأصوات بالأحداث
-// ==============================
-
-// عند الإعجاب
 document.addEventListener('click', function(e) {
-    if (e.target.closest('.like-btn, .reaction-option')) {
-        sounds.like();
-    }
-});
-
-// عند النشر (مراقبة نجاح النشر)
-document.addEventListener('DOMContentLoaded', function() {
-    const quickForm = document.getElementById('quickPostForm');
-    if (quickForm) {
-        const originalSubmit = quickForm.submit;
-        quickForm.addEventListener('submit', function() {
-            setTimeout(() => sounds.publish(), 300);
-        });
-    }
-});
-
-// عند متابعة
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.follow-btn')) {
-        setTimeout(() => sounds.follow(), 300);
-    }
-});
-
-// عند وصول إشعار (SSE)
-if (typeof EventSource !== 'undefined') {
-    const eventSource = new EventSource('/sse/notifications');
-    eventSource.onmessage = function(e) {
-        try {
-            const data = JSON.parse(e.data);
-            if (data.count > 0) {
-                sounds.notification();
-            }
-        } catch (err) {}
-    };
-}
-
-// تبديل الصوت (زر مخفي في الإعدادات)
-// يمكن إضافة زر في settings.html
-
-// ============================================
-// نظام الأصوات (Sound Effects)
-// ============================================
-const SoundManager = {
-    sounds: {},
-    isMuted: localStorage.getItem('sound_muted') === 'true',
-
-    init() {
-        // تحميل الأصوات
-        this.sounds = {
-            notification: new Audio('/static/sounds/notification.mp3'),
-            like: new Audio('/static/sounds/like.mp3'),
-            comment: new Audio('/static/sounds/comment.mp3'),
-            post: new Audio('/static/sounds/post.mp3')
-        };
-
-        // زر التحكم بالصوت
-        this.createToggleButton();
-    },
-
-    createToggleButton() {
-        const btn = document.createElement('button');
-        btn.className = 'sound-toggle';
-        btn.innerHTML = this.isMuted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
-        btn.title = 'تشغيل/إيقاف الأصوات';
-        document.body.appendChild(btn);
-
-        btn.addEventListener('click', () => {
-            this.isMuted = !this.isMuted;
-            localStorage.setItem('sound_muted', this.isMuted);
-            btn.innerHTML = this.isMuted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
-            if (!this.isMuted) {
-                this.play('notification'); // اختبار الصوت
-            }
-        });
-    },
-
-    play(soundName) {
-        if (this.isMuted) return;
-        const sound = this.sounds[soundName];
-        if (sound) {
-            sound.currentTime = 0;
-            sound.play().catch(() => {});
-        }
-    }
-};
-
-// ==============================
-// تشغيل الأصوات عند الأحداث
-// ==============================
-document.addEventListener('DOMContentLoaded', () => {
-    SoundManager.init();
-
-    // صوت عند الإعجاب
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.reaction-option') || e.target.closest('.like-btn')) {
-            SoundManager.play('like');
-        }
-    });
-
-    // صوت عند التعليق
-    document.addEventListener('submit', function(e) {
-        if (e.target.closest('.comment-form')) {
-            setTimeout(() => SoundManager.play('comment'), 200);
-        }
-    });
-
-    // صوت عند النشر
-    document.addEventListener('submit', function(e) {
-        if (e.target.closest('#quickPostForm') || e.target.closest('form[action*="/posts/create"]')) {
-            setTimeout(() => SoundManager.play('post'), 300);
-        }
-    });
+    if (e.target.closest('.like-btn, .reaction-option')) sounds.like();
 });
 
 // ==============================
@@ -648,10 +392,7 @@ if (document.getElementById('notif-badge')) {
                 badge.textContent = data.count;
                 badge.style.display = data.count > 0 ? 'block' : 'none';
             }
-            // تشغيل صوت الإشعار
-            if (data.count > 0) {
-                SoundManager.play('notification');
-            }
+            if (data.count > 0) sounds.notification();
         } catch(err) {}
     };
     eventSource.onerror = function() {

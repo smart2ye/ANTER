@@ -14,12 +14,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build APK from PWA
-        uses: shubham-singh-08/pwa-to-apk-action@v2
+        uses: youseftarekdev/pwa-to-apk-action@main
         with:
           app_url: "https://anter-1.onrender.com/"
           app_name: "ANTER"
           app_package: "com.smart2ye.anter"
-          app_icon_path: "./icon.png"   # استخدم الصورة المحلية بدلاً من الرابط
+          app_icon_path: "./icon.png"
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4

@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import or_
+from sqlalchemy.exc import SQLAlchemyError
+import os
 
 from app.extensions import db, csrf
 from app.models import Message, User, Notification, CallSignal
@@ -97,25 +99,44 @@ def send(user_id):
     other = User.query.get_or_404(user_id)
     content = request.form.get('content', '').strip()
     uploaded_audio = request.files.get('audio')
-    audio_path = save_audio_file(uploaded_audio)
+    audio_path = ''
+
+    if uploaded_audio and uploaded_audio.filename:
+        try:
+            audio_path = save_audio_file(uploaded_audio)
+        except OSError:
+            current_app.logger.exception('تعذر حفظ ملف الرسالة الصوتية')
+            flash('تعذر حفظ الرسالة الصوتية حاليًا. حاول مجددًا.', 'danger')
+            return redirect(url_for('messages.chat', user_id=user_id))
 
     if content or audio_path:
-        message = Message(
-            sender_id=current_user.id,
-            receiver_id=other.id,
-            content=content,
-            audio_path=audio_path or None,
-        )
-        db.session.add(message)
-        notification_action = 'voice_message' if audio_path else 'message'
-        notification = Notification(
-            user_id=other.id,
-            actor_id=current_user.id,
-            action=notification_action,
-        )
-        db.session.add(notification)
-        db.session.commit()
-        flash('تم إرسال الرسالة.', 'success')
+        try:
+            message = Message(
+                sender_id=current_user.id,
+                receiver_id=other.id,
+                content=content,
+                audio_path=audio_path or None,
+            )
+            db.session.add(message)
+            notification_action = 'voice_message' if audio_path else 'message'
+            notification = Notification(
+                user_id=other.id,
+                actor_id=current_user.id,
+                action=notification_action,
+            )
+            db.session.add(notification)
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
+            if audio_path:
+                try:
+                    os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], audio_path))
+                except OSError:
+                    pass
+            current_app.logger.exception('تعذر إرسال الرسالة')
+            flash('تعذر إرسال الرسالة حاليًا. حاول مجددًا.', 'danger')
+        else:
+            flash('تم إرسال الرسالة.', 'success')
     elif uploaded_audio and uploaded_audio.filename:
         flash('صيغة الرسالة الصوتية غير مدعومة.', 'danger')
     else:

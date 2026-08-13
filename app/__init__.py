@@ -5,6 +5,7 @@ from app.models import User
 from app.routes import register_blueprints
 import os
 import secrets
+from datetime import datetime, timedelta
 
 def create_app():
     app = Flask(__name__)
@@ -73,9 +74,19 @@ def create_app():
     @app.before_request
     def update_last_seen():
         from flask_login import current_user
-        from datetime import datetime
-        if current_user.is_authenticated:
-            current_user.last_seen = datetime.utcnow()
+        if not current_user.is_authenticated:
+            return
+
+        # لا نكتب في قاعدة البيانات مع كل طلب (خصوصًا طلبات polling للمكالمة).
+        now = datetime.utcnow()
+        last_seen = current_user.last_seen
+        if last_seen and now - last_seen < timedelta(minutes=2):
+            return
+
+        current_user.last_seen = now
+        try:
             db.session.commit()
+        except Exception:
+            db.session.rollback()
 
     return app

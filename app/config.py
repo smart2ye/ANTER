@@ -12,15 +12,22 @@ if DATABASE_URI.startswith('postgres://'):
 DEFAULT_UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static/uploads')
 UPLOAD_FOLDER = os.path.abspath(os.environ.get('UPLOAD_FOLDER', DEFAULT_UPLOAD_FOLDER))
 
+if DATABASE_URI.startswith('sqlite'):
+    DATABASE_ENGINE_OPTIONS = {
+        'connect_args': {'check_same_thread': False, 'timeout': 30},
+    }
+else:
+    DATABASE_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 280,
+    }
+
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-change-in-production'
     SQLALCHEMY_DATABASE_URI = DATABASE_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_pre_ping': True,
-        'pool_recycle': 280,
-    }
+    SQLALCHEMY_ENGINE_OPTIONS = DATABASE_ENGINE_OPTIONS
     UPLOAD_FOLDER = UPLOAD_FOLDER
     MAX_CONTENT_LENGTH = 200 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}

@@ -58,7 +58,7 @@ def logout():
     log_user_activity(current_user.id, "logout")
     logout_user()
     flash('✅ تم تسجيل الخروج بنجاح، نراكم قريباً!', 'success')
-    return redirect(url_for('main.index'))
+    return redirect(url_for('auth.login'))
 
 @auth_bp.route('/reset_password_request', methods=['GET', 'POST'])
 def reset_password_request():

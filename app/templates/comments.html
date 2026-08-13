@@ -1,31 +1,46 @@
 <!-- ============================== -->
-<!-- قائمة التعليقات -->
+<!-- بطاقة التعليقات المشتركة -->
 <!-- ============================== -->
 <div class="comments-list">
-    {% if post.comments %}
-        {% for comment in post.comments %}
-        <div class="comment-item" id="comment-{{ comment.id }}">
-            <img src="{{ url_for('static', filename='uploads/' + comment.author.avatar) }}"
-                 class="comment-avatar"
-                 alt="{{ comment.author.name }}">
+    {% for comment in post.comments.order_by('created_at').all() %}
+        {% set user_comment_like = comment.likes.filter_by(user_id=current_user.id).first() if current_user.is_authenticated else none %}
+        <article class="comment-card comment-item" id="comment-{{ comment.id }}" data-comment-id="{{ comment.id }}">
+            <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-avatar-link" aria-label="{{ comment.author.name }}">
+                <img src="{{ url_for('static', filename='uploads/' + comment.author.avatar) }}"
+                     class="comment-avatar"
+                     alt="{{ comment.author.name }}">
+            </a>
             <div class="comment-content">
-                <div class="comment-author">
-                    {{ comment.author.name }}
-                    {% if comment.author.is_verified %}
-                        <i class="fas fa-check-circle verified-badge" style="font-size: 0.6rem;" title="حساب موثق"></i>
-                    {% endif %}
-                    <span class="comment-time">· {{ comment.created_at.strftime('%H:%M · %d/%m') }}</span>
+                <div class="comment-header">
+                    <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-author">
+                        {{ comment.author.name }}
+                        {% if comment.author.is_verified %}
+                            <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>
+                        {% endif %}
+                    </a>
+                    <time class="comment-time" datetime="{{ comment.created_at.isoformat() }}">
+                        {{ comment.created_at.strftime('%H:%M · %d/%m') }}
+                    </time>
                 </div>
                 <div class="comment-text">{{ comment.content }}</div>
+                <div class="comment-actions">
+                    <button type="button"
+                            class="comment-like-btn{% if user_comment_like %} liked{% endif %}"
+                            data-comment="{{ comment.id }}"
+                            aria-pressed="{{ 'true' if user_comment_like else 'false' }}">
+                        <i class="{% if user_comment_like %}fas{% else %}far{% endif %} fa-heart"></i>
+                        <span class="comment-like-label">إعجاب</span>
+                        <span class="comment-like-count">{{ comment.like_count() }}</span>
+                    </button>
+                </div>
             </div>
-        </div>
-        {% endfor %}
+        </article>
     {% else %}
-        <div class="text-center text-muted py-3">
-            <i class="far fa-comment-dots fa-2x mb-2" style="opacity: 0.3;"></i>
+        <div class="comments-empty text-center text-muted py-3">
+            <i class="far fa-comment-dots fa-2x mb-2" aria-hidden="true"></i>
             <p class="mb-0 small">لا توجد تعليقات بعد، كن أول من يعلق!</p>
         </div>
-    {% endif %}
+    {% endfor %}
 </div>
 
 <!-- ============================== -->
@@ -48,7 +63,7 @@
                        required
                        style="background: var(--fb-bg); border: 1px solid var(--fb-border);">
             </div>
-            <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">
+            <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3" aria-label="إرسال التعليق">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>

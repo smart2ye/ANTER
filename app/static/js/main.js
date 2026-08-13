@@ -18,7 +18,7 @@ function loadMorePosts() {
             if (data.posts && data.posts.length > 0) {
                 const container = document.getElementById('posts-container');
                 data.posts.forEach(post => {
-                    const postHtml = createPostHtml(post);
+                    const postHtml = post.html || createPostHtml(post);
                     container.insertAdjacentHTML('beforeend', postHtml);
                 });
                 hasMore = data.has_next;
@@ -36,63 +36,8 @@ function loadMorePosts() {
 }
 
 function createPostHtml(post) {
-    return `
-        <div class="fb-post">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-1">
-                    <a href="/users/${post.author.username}">
-                        <img src="/static/uploads/${post.author.avatar}" class="post-avatar me-2" width="32" height="32" style="border-radius: 50%; object-fit: cover;">
-                    </a>
-                    <div>
-                        <a href="/users/${post.author.username}" class="text-decoration-none">
-                            <strong class="post-author-name" style="font-size: 0.9rem;">
-                                ${post.author.name}
-                                ${post.author.is_verified ? '<i class="fas fa-check-circle text-primary" style="font-size: 0.6rem;" title="حساب موثق"></i>' : ''}
-                            </strong>
-                        </a>
-                        <small class="post-username d-block" style="font-size: 0.65rem;">@${post.author.username}</small>
-                    </div>
-                    <small class="text-muted ms-auto" style="font-size: 0.6rem;">${post.created_at}</small>
-                </div>
-                <p class="post-content" style="font-size: 0.9rem;">${post.content}</p>
-                ${post.image ? `<img src="/static/uploads/${post.image}" class="post-image" style="max-height: 200px; width: 100%; object-fit: cover; border-radius: 8px;">` : ''}
-                <div class="post-actions mt-1 pt-1">
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-primary like-btn py-0 px-2" style="font-size: 0.7rem;" data-post="${post.id}">
-                            <i class="fas fa-thumbs-up"></i> <span class="like-count">${post.like_count}</span>
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary toggle-comments-btn py-0 px-2" style="font-size: 0.7rem;" data-post="${post.id}">
-                            <i class="fas fa-comment"></i> (${post.comment_count})
-                        </button>
-                        <div class="dropdown d-inline-block">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-0 px-2" style="font-size: 0.7rem;" type="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-share"></i>
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item small" href="#" onclick="copyLink('${post_url}')"><i class="fas fa-copy"></i> نسخ الرابط</a></li>
-                                <li><a class="dropdown-item small" href="https://wa.me/?text=${post_url}" target="_blank"><i class="fab fa-whatsapp"></i> واتساب</a></li>
-                                <li><a class="dropdown-item small" href="https://twitter.com/intent/tweet?url=${post_url}" target="_blank"><i class="fab fa-twitter"></i> تويتر</a></li>
-                                <li><a class="dropdown-item small" href="https://www.facebook.com/sharer/sharer.php?u=${post_url}" target="_blank"><i class="fab fa-facebook"></i> فيسبوك</a></li>
-                            </ul>
-                        </div>
-                        <a href="/posts/post/${post.id}" class="btn btn-sm btn-outline-info py-0 px-2" style="font-size: 0.7rem;">
-                            <i class="fas fa-external-link-alt"></i>
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger report-btn py-0 px-2" style="font-size: 0.7rem;" data-post="${post.id}" data-bs-toggle="modal" data-bs-target="#reportModal">
-                            <i class="fas fa-flag"></i>
-                        </button>
-                    </div>
-                    ${post.is_author ? `
-                        <div class="d-flex gap-1">
-                            <a href="/posts/edit/${post.id}" class="btn btn-sm btn-warning py-0 px-2" style="font-size: 0.7rem;"><i class="fas fa-edit"></i></a>
-                            <button class="btn btn-sm btn-danger delete-post py-0 px-2" style="font-size: 0.7rem;" data-post="${post.id}"><i class="fas fa-trash"></i></button>
-                        </div>
-                    ` : ''}
-                </div>
-                <div id="comments-${post.id}" class="mt-2 comment-section" style="display: none;"></div>
-            </div>
-        </div>
-    `;
+    // يجب أن تأتي البطاقات الديناميكية من نفس القالب المشترك المستخدم في بقية المسارات.
+    return post.html || '';
 }
 
 // اكتشاف التمرير للأسفل
@@ -126,33 +71,95 @@ document.addEventListener('click', function(e) {
 // تبديل التعليقات - يعمل مع الأزرار الديناميكية
 // ==============================
 document.addEventListener('click', function(e) {
-    const btn = e.target.closest('.toggle-comments-btn');
+    const btn = e.target.closest('.toggle-comments-btn, .comment-toggle');
     if (!btn) return;
+
     const postId = btn.dataset.post;
     const commentsDiv = document.getElementById('comments-' + postId);
-    if (commentsDiv) {
-        if (commentsDiv.style.display === 'none' || commentsDiv.style.display === '') {
-            commentsDiv.style.display = 'block';
-            if (commentsDiv.innerHTML.trim() === '') {
-                fetch(`/api/comments/${postId}`)
-                    .then(res => res.text())
-                    .then(html => {
-                        const temp = document.createElement('div');
-                        temp.innerHTML = html;
-                        const comments = temp.querySelector('.comment-section');
-                        if (comments) {
-                            commentsDiv.innerHTML = comments.innerHTML;
-                            commentsDiv.style.display = "block";
-                        }
-                    });
-            }
+    if (!commentsDiv) return;
+
+    const isOpen = commentsDiv.classList.contains('open');
+    if (!isOpen) {
+        commentsDiv.style.display = 'block';
+        requestAnimationFrame(() => commentsDiv.classList.add('open'));
+
+        // التعليقات مضمّنة مسبقًا في البطاقات المشتركة.
+        // استخدم API فقط للأزرار القديمة التي لا تحتوي محتوى مسبقًا.
+        if (commentsDiv.innerHTML.trim() === '' && btn.classList.contains('toggle-comments-btn')) {
+            fetch(`/api/comments/${postId}`)
+                .then(res => res.text())
+                .then(html => {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = html;
+                    const comments = temp.querySelector('.comment-section');
+                    if (comments) commentsDiv.innerHTML = comments.innerHTML;
+                });
+        }
+
+        if (btn.classList.contains('toggle-comments-btn')) {
             btn.innerHTML = '<i class="fas fa-comment"></i> إخفاء التعليقات';
-        } else {
-            commentsDiv.style.display = 'none';
+        }
+    } else {
+        commentsDiv.classList.remove('open');
+        window.setTimeout(() => {
+            if (!commentsDiv.classList.contains('open')) commentsDiv.style.display = 'none';
+        }, 280);
+
+        if (btn.classList.contains('toggle-comments-btn')) {
             const count = commentsDiv.querySelectorAll('.comment-item').length;
             btn.innerHTML = `<i class="fas fa-comment"></i> (${count})`;
         }
     }
+});
+
+// ==============================
+// تفاعل الإعجاب على التعليقات
+// ==============================
+function updateCommentLikeState(btn, liked, countValue, animate = false) {
+    const count = btn.querySelector('.comment-like-count');
+    const icon = btn.querySelector('i');
+    if (count) count.textContent = countValue > 0 ? countValue : '';
+    btn.classList.toggle('liked', liked);
+    btn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+    if (icon) icon.className = `${liked ? 'fas' : 'far'} fa-heart`;
+    if (animate) {
+        btn.classList.remove('just-liked');
+        requestAnimationFrame(() => btn.classList.add('just-liked'));
+    }
+}
+
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.comment-like-btn');
+    if (!btn) return;
+
+    const commentId = btn.dataset.comment;
+    if (!commentId || btn.dataset.loading === 'true') return;
+
+    const countEl = btn.querySelector('.comment-like-count');
+    const wasLiked = btn.classList.contains('liked');
+    const previousCount = Number.parseInt(countEl?.textContent || '0', 10) || 0;
+    const optimisticLiked = !wasLiked;
+    const optimisticCount = Math.max(0, previousCount + (optimisticLiked ? 1 : -1));
+
+    btn.dataset.loading = 'true';
+    btn.classList.add('is-loading');
+    updateCommentLikeState(btn, optimisticLiked, optimisticCount, optimisticLiked);
+
+    fetch(`/like_comment/${commentId}`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'include'
+    })
+        .then(res => {
+            if (!res.ok) throw new Error('comment like request failed');
+            return res.json();
+        })
+        .then(data => updateCommentLikeState(btn, Boolean(data.liked), Number(data.count) || 0, Boolean(data.liked)))
+        .catch(() => updateCommentLikeState(btn, wasLiked, previousCount, false))
+        .finally(() => {
+            btn.dataset.loading = 'false';
+            btn.classList.remove('is-loading');
+        });
 });
 
 // ==============================
@@ -233,6 +240,18 @@ document.addEventListener('click', function(e) {
 
     const postId = option.dataset.post;
     const reaction = option.dataset.reaction;
+    if (!postId || option.dataset.loading === 'true') return;
+
+    const wrapper = option.closest('.reaction-wrapper');
+    const toggle = wrapper?.querySelector('.reaction-toggle');
+    const iconEl = document.getElementById(`reaction-icon-${postId}`);
+    const labelEl = document.getElementById(`reaction-label-${postId}`);
+    const countEl = document.getElementById(`reaction-count-${postId}`);
+    const summary = document.getElementById(`reaction-summary-${postId}`);
+    const picker = option.closest('.reaction-picker');
+
+    option.dataset.loading = 'true';
+    toggle?.classList.add('is-loading');
 
     fetch(`/like/${postId}`, {
         method: 'POST',
@@ -243,51 +262,39 @@ document.addEventListener('click', function(e) {
         credentials: 'include',
         body: JSON.stringify({ reaction: reaction })
     })
-    .then(res => res.json())
-    .then(data => {
-        // تحديث العدد
-        const countEl = document.getElementById(`reaction-count-${postId}`);
-        if (countEl) countEl.textContent = data.count;
+        .then(res => {
+            if (!res.ok) throw new Error('reaction request failed');
+            return res.json();
+        })
+        .then(data => {
+            const liked = Boolean(data.liked);
+            if (countEl) countEl.textContent = data.count ?? 0;
+            if (iconEl) iconEl.textContent = liked ? (reactionIcons[reaction] || '👍') : '👍';
+            if (labelEl) labelEl.textContent = liked ? (reactionNames[reaction] || 'إعجاب') : 'إعجاب';
+            toggle?.classList.toggle('reaction-active', liked);
 
-        // تحديث الأيقونة والاسم
-        const iconEl = document.getElementById(`reaction-icon-${postId}`);
-        const labelEl = document.getElementById(`reaction-label-${postId}`);
-        const summary = document.getElementById(`reaction-summary-${postId}`);
-        const picker = option.closest('.reaction-picker');
+            if (summary) {
+                summary.innerHTML = `<span class="reaction-item">${iconEl ? iconEl.textContent : '👍'} ${data.count ?? 0}</span>`;
+            }
 
-        if (data.liked) {
-            // تم الإعجاب: اعرض الرمز المختار
-            if (iconEl) iconEl.textContent = reactionIcons[reaction] || '👍';
-            if (labelEl) labelEl.textContent = reactionNames[reaction] || 'إعجاب';
-            const display = iconEl?.closest('.reaction-display');
-            if (display) display.parentElement.classList.add('reaction-active');
-        } else {
-            // تم إزالة الإعجاب: ارجع للرمز الافتراضي
-            if (iconEl) iconEl.textContent = '👍';
-            if (labelEl) labelEl.textContent = 'إعجاب';
-            const display = iconEl?.closest('.reaction-display');
-            if (display) display.parentElement.classList.remove('reaction-active');
-        }
+            if (iconEl) {
+                iconEl.classList.remove('reaction-just-selected');
+                requestAnimationFrame(() => iconEl.classList.add('reaction-just-selected'));
+            }
 
-        // تحديث ملخص التفاعلات
-        if (summary) {
-            summary.innerHTML = `<span class="reaction-item">${iconEl ? iconEl.textContent : '👍'} ${data.count}</span>`;
-        }
-
-        // إغلاق القائمة بعد الاختيار
-        if (picker) {
-            picker.style.display = 'none';
-            setTimeout(() => { picker.style.display = ''; }, 100);
-        }
-
-        // تأثير حركي
-        if (iconEl) {
-            iconEl.style.animation = 'none';
-            setTimeout(() => {
-                iconEl.style.animation = 'reactionPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
-            }, 10);
-        }
-    });
+            if (picker) {
+                picker.classList.add('selection-complete');
+                window.setTimeout(() => picker.classList.remove('selection-complete'), 220);
+            }
+        })
+        .catch(() => {
+            toggle?.classList.add('reaction-error');
+            window.setTimeout(() => toggle?.classList.remove('reaction-error'), 500);
+        })
+        .finally(() => {
+            option.dataset.loading = 'false';
+            toggle?.classList.remove('is-loading');
+        });
 });
 
 // ==============================
@@ -376,7 +383,7 @@ const sounds = new SoundManager();
 
 // ربط الأصوات بالأحداث
 document.addEventListener('click', function(e) {
-    if (e.target.closest('.like-btn, .reaction-option')) sounds.like();
+    if (e.target.closest('.like-btn, .reaction-option, .comment-like-btn')) sounds.like();
 });
 
 // ==============================

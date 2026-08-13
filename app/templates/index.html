@@ -47,6 +47,7 @@
                 </div>
                 
                 <form method="POST" action="{{ url_for('posts.create') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
                     <div class="mb-3">
                         <textarea name="content" class="form-control border-0 shadow-none" 
                                   rows="4" placeholder="ماذا يحدث في ذهنك؟..." 
@@ -192,26 +193,6 @@
         document.getElementById('quickPreviewImg').src = '#';
     }
 
-    // تبديل التعليقات
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.toggle-comments-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const postId = this.dataset.post;
-                const commentsDiv = document.getElementById('comments-' + postId);
-                if (commentsDiv) {
-                    if (commentsDiv.style.display === 'none' || commentsDiv.style.display === '') {
-                        commentsDiv.style.display = 'block';
-                        this.innerHTML = '<i class="fas fa-comment"></i> إخفاء التعليقات';
-                    } else {
-                        commentsDiv.style.display = 'none';
-                        const count = commentsDiv.querySelectorAll('.comment-item').length;
-                        this.innerHTML = '<i class="fas fa-comment"></i> (' + count + ')';
-                    }
-                }
-            });
-        });
-    });
-
     // نسخ الرابط
     window.copyLink = function(url) {
         navigator.clipboard.writeText(url).then(() => {
@@ -226,21 +207,6 @@
             alert('✅ تم نسخ الرابط!');
         });
     };
-
-    // الإعجاب
-    document.querySelectorAll('.like-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const postId = this.dataset.post;
-            fetch('/posts/like/' + postId, { method: 'POST' })
-                .then(function(res) { return res.json(); })
-                .then(function(data) {
-                    this.querySelector('.like-count').textContent = data.count;
-                    this.classList.toggle('btn-primary');
-                    this.classList.toggle('btn-outline-primary');
-                    this.classList.toggle('liked');
-                }.bind(this));
-        });
-    });
 
     // حذف المنشور
     document.querySelectorAll('.delete-post').forEach(function(btn) {

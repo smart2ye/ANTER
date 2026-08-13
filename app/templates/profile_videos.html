@@ -4,7 +4,7 @@
     <div class="d-flex align-items-center">
         <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" class="profile-avatar me-4">
         <div class="flex-grow-1">
-            <h4 class="profile-name">{{ user.name }}{% if user.is_verified %} <i class="fas fa-check-circle text-primary" style="font-size: 1rem;" title="حساب موثق"></i>{% endif %}</h4>
+            <h4 class="profile-name">{{ user.name }}{% if user.is_verified %} <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>{% endif %}</h4>
             <p class="post-username">@{{ user.username }}</p>
             <div class="profile-status mt-1">
                 {{ get_status_icon(user)|safe }}

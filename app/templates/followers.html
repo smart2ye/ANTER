@@ -12,7 +12,7 @@
                     {{ user.name }}
                 </a>
                 {% if user.is_verified %}
-                    <i class="fas fa-check-circle text-primary" style="font-size: 0.8rem;"></i>
+                    <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>
                 {% endif %}
             </h5>
             <small class="text-muted">@{{ user.username }}</small>
@@ -48,7 +48,7 @@
                 <a href="{{ url_for('users.profile', username=u.username) }}" class="text-decoration-none text-dark">
                     <strong>{{ u.name }}</strong>
                     {% if u.is_verified %}
-                        <i class="fas fa-check-circle text-primary" style="font-size: 0.7rem;"></i>
+                        <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>
                     {% endif %}
                 </a>
                 <br>

@@ -137,7 +137,8 @@ def api_posts():
             'like_count': post.like_count(),
             'comment_count': post.comment_count(),
             'is_author': post.author_id == current_user.id,
-            'is_suggested': post in top_suggested
+            'is_suggested': post in top_suggested,
+            'html': render_template('_post_card.html', post=post)
         })
     return jsonify({'posts': data, 'has_next': has_next})
 

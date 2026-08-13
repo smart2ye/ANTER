@@ -1,7 +1,7 @@
 from flask import Flask, session
 from app.config import Config
 from app.extensions import db, login_manager, csrf
-from app.models import User
+from app.models import User, CallSignal
 from app.routes import register_blueprints
 import os
 import secrets
@@ -35,6 +35,8 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        # إنشاء جدول إشارات المكالمات صراحةً على قواعد الإنتاج القائمة.
+        CallSignal.__table__.create(bind=db.engine, checkfirst=True)
         # ترحيل خفيف للتوافق مع قواعد البيانات الموجودة قبل إضافة الرسائل الصوتية.
         from sqlalchemy import inspect, text
         inspector = inspect(db.engine)

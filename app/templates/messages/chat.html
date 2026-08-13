@@ -1,67 +1,464 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="d-flex align-items-center mb-3">
-    <a href="{{ url_for('messages.inbox') }}" class="btn btn-outline-secondary btn-sm me-2"><i class="fas fa-arrow-right"></i></a>
-    <img src="{{ url_for('static', filename='uploads/' + other.avatar) }}" width="40" height="40" class="rounded-circle me-2" style="object-fit: cover;">
-    <h6 class="mb-0">{{ other.name }}</h6>
-    <span class="badge bg-secondary ms-2">@{{ other.username }}</span>
-</div>
-
-<div class="chat-box border rounded p-2" style="height: 400px; overflow-y: auto; background: #f8f9fa;">
-    {% if messages %}
-        {% for msg in messages %}
-            <div class="d-flex mb-2 {% if msg.sender_id == current_user.id %}justify-content-end{% endif %}">
-                <div class="p-2 rounded {% if msg.sender_id == current_user.id %}bg-primary text-white{% else %}bg-white border{% endif %}" style="max-width: 75%;">
-                    {{ msg.content }}
-                    <br><small class="{% if msg.sender_id == current_user.id %}text-light{% else %}text-muted{% endif %}">{{ msg.created_at.strftime('%H:%M') }}</small>
-                </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <div class="text-center text-muted mt-5">
-            <i class="fas fa-comment-dots fa-3x mb-2"></i>
-            <p>لا توجد رسائل بعد. ابدأ المحادثة!</p>
+<section class="chat-page" data-user-id="{{ other.id }}">
+    <header class="chat-header d-flex align-items-center gap-2 mb-3">
+        <a href="{{ url_for('messages.inbox') }}" class="btn btn-light chat-back" aria-label="العودة إلى الرسائل">
+            <i class="fas fa-arrow-right"></i>
+        </a>
+        <img src="{{ url_for('static', filename='uploads/' + other.avatar) }}" width="44" height="44" class="rounded-circle" style="object-fit: cover;" alt="{{ other.name }}">
+        <div class="flex-grow-1">
+            <h1 class="h6 mb-0 fw-bold">{{ other.name }}</h1>
+            <span class="text-muted small">@{{ other.username }}</span>
         </div>
-    {% endif %}
-</div>
+        <button class="btn btn-outline-primary call-button" type="button" id="voiceCallButton" aria-label="بدء مكالمة صوتية" title="بدء مكالمة صوتية">
+            <i class="fas fa-phone-alt"></i>
+        </button>
+        <span class="badge text-bg-light border"><i class="fas fa-shield-alt me-1"></i>محادثة خاصة</span>
+    </header>
 
-<form method="POST" action="{{ url_for('messages.send', user_id=other.id) }}" class="mt-2" id="messageForm">
-    <div class="input-group">
-        <input type="text" name="content" id="messageInput" class="form-control" placeholder="اكتب رسالة..." required autofocus>
-        <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i></button>
+    <div class="chat-box" id="chatBox" aria-live="polite">
+        {% if messages %}
+            {% for msg in messages %}
+                <article class="message-row {% if msg.sender_id == current_user.id %}is-sent{% else %}is-received{% endif %}">
+                    <div class="message-bubble">
+                        {% if msg.content %}
+                            <p class="message-text mb-1">{{ msg.content }}</p>
+                        {% endif %}
+                        {% if msg.audio_path %}
+                            <div class="voice-message" data-audio-message>
+                                <div class="voice-message-label"><i class="fas fa-microphone"></i> رسالة صوتية</div>
+                                <audio controls preload="metadata" class="voice-audio">
+                                    <source src="{{ url_for('static', filename='uploads/' + msg.audio_path) }}">
+                                    متصفحك لا يدعم تشغيل الرسائل الصوتية.
+                                </audio>
+                            </div>
+                        {% endif %}
+                        <time class="message-time" datetime="{{ msg.created_at.isoformat() }}">{{ msg.created_at.strftime('%H:%M') }}</time>
+                    </div>
+                </article>
+            {% endfor %}
+        {% else %}
+            <div class="chat-empty text-center text-muted" id="chatEmpty">
+                <i class="fas fa-comment-dots fa-3x mb-3"></i>
+                <p class="mb-0">لا توجد رسائل بعد. ابدأ المحادثة!</p>
+            </div>
+        {% endif %}
     </div>
-</form>
+
+    <form method="POST" action="{{ url_for('messages.send', user_id=other.id) }}" enctype="multipart/form-data" class="chat-composer mt-3" id="messageForm" novalidate>
+        <input type="file" name="audio" id="voiceInput" accept="audio/webm,audio/ogg,audio/mpeg,audio/wav,audio/mp4,audio/aac" class="d-none">
+        <div class="voice-preview d-none" id="voicePreview">
+            <div class="d-flex align-items-center gap-2">
+                <span class="voice-preview-icon"><i class="fas fa-microphone"></i></span>
+                <div class="flex-grow-1">
+                    <strong class="d-block small">رسالة صوتية جاهزة للإرسال</strong>
+                    <audio id="voicePreviewAudio" controls class="w-100"></audio>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="clearVoiceButton" aria-label="حذف الرسالة الصوتية"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="recording-status d-none" id="recordingStatus" role="status">
+            <span class="recording-dot"></span>
+            <span>جارٍ التسجيل</span>
+            <strong id="recordingTimer">00:00</strong>
+        </div>
+        <div class="composer-row">
+            <button class="btn btn-light composer-button" type="button" id="recordVoiceButton" aria-label="تسجيل رسالة صوتية" title="تسجيل رسالة صوتية">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <input type="text" name="content" id="messageInput" class="form-control composer-input" placeholder="اكتب رسالة..." autocomplete="off" autofocus>
+            <button class="btn btn-primary composer-send" type="submit" id="sendMessageButton" aria-label="إرسال الرسالة" title="إرسال">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        <p class="composer-help mb-0 mt-2" id="composerHelp">يمكنك إرسال نص أو تسجيل رسالة صوتية قصيرة.</p>
+    </form>
+    <audio id="remoteAudio" autoplay></audio>
+
+    <div class="call-panel d-none" id="callPanel" role="dialog" aria-live="assertive" aria-label="مكالمة صوتية">
+        <div class="call-avatar"><img src="{{ url_for('static', filename='uploads/' + other.avatar) }}" alt="{{ other.name }}"></div>
+        <h2 class="h5 mb-1" id="callTitle">مكالمة صوتية</h2>
+        <p class="mb-3 text-muted" id="callStatus">جارٍ تجهيز الاتصال…</p>
+        <div class="call-actions" id="outgoingCallActions">
+            <button type="button" class="btn btn-danger call-action" id="hangupCallButton"><i class="fas fa-phone-slash"></i> إنهاء</button>
+        </div>
+        <div class="call-actions d-none" id="incomingCallActions">
+            <button type="button" class="btn btn-success call-action" id="answerCallButton"><i class="fas fa-phone-alt"></i> قبول</button>
+            <button type="button" class="btn btn-outline-danger call-action" id="declineCallButton"><i class="fas fa-times"></i> رفض</button>
+        </div>
+    </div>
+</section>
+
+<style>
+    .chat-page { max-width: 820px; margin: 0 auto; }
+    .chat-header { background: var(--card-bg, #fff); border: 1px solid rgba(0,0,0,.07); border-radius: 16px; padding: 12px 14px; box-shadow: 0 4px 18px rgba(0,0,0,.04); }
+    .chat-back { border-radius: 50%; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; }
+    .chat-box { height: min(58vh, 560px); min-height: 340px; overflow-y: auto; padding: 18px; border-radius: 18px; background: linear-gradient(180deg, #f6f8fb 0%, #eef3f9 100%); border: 1px solid rgba(0,0,0,.06); scroll-behavior: smooth; }
+    .message-row { display: flex; margin-bottom: 10px; }
+    .message-row.is-sent { justify-content: flex-start; }
+    .message-row.is-received { justify-content: flex-end; }
+    .message-bubble { max-width: min(78%, 470px); padding: 10px 12px 7px; border-radius: 16px; box-shadow: 0 2px 7px rgba(0,0,0,.05); }
+    .is-sent .message-bubble { color: #fff; background: #1877f2; border-bottom-right-radius: 4px; }
+    .is-received .message-bubble { color: #1f2937; background: #fff; border-bottom-left-radius: 4px; }
+    .message-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .message-time { display: block; font-size: .7rem; opacity: .72; text-align: left; }
+    .voice-message { min-width: 220px; }
+    .voice-message-label { font-size: .77rem; margin-bottom: 6px; font-weight: 700; }
+    .voice-audio { width: 100%; height: 34px; vertical-align: middle; }
+    .chat-empty { padding-top: 130px; }
+    .chat-composer { background: var(--card-bg, #fff); padding: 12px; border: 1px solid rgba(0,0,0,.07); border-radius: 18px; box-shadow: 0 4px 18px rgba(0,0,0,.04); }
+    .composer-row { display: flex; gap: 8px; align-items: center; }
+    .composer-button, .composer-send { width: 42px; height: 42px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+    .composer-input { min-width: 0; border-radius: 22px; min-height: 42px; }
+    .composer-help { color: #6b7280; font-size: .75rem; padding-inline: 6px; }
+    .recording-status { align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 10px; border-radius: 10px; color: #b42318; background: #fff0ef; font-size: .83rem; }
+    .recording-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #e53935; animation: recordingPulse 1.1s ease-in-out infinite; }
+    .voice-preview { background: #f0f7ff; border: 1px solid #cfe4ff; border-radius: 12px; padding: 9px 10px; margin-bottom: 10px; }
+    .voice-preview-icon { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; background: #1877f2; color: #fff; }
+    #recordVoiceButton.is-recording { background: #e53935; color: #fff; border-color: #e53935; }
+    .call-button { width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+    .call-panel { position: fixed; z-index: 1080; inset: 0; padding: 34px 20px; background: rgba(10, 23, 41, .92); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .call-panel .text-muted { color: rgba(255,255,255,.75) !important; }
+    .call-avatar { width: 112px; height: 112px; margin-bottom: 20px; padding: 5px; background: rgba(255,255,255,.16); border-radius: 50%; animation: callPulse 1.8s ease-in-out infinite; }
+    .call-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .call-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .call-action { min-width: 112px; border-radius: 24px; }
+    @keyframes recordingPulse { 50% { opacity: .35; transform: scale(.8); } }
+    @keyframes callPulse { 50% { transform: scale(1.06); background: rgba(24,119,242,.45); } }
+    @media (max-width: 576px) { .chat-box { margin-inline: -4px; min-height: 320px; height: calc(100vh - 245px); } .message-bubble { max-width: 88%; } .chat-header { border-radius: 12px; } }
+</style>
 
 <script>
-    // تمرير إلى الأسفل عند تحميل الصفحة
-    const chatBox = document.querySelector('.chat-box');
-    chatBox.scrollTop = chatBox.scrollHeight;
+(() => {
+    const chatBox = document.getElementById('chatBox');
+    const form = document.getElementById('messageForm');
+    const input = document.getElementById('messageInput');
+    const voiceInput = document.getElementById('voiceInput');
+    const recordButton = document.getElementById('recordVoiceButton');
+    const clearVoiceButton = document.getElementById('clearVoiceButton');
+    const preview = document.getElementById('voicePreview');
+    const previewAudio = document.getElementById('voicePreviewAudio');
+    const recordingStatus = document.getElementById('recordingStatus');
+    const recordingTimer = document.getElementById('recordingTimer');
+    const composerHelp = document.getElementById('composerHelp');
 
-    // إرسال الرسالة عند الضغط على Enter (مع منع إعادة التحميل)
-    document.getElementById('messageInput').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            document.getElementById('messageForm').submit();
+    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+
+    let mediaRecorder = null;
+    let mediaStream = null;
+    let audioChunks = [];
+    let timerInterval = null;
+    let recordingSeconds = 0;
+
+    const showHelp = (message, isError = false) => {
+        composerHelp.textContent = message;
+        composerHelp.style.color = isError ? '#b42318' : '';
+    };
+
+    const clearVoice = () => {
+        const transfer = new DataTransfer();
+        voiceInput.files = transfer.files;
+        previewAudio.removeAttribute('src');
+        previewAudio.load();
+        preview.classList.add('d-none');
+        showHelp('يمكنك إرسال نص أو تسجيل رسالة صوتية قصيرة.');
+    };
+
+    const stopStream = () => {
+        if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+    };
+
+    const formatTime = (seconds) => {
+        const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
+        const remaining = String(seconds % 60).padStart(2, '0');
+        return `${minutes}:${remaining}`;
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+    };
+
+    const startRecording = async () => {
+        if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+            showHelp('متصفحك لا يدعم تسجيل الرسائل الصوتية.', true);
+            return;
+        }
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const supportedType = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm']
+                .find(type => MediaRecorder.isTypeSupported(type));
+            mediaRecorder = supportedType ? new MediaRecorder(mediaStream, { mimeType: supportedType }) : new MediaRecorder(mediaStream);
+            audioChunks = [];
+            recordingSeconds = 0;
+            recordingTimer.textContent = '00:00';
+            mediaRecorder.addEventListener('dataavailable', event => {
+                if (event.data.size) audioChunks.push(event.data);
+            });
+            mediaRecorder.addEventListener('stop', () => {
+                clearInterval(timerInterval);
+                recordingStatus.classList.add('d-none');
+                recordButton.classList.remove('is-recording');
+                recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
+                const mimeType = mediaRecorder.mimeType || 'audio/webm';
+                const blob = new Blob(audioChunks, { type: mimeType });
+                if (blob.size < 1000) {
+                    stopStream();
+                    showHelp('لم يُلتقط تسجيل كافٍ. حاول مجددًا.', true);
+                    return;
+                }
+                const extension = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') ? 'm4a' : 'webm';
+                const voiceFile = new File([blob], `voice-message-${Date.now()}.${extension}`, { type: mimeType });
+                const transfer = new DataTransfer();
+                transfer.items.add(voiceFile);
+                voiceInput.files = transfer.files;
+                previewAudio.src = URL.createObjectURL(blob);
+                preview.classList.remove('d-none');
+                showHelp('يمكنك الاستماع إلى التسجيل ثم إرساله.');
+                stopStream();
+            });
+            mediaRecorder.start();
+            recordButton.classList.add('is-recording');
+            recordButton.innerHTML = '<i class="fas fa-stop"></i>';
+            recordingStatus.classList.remove('d-none');
+            showHelp('اضغط زر الإيقاف عند الانتهاء من التسجيل.');
+            timerInterval = setInterval(() => {
+                recordingSeconds += 1;
+                recordingTimer.textContent = formatTime(recordingSeconds);
+                if (recordingSeconds >= 120) stopRecording();
+            }, 1000);
+        } catch (error) {
+            stopStream();
+            showHelp('تعذر الوصول إلى الميكروفون. تحقق من إذن الميكروفون ثم حاول مجددًا.', true);
+        }
+    };
+
+    recordButton.addEventListener('click', () => {
+        if (mediaRecorder?.state === 'recording') stopRecording();
+        else startRecording();
+    });
+    clearVoiceButton.addEventListener('click', clearVoice);
+
+    form.addEventListener('submit', event => {
+        const hasText = input.value.trim().length > 0;
+        const hasAudio = voiceInput.files.length > 0;
+        if (!hasText && !hasAudio) {
+            event.preventDefault();
+            showHelp('اكتب رسالة أو سجّل رسالة صوتية أولًا.', true);
         }
     });
 
-    // تحديث ارتفاع الشات تلقائياً عند تغيير حجم النافذة
-    function adjustChatHeight() {
-        const headerHeight = document.querySelector('.navbar').offsetHeight || 56;
-        const footerHeight = document.querySelector('.fixed-bottom')?.offsetHeight || 70;
-        const availableHeight = window.innerHeight - headerHeight - footerHeight - 180;
-        const chatBox = document.querySelector('.chat-box');
-        if (chatBox) {
-            chatBox.style.height = Math.max(300, availableHeight) + 'px';
+    input.addEventListener('keydown', event => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            form.requestSubmit();
         }
-    }
-    window.addEventListener('resize', adjustChatHeight);
-    setTimeout(adjustChatHeight, 300);
+    });
+
+    // مكالمات WebRTC الفردية: الصوت يمر مباشرة بين الطرفين، بينما الخادم ينقل إشارات الاتصال فقط.
+    const otherUserId = Number(document.querySelector('.chat-page').dataset.userId);
+    const otherName = {{ other.name | tojson }};
+    const rtcConfig = {{ rtc_config | tojson }};
+    const voiceCallButton = document.getElementById('voiceCallButton');
+    const callPanel = document.getElementById('callPanel');
+    const callTitle = document.getElementById('callTitle');
+    const callStatus = document.getElementById('callStatus');
+    const outgoingCallActions = document.getElementById('outgoingCallActions');
+    const incomingCallActions = document.getElementById('incomingCallActions');
+    const answerCallButton = document.getElementById('answerCallButton');
+    const declineCallButton = document.getElementById('declineCallButton');
+    const hangupCallButton = document.getElementById('hangupCallButton');
+    const remoteAudio = document.getElementById('remoteAudio');
+
+    let peerConnection = null;
+    let callStream = null;
+    let activeCallId = null;
+    let incomingInvite = null;
+    let pendingCandidates = [];
+    let pollingInProgress = false;
+
+    const setCallPanel = (title, status, incoming = false) => {
+        callTitle.textContent = title;
+        callStatus.textContent = status;
+        callPanel.classList.remove('d-none');
+        outgoingCallActions.classList.toggle('d-none', incoming);
+        incomingCallActions.classList.toggle('d-none', !incoming);
+    };
+
+    const hideCallPanel = () => callPanel.classList.add('d-none');
+
+    const sendCallSignal = async (type, payload = {}) => {
+        if (!activeCallId) return;
+        const response = await fetch(`/messages/calls/signal/${otherUserId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ callId: activeCallId, type, payload })
+        });
+        if (!response.ok) throw new Error('تعذر إرسال إشارة المكالمة');
+    };
+
+    const releaseCallResources = () => {
+        if (peerConnection) {
+            peerConnection.onicecandidate = null;
+            peerConnection.ontrack = null;
+            peerConnection.close();
+        }
+        peerConnection = null;
+        if (callStream) callStream.getTracks().forEach(track => track.stop());
+        callStream = null;
+        remoteAudio.srcObject = null;
+        pendingCandidates = [];
+        incomingInvite = null;
+        activeCallId = null;
+        voiceCallButton.disabled = false;
+        hideCallPanel();
+    };
+
+    const finishCall = async (notify = true) => {
+        const callId = activeCallId;
+        if (notify && callId) {
+            try { await sendCallSignal('hangup'); } catch (error) { /* تنتهي المكالمة محليًا حتى عند انقطاع الشبكة */ }
+        }
+        releaseCallResources();
+    };
+
+    const getCallStream = async () => {
+        if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
+            throw new Error('متصفحك لا يدعم المكالمات الصوتية.');
+        }
+        if (!callStream) callStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        return callStream;
+    };
+
+    const flushCandidates = async () => {
+        if (!peerConnection || !peerConnection.remoteDescription) return;
+        const candidates = [...pendingCandidates];
+        pendingCandidates = [];
+        for (const candidate of candidates) {
+            try { await peerConnection.addIceCandidate(candidate); } catch (error) { console.warn('ICE candidate ignored', error); }
+        }
+    };
+
+    const createPeerConnection = async () => {
+        peerConnection = new RTCPeerConnection(rtcConfig);
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) sendCallSignal('candidate', event.candidate.toJSON()).catch(() => {});
+        };
+        peerConnection.ontrack = event => {
+            remoteAudio.srcObject = event.streams[0];
+            remoteAudio.play().catch(() => {});
+            callStatus.textContent = 'المكالمة متصلة';
+        };
+        peerConnection.onconnectionstatechange = () => {
+            if (!peerConnection) return;
+            if (peerConnection.connectionState === 'connected') callStatus.textContent = 'المكالمة متصلة';
+            if (['failed', 'closed'].includes(peerConnection.connectionState)) releaseCallResources();
+        };
+        const stream = await getCallStream();
+        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+    };
+
+    const newCallId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+
+    const startCall = async () => {
+        if (activeCallId) return;
+        try {
+            activeCallId = newCallId();
+            voiceCallButton.disabled = true;
+            setCallPanel('مكالمة صوتية', 'جارٍ الاتصال…');
+            await createPeerConnection();
+            const offer = await peerConnection.createOffer({ offerToReceiveAudio: true });
+            await peerConnection.setLocalDescription(offer);
+            await sendCallSignal('invite', offer);
+            callStatus.textContent = 'في انتظار رد الطرف الآخر…';
+        } catch (error) {
+            releaseCallResources();
+            showHelp(error.message || 'تعذر بدء المكالمة. تحقق من إذن الميكروفون.', true);
+        }
+    };
+
+    const answerCall = async () => {
+        if (!incomingInvite) return;
+        try {
+            setCallPanel('مكالمة واردة', 'جارٍ الاتصال…');
+            await createPeerConnection();
+            await peerConnection.setRemoteDescription(incomingInvite.payload);
+            await flushCandidates();
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            await sendCallSignal('answer', answer);
+            incomingInvite = null;
+            outgoingCallActions.classList.remove('d-none');
+            incomingCallActions.classList.add('d-none');
+            callStatus.textContent = 'تم الرد، جارٍ ربط الصوت…';
+        } catch (error) {
+            await finishCall(true);
+            showHelp(error.message || 'تعذر الرد على المكالمة.', true);
+        }
+    };
+
+    const declineCall = async () => {
+        try { await sendCallSignal('decline'); } catch (error) { /* لا يمنع الرفض المحلي */ }
+        releaseCallResources();
+    };
+
+    const handleCallSignal = async (signal) => {
+        if (signal.type === 'invite') {
+            if (activeCallId) {
+                const previousCallId = activeCallId;
+                activeCallId = signal.callId;
+                try { await sendCallSignal('decline'); } catch (error) { /* لا شيء */ }
+                activeCallId = previousCallId;
+                return;
+            }
+            activeCallId = signal.callId;
+            incomingInvite = signal;
+            voiceCallButton.disabled = true;
+            setCallPanel(`مكالمة واردة من ${otherName}`, 'يريد بدء مكالمة صوتية معك.', true);
+            return;
+        }
+        if (!activeCallId || signal.callId !== activeCallId) return;
+        if (signal.type === 'answer' && peerConnection) {
+            await peerConnection.setRemoteDescription(signal.payload);
+            await flushCandidates();
+            callStatus.textContent = 'تم الرد، جارٍ ربط الصوت…';
+        } else if (signal.type === 'candidate') {
+            pendingCandidates.push(signal.payload);
+            await flushCandidates();
+        } else if (signal.type === 'decline') {
+            showHelp('تم رفض المكالمة.', true);
+            releaseCallResources();
+        } else if (signal.type === 'hangup') {
+            showHelp('أنهى الطرف الآخر المكالمة.');
+            releaseCallResources();
+        }
+    };
+
+    const pollCallSignals = async () => {
+        if (pollingInProgress) return;
+        pollingInProgress = true;
+        try {
+            const response = await fetch(`/messages/calls/poll/${otherUserId}`, { cache: 'no-store' });
+            if (!response.ok) return;
+            const data = await response.json();
+            for (const signal of data.signals || []) await handleCallSignal(signal);
+        } catch (error) {
+            console.warn('Call polling failed', error);
+        } finally {
+            pollingInProgress = false;
+        }
+    };
+
+    voiceCallButton.addEventListener('click', startCall);
+    answerCallButton.addEventListener('click', answerCall);
+    declineCallButton.addEventListener('click', declineCall);
+    hangupCallButton.addEventListener('click', () => finishCall(true));
+    window.addEventListener('pagehide', () => {
+        if (activeCallId) sendCallSignal('hangup').catch(() => {});
+        releaseCallResources();
+    });
+    pollCallSignals();
+    window.setInterval(pollCallSignals, 2500);
+})();
 </script>
-<style>
-    .chat-box {
-        background: #f1f3f5;
-        scroll-behavior: smooth;
-    }
-</style>
 {% endblock %}

@@ -8,6 +8,7 @@ from .comment import Comment
 from .like import Like
 from .follow import Follow
 from .message import Message
+from .call_signal import CallSignal
 from .notification import Notification
 from .comment_like import CommentLike
 from .repost import Repost

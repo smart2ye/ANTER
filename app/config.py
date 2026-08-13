@@ -25,8 +25,13 @@ class Config:
     MAX_CONTENT_LENGTH = 200 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'avi', 'mov', 'mkv'}
+    ALLOWED_AUDIO_EXTENSIONS = {'webm', 'ogg', 'mp3', 'wav', 'm4a', 'aac'}
+    WEBRTC_STUN_URL = os.environ.get('WEBRTC_STUN_URL', 'stun:stun.l.google.com:19302')
+    WEBRTC_TURN_URL = os.environ.get('WEBRTC_TURN_URL', '')
+    WEBRTC_TURN_USERNAME = os.environ.get('WEBRTC_TURN_USERNAME', '')
+    WEBRTC_TURN_CREDENTIAL = os.environ.get('WEBRTC_TURN_CREDENTIAL', '')
     PERMANENT_SESSION_LIFETIME = 86400
 
 
-for subfolder in ('avatars', 'posts', 'reels', 'videos', 'thumbnails'):
+for subfolder in ('avatars', 'posts', 'reels', 'videos', 'thumbnails', 'audio'):
     os.makedirs(os.path.join(UPLOAD_FOLDER, subfolder), exist_ok=True)

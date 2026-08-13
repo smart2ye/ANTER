@@ -34,6 +34,14 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        # ترحيل خفيف للتوافق مع قواعد البيانات الموجودة قبل إضافة الرسائل الصوتية.
+        from sqlalchemy import inspect, text
+        inspector = inspect(db.engine)
+        if 'messages' in inspector.get_table_names():
+            columns = {column['name'] for column in inspector.get_columns('messages')}
+            if 'audio_path' not in columns:
+                with db.engine.begin() as connection:
+                    connection.execute(text('ALTER TABLE messages ADD COLUMN audio_path VARCHAR(255)'))
 
     # ============================================
     # دالة عامة لحساب التفاعلات

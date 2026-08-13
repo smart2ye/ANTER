@@ -28,6 +28,30 @@ def save_uploaded_image(file, subfolder=''):
         pass
     return os.path.join(subfolder, new_name) if subfolder else new_name
 
+
+def allowed_audio_file(filename):
+    return (
+        bool(filename)
+        and '.' in filename
+        and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_AUDIO_EXTENSIONS']
+    )
+
+
+def save_audio_file(file):
+    """حفظ رسالة صوتية مرفوعة وإرجاع مسارها النسبي."""
+    if not file or not hasattr(file, 'filename') or not file.filename:
+        return ''
+    if not allowed_audio_file(file.filename):
+        return ''
+
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f'{uuid.uuid4()}.{ext}'
+    upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'audio')
+    os.makedirs(upload_path, exist_ok=True)
+    file.save(os.path.join(upload_path, filename))
+    return os.path.join('audio', filename)
+
+
 def parse_mentions(text):
     def replace_mention(match):
         username = match.group(1)

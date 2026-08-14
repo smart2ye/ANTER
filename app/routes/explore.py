@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
 from app.models import User, Follow, Post
@@ -28,11 +30,12 @@ def explore():
 
     # إذا كانت قائمة الدرجة الثانية فارغة، اعرض مستخدمين لديهم منشورات حديثة.
     if not suggested_ids:
+        recent_cutoff = datetime.utcnow() - timedelta(days=30)
         active_users = db.session.query(
             Post.author_id,
             func.count(Post.id).label('posts_count')
         ).filter(
-            Post.created_at > func.datetime('now', '-30 days'),
+            Post.created_at > recent_cutoff,
             ~Post.author_id.in_(following_ids)
         ).group_by(Post.author_id).order_by(
             func.count(Post.id).desc()

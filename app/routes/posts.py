@@ -1,10 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, jsonify, session, abort
 from flask_login import login_required, current_user
 from app import db, csrf
-from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag
+from app.models import Post, Comment, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag
 from app.forms.post import PostForm
 from app.utils.helpers import extract_hashtags
-from app.utils.image_storage import prepare_image_data
 from datetime import datetime
 import os
 import secrets
@@ -15,7 +14,7 @@ posts_bp = Blueprint('posts', __name__)
 @login_required
 def edit(post_id):
     post = Post.query.get_or_404(post_id)
-    if post.author_id != current_user.id and not current_user.is_admin:
+    if post.user_id != current_user.id and not current_user.is_admin:
         flash('ليس لديك صلاحية تعديل هذا المنشور', 'danger')
         return redirect(url_for('main.index'))
     
@@ -49,7 +48,7 @@ def edit(post_id):
 @login_required
 def delete(post_id):
     post = Post.query.get_or_404(post_id)
-    if post.author_id != current_user.id and not current_user.is_admin:
+    if post.user_id != current_user.id and not current_user.is_admin:
         flash('ليس لديك صلاحية حذف هذا المنشور', 'danger')
         return redirect(url_for('main.index'))
     
@@ -63,12 +62,17 @@ def delete(post_id):
 @csrf.exempt
 def like(post_id):
     post = Post.query.get_or_404(post_id)
-    like = Like.query.filter_by(user_id=current_user.id, post_id=post_id).first()
     payload = request.get_json(silent=True) or {}
     reaction_type = payload.get('reaction', 'like')
     allowed_reactions = {'like', 'love', 'haha', 'angry', 'sad'}
+
     if reaction_type not in allowed_reactions:
         reaction_type = 'like'
+
+    like = Like.query.filter_by(
+        user_id=current_user.id,
+        post_id=post_id
+    ).first()
 
     if like:
         if like.reaction_type == reaction_type:
@@ -85,19 +89,23 @@ def like(post_id):
         )
         db.session.add(like)
         liked = True
-        
+
         # إشعار
-        if post.author_id != current_user.id:
+        if post.user_id != current_user.id:
             notification = Notification(
-                user_id=post.author_id,
-                actor_id=current_user.id,
-                action='like',
-                post_id=post_id
+                user_id=post.user_id,
+                type='like',
+                message=f'{current_user.name} أعجب بمنشورك',
+                link=f'/posts/{post_id}'
             )
             db.session.add(notification)
-    
+
     db.session.commit()
-    return jsonify({'liked': liked, 'count': post.likes.count()})
+    return jsonify({
+        'liked': liked,
+        'reaction': reaction_type if liked else None,
+        'count': post.likes.count()
+    })
 
 @posts_bp.route('/post/<int:post_id>')
 def view(post_id):
@@ -120,13 +128,13 @@ def comment(post_id):
     db.session.commit()
     
     # إشعار
-    if post.author_id != current_user.id:
+    if post.user_id != current_user.id:
         notification = Notification(
-                user_id=post.author_id,
-                actor_id=current_user.id,
-                action='comment',
-                post_id=post_id
-            )
+            user_id=post.user_id,
+            type='comment',
+            message=f'{current_user.name} علق على منشورك',
+            link=f'/posts/{post_id}'
+        )
         db.session.add(notification)
         db.session.commit()
     
@@ -138,23 +146,23 @@ def comment(post_id):
 @csrf.exempt
 def like_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
-    like = CommentLike.query.filter_by(user_id=current_user.id, comment_id=comment_id).first()
+    like = Like.query.filter_by(user_id=current_user.id, comment_id=comment_id).first()
     
     if like:
         db.session.delete(like)
         liked = False
     else:
-        like = CommentLike(user_id=current_user.id, comment_id=comment_id)
+        like = Like(user_id=current_user.id, comment_id=comment_id)
         db.session.add(like)
         liked = True
         
         # إشعار
-        if comment.author_id != current_user.id:
+        if comment.user_id != current_user.id:
             notification = Notification(
-                user_id=comment.author_id,
-                actor_id=current_user.id,
-                action='like_comment',
-                post_id=comment.post_id
+                user_id=comment.user_id,
+                type='like_comment',
+                message=f'{current_user.name} أعجب بتعليقك',
+                link=f'/posts/{comment.post_id}'
             )
             db.session.add(notification)
     
@@ -177,12 +185,12 @@ def repost(post_id):
         reposted = True
         
         # إشعار
-        if post.author_id != current_user.id:
+        if post.user_id != current_user.id:
             notification = Notification(
-                user_id=post.author_id,
-                actor_id=current_user.id,
-                action='repost',
-                post_id=post_id
+                user_id=post.user_id,
+                type='repost',
+                message=f'{current_user.name} شارك منشورك',
+                link=f'/posts/{post_id}'
             )
             db.session.add(notification)
     
@@ -241,20 +249,7 @@ def create():
 
         hashtags = extract_hashtags(content)
 
-        image_data, image_mime = (None, None)
-        if form.image.data:
-            image_data, image_mime = prepare_image_data(form.image.data)
-            if not image_data:
-                flash('تعذر قراءة صورة المنشور أو أنها أكبر من الحد المسموح.', 'danger')
-                return redirect(url_for('posts.create'))
-
-        post = Post(
-            content=content,
-            author_id=current_user.id,
-            image='',
-            image_data=image_data,
-            image_mime=image_mime,
-        )
+        post = Post(content=content, user_id=current_user.id)
         db.session.add(post)
         db.session.flush()
 

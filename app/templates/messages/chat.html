@@ -145,6 +145,7 @@
     const recordingStatus = document.getElementById('recordingStatus');
     const recordingTimer = document.getElementById('recordingTimer');
     const composerHelp = document.getElementById('composerHelp');
+    const sendButton = document.getElementById('sendMessageButton');
 
     if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -243,13 +244,53 @@
     });
     clearVoiceButton.addEventListener('click', clearVoice);
 
+    const readFileAsBase64 = file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = String(reader.result || '');
+            resolve(result.includes(',') ? result.split(',', 2)[1] : result);
+        };
+        reader.onerror = () => reject(reader.error || new Error('تعذر قراءة الملف'));
+        reader.readAsDataURL(file);
+    });
+
+    const sendVoiceAsJson = async file => {
+        const endpoint = form.action.replace(/\/send\/\d+$/, match => match.replace('/send/', '/send-audio/'));
+        const audioData = await readFileAsBase64(file);
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                audioData,
+                fileName: file.name,
+                content: input.value.trim(),
+            }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'تعذر إرسال الرسالة الصوتية.');
+        }
+        window.location.assign(result.redirect || form.action);
+    };
+
     form.addEventListener('submit', event => {
         const hasText = input.value.trim().length > 0;
-        const hasAudio = voiceInput.files.length > 0;
-        if (!hasText && !hasAudio) {
+        const audioFile = voiceInput.files[0];
+        if (!hasText && !audioFile) {
             event.preventDefault();
             showHelp('اكتب رسالة أو سجّل رسالة صوتية أولًا.', true);
+            return;
         }
+        if (!audioFile) return;
+
+        event.preventDefault();
+        sendButton.disabled = true;
+        showHelp('جارٍ إرسال الرسالة الصوتية…');
+        sendVoiceAsJson(audioFile)
+            .catch(error => {
+                sendButton.disabled = false;
+                showHelp(error.message || 'تعذر إرسال الرسالة الصوتية. حاول مجددًا.', true);
+            });
     });
 
     input.addEventListener('keydown', event => {

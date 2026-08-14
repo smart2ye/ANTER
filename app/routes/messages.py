@@ -1,3 +1,5 @@
+import base64
+import binascii
 import json
 import uuid
 from datetime import datetime, timedelta
@@ -156,6 +158,60 @@ def send(user_id):
     else:
         flash('الرسالة فارغة.', 'danger')
     return redirect(url_for('messages.chat', user_id=user_id))
+
+
+@messages_bp.route('/send-audio/<int:user_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def send_audio_message(user_id):
+    """استقبال الصوت كـ base64 لتجاوز فشل multipart في بعض بيئات الإنتاج."""
+    other = User.query.get_or_404(user_id)
+    data = request.get_json(silent=True) or {}
+    encoded_audio = data.get('audioData')
+    filename = str(data.get('fileName', '')).strip()
+    content = str(data.get('content', '')).strip()
+
+    if not isinstance(encoded_audio, str) or not filename or not allowed_audio_file(filename):
+        return jsonify({'success': False, 'message': 'ملف صوتي غير صالح.'}), 400
+    if len(encoded_audio) > (current_app.config['MAX_AUDIO_MESSAGE_BYTES'] * 4 // 3) + 1024:
+        return jsonify({'success': False, 'message': 'الرسالة الصوتية أكبر من الحد المسموح.'}), 413
+
+    try:
+        audio_data = base64.b64decode(encoded_audio, validate=True)
+    except (binascii.Error, ValueError, TypeError):
+        return jsonify({'success': False, 'message': 'تعذر قراءة بيانات الصوت.'}), 400
+
+    max_audio_size = current_app.config['MAX_AUDIO_MESSAGE_BYTES']
+    if not audio_data or len(audio_data) > max_audio_size:
+        return jsonify({'success': False, 'message': 'يجب أن تكون الرسالة الصوتية صالحة وألا تتجاوز 10 ميجابايت.'}), 400
+
+    extension = filename.rsplit('.', 1)[1].lower()
+    audio_mime = AUDIO_MIME_BY_EXTENSION.get(extension, 'application/octet-stream')
+    try:
+        message = Message(
+            sender_id=current_user.id,
+            receiver_id=other.id,
+            content=content,
+            audio_data=audio_data,
+            audio_mime=audio_mime,
+        )
+        db.session.add(message)
+        db.session.add(Notification(
+            user_id=other.id,
+            actor_id=current_user.id,
+            action='voice_message',
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('تعذر إرسال الرسالة الصوتية عبر JSON')
+        return jsonify({'success': False, 'message': 'تعذر إرسال الرسالة الصوتية حاليًا.'}), 500
+
+    return jsonify({
+        'success': True,
+        'messageId': message.id,
+        'redirect': url_for('messages.chat', user_id=user_id),
+    }), 201
 
 
 @messages_bp.route('/audio/<int:message_id>')

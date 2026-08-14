@@ -125,9 +125,8 @@ def comment(post_id):
     
     comment = Comment(content=content, author_id=current_user.id, post_id=post_id)
     db.session.add(comment)
-    db.session.commit()
     
-    # إشعار
+    # إنشاء الإشعار ضمن نفس المعاملة حتى لا يُحفظ التعليق جزئيًا عند فشل الإشعار.
     if post.author_id != current_user.id:
         notification = Notification(
             user_id=post.author_id,
@@ -136,7 +135,12 @@ def comment(post_id):
             post_id=post_id,
         )
         db.session.add(notification)
+
+    try:
         db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     
     flash('تم إضافة التعليق بنجاح!', 'success')
     return redirect(url_for('posts.view', post_id=post_id))

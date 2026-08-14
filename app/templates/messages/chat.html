@@ -24,11 +24,15 @@
                         {% if msg.content %}
                             <p class="message-text mb-1">{{ msg.content }}</p>
                         {% endif %}
-                        {% if msg.audio_path %}
+                        {% if msg.audio_data or msg.audio_path %}
                             <div class="voice-message" data-audio-message>
                                 <div class="voice-message-label"><i class="fas fa-microphone"></i> رسالة صوتية</div>
                                 <audio controls preload="metadata" class="voice-audio">
-                                    <source src="{{ url_for('static', filename='uploads/' + msg.audio_path) }}">
+                                    {% if msg.audio_data %}
+                                        <source src="{{ url_for('messages.audio', message_id=msg.id) }}" type="{{ msg.audio_mime or 'audio/webm' }}">
+                                    {% else %}
+                                        <source src="{{ url_for('static', filename='uploads/' + msg.audio_path) }}">
+                                    {% endif %}
                                     متصفحك لا يدعم تشغيل الرسائل الصوتية.
                                 </audio>
                             </div>

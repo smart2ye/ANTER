@@ -37,14 +37,26 @@ def create_app():
         db.create_all()
         # إنشاء جدول إشارات المكالمات صراحةً على قواعد الإنتاج القائمة.
         CallSignal.__table__.create(bind=db.engine, checkfirst=True)
-        # ترحيل خفيف للتوافق مع قواعد البيانات الموجودة قبل إضافة الرسائل الصوتية.
+        # ترحيل خفيف للتوافق مع قواعد البيانات القائمة قبل دعم الرسائل الصوتية.
         from sqlalchemy import inspect, text
         inspector = inspect(db.engine)
         if 'messages' in inspector.get_table_names():
             columns = {column['name'] for column in inspector.get_columns('messages')}
-            if 'audio_path' not in columns:
+            binary_type = 'BYTEA' if db.engine.dialect.name == 'postgresql' else 'BLOB'
+            required_columns = {
+                'audio_path': 'VARCHAR(255)',
+                'audio_data': binary_type,
+                'audio_mime': 'VARCHAR(100)',
+            }
+            missing_columns = [
+                (name, sql_type)
+                for name, sql_type in required_columns.items()
+                if name not in columns
+            ]
+            if missing_columns:
                 with db.engine.begin() as connection:
-                    connection.execute(text('ALTER TABLE messages ADD COLUMN audio_path VARCHAR(255)'))
+                    for name, sql_type in missing_columns:
+                        connection.execute(text(f'ALTER TABLE messages ADD COLUMN {name} {sql_type}'))
 
     # ============================================
     # دالة عامة لحساب التفاعلات

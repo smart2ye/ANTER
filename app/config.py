@@ -30,6 +30,7 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = DATABASE_ENGINE_OPTIONS
     UPLOAD_FOLDER = UPLOAD_FOLDER
     MAX_CONTENT_LENGTH = 200 * 1024 * 1024
+    MAX_AUDIO_MESSAGE_BYTES = 10 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'avi', 'mov', 'mkv'}
     ALLOWED_AUDIO_EXTENSIONS = {'webm', 'ogg', 'mp3', 'wav', 'm4a', 'aac'}

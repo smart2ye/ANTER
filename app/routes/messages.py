@@ -2,14 +2,14 @@ import json
 import uuid
 from datetime import datetime, timedelta
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, send_file
+from io import BytesIO
 from flask_login import login_required, current_user
 from sqlalchemy import or_
-import os
 
 from app.extensions import db, csrf
 from app.models import Message, User, Notification, CallSignal
-from app.utils.helpers import get_status_icon, save_audio_file
+from app.utils.helpers import get_status_icon, allowed_audio_file
 
 messages_bp = Blueprint('messages', __name__, url_prefix='/messages')
 CALL_SIGNAL_TYPES = {'invite', 'answer', 'candidate', 'decline', 'hangup'}
@@ -91,6 +91,16 @@ def chat(user_id):
     )
 
 
+AUDIO_MIME_BY_EXTENSION = {
+    'webm': 'audio/webm',
+    'ogg': 'audio/ogg',
+    'mp3': 'audio/mpeg',
+    'wav': 'audio/wav',
+    'm4a': 'audio/mp4',
+    'aac': 'audio/aac',
+}
+
+
 @messages_bp.route('/send/<int:user_id>', methods=['POST'])
 @login_required
 @csrf.exempt
@@ -98,49 +108,72 @@ def send(user_id):
     other = User.query.get_or_404(user_id)
     content = request.form.get('content', '').strip()
     uploaded_audio = request.files.get('audio')
-    audio_path = ''
+    audio_data = None
+    audio_mime = None
 
     if uploaded_audio and uploaded_audio.filename:
+        if not allowed_audio_file(uploaded_audio.filename):
+            flash('صيغة الرسالة الصوتية غير مدعومة.', 'danger')
+            return redirect(url_for('messages.chat', user_id=user_id))
         try:
-            audio_path = save_audio_file(uploaded_audio)
+            audio_data = uploaded_audio.read()
         except Exception:
-            current_app.logger.exception('تعذر حفظ ملف الرسالة الصوتية')
-            flash('تعذر حفظ الرسالة الصوتية حاليًا. حاول مجددًا.', 'danger')
+            current_app.logger.exception('تعذر قراءة ملف الرسالة الصوتية')
+            flash('تعذر قراءة الرسالة الصوتية حاليًا. حاول مجددًا.', 'danger')
             return redirect(url_for('messages.chat', user_id=user_id))
 
-    if content or audio_path:
+        max_audio_size = current_app.config['MAX_AUDIO_MESSAGE_BYTES']
+        if not audio_data or len(audio_data) > max_audio_size:
+            flash('يجب أن تكون الرسالة الصوتية صالحة وألا تتجاوز 10 ميجابايت.', 'danger')
+            return redirect(url_for('messages.chat', user_id=user_id))
+
+        extension = uploaded_audio.filename.rsplit('.', 1)[1].lower()
+        audio_mime = AUDIO_MIME_BY_EXTENSION.get(extension, 'application/octet-stream')
+
+    if content or audio_data:
         try:
             message = Message(
                 sender_id=current_user.id,
                 receiver_id=other.id,
                 content=content,
-                audio_path=audio_path or None,
+                audio_data=audio_data,
+                audio_mime=audio_mime,
             )
             db.session.add(message)
-            notification_action = 'voice_message' if audio_path else 'message'
-            notification = Notification(
+            notification_action = 'voice_message' if audio_data else 'message'
+            db.session.add(Notification(
                 user_id=other.id,
                 actor_id=current_user.id,
                 action=notification_action,
-            )
-            db.session.add(notification)
+            ))
             db.session.commit()
         except Exception:
             db.session.rollback()
-            if audio_path:
-                try:
-                    os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], audio_path))
-                except OSError:
-                    pass
             current_app.logger.exception('تعذر إرسال الرسالة')
             flash('تعذر إرسال الرسالة حاليًا. حاول مجددًا.', 'danger')
         else:
             flash('تم إرسال الرسالة.', 'success')
-    elif uploaded_audio and uploaded_audio.filename:
-        flash('صيغة الرسالة الصوتية غير مدعومة.', 'danger')
     else:
         flash('الرسالة فارغة.', 'danger')
     return redirect(url_for('messages.chat', user_id=user_id))
+
+
+@messages_bp.route('/audio/<int:message_id>')
+@login_required
+def audio(message_id):
+    """تقديم صوت الرسالة من قاعدة البيانات إلى طرف المحادثة فقط."""
+    message = Message.query.get_or_404(message_id)
+    if current_user.id not in {message.sender_id, message.receiver_id}:
+        return jsonify({'message': 'غير مصرح لك بالوصول إلى هذا الملف.'}), 403
+    if not message.audio_data:
+        return jsonify({'message': 'لا يحتوي هذا السجل على رسالة صوتية.'}), 404
+    return send_file(
+        BytesIO(message.audio_data),
+        mimetype=message.audio_mime or 'application/octet-stream',
+        as_attachment=False,
+        download_name=f'voice-message-{message.id}',
+        conditional=True,
+    )
 
 
 @messages_bp.route('/calls/signal/<int:user_id>', methods=['POST'])

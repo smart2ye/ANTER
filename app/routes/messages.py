@@ -4,8 +4,7 @@ import json
 import uuid
 from datetime import datetime, timedelta
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, send_file
-from io import BytesIO
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, Response
 from flask_login import login_required, current_user
 from sqlalchemy import or_
 
@@ -223,12 +222,17 @@ def audio(message_id):
         return jsonify({'message': 'غير مصرح لك بالوصول إلى هذا الملف.'}), 403
     if not message.audio_data:
         return jsonify({'message': 'لا يحتوي هذا السجل على رسالة صوتية.'}), 404
-    return send_file(
-        BytesIO(message.audio_data),
-        mimetype=message.audio_mime or 'application/octet-stream',
-        as_attachment=False,
-        download_name=f'voice-message-{message.id}',
-        conditional=True,
+    audio_mime = message.audio_mime or 'application/octet-stream'
+    return Response(
+        message.audio_data,
+        status=200,
+        mimetype=audio_mime,
+        headers={
+            'Content-Length': str(len(message.audio_data)),
+            'Content-Disposition': f'inline; filename="voice-message-{message.id}"',
+            'Cache-Control': 'private, max-age=300',
+            'Accept-Ranges': 'bytes',
+        },
     )
 
 

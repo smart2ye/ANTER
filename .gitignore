@@ -69,3 +69,5 @@ logs/
 cookies.txt
 vapid_*.pem
 instance/*.db
+backup-like-fix/
+apply-like-fix.sh

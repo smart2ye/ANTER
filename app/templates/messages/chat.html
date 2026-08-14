@@ -50,7 +50,7 @@
     </div>
 
     <form method="POST" action="{{ url_for('messages.send', user_id=other.id) }}" enctype="multipart/form-data" class="chat-composer mt-3" id="messageForm" novalidate>
-        <input type="file" name="audio" id="voiceInput" accept="audio/webm,audio/ogg,audio/mpeg,audio/wav,audio/mp4,audio/aac" class="d-none">
+        <input type="file" name="audio" id="voiceInput" accept="audio/*" capture="microphone" class="d-none">
         <div class="voice-preview d-none" id="voicePreview">
             <div class="d-flex align-items-center gap-2">
                 <span class="voice-preview-icon"><i class="fas fa-microphone"></i></span>
@@ -69,6 +69,9 @@
         <div class="composer-row">
             <button class="btn btn-light composer-button" type="button" id="recordVoiceButton" aria-label="تسجيل رسالة صوتية" title="تسجيل رسالة صوتية">
                 <i class="fas fa-microphone"></i>
+            </button>
+            <button class="btn btn-light composer-button" type="button" id="chooseVoiceButton" aria-label="تسجيل أو اختيار ملف صوتي" title="تسجيل أو اختيار ملف صوتي">
+                <i class="fas fa-folder-open"></i>
             </button>
             <input type="text" name="content" id="messageInput" class="form-control composer-input" placeholder="اكتب رسالة..." autocomplete="off" autofocus>
             <button class="btn btn-primary composer-send" type="submit" id="sendMessageButton" aria-label="إرسال الرسالة" title="إرسال">
@@ -139,6 +142,7 @@
     const input = document.getElementById('messageInput');
     const voiceInput = document.getElementById('voiceInput');
     const recordButton = document.getElementById('recordVoiceButton');
+    const chooseVoiceButton = document.getElementById('chooseVoiceButton');
     const clearVoiceButton = document.getElementById('clearVoiceButton');
     const preview = document.getElementById('voicePreview');
     const previewAudio = document.getElementById('voicePreviewAudio');
@@ -164,6 +168,7 @@
 
     const clearVoice = () => {
         recordedAudioFile = null;
+        voiceInput.value = '';
         try {
             const transfer = new DataTransfer();
             voiceInput.files = transfer.files;
@@ -185,6 +190,22 @@
         mediaStream = null;
     };
 
+    const showVoiceFile = file => {
+        if (!file || file.size < 1000) {
+            recordedAudioFile = null;
+            voiceInput.value = '';
+            showHelp('ملف الصوت فارغ أو قصير جدًا. سجّل صوتًا ثم حاول مجددًا.', true);
+            return false;
+        }
+        recordedAudioFile = file;
+        if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+        previewObjectUrl = URL.createObjectURL(file);
+        previewAudio.src = previewObjectUrl;
+        preview.classList.remove('d-none');
+        showHelp('تم تجهيز التسجيل. استمع إليه ثم اضغط زر الإرسال.');
+        return true;
+    };
+
     const formatTime = (seconds) => {
         const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
         const remaining = String(seconds % 60).padStart(2, '0');
@@ -196,8 +217,12 @@
     };
 
     const startRecording = async () => {
+        if (!window.isSecureContext) {
+            showHelp('يلزم فتح الموقع عبر HTTPS حتى يعمل الميكروفون. استخدم رابط anter-1.onrender.com.', true);
+            return;
+        }
         if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-            showHelp('متصفحك لا يدعم تسجيل الرسائل الصوتية.', true);
+            showHelp('التسجيل المباشر غير مدعوم. استخدم زر المجلد لتسجيل صوت من الهاتف.', true);
             return;
         }
         try {
@@ -245,11 +270,7 @@
                 } catch (error) {
                     // سيُرسل recordedAudioFile مباشرةً عند الضغط على زر الإرسال.
                 }
-                if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
-                previewObjectUrl = URL.createObjectURL(blob);
-                previewAudio.src = previewObjectUrl;
-                preview.classList.remove('d-none');
-                showHelp('يمكنك الاستماع إلى التسجيل ثم إرساله.');
+                showVoiceFile(voiceFile);
                 stopStream();
             });
             // إرسال مقاطع كل ربع ثانية يمنع فقدان المقطع النهائي عند الضغط على إيقاف.
@@ -265,9 +286,22 @@
             }, 1000);
         } catch (error) {
             stopStream();
-            showHelp('تعذر الوصول إلى الميكروفون. تحقق من إذن الميكروفون ثم حاول مجددًا.', true);
+            const errorMessages = {
+                NotAllowedError: 'تم رفض إذن الميكروفون. اسمح للموقع باستخدام الميكروفون من إعدادات المتصفح ثم حاول مجددًا.',
+                PermissionDeniedError: 'تم رفض إذن الميكروفون. اسمح للموقع باستخدام الميكروفون ثم حاول مجددًا.',
+                NotFoundError: 'لم يعثر المتصفح على ميكروفون. تحقق من وجوده أو استخدم زر المجلد.',
+                NotReadableError: 'الميكروفون مستخدم في تطبيق آخر. أغلق التطبيق الآخر ثم حاول مجددًا.',
+                SecurityError: 'المتصفح يمنع الميكروفون في هذه الصفحة. افتح الموقع عبر HTTPS.',
+            };
+            showHelp(errorMessages[error.name] || 'تعذر الوصول إلى الميكروفون. استخدم زر المجلد لتسجيل صوت من الهاتف.', true);
         }
     };
+
+    voiceInput.addEventListener('change', () => {
+        const file = voiceInput.files?.[0];
+        if (file) showVoiceFile(file);
+    });
+    chooseVoiceButton.addEventListener('click', () => voiceInput.click());
 
     recordButton.addEventListener('click', () => {
         if (mediaRecorder?.state === 'recording') stopRecording();

@@ -12,7 +12,7 @@
         <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-3">
             <!-- الصورة -->
             <div class="position-relative" style="flex-shrink: 0;">
-                <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" 
+                <img src="{{ avatar_url(user) }}"
                      class="border border-3 border-white shadow-sm" 
                      style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; background: var(--card-bg);">
                 {% if user.is_verified %}

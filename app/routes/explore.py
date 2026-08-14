@@ -4,6 +4,7 @@ from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
 from app.models import User, Follow, Post
 from app.extensions import db
+from app.utils.media_urls import avatar_url
 from sqlalchemy import func
 
 explore_bp = Blueprint('explore', __name__, url_prefix='/explore')
@@ -72,6 +73,7 @@ def search():
         'name': u.name,
         'bio': u.bio,
         'avatar': u.avatar,
+        'avatar_url': avatar_url(u),
         'followers_count': u.follower_count(),
         'is_following': current_user.is_following(u)
     } for u in users])

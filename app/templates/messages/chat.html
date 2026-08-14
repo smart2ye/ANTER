@@ -5,7 +5,7 @@
         <a href="{{ url_for('messages.inbox') }}" class="btn btn-light chat-back" aria-label="العودة إلى الرسائل">
             <i class="fas fa-arrow-right"></i>
         </a>
-        <img src="{{ url_for('static', filename='uploads/' + other.avatar) }}" width="44" height="44" class="rounded-circle" style="object-fit: cover;" alt="{{ other.name }}">
+        <img src="{{ avatar_url(other) }}" width="44" height="44" class="rounded-circle" style="object-fit: cover;" alt="{{ other.name }}">
         <div class="flex-grow-1">
             <h1 class="h6 mb-0 fw-bold">{{ other.name }}</h1>
             <span class="text-muted small">@{{ other.username }}</span>
@@ -83,7 +83,7 @@
     <audio id="remoteAudio" autoplay></audio>
 
     <div class="call-panel d-none" id="callPanel" role="dialog" aria-live="assertive" aria-label="مكالمة صوتية">
-        <div class="call-avatar"><img src="{{ url_for('static', filename='uploads/' + other.avatar) }}" alt="{{ other.name }}"></div>
+        <div class="call-avatar"><img src="{{ avatar_url(other) }}" alt="{{ other.name }}"></div>
         <h2 class="h5 mb-1" id="callTitle">مكالمة صوتية</h2>
         <p class="mb-3 text-muted" id="callStatus">جارٍ تجهيز الاتصال…</p>
         <div class="call-actions" id="outgoingCallActions">

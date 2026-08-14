@@ -14,6 +14,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     bio = db.Column(db.String(200), default='')
     avatar = db.Column(db.String(200), default='default.png')
+    avatar_data = db.Column(db.LargeBinary, nullable=True)
+    avatar_mime = db.Column(db.String(100), nullable=True)
     
     gender = db.Column(db.String(20), default='')
     birth_date = db.Column(db.Date, nullable=True)

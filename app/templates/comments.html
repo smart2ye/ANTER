@@ -6,7 +6,7 @@
         {% set user_comment_like = comment.likes.filter_by(user_id=current_user.id).first() if current_user.is_authenticated else none %}
         <article class="comment-card comment-item" id="comment-{{ comment.id }}" data-comment-id="{{ comment.id }}">
             <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-avatar-link" aria-label="{{ comment.author.name }}">
-                <img src="{{ url_for('static', filename='uploads/' + comment.author.avatar) }}"
+                <img src="{{ avatar_url(comment.author) }}"
                      class="comment-avatar"
                      alt="{{ comment.author.name }}">
             </a>
@@ -51,7 +51,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
 
         <div class="d-flex gap-2">
-            <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}"
+            <img src="{{ avatar_url(current_user) }}"
                  class="comment-avatar"
                  alt="{{ current_user.name }}"
                  style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">

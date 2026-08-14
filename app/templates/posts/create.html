@@ -2,7 +2,7 @@
 {% block content %}
 <div class="card shadow-lg border-0 rounded-4 p-4" style="background: var(--card-bg); max-width: 600px; margin: 0 auto;">
     <div class="d-flex align-items-center mb-3">
-        <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" class="rounded-circle me-2" width="48" height="48" style="object-fit: cover; border: 2px solid var(--fb-blue);">
+        <img src="{{ avatar_url(current_user) }}" class="rounded-circle me-2" width="48" height="48" style="object-fit: cover; border: 2px solid var(--fb-blue);">
         <div>
             <h6 class="mb-0 fw-bold">{{ current_user.name }}</h6>
             <small class="text-muted">@{{ current_user.username }}</small>

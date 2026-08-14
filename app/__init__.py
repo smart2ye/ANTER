@@ -40,23 +40,32 @@ def create_app():
         # ترحيل خفيف للتوافق مع قواعد البيانات القائمة قبل دعم الرسائل الصوتية.
         from sqlalchemy import inspect, text
         inspector = inspect(db.engine)
-        if 'messages' in inspector.get_table_names():
-            columns = {column['name'] for column in inspector.get_columns('messages')}
-            binary_type = 'BYTEA' if db.engine.dialect.name == 'postgresql' else 'BLOB'
-            required_columns = {
+        binary_type = 'BYTEA' if db.engine.dialect.name == 'postgresql' else 'BLOB'
+        required_columns_by_table = {
+            'messages': {
                 'audio_path': 'VARCHAR(255)',
                 'audio_data': binary_type,
                 'audio_mime': 'VARCHAR(100)',
-            }
-            missing_columns = [
-                (name, sql_type)
-                for name, sql_type in required_columns.items()
-                if name not in columns
-            ]
-            if missing_columns:
-                with db.engine.begin() as connection:
-                    for name, sql_type in missing_columns:
-                        connection.execute(text(f'ALTER TABLE messages ADD COLUMN {name} {sql_type}'))
+            },
+            'users': {
+                'avatar_data': binary_type,
+                'avatar_mime': 'VARCHAR(100)',
+            },
+            'posts': {
+                'image_data': binary_type,
+                'image_mime': 'VARCHAR(100)',
+            },
+        }
+        with db.engine.begin() as connection:
+            for table_name, required_columns in required_columns_by_table.items():
+                if table_name not in inspector.get_table_names():
+                    continue
+                columns = {column['name'] for column in inspector.get_columns(table_name)}
+                for name, sql_type in required_columns.items():
+                    if name not in columns:
+                        connection.execute(text(
+                            f'ALTER TABLE {table_name} ADD COLUMN {name} {sql_type}'
+                        ))
 
     # ============================================
     # دالة عامة لحساب التفاعلات
@@ -80,7 +89,10 @@ def create_app():
     # جعل get_status_icon متاحة في جميع القوالب
     # ============================================
     from app.utils.helpers import get_status_icon
+    from app.utils.media_urls import avatar_url, post_image_url
     app.add_template_global(get_status_icon, name='get_status_icon')
+    app.add_template_global(avatar_url, name='avatar_url')
+    app.add_template_global(post_image_url, name='post_image_url')
 
     # ============================================
     # تحديث آخر ظهور للمستخدم عند كل طلب

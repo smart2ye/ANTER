@@ -4,7 +4,7 @@
     <div class="post-card-header">
         <div class="post-author-info">
             <a href="{{ url_for('users.profile', username=post.author.username) }}" class="post-avatar-link">
-                <img src="{{ url_for('static', filename='uploads/' + post.author.avatar) }}" class="post-avatar" alt="{{ post.author.name }}">
+                <img src="{{ avatar_url(post.author) }}" class="post-avatar" alt="{{ post.author.name }}">
             </a>
             <div class="post-author-meta">
                 <a href="{{ url_for('users.profile', username=post.author.username) }}" class="post-author-name">
@@ -33,9 +33,9 @@
         <p>{{ post.content }}</p>
     </div>
 
-    {% if post.image %}
+    {% if post.image_data or post.image %}
     <div class="post-image-wrapper">
-        <img src="{{ url_for('static', filename='uploads/' + post.image) }}" class="post-image" alt="صورة المنشور">
+        <img src="{{ post_image_url(post) }}" class="post-image" alt="صورة المنشور">
     </div>
     {% endif %}
 

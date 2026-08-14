@@ -3,7 +3,8 @@ from flask_login import login_required, current_user
 from app import db, csrf
 from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag
 from app.forms.post import PostForm
-from app.utils.helpers import extract_hashtags, save_uploaded_image
+from app.utils.helpers import extract_hashtags
+from app.utils.image_storage import prepare_image_data
 from datetime import datetime
 import os
 import secrets
@@ -240,8 +241,20 @@ def create():
 
         hashtags = extract_hashtags(content)
 
-        image_path = save_uploaded_image(form.image.data, 'posts')
-        post = Post(content=content, author_id=current_user.id, image=image_path)
+        image_data, image_mime = (None, None)
+        if form.image.data:
+            image_data, image_mime = prepare_image_data(form.image.data)
+            if not image_data:
+                flash('تعذر قراءة صورة المنشور أو أنها أكبر من الحد المسموح.', 'danger')
+                return redirect(url_for('posts.create'))
+
+        post = Post(
+            content=content,
+            author_id=current_user.id,
+            image='',
+            image_data=image_data,
+            image_mime=image_mime,
+        )
         db.session.add(post)
         db.session.flush()
 

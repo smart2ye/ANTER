@@ -11,8 +11,8 @@
         <div class="mb-3">
             {{ form.image.label(class="form-label") }}
             {{ form.image(class="form-control") }}
-            {% if post.image %}
-                <img src="{{ url_for('static', filename='uploads/' + post.image) }}" class="img-fluid mt-2" style="max-height: 150px;">
+            {% if post.image_data or post.image %}
+                <img src="{{ post_image_url(post) }}" class="img-fluid mt-2" style="max-height: 150px;">
             {% endif %}
         </div>
         {{ form.submit(class="btn btn-primary w-100") }}

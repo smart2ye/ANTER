@@ -3,8 +3,8 @@ from flask_login import login_required, current_user, logout_user
 from app.extensions import db, csrf
 from app.models import User, Post, Video, Notification, Follow
 from app.forms.profile import ProfileForm
-from app.utils.helpers import save_uploaded_image, log_user_activity, get_user_activity_summary, get_status_icon
-import os
+from app.utils.helpers import log_user_activity, get_user_activity_summary, get_status_icon
+from app.utils.image_storage import prepare_image_data
 from datetime import datetime
 
 users_bp = Blueprint('users', __name__, url_prefix='/users')
@@ -48,14 +48,14 @@ def edit_profile():
         current_user.name = form.name.data
         current_user.bio = form.bio.data
         if form.avatar.data:
-            old_avatar = current_user.avatar
-            avatar_path = save_uploaded_image(form.avatar.data, 'avatars')
-            if avatar_path:
-                current_user.avatar = avatar_path
-                if old_avatar and old_avatar != 'default.png':
-                    old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], old_avatar)
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
+            avatar_data, avatar_mime = prepare_image_data(form.avatar.data)
+            if avatar_data:
+                current_user.avatar_data = avatar_data
+                current_user.avatar_mime = avatar_mime
+                # Keep the legacy path for old clients; avatar_url prefers the DB data.
+                current_user.avatar = 'default.png'
+            else:
+                flash('تعذر قراءة صورة البروفايل أو أنها أكبر من الحد المسموح.', 'danger')
         db.session.commit()
         log_user_activity(current_user.id, 'profile_update', {'name': form.name.data, 'bio': form.bio.data})
         flash('تم تحديث الملف الشخصي بنجاح.', 'success')

@@ -35,7 +35,7 @@
                     </a>
                     <div class="dropdown">
                         <a href="#" class="text-white dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown">
-                            <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" class="fb-avatar-sm">
+                            <img src="{{ avatar_url(current_user) }}" class="fb-avatar-sm">
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{{ url_for('users.profile', username=current_user.username) }}"><i class="fas fa-user"></i> ملفي</a></li>
@@ -121,7 +121,7 @@
                 <div class="p-3">
                     <div class="card shadow-sm border-0">
                         <div class="card-body text-center">
-                            <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" class="fb-avatar-lg mb-2">
+                            <img src="{{ avatar_url(current_user) }}" class="fb-avatar-lg mb-2">
                             <h6 class="fw-bold">{{ current_user.name }}</h6>
                                     <div class="post-status mt-1">
                                         {{ get_status_icon(current_user)|safe }}

@@ -16,7 +16,11 @@
                         {% if last_msg.sender_id == current_user.id %}
                             <span class="text-muted">أنت: </span>
                         {% endif %}
-                        {{ last_msg.content[:50] }}
+                        {% if last_msg.audio_data or last_msg.audio_path %}
+                            رسالة صوتية
+                        {% else %}
+                            {{ last_msg.content[:50] }}
+                        {% endif %}
                     </p>
                 </div>
                 <small class="text-muted">{{ last_msg.created_at.strftime('%H:%M') }}</small>

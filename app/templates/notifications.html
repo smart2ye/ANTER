@@ -14,7 +14,7 @@
                     {% set link = url_for('posts.view_post', post_id=notif.post_id) %}
                 {% elif notif.action == 'follow' %}
                     {% set link = url_for('users.profile', username=notif.actor.username) %}
-                {% elif notif.action == 'message' %}
+                {% elif notif.action in ['message', 'voice_message', 'voice_call'] %}
                     {% set link = url_for('messages.chat', user_id=notif.actor.id) %}
                 {% endif %}
 
@@ -36,6 +36,10 @@
                                     <span class="text-muted fw-normal">تابعك</span>
                                 {% elif notif.action == 'message' %}
                                     <span class="text-muted fw-normal">أرسل لك رسالة</span>
+                                {% elif notif.action == 'voice_message' %}
+                                    <span class="text-muted fw-normal">أرسل لك رسالة صوتية</span>
+                                {% elif notif.action == 'voice_call' %}
+                                    <span class="text-muted fw-normal">اتصل بك صوتيًا</span>
                                 {% endif %}
                             </div>
                             <small class="text-muted">{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</small>

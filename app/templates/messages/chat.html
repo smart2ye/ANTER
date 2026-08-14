@@ -25,6 +25,20 @@
                         {% if msg.content %}
                             <p class="message-text mb-1">{{ msg.content }}</p>
                         {% endif %}
+                        {% if msg.attachment_data %}
+                            <div class="chat-attachment">
+                                {% if msg.attachment_kind == 'image' %}
+                                    <a href="{{ url_for('messages.attachment', message_id=msg.id) }}" target="_blank" rel="noopener">
+                                        <img src="{{ url_for('messages.attachment', message_id=msg.id) }}" alt="{{ msg.attachment_name or 'صورة مرفقة' }}" loading="lazy">
+                                    </a>
+                                {% else %}
+                                    <a class="file-attachment" href="{{ url_for('messages.attachment', message_id=msg.id) }}" download="{{ msg.attachment_name or 'attachment' }}">
+                                        <i class="fas fa-paperclip"></i>
+                                        <span>{{ msg.attachment_name or 'ملف مرفق' }}</span>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
                         {% if msg.audio_data or msg.audio_path %}
                             <div class="voice-message" data-audio-message>
                                 <div class="voice-message-label"><i class="fas fa-microphone"></i> رسالة صوتية</div>
@@ -38,7 +52,15 @@
                                 </audio>
                             </div>
                         {% endif %}
-                        <time class="message-time" datetime="{{ msg.created_at.isoformat() }}">{{ msg.created_at.strftime('%H:%M') }}</time>
+                        <div class="message-meta">
+                            <time class="message-time" datetime="{{ msg.created_at.isoformat() }}">{{ msg.created_at.strftime('%H:%M') }}</time>
+                            {% if msg.sender_id == current_user.id %}
+                                <span class="read-receipt" title="{{ 'تمت القراءة' if msg.is_read else 'تم الإرسال' }}" aria-label="{{ 'تمت القراءة' if msg.is_read else 'تم الإرسال' }}">
+                                    <i class="fas {{ 'fa-check-double' if msg.is_read else 'fa-check' }}"></i>
+                                    {{ 'مقروءة' if msg.is_read else 'مُرسلة' }}
+                                </span>
+                            {% endif %}
+                        </div>
                     </div>
                 </article>
             {% endfor %}
@@ -52,6 +74,7 @@
 
     <form method="POST" action="{{ url_for('messages.send', user_id=other.id) }}" enctype="multipart/form-data" class="chat-composer mt-3" id="messageForm" novalidate>
         <input type="file" name="audio" id="voiceInput" accept="audio/*" capture="microphone" class="d-none">
+        <div class="attachment-preview d-none" id="attachmentPreview" role="status"></div>
         <div class="voice-preview d-none" id="voicePreview">
             <div class="d-flex align-items-center gap-2">
                 <span class="voice-preview-icon"><i class="fas fa-microphone"></i></span>
@@ -74,6 +97,10 @@
             <button class="btn btn-light composer-button" type="button" id="chooseVoiceButton" aria-label="تسجيل أو اختيار ملف صوتي" title="تسجيل أو اختيار ملف صوتي">
                 <i class="fas fa-folder-open"></i>
             </button>
+            <button class="btn btn-light composer-button" type="button" id="attachmentButton" aria-label="إرفاق صورة أو ملف" title="إرفاق صورة أو ملف">
+                <i class="fas fa-paperclip"></i>
+            </button>
+            <input type="file" name="attachment" id="attachmentInput" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.zip" class="d-none">
             <input type="text" name="content" id="messageInput" class="form-control composer-input" placeholder="اكتب رسالة..." autocomplete="off" autofocus>
             <button class="btn btn-primary composer-send" type="submit" id="sendMessageButton" aria-label="إرسال الرسالة" title="إرسال">
                 <i class="fas fa-paper-plane"></i>
@@ -109,7 +136,15 @@
     .is-sent .message-bubble { color: #fff; background: #1877f2; border-bottom-right-radius: 4px; }
     .is-received .message-bubble { color: #1f2937; background: #fff; border-bottom-left-radius: 4px; }
     .message-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .message-meta { display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-top: 3px; }
     .message-time { display: block; font-size: .7rem; opacity: .72; text-align: left; }
+    .read-receipt { font-size: .68rem; opacity: .78; white-space: nowrap; }
+    .is-sent .read-receipt { color: rgba(255,255,255,.84); }
+    .is-received .read-receipt { color: #64748b; }
+    .chat-attachment { margin-bottom: 7px; }
+    .chat-attachment img { display: block; max-width: min(100%, 320px); max-height: 300px; border-radius: 12px; object-fit: cover; }
+    .file-attachment { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 8px 10px; border-radius: 10px; background: rgba(24,119,242,.09); color: inherit; text-decoration: none; overflow-wrap: anywhere; }
+    .attachment-preview { margin-bottom: 9px; padding: 8px 10px; border: 1px dashed #9fc7f5; border-radius: 10px; color: #2563eb; font-size: .78rem; }
     .voice-message { min-width: 220px; }
     .voice-message-label { font-size: .77rem; margin-bottom: 6px; font-weight: 700; }
     .voice-audio { width: 100%; height: 34px; vertical-align: middle; }
@@ -144,6 +179,9 @@
     const form = document.getElementById('messageForm');
     const input = document.getElementById('messageInput');
     const voiceInput = document.getElementById('voiceInput');
+    const attachmentInput = document.getElementById('attachmentInput');
+    const attachmentButton = document.getElementById('attachmentButton');
+    const attachmentPreview = document.getElementById('attachmentPreview');
     const recordButton = document.getElementById('recordVoiceButton');
     const chooseVoiceButton = document.getElementById('chooseVoiceButton');
     const clearVoiceButton = document.getElementById('clearVoiceButton');
@@ -154,7 +192,15 @@
     const composerHelp = document.getElementById('composerHelp');
     const sendButton = document.getElementById('sendMessageButton');
 
-    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    const scrollChatToBottom = () => {
+        if (!chatBox) return;
+        requestAnimationFrame(() => {
+            chatBox.scrollTop = chatBox.scrollHeight;
+            window.setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 120);
+        });
+    };
+    scrollChatToBottom();
+    window.addEventListener('load', scrollChatToBottom, { once: true });
 
     let mediaRecorder = null;
     let mediaStream = null;
@@ -300,6 +346,18 @@
         }
     };
 
+    attachmentButton.addEventListener('click', () => attachmentInput.click());
+    attachmentInput.addEventListener('change', () => {
+        const file = attachmentInput.files?.[0];
+        if (!file) {
+            attachmentPreview.classList.add('d-none');
+            return;
+        }
+        if (recordedAudioFile || voiceInput.files?.[0]) clearVoice();
+        attachmentPreview.textContent = `مرفق جاهز: ${file.name}`;
+        attachmentPreview.classList.remove('d-none');
+    });
+
     voiceInput.addEventListener('change', () => {
         const file = voiceInput.files?.[0];
         if (file) showVoiceFile(file);
@@ -345,7 +403,13 @@
         stopTyping();
         const hasText = input.value.trim().length > 0;
         const audioFile = recordedAudioFile || voiceInput.files[0];
-        if (!hasText && !audioFile) {
+        const attachmentFile = attachmentInput.files?.[0];
+        if (audioFile && attachmentFile) {
+            event.preventDefault();
+            showHelp('أرسل تسجيلًا صوتيًا أو مرفقًا واحدًا في كل مرة.', true);
+            return;
+        }
+        if (!hasText && !audioFile && !attachmentFile) {
             event.preventDefault();
             showHelp('اكتب رسالة أو سجّل رسالة صوتية أولًا.', true);
             return;

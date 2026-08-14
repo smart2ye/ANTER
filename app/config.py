@@ -32,9 +32,11 @@ class Config:
     MAX_CONTENT_LENGTH = 200 * 1024 * 1024
     MAX_AUDIO_MESSAGE_BYTES = 10 * 1024 * 1024
     MAX_IMAGE_BYTES = 8 * 1024 * 1024
+    MAX_CHAT_ATTACHMENT_BYTES = 8 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'avi', 'mov', 'mkv'}
     ALLOWED_AUDIO_EXTENSIONS = {'webm', 'ogg', 'mp3', 'wav', 'm4a', 'aac'}
+    ALLOWED_CHAT_FILE_EXTENSIONS = {'pdf', 'txt', 'doc', 'docx', 'xls', 'xlsx', 'zip'}
     WEBRTC_STUN_URL = os.environ.get('WEBRTC_STUN_URL', 'stun:stun.l.google.com:19302')
     WEBRTC_TURN_URL = os.environ.get('WEBRTC_TURN_URL', '')
     WEBRTC_TURN_USERNAME = os.environ.get('WEBRTC_TURN_USERNAME', '')

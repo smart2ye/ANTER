@@ -1,16 +1,20 @@
 import base64
 import binascii
 import json
+import mimetypes
 import uuid
+from urllib.parse import quote
 from datetime import datetime, timedelta
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, Response
 from flask_login import login_required, current_user
+from werkzeug.utils import secure_filename
 from sqlalchemy import or_
 
 from app.extensions import db, csrf
 from app.models import Message, User, Notification, CallSignal, TypingState, Follow
 from app.utils.helpers import get_status_icon, allowed_audio_file
+from app.utils.image_storage import prepare_image_data
 
 messages_bp = Blueprint('messages', __name__, url_prefix='/messages')
 CALL_SIGNAL_TYPES = {'invite', 'answer', 'candidate', 'decline', 'hangup'}
@@ -93,6 +97,7 @@ def chat(user_id):
 
 
 TYPING_TTL_SECONDS = 6
+CHAT_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 
 def _can_message_user(other):
@@ -105,6 +110,31 @@ def _can_message_user(other):
             followed_id=current_user.id,
         ).first() is not None
     return True
+
+
+def _prepare_chat_attachment(uploaded_file):
+    if not uploaded_file or not uploaded_file.filename:
+        return None, None, None, None
+
+    filename = secure_filename(uploaded_file.filename)
+    if not filename or '.' not in filename:
+        return None, None, None, None
+    extension = filename.rsplit('.', 1)[1].lower()
+    max_bytes = current_app.config['MAX_CHAT_ATTACHMENT_BYTES']
+
+    if extension in CHAT_IMAGE_EXTENSIONS:
+        data, mime_type = prepare_image_data(uploaded_file)
+        if not data:
+            return None, None, None, None
+        return data, mime_type, filename, 'image'
+
+    if extension not in current_app.config['ALLOWED_CHAT_FILE_EXTENSIONS']:
+        return None, None, None, None
+    data = uploaded_file.read(max_bytes + 1)
+    if not data or len(data) > max_bytes:
+        return None, None, None, None
+    mime_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+    return data, mime_type, filename, 'file'
 
 
 @messages_bp.route('/typing/<int:user_id>', methods=['POST'])
@@ -172,8 +202,17 @@ def send(user_id):
         return redirect(url_for('messages.chat', user_id=user_id))
     content = request.form.get('content', '').strip()
     uploaded_audio = request.files.get('audio')
+    uploaded_attachment = request.files.get('attachment')
     audio_data = None
     audio_mime = None
+    attachment_data = None
+    attachment_mime = None
+    attachment_name = None
+    attachment_kind = None
+
+    if uploaded_audio and uploaded_audio.filename and uploaded_attachment and uploaded_attachment.filename:
+        flash('أرسل رسالة صوتية أو مرفقًا واحدًا في كل مرة.', 'warning')
+        return redirect(url_for('messages.chat', user_id=user_id))
 
     if uploaded_audio and uploaded_audio.filename:
         if not allowed_audio_file(uploaded_audio.filename):
@@ -194,7 +233,13 @@ def send(user_id):
         extension = uploaded_audio.filename.rsplit('.', 1)[1].lower()
         audio_mime = AUDIO_MIME_BY_EXTENSION.get(extension, 'application/octet-stream')
 
-    if content or audio_data:
+    if uploaded_attachment and uploaded_attachment.filename:
+        attachment_data, attachment_mime, attachment_name, attachment_kind = _prepare_chat_attachment(uploaded_attachment)
+        if not attachment_data:
+            flash('نوع المرفق غير مدعوم أو حجمه أكبر من 8 ميجابايت.', 'danger')
+            return redirect(url_for('messages.chat', user_id=user_id))
+
+    if content or audio_data or attachment_data:
         try:
             typing_state = TypingState.query.filter_by(
                 sender_id=current_user.id,
@@ -208,9 +253,13 @@ def send(user_id):
                 content=content,
                 audio_data=audio_data,
                 audio_mime=audio_mime,
+                attachment_data=attachment_data,
+                attachment_mime=attachment_mime,
+                attachment_name=attachment_name,
+                attachment_kind=attachment_kind,
             )
             db.session.add(message)
-            notification_action = 'voice_message' if audio_data else 'message'
+            notification_action = 'voice_message' if audio_data else 'file_message' if attachment_data else 'message'
             db.session.add(Notification(
                 user_id=other.id,
                 actor_id=current_user.id,
@@ -307,6 +356,30 @@ def audio(message_id):
         headers={
             'Content-Length': str(len(message.audio_data)),
             'Content-Disposition': f'inline; filename="voice-message-{message.id}"',
+            'Cache-Control': 'private, max-age=300',
+            'Accept-Ranges': 'bytes',
+        },
+    )
+
+
+@messages_bp.route('/attachment/<int:message_id>')
+@login_required
+def attachment(message_id):
+    """Serve a chat attachment only to the two participants in the message."""
+    message = Message.query.get_or_404(message_id)
+    if current_user.id not in {message.sender_id, message.receiver_id}:
+        return jsonify({'message': 'غير مصرح لك بالوصول إلى هذا المرفق.'}), 403
+    if not message.attachment_data:
+        return jsonify({'message': 'لا يحتوي هذا السجل على مرفق.'}), 404
+    disposition = 'inline' if message.attachment_kind == 'image' else 'attachment'
+    filename = secure_filename(message.attachment_name or f'attachment-{message.id}')
+    return Response(
+        message.attachment_data,
+        status=200,
+        mimetype=message.attachment_mime or 'application/octet-stream',
+        headers={
+            'Content-Length': str(len(message.attachment_data)),
+            'Content-Disposition': f"{disposition}; filename*=UTF-8''{quote(filename)}",
             'Cache-Control': 'private, max-age=300',
             'Accept-Ranges': 'bytes',
         },

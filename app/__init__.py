@@ -46,6 +46,10 @@ def create_app():
                 'audio_path': 'VARCHAR(255)',
                 'audio_data': binary_type,
                 'audio_mime': 'VARCHAR(100)',
+                'attachment_data': binary_type,
+                'attachment_mime': 'VARCHAR(150)',
+                'attachment_name': 'VARCHAR(255)',
+                'attachment_kind': 'VARCHAR(20)',
             },
             'users': {
                 'avatar_data': binary_type,

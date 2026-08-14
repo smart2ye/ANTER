@@ -152,6 +152,8 @@
     let mediaRecorder = null;
     let mediaStream = null;
     let audioChunks = [];
+    let recordedAudioFile = null;
+    let previewObjectUrl = null;
     let timerInterval = null;
     let recordingSeconds = 0;
 
@@ -161,8 +163,17 @@
     };
 
     const clearVoice = () => {
-        const transfer = new DataTransfer();
-        voiceInput.files = transfer.files;
+        recordedAudioFile = null;
+        try {
+            const transfer = new DataTransfer();
+            voiceInput.files = transfer.files;
+        } catch (error) {
+            // بعض متصفحات الهاتف تمنع تعديل files في input مخفي.
+        }
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+        }
         previewAudio.removeAttribute('src');
         previewAudio.load();
         preview.classList.add('d-none');
@@ -194,35 +205,55 @@
             const supportedType = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm']
                 .find(type => MediaRecorder.isTypeSupported(type));
             mediaRecorder = supportedType ? new MediaRecorder(mediaStream, { mimeType: supportedType }) : new MediaRecorder(mediaStream);
+            const recorder = mediaRecorder;
             audioChunks = [];
+            recordedAudioFile = null;
             recordingSeconds = 0;
             recordingTimer.textContent = '00:00';
-            mediaRecorder.addEventListener('dataavailable', event => {
-                if (event.data.size) audioChunks.push(event.data);
+            recorder.addEventListener('dataavailable', event => {
+                if (event.data && event.data.size > 0) audioChunks.push(event.data);
             });
-            mediaRecorder.addEventListener('stop', () => {
+            recorder.addEventListener('error', () => {
                 clearInterval(timerInterval);
                 recordingStatus.classList.add('d-none');
                 recordButton.classList.remove('is-recording');
                 recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
-                const mimeType = mediaRecorder.mimeType || 'audio/webm';
+                stopStream();
+                showHelp('تعذر إنشاء ملف صوتي من الميكروفون. حاول مجددًا.', true);
+            });
+            recorder.addEventListener('stop', () => {
+                clearInterval(timerInterval);
+                recordingStatus.classList.add('d-none');
+                recordButton.classList.remove('is-recording');
+                recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
+                const mimeType = recorder.mimeType || supportedType || 'audio/webm';
                 const blob = new Blob(audioChunks, { type: mimeType });
                 if (blob.size < 1000) {
+                    recordedAudioFile = null;
                     stopStream();
-                    showHelp('لم يُلتقط تسجيل كافٍ. حاول مجددًا.', true);
+                    showHelp('لم يُلتقط تسجيل كافٍ. تحدث بوضوح ثم حاول مجددًا.', true);
                     return;
                 }
                 const extension = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') ? 'm4a' : 'webm';
                 const voiceFile = new File([blob], `voice-message-${Date.now()}.${extension}`, { type: mimeType });
-                const transfer = new DataTransfer();
-                transfer.items.add(voiceFile);
-                voiceInput.files = transfer.files;
-                previewAudio.src = URL.createObjectURL(blob);
+                // لا نعتمد على files في input المخفي؛ بعض متصفحات الهاتف تجعلها للقراءة فقط.
+                recordedAudioFile = voiceFile;
+                try {
+                    const transfer = new DataTransfer();
+                    transfer.items.add(voiceFile);
+                    voiceInput.files = transfer.files;
+                } catch (error) {
+                    // سيُرسل recordedAudioFile مباشرةً عند الضغط على زر الإرسال.
+                }
+                if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+                previewObjectUrl = URL.createObjectURL(blob);
+                previewAudio.src = previewObjectUrl;
                 preview.classList.remove('d-none');
                 showHelp('يمكنك الاستماع إلى التسجيل ثم إرساله.');
                 stopStream();
             });
-            mediaRecorder.start();
+            // إرسال مقاطع كل ربع ثانية يمنع فقدان المقطع النهائي عند الضغط على إيقاف.
+            recorder.start(250);
             recordButton.classList.add('is-recording');
             recordButton.innerHTML = '<i class="fas fa-stop"></i>';
             recordingStatus.classList.remove('d-none');
@@ -275,7 +306,7 @@
 
     form.addEventListener('submit', event => {
         const hasText = input.value.trim().length > 0;
-        const audioFile = voiceInput.files[0];
+        const audioFile = recordedAudioFile || voiceInput.files[0];
         if (!hasText && !audioFile) {
             event.preventDefault();
             showHelp('اكتب رسالة أو سجّل رسالة صوتية أولًا.', true);

@@ -1,16 +1,56 @@
 {% extends "base.html" %}
 {% block content %}
-<h5 class="mb-3"><i class="fas fa-fire text-danger"></i> التريندات</h5>
-<p class="text-muted small">المنشورات الأكثر تفاعلاً خلال آخر 24 ساعة</p>
-{% if posts %}
-    {% for post in posts %}
-        {% include "_post_card.html" %}
-    {% endfor %}
-{% else %}
-    <div class="text-center text-muted mt-5">
-        <i class="fas fa-fire fa-3x mb-3"></i>
-        <h5>لا توجد تريندات حالياً</h5>
-        <p>تفاعل مع المنشورات لظهور التريندات.</p>
+<div class="container-fluid">
+    <div class="row">
+        <!-- قسم المنشورات التريند -->
+        <div class="col-md-8">
+            <h5 class="mb-3"><i class="fas fa-fire text-danger"></i> المنشورات الرائجة الآن</h5>
+            <p class="text-muted small">يتم ترتيبها بناءً على التفاعل الحقيقي وسرعة الانتشار</p>
+            
+            {% if posts %}
+                {% for post in posts %}
+                    {% include "_post_card.html" %}
+                {% endfor %}
+            {% else %}
+                <div class="card shadow-sm border-0 rounded-3 text-center p-5">
+                    <div class="card-body">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <h5>لا توجد تريندات حالياً</h5>
+                        <p class="text-muted">كن أول من يشعل الحماس في المنصة!</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- قسم الهاشتاقات التريند -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-3 sticky-top" style="top: 80px;">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-hashtag text-primary"></i> وسوم رائجة</h6>
+                </div>
+                <div class="card-body px-0">
+                    {% if trending_hashtags %}
+                        <div class="list-group list-group-flush">
+                            {% for tag, score in trending_hashtags %}
+                                <a href="{{ url_for('explore.search', q='#' + tag) }}" class="list-group-item list-group-item-action border-0 py-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="fw-bold text-dark">#{{ tag }}</span>
+                                            <div class="small text-muted">رائج الآن</div>
+                                        </div>
+                                        <i class="fas fa-chevron-left text-muted small"></i>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted small">لا توجد وسوم نشطة حالياً</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
-{% endif %}
+</div>
 {% endblock %}

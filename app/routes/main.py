@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from flask_login import login_required, current_user
 from app.models import Post, Video, Like, Comment, Follow, HiddenPost
 from app.extensions import db
@@ -84,6 +84,28 @@ def index():
         return (1.5 if not is_suggested else 1) * (-time_weight)
     all_posts.sort(key=sort_key)
     return render_template('index.html', posts=all_posts, suggested_posts=top_suggested)
+
+@main_bp.route('/login')
+def login_alias():
+    return redirect(url_for('auth.login'))
+
+
+@main_bp.route('/register')
+def register_alias():
+    return redirect(url_for('auth.register'))
+
+
+@main_bp.route('/profile')
+@login_required
+def profile_alias():
+    return redirect(url_for('users.profile', username=current_user.username))
+
+
+@main_bp.route('/settings')
+@login_required
+def settings_alias():
+    return redirect(url_for('users.settings'))
+
 
 @main_bp.route('/api/posts')
 @login_required

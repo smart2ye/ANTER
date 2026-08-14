@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import or_
-from sqlalchemy.exc import SQLAlchemyError
 import os
 
 from app.extensions import db, csrf
@@ -104,7 +103,7 @@ def send(user_id):
     if uploaded_audio and uploaded_audio.filename:
         try:
             audio_path = save_audio_file(uploaded_audio)
-        except OSError:
+        except Exception:
             current_app.logger.exception('تعذر حفظ ملف الرسالة الصوتية')
             flash('تعذر حفظ الرسالة الصوتية حاليًا. حاول مجددًا.', 'danger')
             return redirect(url_for('messages.chat', user_id=user_id))
@@ -126,7 +125,7 @@ def send(user_id):
             )
             db.session.add(notification)
             db.session.commit()
-        except SQLAlchemyError:
+        except Exception:
             db.session.rollback()
             if audio_path:
                 try:

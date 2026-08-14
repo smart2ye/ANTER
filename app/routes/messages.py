@@ -9,7 +9,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import or_
 
 from app.extensions import db, csrf
-from app.models import Message, User, Notification, CallSignal
+from app.models import Message, User, Notification, CallSignal, TypingState, Follow
 from app.utils.helpers import get_status_icon, allowed_audio_file
 
 messages_bp = Blueprint('messages', __name__, url_prefix='/messages')
@@ -92,6 +92,66 @@ def chat(user_id):
     )
 
 
+TYPING_TTL_SECONDS = 6
+
+
+def _can_message_user(other):
+    privacy = getattr(other, 'message_privacy', 'everyone') or 'everyone'
+    if privacy == 'none':
+        return False
+    if privacy == 'followers':
+        return Follow.query.filter_by(
+            follower_id=other.id,
+            followed_id=current_user.id,
+        ).first() is not None
+    return True
+
+
+@messages_bp.route('/typing/<int:user_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def set_typing(user_id):
+    """Store a short-lived typing snapshot; every request returns immediately."""
+    other = User.query.get_or_404(user_id)
+    if not _can_message_user(other):
+        return jsonify({'success': False, 'typing': False, 'message': 'المراسلة غير متاحة لهذا المستخدم.'}), 403
+
+    data = request.get_json(silent=True) or request.form
+    value = data.get('typing', False)
+    is_typing = value is True or str(value).strip().lower() in {'1', 'true', 'yes', 'on'}
+    state = TypingState.query.filter_by(
+        sender_id=current_user.id,
+        receiver_id=other.id,
+    ).first()
+    if is_typing:
+        if state:
+            state.updated_at = datetime.utcnow()
+        else:
+            db.session.add(TypingState(
+                sender_id=current_user.id,
+                receiver_id=other.id,
+                updated_at=datetime.utcnow(),
+            ))
+    elif state:
+        db.session.delete(state)
+    db.session.commit()
+    return jsonify({'success': True, 'typing': is_typing})
+
+
+@messages_bp.route('/typing/<int:user_id>', methods=['GET'])
+@login_required
+def get_typing(user_id):
+    """Read a typing snapshot that is valid for only a few seconds."""
+    other = User.query.get_or_404(user_id)
+    cutoff = datetime.utcnow() - timedelta(seconds=TYPING_TTL_SECONDS)
+    state = TypingState.query.filter(
+        TypingState.sender_id == other.id,
+        TypingState.receiver_id == current_user.id,
+        TypingState.updated_at >= cutoff,
+    ).first()
+    return jsonify({'typing': state is not None, 'ttl': TYPING_TTL_SECONDS})
+
+
 AUDIO_MIME_BY_EXTENSION = {
     'webm': 'audio/webm',
     'ogg': 'audio/ogg',
@@ -107,6 +167,9 @@ AUDIO_MIME_BY_EXTENSION = {
 @csrf.exempt
 def send(user_id):
     other = User.query.get_or_404(user_id)
+    if not _can_message_user(other):
+        flash('هذا المستخدم لا يستقبل رسائل منك حاليًا.', 'warning')
+        return redirect(url_for('messages.chat', user_id=user_id))
     content = request.form.get('content', '').strip()
     uploaded_audio = request.files.get('audio')
     audio_data = None
@@ -133,6 +196,12 @@ def send(user_id):
 
     if content or audio_data:
         try:
+            typing_state = TypingState.query.filter_by(
+                sender_id=current_user.id,
+                receiver_id=other.id,
+            ).first()
+            if typing_state:
+                db.session.delete(typing_state)
             message = Message(
                 sender_id=current_user.id,
                 receiver_id=other.id,
@@ -165,6 +234,8 @@ def send(user_id):
 def send_audio_message(user_id):
     """استقبال الصوت كـ base64 لتجاوز فشل multipart في بعض بيئات الإنتاج."""
     other = User.query.get_or_404(user_id)
+    if not _can_message_user(other):
+        return jsonify({'success': False, 'message': 'هذا المستخدم لا يستقبل رسائل منك حاليًا.'}), 403
     data = request.get_json(silent=True) or {}
     encoded_audio = data.get('audioData')
     filename = str(data.get('fileName', '')).strip()
@@ -187,6 +258,12 @@ def send_audio_message(user_id):
     extension = filename.rsplit('.', 1)[1].lower()
     audio_mime = AUDIO_MIME_BY_EXTENSION.get(extension, 'application/octet-stream')
     try:
+        typing_state = TypingState.query.filter_by(
+            sender_id=current_user.id,
+            receiver_id=other.id,
+        ).first()
+        if typing_state:
+            db.session.delete(typing_state)
         message = Message(
             sender_id=current_user.id,
             receiver_id=other.id,

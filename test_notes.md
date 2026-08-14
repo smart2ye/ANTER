@@ -124,3 +124,7 @@
 ## فحص إعداد Render — 14/08/2026
 
 تم فحص خدمة `ANTER-1` عبر Render API: `rootDir` فارغ، الخدمة على الخطة المجانية، ولا يظهر لها قرص دائم. endpoint متغيرات البيئة يعرض `ANTER` فقط ولا يعرض `DATABASE_URL`. لذلك تعمل الخدمة حاليًا بقاعدة SQLite الافتراضية داخل نظام ملفات Render المؤقت؛ وهذا يفسر اختفاء الرسائل الجديدة بعد كل نشر، وليس خللًا في رابط `/messages/audio/<id>` وحده.
+
+## توافق PostgreSQL — 14/08/2026
+
+بعد ربط Supabase، ظهر خطأ 500 في `/explore/` بسبب `func.datetime('now', '-30 days')` الخاص بـSQLite. تم استبداله بتاريخ Python في الالتزام `4c89b72`. نشر Render أصبح Live، و`/health` يعيد `200` مع `X-ANTER-Database: postgresql` و`X-ANTER-Persistent-Database: true`.

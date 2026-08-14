@@ -184,70 +184,48 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
-        // تحديث عداد الإشعارات
-        {% if current_user.is_authenticated %}
+        // مصدر واحد وخفيف لتحديث عداد الإشعارات.
+        function updateBadge() {
+            return fetch('/notifications/unread_count', {
+                headers: {'Accept': 'application/json'},
+                credentials: 'same-origin',
+                cache: 'no-store'
+            })
+                .then(function(res) {
+                    if (!res.ok) throw new Error('تعذر تحديث الإشعارات');
+                    return res.json();
+                })
+                .then(function(data) {
+                    var badge = document.getElementById('notif-badge');
+                    if (badge) {
+                        badge.textContent = data.count;
+                        badge.style.display = data.count > 0 ? 'block' : 'none';
+                    }
+                    document.dispatchEvent(new CustomEvent('anter:notification-count', {
+                        detail: {count: data.count}
+                    }));
+                    return data.count;
+                })
+                .catch(function() {
+                    return null;
+                });
         }
-        fetch('/notifications/unread_count')
-            .then(function(res) { return res.json(); })
-            .then(function(data) { updateBadge(data.count); });
-        setInterval(function() {
-            fetch('/notifications/unread_count')
-                .then(function(res) { return res.json(); })
-                .then(function(data) { updateBadge(data.count); });
-        }, 15000);
+
+        {% if current_user.is_authenticated %}
+        updateBadge();
+        setInterval(updateBadge, 15000);
         {% endif %}
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/static/sw.js').catch(function(error) {
+                    console.log('Service Worker registration failed:', error);
+                });
+            });
+        }
     </script>
     {% block scripts %}{% endblock %}
     <script>
-        function updateBadge() {
-            fetch("/notifications/unread_count")
-                .then(res => res.json())
-                .then(data => {
-                    const badge = document.getElementById("notif-badge");
-                    if (badge) {
-                        badge.textContent = data.count;
-                        badge.style.display = data.count > 0 ? "block" : "none";
-                    }
-                });
-        }
-        updateBadge();
-        setInterval(updateBadge, 15000);
-    </script>
-</body>
-</html>
-<script>
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/static/sw.js')
-            .then(function(registration) {
-                console.log('Service Worker registered successfully:', registration);
-            })
-            .catch(function(error) {
-                console.log('Service Worker registration failed:', error);
-            });
-    });
-}
-</script>
-<script>
-    // ==============================
-    // تحديث عداد الإشعارات (دالة عامة)
-    // ==============================
-    function updateBadge() {
-        fetch('/notifications/unread_count')
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                var badge = document.getElementById('notif-badge');
-                if (badge) {
-                    badge.textContent = data.count;
-                    badge.style.display = data.count > 0 ? 'block' : 'none';
-                }
-            });
-    }
-
-    // تحديث العداد كل 15 ثانية
-    setInterval(updateBadge, 15000);
-</script>
-<script>
     // ==============================
     // طلب إذن الإشعارات
     // ==============================
@@ -294,4 +272,6 @@ if ('serviceWorker' in navigator) {
     } else {
         window.addEventListener('load', subscribeToPush);
     }
-</script>
+    </script>
+</body>
+</html>

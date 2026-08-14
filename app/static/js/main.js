@@ -387,25 +387,15 @@ document.addEventListener('click', function(e) {
 });
 
 // ==============================
-// استقبال الإشعارات عبر SSE
+// صوت الإشعارات من التحديث الدوري الموحد في القالب العام
 // ==============================
-if (document.getElementById('notif-badge')) {
-    const eventSource = new EventSource('/sse/notifications');
-    eventSource.onmessage = function(e) {
-        try {
-            const data = JSON.parse(e.data);
-            const badge = document.getElementById('notif-badge');
-            if (badge) {
-                badge.textContent = data.count;
-                badge.style.display = data.count > 0 ? 'block' : 'none';
-            }
-            if (data.count > 0) sounds.notification();
-        } catch(err) {}
-    };
-    eventSource.onerror = function() {
-        setTimeout(() => {
-            const newSource = new EventSource('/sse/notifications');
-            eventSource.close();
-        }, 5000);
-    };
-}
+let previousNotificationCount = null;
+document.addEventListener('anter:notification-count', function(event) {
+    const count = Number(event.detail && event.detail.count);
+    if (!Number.isFinite(count)) return;
+
+    if (previousNotificationCount !== null && count > previousNotificationCount) {
+        sounds.notification();
+    }
+    previousNotificationCount = count;
+});

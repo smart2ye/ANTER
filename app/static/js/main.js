@@ -402,3 +402,91 @@ document.addEventListener('anter:notification-count', function(event) {
     }
     previousNotificationCount = count;
 });
+
+
+// ==============================
+// بطاقة المشاركة المنبثقة المطورة
+// ==============================
+function copyShareUrl(url) {
+    if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(url);
+    }
+    return new Promise((resolve, reject) => {
+        const input = document.createElement('textarea');
+        input.value = url;
+        input.setAttribute('readonly', '');
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        input.select();
+        const copied = document.execCommand('copy');
+        document.body.removeChild(input);
+        copied ? resolve() : reject(new Error('copy failed'));
+    });
+}
+
+document.addEventListener('click', function(event) {
+    const toggle = event.target.closest('.share-toggle');
+    const closeButton = event.target.closest('.share-modal-close');
+    const copyButton = event.target.closest('.copy-link-btn');
+
+    if (toggle) {
+        event.preventDefault();
+        const dropdown = toggle.closest('.share-dropdown');
+        const card = dropdown ? dropdown.querySelector('.share-modal-card') : null;
+        document.querySelectorAll('.share-modal-card').forEach((otherCard) => {
+            if (otherCard !== card) otherCard.style.display = 'none';
+        });
+        if (card) {
+            const opening = card.style.display !== 'block';
+            card.style.display = opening ? 'block' : 'none';
+            toggle.setAttribute('aria-expanded', String(opening));
+        }
+        return;
+    }
+
+    if (closeButton) {
+        const dropdown = closeButton.closest('.share-dropdown');
+        const card = closeButton.closest('.share-modal-card');
+        if (card) card.style.display = 'none';
+        dropdown?.querySelector('.share-toggle')?.setAttribute('aria-expanded', 'false');
+        return;
+    }
+
+    if (copyButton) {
+        event.preventDefault();
+        const label = copyButton.querySelector('span:last-child');
+        const originalText = label ? label.textContent : '';
+        copyShareUrl(copyButton.dataset.url)
+            .then(() => {
+                if (label) label.textContent = 'تم النسخ!';
+                copyButton.classList.add('text-success');
+                window.setTimeout(() => {
+                    if (label) label.textContent = originalText;
+                    copyButton.classList.remove('text-success');
+                }, 1800);
+            })
+            .catch(() => {
+                if (label) label.textContent = 'تعذر النسخ';
+                window.setTimeout(() => {
+                    if (label) label.textContent = originalText;
+                }, 1800);
+            });
+        return;
+    }
+
+    if (!event.target.closest('.share-dropdown')) {
+        document.querySelectorAll('.share-modal-card').forEach((card) => {
+            card.style.display = 'none';
+            card.closest('.share-dropdown')?.querySelector('.share-toggle')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+});
+
+document.addEventListener('keydown', function(event) {
+    if (event.key !== 'Escape') return;
+    document.querySelectorAll('.share-modal-card').forEach((card) => {
+        card.style.display = 'none';
+        card.closest('.share-dropdown')?.querySelector('.share-toggle')?.setAttribute('aria-expanded', 'false');
+    });
+});

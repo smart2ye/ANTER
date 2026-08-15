@@ -49,8 +49,9 @@
             {% if reactions.angry > 0 %}<span class="reaction-item">😡 {{ reactions.angry }}</span>{% endif %}
             {% if reactions.sad > 0 %}<span class="reaction-item">😢 {{ reactions.sad }}</span>{% endif %}
         </div>
+        {% set comment_count = post.comment_count() %}
         <div class="comments-count">
-            <i class="far fa-comment"></i> {{ post.comment_count() }}
+            <i class="far fa-comment"></i> {{ comment_count }}
         </div>
     </div>
 
@@ -79,7 +80,7 @@
         <!-- زر التعليق -->
         <button class="action-btn comment-toggle" data-post="{{ post.id }}">
             <i class="far fa-comment"></i>
-            <span>{{ post.comment_count() }}</span>
+            <span>{{ comment_count }}</span>
         </button>
 
         <!-- زر المشاركة -->
@@ -107,8 +108,6 @@
         {% endif %}
     </div>
 
-    <!-- قسم التعليقات المشترك -->
-    <div class="comments-section" id="comments-{{ post.id }}">
-        {% include "comments.html" with context %}
-    </div>
+    <!-- تُحمّل التعليقات عند فتحها لتفادي استعلامات متكررة لكل بطاقة في الخلاصة. -->
+    <div class="comments-section" id="comments-{{ post.id }}" data-loaded="false"></div>
 </div>

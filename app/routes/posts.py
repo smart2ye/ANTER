@@ -284,6 +284,14 @@ def create():
 
     return render_template('posts/create.html', form=form)
 
+@posts_bp.route('/comments/<int:post_id>/fragment')
+@login_required
+def comments_fragment(post_id):
+    """Return one post's comments only when the reader opens the discussion."""
+    post = Post.query.get_or_404(post_id)
+    return render_template('comments.html', post=post)
+
+
 @posts_bp.route('/post/<int:post_id>')
 def view_post(post_id):
     post = Post.query.get_or_404(post_id)

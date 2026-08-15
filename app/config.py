@@ -12,6 +12,15 @@ if DATABASE_URI.startswith('postgres://'):
 DEFAULT_UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static/uploads')
 UPLOAD_FOLDER = os.path.abspath(os.environ.get('UPLOAD_FOLDER', DEFAULT_UPLOAD_FOLDER))
 
+
+def env_int(name, default, minimum=1):
+    """Read a positive integer from the environment without risking startup failure."""
+    try:
+        return max(minimum, int(os.environ.get(name, default)))
+    except (TypeError, ValueError):
+        return default
+
+
 if DATABASE_URI.startswith('sqlite'):
     DATABASE_ENGINE_OPTIONS = {
         'connect_args': {'check_same_thread': False, 'timeout': 30},
@@ -29,10 +38,16 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = DATABASE_ENGINE_OPTIONS
     UPLOAD_FOLDER = UPLOAD_FOLDER
-    MAX_CONTENT_LENGTH = 200 * 1024 * 1024
+    # A small deployment must reject very large request bodies before they pressure the worker.
+    MAX_CONTENT_LENGTH = env_int('MAX_REQUEST_BYTES', 25 * 1024 * 1024, 5 * 1024 * 1024)
     MAX_AUDIO_MESSAGE_BYTES = 10 * 1024 * 1024
-    MAX_IMAGE_BYTES = 8 * 1024 * 1024
+    # Admission limits protect a small worker from oversized or highly compressed uploads.
+    MAX_IMAGE_BYTES = env_int('MAX_IMAGE_BYTES', 5 * 1024 * 1024, 1 * 1024 * 1024)
+    MAX_IMAGE_PIXELS = env_int('MAX_IMAGE_PIXELS', 10 * 1024 * 1024, 1 * 1024 * 1024)
     MAX_CHAT_ATTACHMENT_BYTES = 8 * 1024 * 1024
+    # Keep the initial HTML response small; additional posts load on scroll.
+    FEED_PAGE_SIZE = env_int('FEED_PAGE_SIZE', 5, 2)
+    FEED_CANDIDATE_LIMIT = env_int('FEED_CANDIDATE_LIMIT', 30, FEED_PAGE_SIZE)
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'avi', 'mov', 'mkv'}
     ALLOWED_AUDIO_EXTENSIONS = {'webm', 'ogg', 'mp3', 'wav', 'm4a', 'aac'}

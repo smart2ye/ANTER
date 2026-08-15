@@ -213,7 +213,7 @@
 
         {% if current_user.is_authenticated %}
         updateBadge();
-        setInterval(updateBadge, 15000);
+        setInterval(updateBadge, 30000);
         {% endif %}
 
         if ('serviceWorker' in navigator) {

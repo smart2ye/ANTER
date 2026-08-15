@@ -1,8 +1,10 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import current_app
 from flask_login import login_required, current_user
 from app.models import Post, Video, Like, Comment, Follow, HiddenPost
 from app.extensions import db
 from sqlalchemy import func, or_, and_
+from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
 import math
 import re
@@ -53,37 +55,58 @@ def calculate_similarity(text, interests):
 def get_post_engagement_score(post):
     return post.like_count() * 2 + post.comment_count() * 3
 
-@main_bp.route('/')
-@login_required
-def index():
-    following_ids = [f.followed_id for f in current_user.following] + [current_user.id]
-    interests = get_user_interests(current_user.id)
-    followed_posts = Post.query.filter(Post.author_id.in_(following_ids)).all()
-    suggested_posts = Post.query.filter(
+
+def build_feed(user):
+    """Build a bounded, ranked feed for both the HTML page and infinite-scroll API."""
+    page_size = current_app.config['FEED_PAGE_SIZE']
+    candidate_limit = current_app.config['FEED_CANDIDATE_LIMIT']
+    following_ids = [follow.followed_id for follow in user.following] + [user.id]
+    interests = get_user_interests(user.id)
+    post_query = Post.query.options(joinedload(Post.author))
+
+    followed_posts = post_query.filter(Post.author_id.in_(following_ids)) \
+        .order_by(Post.created_at.desc()).limit(candidate_limit).all()
+    suggested_posts = post_query.filter(
         ~Post.author_id.in_(following_ids),
         Post.created_at > datetime.utcnow() - timedelta(days=7)
-    ).all()
+    ).order_by(Post.created_at.desc()).limit(candidate_limit).all()
+
     suggested_with_scores = []
     for post in suggested_posts:
         similarity = calculate_similarity(post.content, interests)
         engagement = get_post_engagement_score(post)
-        score = similarity * 3 + (engagement / 10)
-        suggested_with_scores.append((post, score))
-    suggested_with_scores.sort(key=lambda x: x[1], reverse=True)
-    top_suggested = [post for post, score in suggested_with_scores[:10]]
-    if followed_posts or top_suggested:
-        all_posts = followed_posts + top_suggested
-    else:
-        all_posts = Post.query.order_by(Post.created_at.desc()).limit(20).all()
-    hidden_ids = [h.post_id for h in HiddenPost.query.filter_by(user_id=current_user.id).all()]
+        suggested_with_scores.append((post, similarity * 3 + (engagement / 10)))
+    suggested_with_scores.sort(key=lambda item: item[1], reverse=True)
+    top_suggested = [post for post, _score in suggested_with_scores[:page_size]]
+
+    all_posts = followed_posts + top_suggested
+    if not all_posts:
+        all_posts = post_query.order_by(Post.created_at.desc()).limit(candidate_limit).all()
+
+    hidden_ids = {
+        post_id for post_id, in db.session.query(HiddenPost.post_id)
+        .filter_by(user_id=user.id).all()
+    }
     if hidden_ids:
-        all_posts = [p for p in all_posts if p.id not in hidden_ids]
-    def sort_key(post):
-        is_suggested = post in top_suggested
-        time_weight = (datetime.utcnow() - post.created_at).total_seconds() / 3600
-        return (1.5 if not is_suggested else 1) * (-time_weight)
-    all_posts.sort(key=sort_key)
-    return render_template('index.html', posts=all_posts, suggested_posts=top_suggested)
+        all_posts = [post for post in all_posts if post.id not in hidden_ids]
+
+    suggested_ids = {post.id for post in top_suggested}
+    all_posts.sort(
+        key=lambda post: ((1.5 if post.id not in suggested_ids else 1), post.created_at),
+        reverse=True
+    )
+    return all_posts, top_suggested
+
+@main_bp.route('/')
+@login_required
+def index():
+    all_posts, top_suggested = build_feed(current_user)
+    page_size = current_app.config['FEED_PAGE_SIZE']
+    return render_template(
+        'index.html',
+        posts=all_posts[:page_size],
+        suggested_posts=top_suggested
+    )
 
 @main_bp.route('/login')
 def login_alias():
@@ -110,35 +133,9 @@ def settings_alias():
 @main_bp.route('/api/posts')
 @login_required
 def api_posts():
-    page = request.args.get('page', 1, type=int)
-    per_page = 5
-    following_ids = [f.followed_id for f in current_user.following] + [current_user.id]
-    interests = get_user_interests(current_user.id)
-    followed_posts = Post.query.filter(Post.author_id.in_(following_ids)).all()
-    suggested_posts = Post.query.filter(
-        ~Post.author_id.in_(following_ids),
-        Post.created_at > datetime.utcnow() - timedelta(days=7)
-    ).all()
-    suggested_with_scores = []
-    for post in suggested_posts:
-        similarity = calculate_similarity(post.content, interests)
-        engagement = get_post_engagement_score(post)
-        score = similarity * 3 + (engagement / 10)
-        suggested_with_scores.append((post, score))
-    suggested_with_scores.sort(key=lambda x: x[1], reverse=True)
-    top_suggested = [post for post, score in suggested_with_scores[:10]]
-    if followed_posts or top_suggested:
-        all_posts = followed_posts + top_suggested
-    else:
-        all_posts = Post.query.order_by(Post.created_at.desc()).limit(20).all()
-    hidden_ids = [h.post_id for h in HiddenPost.query.filter_by(user_id=current_user.id).all()]
-    if hidden_ids:
-        all_posts = [p for p in all_posts if p.id not in hidden_ids]
-    def sort_key(post):
-        is_suggested = post in top_suggested
-        time_weight = (datetime.utcnow() - post.created_at).total_seconds() / 3600
-        return (1.5 if not is_suggested else 1) * (-time_weight)
-    all_posts.sort(key=sort_key)
+    page = max(1, request.args.get('page', 1, type=int))
+    per_page = current_app.config['FEED_PAGE_SIZE']
+    all_posts, top_suggested = build_feed(current_user)
     start = (page - 1) * per_page
     end = start + per_page
     paginated_posts = all_posts[start:end]

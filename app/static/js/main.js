@@ -83,16 +83,19 @@ document.addEventListener('click', function(e) {
         commentsDiv.style.display = 'block';
         requestAnimationFrame(() => commentsDiv.classList.add('open'));
 
-        // التعليقات مضمّنة مسبقًا في البطاقات المشتركة.
-        // استخدم API فقط للأزرار القديمة التي لا تحتوي محتوى مسبقًا.
-        if (commentsDiv.innerHTML.trim() === '' && btn.classList.contains('toggle-comments-btn')) {
-            fetch(`/api/comments/${postId}`)
-                .then(res => res.text())
+        // تُجلب التعليقات مرة واحدة فقط عند فتح النقاش، لتبقى الخلاصة خفيفة.
+        if (commentsDiv.dataset.loaded !== 'true') {
+            fetch(`/comments/${postId}/fragment`, {credentials: 'include'})
+                .then(res => {
+                    if (!res.ok) throw new Error('تعذر تحميل التعليقات');
+                    return res.text();
+                })
                 .then(html => {
-                    const temp = document.createElement('div');
-                    temp.innerHTML = html;
-                    const comments = temp.querySelector('.comment-section');
-                    if (comments) commentsDiv.innerHTML = comments.innerHTML;
+                    commentsDiv.innerHTML = html;
+                    commentsDiv.dataset.loaded = 'true';
+                })
+                .catch(() => {
+                    commentsDiv.innerHTML = '<p class="text-muted small p-3 mb-0">تعذر تحميل التعليقات الآن.</p>';
                 });
         }
 

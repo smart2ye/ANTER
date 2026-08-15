@@ -83,14 +83,37 @@
             <span>{{ comment_count }}</span>
         </button>
 
-        <!-- زر المشاركة -->
-        <div class="share-dropdown">
-            <button class="action-btn share-toggle"><i class="fas fa-share-alt"></i></button>
-            <div class="share-options">
-                <a href="#" onclick="copyLink('{{ post_url }}')"><i class="fas fa-copy"></i> نسخ الرابط</a>
-                <a href="https://wa.me/?text={{ post_url }}" target="_blank"><i class="fab fa-whatsapp"></i> واتساب</a>
-                <a href="https://twitter.com/intent/tweet?url={{ post_url }}" target="_blank"><i class="fab fa-twitter"></i> تويتر</a>
-                <a href="https://www.facebook.com/sharer/sharer.php?u={{ post_url }}" target="_blank"><i class="fab fa-facebook"></i> فيسبوك</a>
+        <!-- زر المشاركة المطور -->
+        <div class="share-dropdown position-relative">
+            <button class="action-btn share-toggle" type="button" aria-expanded="false" title="مشاركة المنشور">
+                <i class="fas fa-share-alt"></i>
+            </button>
+            <div class="share-modal-card shadow-lg" style="display: none;">
+                <div class="share-modal-header">
+                    <span>مشاركة المنشور</span>
+                    <button type="button" class="share-modal-close" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="share-options-grid">
+                    <button type="button" class="share-option-item copy-link-btn" data-url="{{ post_url }}">
+                        <span class="share-icon bg-secondary text-white"><i class="fas fa-link"></i></span>
+                        <span>نسخ الرابط</span>
+                    </button>
+                    <a href="https://wa.me/?text={{ post_url }}" target="_blank" class="share-option-item">
+                        <span class="share-icon bg-success text-white"><i class="fab fa-whatsapp"></i></span>
+                        <span>واتساب</span>
+                    </a>
+                    <a href="https://twitter.com/intent/tweet?url={{ post_url }}" target="_blank" class="share-option-item">
+                        <span class="share-icon bg-dark text-white"><i class="fab fa-x-twitter"></i></span>
+                        <span>تويتر / X</span>
+                    </a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ post_url }}" target="_blank" class="share-option-item">
+                        <span class="share-icon bg-primary text-white"><i class="fab fa-facebook-f"></i></span>
+                        <span>فيسبوك</span>
+                    </a>
+                </div>
+                <div class="share-link-preview">
+                    <input type="text" class="form-control form-control-sm" value="{{ post_url }}" readonly>
+                </div>
             </div>
         </div>
 

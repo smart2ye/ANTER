@@ -2492,3 +2492,109 @@ body {
         animation: none !important;
     }
 }
+
+/* ========================================
+   بطاقة المشاركة المنبثقة المطورة (Share Modal)
+   ======================================== */
+.share-dropdown {
+    position: relative;
+}
+
+.share-modal-card {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: 0;
+    z-index: 1050;
+    width: 280px;
+    padding: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    background: var(--card-bg, #ffffff);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    animation: shareModalFadeIn 0.2s ease;
+    text-align: right;
+}
+
+@keyframes shareModalFadeIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.share-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    color: var(--fb-text, #1c1e21);
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.share-modal-close {
+    padding: 2px 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted, #65676b);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.share-options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.share-option-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.02);
+    color: var(--fb-text, #1c1e21);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.share-option-item:hover {
+    background: rgba(24, 119, 242, 0.08);
+    color: var(--primary, #1877f2);
+    transform: translateY(-2px);
+}
+
+.share-icon {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 0.95rem;
+}
+
+.share-link-preview input {
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.03);
+    color: var(--text-muted, #65676b);
+    font-size: 0.75rem;
+    text-align: left;
+    direction: ltr;
+}
+
+@media (max-width: 575.98px) {
+    .share-modal-card {
+        right: auto;
+        left: 50%;
+        width: min(90vw, 300px);
+        transform: translateX(-50%);
+    }
+}

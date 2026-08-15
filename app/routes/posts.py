@@ -19,18 +19,29 @@ def edit(post_id):
     if post.author_id != current_user.id and not current_user.is_admin:
         flash('ليس لديك صلاحية تعديل هذا المنشور', 'danger')
         return redirect(url_for('main.index'))
-    
-    if request.method == 'POST':
-        content = request.form.get('content', '').strip()
+
+    form = PostForm(obj=post)
+    if form.validate_on_submit():
+        content = form.content.data.strip()
         if not content:
             flash('المنشور لا يمكن أن يكون فارغاً', 'danger')
             return redirect(url_for('posts.edit', post_id=post_id))
         
         post.content = content
         post.updated_at = datetime.utcnow()
-        
-        # تحديث الهاشتاجات
-        post.hashtags.clear()
+
+        uploaded_image = form.image.data
+        if uploaded_image and getattr(uploaded_image, 'filename', ''):
+            image_data, image_mime = prepare_image_data(uploaded_image)
+            if not image_data:
+                flash('تعذر قراءة الصورة. استخدم JPG أو PNG أو GIF أو WEBP بحجم ضمن الحد المسموح.', 'danger')
+                return redirect(url_for('posts.edit', post_id=post_id))
+            post.image_data = image_data
+            post.image_mime = image_mime
+
+        # تحديث الوسوم عبر عناصر العلاقة الديناميكية، التي لا تدعم clear().
+        for existing_tag in post.hashtags.all():
+            post.hashtags.remove(existing_tag)
         hashtags = extract_hashtags(content)
         for tag_name in hashtags:
             tag = Hashtag.query.filter_by(name=tag_name).first()
@@ -44,7 +55,7 @@ def edit(post_id):
         flash('تم تحديث المنشور بنجاح!', 'success')
         return redirect(url_for('main.index'))
     
-    return render_template('posts/edit.html', post=post)
+    return render_template('posts/edit.html', post=post, form=form)
 
 @posts_bp.route('/delete/<int:post_id>', methods=['POST'])
 @login_required
@@ -256,10 +267,13 @@ def create():
         hashtags = extract_hashtags(content)
 
         # تخزين الصورة داخل قاعدة البيانات الدائمة عند إرفاقها بالمنشور.
-        image_data, image_mime = prepare_image_data(form.image.data)
-        if form.image.data and not image_data:
-            flash('تعذر قراءة الصورة. استخدم JPG أو PNG أو GIF أو WEBP بحجم ضمن الحد المسموح.', 'danger')
-            return redirect(url_for('posts.create'))
+        uploaded_image = form.image.data
+        image_data, image_mime = (None, None)
+        if uploaded_image and getattr(uploaded_image, 'filename', ''):
+            image_data, image_mime = prepare_image_data(uploaded_image)
+            if not image_data:
+                flash('تعذر قراءة الصورة. استخدم JPG أو PNG أو GIF أو WEBP بحجم ضمن الحد المسموح.', 'danger')
+                return redirect(url_for('posts.create'))
 
         post = Post(
             content=content,

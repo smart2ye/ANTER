@@ -1,0 +1,195 @@
+{% if videos %}
+<div class="reels-stream" id="reelsStream" role="feed" aria-label="تدفق ريلز ANTER" tabindex="0">
+    {% for video in videos %}
+    <article class="reel-stream-item" data-reel-id="{{ video.id }}" role="article" aria-label="ريل {{ loop.index }} من {{ videos|length }}">
+        <div class="reel-stream-frame">
+            <video class="reel-stream-video"
+                   playsinline
+                   muted
+                   loop
+                   preload="none"
+                   poster="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}"
+                   aria-label="{{ video.title or 'ريل جديد' }}"
+                   data-video-src="{{ url_for('static', filename='uploads/' + video.file_path) }}">
+                متصفحك لا يدعم تشغيل الفيديو.
+            </video>
+
+            <button type="button" class="reel-tap-toggle" aria-label="تشغيل أو إيقاف الفيديو">
+                <i class="fas fa-play" aria-hidden="true"></i>
+            </button>
+            <div class="reel-buffer-indicator" aria-hidden="true"><i class="fas fa-spinner fa-spin"></i></div>
+            <div class="reel-stream-fade"></div>
+
+            <div class="reel-stream-topline">
+                <a href="{{ url_for('videos.reels') }}" class="reel-stream-brand"><i class="fas fa-play-circle" aria-hidden="true"></i> ANTER Reels</a>
+                <span class="reel-position" dir="ltr">{{ loop.index }} / {{ videos|length }}</span>
+            </div>
+
+            <div class="reel-stream-meta">
+                <a href="{{ url_for('users.profile', username=video.author.username) }}" class="reel-stream-author">
+                    <img src="{{ url_for('static', filename='uploads/' + video.author.avatar) }}" alt="{{ video.author.name }}">
+                    <span>@{{ video.author.username }}</span>
+                </a>
+                <h2>{{ video.title or 'ريل جديد' }}</h2>
+                {% if video.description and video.description != video.title %}
+                <p>{{ video.description }}</p>
+                {% endif %}
+                <span class="reel-stream-views"><i class="fas fa-eye" aria-hidden="true"></i> {{ video.views }} مشاهدة</span>
+            </div>
+
+            <div class="reel-stream-actions" aria-label="تفاعلات الريل">
+                <button type="button" class="reel-stream-action reel-stream-like" data-video-id="{{ video.id }}" aria-label="إعجاب" aria-pressed="false">
+                    <i class="far fa-heart" aria-hidden="true"></i>
+                    <span class="reel-stream-like-count">{{ video.like_count() }}</span>
+                </button>
+                <a class="reel-stream-action" href="{{ url_for('videos.watch', video_id=video.id) }}#reel-comments" aria-label="فتح التعليقات">
+                    <i class="far fa-comment" aria-hidden="true"></i>
+                    <span>{{ video.comment_count() }}</span>
+                </a>
+                <button type="button" class="reel-stream-action reel-stream-sound" aria-label="تشغيل الصوت">
+                    <i class="fas fa-volume-mute" aria-hidden="true"></i>
+                </button>
+                <a class="reel-stream-action reel-stream-more" href="{{ url_for('videos.watch', video_id=video.id) }}" aria-label="فتح صفحة الريل">
+                    <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
+                </a>
+            </div>
+
+            <div class="reel-unavailable-message" aria-live="polite">
+                <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                <span>تعذر تشغيل هذا الفيديو.</span>
+                <a href="{{ url_for('videos.watch', video_id=video.id) }}">فتح صفحة الريل</a>
+            </div>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<section class="reels-empty-state text-center" aria-labelledby="no-reels-heading">
+    <div class="reels-empty-icon"><i class="fas fa-video" aria-hidden="true"></i></div>
+    <h2 id="no-reels-heading">لا توجد ريلزات بعد</h2>
+    <p>شارك مقطعاً عمودياً قصيراً وابدأ المحادثة في مجتمع ANTER.</p>
+    <a href="{{ url_for('videos.upload') }}" class="btn btn-primary reels-upload-empty-btn">
+        <i class="fas fa-upload" aria-hidden="true"></i> رفع أول ريل
+    </a>
+</section>
+{% endif %}
+
+<script>
+(() => {
+    const stream = document.getElementById('reelsStream');
+    if (!stream) return;
+
+    const items = [...stream.querySelectorAll('.reel-stream-item')];
+    let activeItem = null;
+
+    function getVideo(item) {
+        return item.querySelector('.reel-stream-video');
+    }
+
+    function ensureLoaded(video) {
+        if (video.dataset.loaded === 'true') return;
+        const source = document.createElement('source');
+        source.src = video.dataset.videoSrc;
+        video.appendChild(source);
+        video.dataset.loaded = 'true';
+        video.load();
+    }
+
+    function setButtonIcon(item, isPlaying) {
+        const icon = item.querySelector('.reel-tap-toggle i');
+        if (icon) icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+        item.classList.toggle('is-playing', isPlaying);
+    }
+
+    function pauseItem(item) {
+        const video = getVideo(item);
+        video.pause();
+        setButtonIcon(item, false);
+    }
+
+    async function activateItem(item) {
+        if (!item || item === activeItem) return;
+        items.forEach((other) => {
+            if (other !== item) pauseItem(other);
+        });
+        activeItem = item;
+        const video = getVideo(item);
+        ensureLoaded(video);
+        item.classList.add('is-buffering');
+        try {
+            await video.play();
+            setButtonIcon(item, true);
+        } catch (error) {
+            setButtonIcon(item, false);
+        } finally {
+            item.classList.remove('is-buffering');
+        }
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible && visible.intersectionRatio >= 0.62) activateItem(visible.target);
+    }, { root: stream, threshold: [0.35, 0.62, 0.8] });
+
+    items.forEach((item) => {
+        const video = getVideo(item);
+        const toggle = item.querySelector('.reel-tap-toggle');
+        const sound = item.querySelector('.reel-stream-sound');
+        const like = item.querySelector('.reel-stream-like');
+
+        observer.observe(item);
+
+        video.addEventListener('waiting', () => item.classList.add('is-buffering'));
+        video.addEventListener('playing', () => item.classList.remove('is-buffering'));
+        video.addEventListener('error', () => {
+            item.classList.remove('is-buffering');
+            item.classList.add('is-unavailable');
+        });
+
+        toggle.addEventListener('click', async () => {
+            ensureLoaded(video);
+            if (video.paused) {
+                activeItem = null;
+                await activateItem(item);
+            } else {
+                pauseItem(item);
+            }
+        });
+
+        sound.addEventListener('click', () => {
+            video.muted = !video.muted;
+            sound.querySelector('i').className = video.muted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+            sound.setAttribute('aria-label', video.muted ? 'تشغيل الصوت' : 'كتم الصوت');
+        });
+
+        like.addEventListener('click', async () => {
+            if (like.classList.contains('is-loading')) return;
+            like.classList.add('is-loading');
+            try {
+                const response = await fetch(`/videos/like/${like.dataset.videoId}`, { method: 'POST' });
+                if (!response.ok) throw new Error('like request failed');
+                const data = await response.json();
+                like.querySelector('.reel-stream-like-count').textContent = data.count;
+                like.classList.toggle('is-liked', data.liked);
+                like.setAttribute('aria-pressed', String(data.liked));
+                like.querySelector('i').className = data.liked ? 'fas fa-heart' : 'far fa-heart';
+            } catch (error) {
+                like.classList.add('has-error');
+                window.setTimeout(() => like.classList.remove('has-error'), 450);
+            } finally {
+                like.classList.remove('is-loading');
+            }
+        });
+    });
+
+    stream.addEventListener('keydown', (event) => {
+        if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+        event.preventDefault();
+        const index = Math.max(0, items.indexOf(activeItem) + (event.key === 'ArrowDown' ? 1 : -1));
+        const target = items[Math.min(items.length - 1, index)];
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+})();
+</script>

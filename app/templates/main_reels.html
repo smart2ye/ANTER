@@ -1,17 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="reels-browse-page" aria-labelledby="reels-page-heading">
-    <header class="reels-page-header">
+<section class="reels-feed-page" aria-labelledby="reels-page-heading">
+    <header class="reels-feed-header">
         <div>
             <p class="reels-eyebrow"><i class="fas fa-bolt" aria-hidden="true"></i> فيديوهات قصيرة</p>
-            <h1 id="reels-page-heading">استكشف الريلز</h1>
-            <p>لقطات سريعة من مجتمع ANTER، مع تشغيل ملائم للهاتف.</p>
+            <h1 id="reels-page-heading">ريلز ANTER</h1>
         </div>
-        <a href="{{ url_for('videos.upload') }}" class="btn btn-primary reels-upload-btn">
+        <a href="{{ url_for('videos.upload') }}" class="btn btn-primary reels-upload-btn" aria-label="رفع ريل جديد">
             <i class="fas fa-plus" aria-hidden="true"></i><span>رفع ريل</span>
         </a>
     </header>
 
-    {% include 'videos/_reel_grid.html' %}
+    {% include 'videos/_reel_stream.html' %}
 </section>
 {% endblock %}

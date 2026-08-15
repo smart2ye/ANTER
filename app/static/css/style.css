@@ -2077,3 +2077,418 @@ body {
         animation: none !important;
     }
 }
+
+/* ========================================
+   تدفق الريلز المتتابع (TikTok / Facebook-style)
+   ======================================== */
+.reels-feed-page {
+    width: min(100%, 560px);
+    margin: 0 auto;
+}
+
+.reels-feed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 2px 2px 12px;
+}
+
+.reels-feed-header h1 {
+    margin: 0;
+    color: var(--fb-text);
+    font-size: 1.28rem;
+    font-weight: 900;
+}
+
+.reels-stream {
+    height: min(760px, calc(100vh - 128px));
+    height: min(760px, calc(100dvh - 128px));
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 20px;
+    background: #08090b;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+    scrollbar-width: none;
+}
+
+.reels-stream::-webkit-scrollbar {
+    display: none;
+}
+
+.reel-stream-item {
+    position: relative;
+    height: 100%;
+    min-height: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    background: #08090b;
+}
+
+.reel-stream-frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    overflow: hidden;
+    isolation: isolate;
+    background:
+        radial-gradient(circle at 50% 12%, rgba(24, 119, 242, 0.18), transparent 32%),
+        #08090b;
+}
+
+.reel-stream-video {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    object-fit: contain;
+}
+
+.reel-stream-fade {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 22%, transparent 53%, rgba(0,0,0,0.82) 100%);
+}
+
+.reel-stream-topline {
+    position: absolute;
+    z-index: 2;
+    top: 14px;
+    right: 14px;
+    left: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: #fff;
+}
+
+.reel-stream-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(0,0,0,0.34);
+    backdrop-filter: blur(8px);
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.reel-stream-brand:hover {
+    color: #fff;
+    background: rgba(0,0,0,0.56);
+}
+
+.reel-position {
+    padding: 5px 8px;
+    border-radius: 999px;
+    color: rgba(255,255,255,0.92);
+    background: rgba(0,0,0,0.34);
+    font-size: 0.7rem;
+    font-weight: 700;
+    backdrop-filter: blur(8px);
+}
+
+.reel-stream-meta {
+    position: absolute;
+    z-index: 2;
+    right: 78px;
+    bottom: 18px;
+    left: 16px;
+    color: #fff;
+}
+
+.reel-stream-author {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.reel-stream-author:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.reel-stream-author img {
+    width: 33px;
+    height: 33px;
+    border: 2px solid rgba(255,255,255,0.9);
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.reel-stream-meta h2 {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 10px 0 4px;
+    color: #fff;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.55;
+}
+
+.reel-stream-meta p {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0 0 5px;
+    color: rgba(255,255,255,0.88);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.79rem;
+    line-height: 1.55;
+}
+
+.reel-stream-views {
+    color: rgba(255,255,255,0.72);
+    font-size: 0.7rem;
+}
+
+.reel-stream-actions {
+    position: absolute;
+    z-index: 3;
+    right: 12px;
+    bottom: 16px;
+    display: grid;
+    gap: 11px;
+}
+
+.reel-stream-action {
+    display: grid;
+    width: 49px;
+    min-height: 49px;
+    place-items: center;
+    padding: 5px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 16px;
+    color: #fff;
+    background: rgba(0,0,0,0.32);
+    backdrop-filter: blur(9px);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.05;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+}
+
+.reel-stream-action i {
+    font-size: 1.15rem;
+}
+
+.reel-stream-action:hover {
+    color: #fff;
+    background: rgba(0,0,0,0.58);
+    transform: scale(1.06);
+}
+
+.reel-stream-action:active {
+    transform: scale(0.92);
+}
+
+.reel-stream-action:focus-visible,
+.reel-tap-toggle:focus-visible {
+    outline: 3px solid rgba(255,255,255,0.85);
+    outline-offset: 2px;
+}
+
+.reel-stream-like.is-liked {
+    color: #ff7186;
+    border-color: rgba(255,113,134,0.45);
+    background: rgba(200, 42, 73, 0.26);
+}
+
+.reel-stream-action.is-loading {
+    pointer-events: none;
+    opacity: 0.55;
+}
+
+.reel-stream-action.has-error {
+    animation: reelActionShake 0.42s ease;
+}
+
+.reel-tap-toggle {
+    position: absolute;
+    z-index: 3;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    width: 68px;
+    height: 68px;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,0.34);
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(0,0,0,0.38);
+    backdrop-filter: blur(8px);
+    font-size: 1.45rem;
+    transform: translate(-50%, -50%);
+    opacity: 1;
+    cursor: pointer;
+    transition: opacity 0.22s ease, transform 0.22s ease, background 0.22s ease;
+}
+
+.reel-stream-item.is-playing .reel-tap-toggle {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0.86);
+}
+
+.reel-stream-item:hover .reel-tap-toggle,
+.reel-stream-item:focus-within .reel-tap-toggle {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.reel-buffer-indicator {
+    position: absolute;
+    z-index: 4;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(0,0,0,0.45);
+    font-size: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.16s ease;
+}
+
+.reel-stream-item.is-buffering .reel-buffer-indicator {
+    opacity: 1;
+}
+
+.reel-unavailable-message {
+    position: absolute;
+    z-index: 5;
+    top: 50%;
+    left: 50%;
+    display: none;
+    width: min(82%, 320px);
+    padding: 13px;
+    border-radius: 14px;
+    color: #fff;
+    background: rgba(20,20,22,0.88);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+    font-size: 0.82rem;
+    text-align: center;
+    transform: translate(-50%, -50%);
+}
+
+.reel-unavailable-message a {
+    display: block;
+    margin-top: 6px;
+    color: #8bc1ff;
+    font-weight: 800;
+}
+
+.reel-stream-item.is-unavailable .reel-unavailable-message {
+    display: block;
+}
+
+@media (min-width: 768px) {
+    .reels-feed-page {
+        width: min(100%, 500px);
+    }
+
+    .reels-stream {
+        height: min(760px, calc(100vh - 142px));
+        height: min(760px, calc(100dvh - 142px));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .reels-feed-page {
+        width: 100%;
+    }
+
+    .reels-feed-header {
+        padding: 0 2px 9px;
+    }
+
+    .reels-feed-header h1 {
+        font-size: 1.13rem;
+    }
+
+    .reels-feed-header .reels-eyebrow {
+        margin-bottom: 0;
+        font-size: 0.68rem;
+    }
+
+    .reels-stream {
+        height: calc(100vh - 116px);
+        height: calc(100dvh - 116px);
+        border-right: 0;
+        border-left: 0;
+        border-radius: 14px;
+    }
+
+    .reel-stream-topline {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+    }
+
+    .reel-stream-meta {
+        right: 72px;
+        bottom: 13px;
+        left: 13px;
+    }
+
+    .reel-stream-actions {
+        right: 9px;
+        bottom: 12px;
+        gap: 8px;
+    }
+
+    .reel-stream-action {
+        width: 45px;
+        min-height: 45px;
+        border-radius: 14px;
+    }
+
+    .reel-tap-toggle {
+        width: 58px;
+        height: 58px;
+        font-size: 1.2rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reels-stream {
+        scroll-behavior: auto;
+    }
+
+    .reel-stream-action,
+    .reel-tap-toggle,
+    .reel-buffer-indicator {
+        transition: none !important;
+        animation: none !important;
+    }
+}

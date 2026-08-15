@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}#{{ tag }} — ANTER{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{{ url_for('explore.explore') }}" class="btn btn-light rounded-circle" aria-label="العودة إلى الاستكشاف">
+            <i class="fas fa-arrow-right"></i>
+        </a>
+        <div>
+            <h4 class="fw-bold mb-1">#{{ tag }}</h4>
+            <p class="text-muted mb-0">المنشورات التي تستخدم هذا الوسم</p>
+        </div>
+    </div>
+
+    {% if posts %}
+        <div class="posts-feed">
+            {% for post in posts %}
+                {% set post_url = url_for('posts.view_post', post_id=post.id, _external=True) %}
+                {% include "_post_card.html" %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+            <div class="card-body">
+                <i class="fas fa-hashtag text-primary fs-1 mb-3"></i>
+                <h5 class="fw-bold">لا توجد منشورات لهذا الوسم بعد</h5>
+                <p class="text-muted mb-0">كن أول من يستخدم #{{ tag }} في منشور جديد.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

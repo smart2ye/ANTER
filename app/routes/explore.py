@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
-from app.models import User, Follow, Post
+from app.models import User, Follow, Post, Hashtag
 from app.extensions import db
 from app.utils.media_urls import avatar_url
 from sqlalchemy import func
@@ -77,3 +77,22 @@ def search():
         'followers_count': u.follower_count(),
         'is_following': current_user.is_following(u)
     } for u in users])
+
+
+@explore_bp.route('/hashtag/<string:tag>')
+@login_required
+def hashtag(tag):
+    """عرض منشورات وسم محدد في صفحة HTML مهيّأة للمستخدم."""
+    normalized_tag = tag.strip().lstrip('#').lower()
+    hashtag_record = Hashtag.query.filter(func.lower(Hashtag.name) == normalized_tag).first()
+
+    if hashtag_record:
+        posts = hashtag_record.posts.order_by(Post.created_at.desc()).all()
+    else:
+        posts = []
+
+    return render_template(
+        'explore/hashtag.html',
+        tag=normalized_tag,
+        posts=posts,
+    )

@@ -98,6 +98,23 @@ def create_app():
     app.add_template_global(avatar_url, name='avatar_url')
     app.add_template_global(post_image_url, name='post_image_url')
 
+    # تحويل الوسوم في المحتوى النصي إلى روابط لصفحات الوسوم، مع إبقاء النص آمناً.
+    from flask import url_for
+    from markupsafe import Markup, escape
+    import re
+
+    def linkify_hashtags(content):
+        escaped_content = str(escape(content or ''))
+
+        def replace_tag(match):
+            tag = match.group(1)
+            tag_url = url_for('explore.hashtag', tag=tag)
+            return f'<a href="{escape(tag_url)}" class="hashtag-link">#{escape(tag)}</a>'
+
+        return Markup(re.sub(r'#([\w\u0600-\u06FF]+)', replace_tag, escaped_content))
+
+    app.add_template_filter(linkify_hashtags, name='linkify_hashtags')
+
     # ============================================
     # تحديث آخر ظهور للمستخدم عند كل طلب
     # ============================================

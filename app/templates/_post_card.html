@@ -30,7 +30,7 @@
 
     <!-- محتوى المنشور -->
     <div class="post-content">
-        <p>{{ post.content }}</p>
+        <p>{{ post.content|linkify_hashtags }}</p>
     </div>
 
     {% if post.image_data or post.image %}

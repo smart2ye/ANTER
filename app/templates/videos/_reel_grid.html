@@ -2,7 +2,7 @@
 <div class="reels-grid" role="list" aria-label="ريلزات ANTER">
     {% for video in videos %}
     <article class="reel-card" role="listitem">
-        <a href="{{ url_for('videos.watch', video_id=video.id) }}"
+        <a href="{{ url_for('videos.watch', public_id=video.public_id) }}"
            class="reel-card-link"
            aria-label="تشغيل ريل: {{ video.title or 'فيديو بدون عنوان' }}">
             <div class="reel-card-media">

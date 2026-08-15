@@ -122,8 +122,9 @@ def like(post_id):
 
 @posts_bp.route('/post/<int:post_id>')
 def view(post_id):
+    """Legacy numeric post URL; keep shared links working while moving to opaque IDs."""
     post = Post.query.get_or_404(post_id)
-    return render_template('post_detail.html', post=post)
+    return redirect(url_for('posts.view_post', public_id=post.public_id), code=301)
 
 @posts_bp.route('/comment/<int:post_id>', methods=['POST'])
 @login_required
@@ -134,7 +135,7 @@ def comment(post_id):
     
     if not content:
         flash('التعليق لا يمكن أن يكون فارغاً', 'danger')
-        return redirect(url_for('posts.view', post_id=post_id))
+        return redirect(url_for('posts.view_post', public_id=post.public_id))
     
     comment = Comment(content=content, author_id=current_user.id, post_id=post_id)
     db.session.add(comment)
@@ -156,7 +157,7 @@ def comment(post_id):
         raise
     
     flash('تم إضافة التعليق بنجاح!', 'success')
-    return redirect(url_for('posts.view', post_id=post_id))
+    return redirect(url_for('posts.view_post', public_id=post.public_id))
 
 @posts_bp.route('/like_comment/<int:comment_id>', methods=['POST'])
 @login_required
@@ -223,20 +224,20 @@ def report(post_id):
     
     if not reason:
         flash('يرجى كتابة سبب التبليغ', 'danger')
-        return redirect(url_for('posts.view', post_id=post_id))
+        return redirect(url_for('posts.view_post', public_id=post.public_id))
     
     # التحقق من عدم وجود بلاغ مكرر
     existing = Report.query.filter_by(user_id=current_user.id, post_id=post_id).first()
     if existing:
         flash('لقد قمت بالفعل بتبليغ عن هذا المنشور', 'warning')
-        return redirect(url_for('posts.view', post_id=post_id))
+        return redirect(url_for('posts.view_post', public_id=post.public_id))
     
     report = Report(user_id=current_user.id, post_id=post_id, reason=reason)
     db.session.add(report)
     db.session.commit()
     
     flash('تم تبليغ المنشور، سيتم مراجعته من قبل الإدارة', 'success')
-    return redirect(url_for('posts.view', post_id=post_id))
+    return redirect(url_for('posts.view_post', public_id=post.public_id))
 
 @posts_bp.route('/hide/<int:post_id>', methods=['POST'])
 @login_required
@@ -306,7 +307,7 @@ def comments_fragment(post_id):
     return render_template('comments.html', post=post)
 
 
-@posts_bp.route('/post/<int:post_id>')
-def view_post(post_id):
-    post = Post.query.get_or_404(post_id)
+@posts_bp.route('/p/<public_id>')
+def view_post(public_id):
+    post = Post.query.filter_by(public_id=public_id).first_or_404()
     return render_template('post_detail.html', post=post)

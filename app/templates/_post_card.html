@@ -1,4 +1,4 @@
-{% set post_url = url_for('posts.view_post', post_id=post.id, _external=true) %}
+{% set post_url = url_for('posts.view_post', public_id=post.public_id, _external=true) %}
 <div class="post-card" data-post-id="{{ post.id }}">
     <!-- رأس المنشور -->
     <div class="post-card-header">
@@ -95,7 +95,7 @@
         </div>
 
         <!-- رابط المنشور -->
-        <a href="{{ url_for('posts.view_post', post_id=post.id) }}" class="action-btn view-post">
+        <a href="{{ url_for('posts.view_post', public_id=post.public_id) }}" class="action-btn view-post">
             <i class="fas fa-external-link-alt"></i>
         </a>
 

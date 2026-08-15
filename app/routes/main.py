@@ -143,7 +143,8 @@ def api_posts():
     data = []
     for post in paginated_posts:
         data.append({
-            'id': post.id,
+            'id': post.public_id,
+            'url': url_for('posts.view_post', public_id=post.public_id),
             'content': post.content,
             'image': post.image,
             'created_at': post.created_at.strftime('%Y-%m-%d %H:%M'),
@@ -202,7 +203,7 @@ def sitemap():
     posts = Post.query.limit(500).all()
     for post in posts:
         pages.append({
-            'loc': url_for('posts.view_post', post_id=post.id, _external=True),
+            'loc': url_for('posts.view_post', public_id=post.public_id, _external=True),
             'priority': 0.9,
             'lastmod': post.created_at.strftime('%Y-%m-%d') if post.created_at else datetime.now().strftime('%Y-%m-%d')
         })

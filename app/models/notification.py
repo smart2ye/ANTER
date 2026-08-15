@@ -13,6 +13,7 @@ class Notification(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     actor = db.relationship('User', foreign_keys=[actor_id])
+    post = db.relationship('Post', foreign_keys=[post_id])
 
     def __repr__(self):
         return f'<Notification {self.id}>'

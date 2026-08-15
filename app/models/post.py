@@ -1,10 +1,12 @@
 from app.extensions import db
 from datetime import datetime
+from app.utils.public_ids import generate_public_id
 
 class Post(db.Model):
     __tablename__ = 'posts'
 
     id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(db.String(40), unique=True, nullable=False, default=lambda: generate_public_id('p'))
     content = db.Column(db.Text, nullable=False)
     image = db.Column(db.String(200), default='')
     image_data = db.Column(db.LargeBinary, nullable=True)

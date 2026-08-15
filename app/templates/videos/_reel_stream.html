@@ -42,14 +42,14 @@
                     <i class="far fa-heart" aria-hidden="true"></i>
                     <span class="reel-stream-like-count">{{ video.like_count() }}</span>
                 </button>
-                <a class="reel-stream-action" href="{{ url_for('videos.watch', video_id=video.id) }}#reel-comments" aria-label="فتح التعليقات">
+                <a class="reel-stream-action" href="{{ url_for('videos.watch', public_id=video.public_id) }}#reel-comments" aria-label="فتح التعليقات">
                     <i class="far fa-comment" aria-hidden="true"></i>
                     <span>{{ video.comment_count() }}</span>
                 </a>
                 <button type="button" class="reel-stream-action reel-stream-sound" aria-label="تشغيل الصوت">
                     <i class="fas fa-volume-mute" aria-hidden="true"></i>
                 </button>
-                <a class="reel-stream-action reel-stream-more" href="{{ url_for('videos.watch', video_id=video.id) }}" aria-label="فتح صفحة الريل">
+                <a class="reel-stream-action reel-stream-more" href="{{ url_for('videos.watch', public_id=video.public_id) }}" aria-label="فتح صفحة الريل">
                     <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
                 </a>
             </div>
@@ -57,7 +57,7 @@
             <div class="reel-unavailable-message" aria-live="polite">
                 <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
                 <span>تعذر تشغيل هذا الفيديو.</span>
-                <a href="{{ url_for('videos.watch', video_id=video.id) }}">فتح صفحة الريل</a>
+                <a href="{{ url_for('videos.watch', public_id=video.public_id) }}">فتح صفحة الريل</a>
             </div>
         </div>
     </article>

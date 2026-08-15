@@ -10,8 +10,8 @@
         <div class="list-group">
             {% for notif in notifications %}
                 {% set link = '#' %}
-                {% if notif.action in ['like', 'comment', 'reply'] and notif.post_id %}
-                    {% set link = url_for('posts.view_post', post_id=notif.post_id) %}
+                {% if notif.action in ['like', 'comment', 'reply'] and notif.post %}
+                    {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
                 {% elif notif.action == 'follow' %}
                     {% set link = url_for('users.profile', username=notif.actor.username) %}
                 {% elif notif.action in ['message', 'voice_message', 'voice_call'] %}

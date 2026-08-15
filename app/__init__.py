@@ -67,6 +67,10 @@ def create_app():
             'posts': {
                 'image_data': binary_type,
                 'image_mime': 'VARCHAR(100)',
+                'public_id': 'VARCHAR(40)',
+            },
+            'videos': {
+                'public_id': 'VARCHAR(40)',
             },
         }
         with db.engine.begin() as connection:
@@ -80,8 +84,28 @@ def create_app():
                             f'ALTER TABLE {table_name} ADD COLUMN {name} {sql_type}'
                         ))
 
-    # ============================================
+            # إضافة فهارس فريدة للروابط العامة في قواعد البيانات القائمة.
+        with db.engine.begin() as connection:
+            for table_name in ('posts', 'videos'):
+                if table_name in inspector.get_table_names():
+                    connection.execute(text(
+                        f'CREATE UNIQUE INDEX IF NOT EXISTS ix_{table_name}_public_id ON {table_name} (public_id)'
+                    ))
+
+        # ترحيل البيانات القائمة إلى معرّفات عامة لا تكشف الرقم التسلسلي.
+        from app.models import Post, Video
+        from app.utils.public_ids import generate_public_id
+        for model, prefix in ((Post, 'p'), (Video, 'r')):
+            for entity in model.query.filter(model.public_id.is_(None)).all():
+                public_id = generate_public_id(prefix)
+                while model.query.filter_by(public_id=public_id).first() is not None:
+                    public_id = generate_public_id(prefix)
+                entity.public_id = public_id
+        db.session.commit()
+
+        # ============================================
     # دالة عامة لحساب التفاعلات
+
     # ============================================
     from sqlalchemy import func
 

@@ -26,5 +26,12 @@ def avatar(user_id):
 
 @media_bp.route('/post/<int:post_id>')
 def post_image(post_id):
+    """Legacy numeric media URL for older rendered pages."""
     post = Post.query.get_or_404(post_id)
+    return redirect(url_for('media.post_image_public', public_id=post.public_id), code=301)
+
+
+@media_bp.route('/p/<public_id>')
+def post_image_public(public_id):
+    post = Post.query.filter_by(public_id=public_id).first_or_404()
     return _image_response(post.image_data, post.image_mime)

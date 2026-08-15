@@ -67,14 +67,22 @@ def upload():
         db.session.commit()
 
         flash('تم رفع الفيديو بنجاح!', 'success')
-        return redirect(url_for('videos.reels' if is_reel else 'videos.watch', video_id=video.id))
+        return redirect(url_for('videos.reels' if is_reel else 'videos.watch', public_id=video.public_id))
 
     return render_template('videos/upload.html')
 
 @videos_bp.route('/watch/<int:video_id>')
 @login_required
-def watch(video_id):
+def watch_legacy(video_id):
+    """Legacy numeric video URL retained for existing shared links."""
     video = Video.query.get_or_404(video_id)
+    return redirect(url_for('videos.watch', public_id=video.public_id), code=301)
+
+
+@videos_bp.route('/r/<public_id>')
+@login_required
+def watch(public_id):
+    video = Video.query.filter_by(public_id=public_id).first_or_404()
     video.views += 1
     db.session.commit()
     comments = video.comments.filter_by(parent_id=None).order_by(VideoComment.created_at.asc()).all()
@@ -108,7 +116,7 @@ def comment(video_id):
     parent_id = request.form.get('parent_id', type=int)
     if not content:
         flash('التعليق لا يمكن أن يكون فارغاً.', 'danger')
-        return redirect(url_for('videos.watch', video_id=video.id))
+        return redirect(url_for('videos.watch', public_id=video.public_id))
 
     comment = VideoComment(content=content, author_id=current_user.id, video_id=video.id)
     if parent_id:
@@ -125,7 +133,7 @@ def comment(video_id):
     db.session.add(comment)
     db.session.commit()
     flash('تم إضافة التعليق.', 'success')
-    return redirect(url_for('videos.watch', video_id=video.id))
+    return redirect(url_for('videos.watch', public_id=video.public_id))
 
 @videos_bp.route('/like_comment/<int:comment_id>', methods=['POST'])
 @login_required

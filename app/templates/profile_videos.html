@@ -41,7 +41,7 @@
 <div class="row g-2">
     {% for video in videos %}
     <div class="col-6">
-        <a href="{{ url_for('videos.watch', video_id=video.id) }}" class="text-decoration-none">
+        <a href="{{ url_for('videos.watch', public_id=video.public_id) }}" class="text-decoration-none">
             <div class="card shadow-sm position-relative" style="aspect-ratio: 9/16;">
                 <img src="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}" class="card-img-top" style="height: 100%; object-fit: cover;">
                 <div class="position-absolute top-50 start-50 translate-middle"><i class="fas fa-play-circle text-white" style="font-size: 3rem; opacity: 0.8;"></i></div>

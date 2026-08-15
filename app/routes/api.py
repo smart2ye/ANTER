@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, url_for
 from flask_login import login_required, current_user
 from app.models import Post, User, Video
 from app.extensions import db
@@ -11,7 +11,8 @@ def get_posts():
     """جلب آخر المنشورات (JSON)"""
     posts = Post.query.order_by(Post.created_at.desc()).limit(20).all()
     return jsonify([{
-        'id': p.id,
+        'id': p.public_id,
+        'url': url_for('posts.view_post', public_id=p.public_id),
         'content': p.content,
         'image': p.image,
         'created_at': p.created_at.isoformat(),
@@ -49,7 +50,8 @@ def get_reels():
     """جلب الريلزات (JSON)"""
     videos = Video.query.filter_by(is_reel=True).order_by(Video.created_at.desc()).limit(20).all()
     return jsonify([{
-        'id': v.id,
+        'id': v.public_id,
+        'url': url_for('videos.watch', public_id=v.public_id),
         'title': v.title,
         'description': v.description,
         'thumbnail': v.thumbnail_path,

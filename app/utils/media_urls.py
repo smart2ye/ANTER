@@ -19,6 +19,6 @@ def avatar_url(user):
 
 def post_image_url(post):
     if getattr(post, 'image_data', None):
-        return url_for('media.post_image', post_id=post.id)
+        return url_for('media.post_image_public', public_id=post.public_id)
     image = getattr(post, 'image', None)
     return _legacy_static_url(image) if image else ''

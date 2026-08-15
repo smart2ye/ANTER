@@ -1,10 +1,12 @@
 from app.extensions import db
 from datetime import datetime
+from app.utils.public_ids import generate_public_id
 
 class Video(db.Model):
     __tablename__ = 'videos'
 
     id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(db.String(40), unique=True, nullable=False, default=lambda: generate_public_id('r'))
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, default='')
     file_path = db.Column(db.String(300), nullable=False)

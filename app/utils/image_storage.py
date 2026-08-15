@@ -1,46 +1,21 @@
-from io import BytesIO
-
-from flask import current_app
 from PIL import Image, UnidentifiedImageError
+import os
+import uuid
+from flask import current_app
 
-
-IMAGE_MIME_BY_FORMAT = {
-    'JPEG': 'image/jpeg',
-    'PNG': 'image/png',
-    'GIF': 'image/gif',
-    'WEBP': 'image/webp',
-}
-
-
-def prepare_image_data(uploaded_file):
-    """Validate and normalize an uploaded image for database storage."""
-    if not uploaded_file or not getattr(uploaded_file, 'filename', ''):
-        return None, None
-
-    max_bytes = current_app.config['MAX_IMAGE_BYTES']
-    raw_data = uploaded_file.read(max_bytes + 1)
-    if not raw_data or len(raw_data) > max_bytes:
-        return None, None
-
+def prepare_image_data(image_file, upload_folder='uploads'):
     try:
-        image = Image.open(BytesIO(raw_data))
-        image.verify()
-        image = Image.open(BytesIO(raw_data))
-        image.load()
-    except (UnidentifiedImageError, OSError, ValueError):
-        return None, None
-
-    image_format = (image.format or '').upper()
-    mime_type = IMAGE_MIME_BY_FORMAT.get(image_format)
-    if not mime_type:
-        return None, None
-
-    # Normalize the file while preserving transparency for PNG/GIF images.
-    output = BytesIO()
-    if image_format == 'JPEG' and image.mode not in ('RGB', 'L'):
-        image = image.convert('RGB')
-    save_kwargs = {'optimize': True}
-    if image_format == 'JPEG':
-        save_kwargs['quality'] = 88
-    image.save(output, format=image_format, **save_kwargs)
-    return output.getvalue(), mime_type
+        img = Image.open(image_file)
+        # تقليل الحجم لتوفير الذاكرة
+        img.thumbnail((800, 800))
+        filename = f"{uuid.uuid4()}.jpg"
+        filepath = os.path.join(current_app.root_path, 'static', upload_folder, filename)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        img.save(filepath, 'JPEG', quality=85, optimize=True)
+        img.close()  # 🔑 إغلاق الصورة لمنع تسرب الذاكرة
+        return filename
+    except UnidentifiedImageError:
+        return None
+    except Exception as e:
+        print(f"Error processing image: {e}")
+        return None

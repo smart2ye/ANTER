@@ -1,57 +1,131 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card shadow-lg p-3">
-    <video controls class="w-100 rounded-3" style="max-height: 70vh; background: #000;">
-        <source src="{{ url_for('static', filename='uploads/' + video.file_path) }}">
-        متصفحك لا يدعم تشغيل الفيديو.
-    </video>
-    <div class="mt-2">
-        <h5>{{ video.title }}</h5>
-        <div class="d-flex align-items-center gap-3">
-            <img src="{{ url_for('static', filename='uploads/' + video.author.avatar) }}" class="rounded-circle" width="32" height="32">
-            <a href="{{ url_for('users.profile', username=video.author.username) }}" class="text-decoration-none">
-                <strong>{{ video.author.name }}</strong>
-            </a>
-            <small class="text-muted">{{ video.views }} مشاهد</small>
-        </div>
-        <p class="mt-2">{{ video.description }}</p>
-        <div class="d-flex gap-3">
-            <button class="btn btn-sm btn-outline-primary like-video-btn" data-video="{{ video.id }}">
-                <i class="fas fa-heart"></i> <span class="like-count">{{ video.like_count() }}</span>
-            </button>
-            <span class="text-muted">{{ video.comment_count() }} تعليق</span>
-        </div>
+<section class="reel-watch-page" aria-labelledby="reel-title">
+    <a href="{{ url_for('main.reels_feed') }}" class="reel-back-link">
+        <i class="fas fa-arrow-right" aria-hidden="true"></i> كل الريلز
+    </a>
+
+    <div class="reel-watch-layout">
+        <article class="reel-player-panel">
+            <div class="reel-player-shell">
+                <video id="reelPlayer"
+                       class="reel-player"
+                       controls
+                       playsinline
+                       preload="metadata"
+                       poster="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}"
+                       controlslist="nodownload">
+                    <source src="{{ url_for('static', filename='uploads/' + video.file_path) }}">
+                    متصفحك لا يدعم تشغيل الفيديو.
+                </video>
+            </div>
+
+            <div class="reel-watch-actions" aria-label="تفاعلات الريل">
+                <button type="button" class="reel-action-button reel-like-button" data-video-id="{{ video.id }}" aria-pressed="false">
+                    <i class="far fa-heart" aria-hidden="true"></i>
+                    <span class="reel-action-count">{{ video.like_count() }}</span>
+                    <span class="visually-hidden">إعجاب</span>
+                </button>
+                <a class="reel-action-button" href="#reel-comments">
+                    <i class="far fa-comment" aria-hidden="true"></i>
+                    <span>{{ video.comment_count() }}</span>
+                    <span class="visually-hidden">تعليق</span>
+                </a>
+                <button type="button" class="reel-action-button reel-copy-link-button" data-copy-link aria-label="نسخ رابط الريل">
+                    <i class="fas fa-link" aria-hidden="true"></i>
+                    <span class="visually-hidden">نسخ الرابط</span>
+                </button>
+            </div>
+        </article>
+
+        <aside class="reel-info-panel">
+            <div class="reel-author-row">
+                <a href="{{ url_for('users.profile', username=video.author.username) }}" class="reel-author-link">
+                    <img src="{{ url_for('static', filename='uploads/' + video.author.avatar) }}" alt="{{ video.author.name }}" class="reel-author-avatar">
+                    <span>
+                        <strong>{{ video.author.name }}</strong>
+                        <small>@{{ video.author.username }}</small>
+                    </span>
+                </a>
+                <span class="reel-view-count"><i class="fas fa-eye" aria-hidden="true"></i> {{ video.views }} مشاهدة</span>
+            </div>
+
+            <h1 id="reel-title">{{ video.title or 'ريل جديد' }}</h1>
+            {% if video.description and video.description != video.title %}
+            <p class="reel-description">{{ video.description }}</p>
+            {% endif %}
+        </aside>
     </div>
-</div>
-<h6 class="mt-3">التعليقات ({{ video.comment_count() }})</h6>
-<div class="mt-2">
-    {% for comment in comments %}
-    <div class="comment-item d-flex align-items-start">
-        <img src="{{ url_for('static', filename='uploads/' + comment.author.avatar) }}" class="comment-avatar me-2">
-        <div>
-            <strong>{{ comment.author.name }}</strong>
-            <small class="text-muted">@{{ comment.author.username }}</small>
-            <p class="mb-0">{{ comment.content }}</p>
+
+    <section id="reel-comments" class="reel-comments-panel" aria-labelledby="reel-comments-heading">
+        <div class="reel-comments-heading">
+            <h2 id="reel-comments-heading">التعليقات</h2>
+            <span>{{ video.comment_count() }}</span>
         </div>
-    </div>
-    {% endfor %}
-</div>
-<form method="POST" action="{{ url_for('videos.comment', video_id=video.id) }}" class="mt-2">
-    <div class="input-group">
-        <input type="text" name="content" class="form-control" placeholder="أضف تعليقاً..." required>
-        <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i></button>
-    </div>
-</form>
+
+        {% if comments %}
+        <div class="reel-comments-list">
+            {% for comment in comments %}
+            <article class="reel-comment-item">
+                <img src="{{ url_for('static', filename='uploads/' + comment.author.avatar) }}" alt="{{ comment.author.name }}" class="comment-avatar">
+                <div class="reel-comment-content">
+                    <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-author">{{ comment.author.name }}</a>
+                    <span class="reel-comment-username">@{{ comment.author.username }}</span>
+                    <p>{{ comment.content }}</p>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="reel-comments-empty">لا توجد تعليقات حتى الآن. كن أول من يبدأ النقاش.</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('videos.comment', video_id=video.id) }}" class="reel-comment-form">
+            <label class="visually-hidden" for="reel-comment-input">أضف تعليقاً</label>
+            <input id="reel-comment-input" type="text" name="content" class="form-control" placeholder="أضف تعليقاً..." maxlength="1000" required>
+            <button class="btn btn-primary" type="submit" aria-label="إرسال التعليق"><i class="fas fa-paper-plane" aria-hidden="true"></i></button>
+        </form>
+    </section>
+</section>
+
 <script>
-    document.querySelector('.like-video-btn').addEventListener('click', function() {
-        const videoId = this.dataset.video;
-        fetch(`/videos/like/${videoId}`, { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                this.querySelector('.like-count').textContent = data.count;
-                this.classList.toggle('btn-primary');
-                this.classList.toggle('btn-outline-primary');
-            });
-    });
+(() => {
+    const likeButton = document.querySelector('.reel-like-button');
+    const copyButton = document.querySelector('[data-copy-link]');
+
+    if (likeButton) {
+        likeButton.addEventListener('click', async () => {
+            if (likeButton.classList.contains('is-loading')) return;
+            likeButton.classList.add('is-loading');
+            try {
+                const response = await fetch(`/videos/like/${likeButton.dataset.videoId}`, { method: 'POST' });
+                if (!response.ok) throw new Error('تعذر تسجيل الإعجاب');
+                const data = await response.json();
+                likeButton.querySelector('.reel-action-count').textContent = data.count;
+                likeButton.classList.toggle('is-liked', data.liked);
+                likeButton.setAttribute('aria-pressed', String(data.liked));
+                likeButton.querySelector('i').className = data.liked ? 'fas fa-heart' : 'far fa-heart';
+            } catch (error) {
+                likeButton.classList.add('has-error');
+                window.setTimeout(() => likeButton.classList.remove('has-error'), 500);
+            } finally {
+                likeButton.classList.remove('is-loading');
+            }
+        });
+    }
+
+    if (copyButton) {
+        copyButton.addEventListener('click', async () => {
+            try {
+                if (!navigator.clipboard) throw new Error('Clipboard API unavailable');
+                await navigator.clipboard.writeText(window.location.href);
+                copyButton.classList.add('copied');
+                window.setTimeout(() => copyButton.classList.remove('copied'), 1400);
+            } catch (error) {
+                window.prompt('انسخ رابط الريل:', window.location.href);
+            }
+        });
+    }
+})();
 </script>
 {% endblock %}

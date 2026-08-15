@@ -1468,3 +1468,612 @@ body {
 .sound-toggle.muted {
     opacity: 0.5;
 }
+
+/* ========================================
+   ريلز ANTER
+   ======================================== */
+.reels-browse-page {
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.reels-page-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 4px 0 18px;
+    padding: 4px 2px;
+}
+
+.reels-eyebrow {
+    color: var(--fb-blue);
+    font-size: 0.78rem;
+    font-weight: 800;
+    margin: 0 0 3px;
+}
+
+.reels-page-header h1 {
+    margin: 0;
+    color: var(--fb-text);
+    font-size: clamp(1.35rem, 3vw, 1.8rem);
+    font-weight: 800;
+}
+
+.reels-page-header p:not(.reels-eyebrow) {
+    margin: 4px 0 0;
+    color: var(--fb-text-muted);
+    font-size: 0.88rem;
+}
+
+.reels-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+    box-shadow: 0 5px 14px rgba(24, 119, 242, 0.2);
+}
+
+.reels-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.reel-card {
+    min-width: 0;
+}
+
+.reel-card-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #101114;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reel-card-link:hover {
+    color: inherit;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+}
+
+.reel-card-link:focus-visible,
+.reel-action-button:focus-visible,
+.reel-back-link:focus-visible {
+    outline: 3px solid rgba(24, 119, 242, 0.5);
+    outline-offset: 3px;
+}
+
+.reel-card-media {
+    position: relative;
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.reel-card-media img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    transform: scale(1.001);
+    transition: transform 0.35s ease, filter 0.35s ease;
+}
+
+.reel-card-link:hover .reel-card-media img {
+    transform: scale(1.05);
+    filter: brightness(0.78);
+}
+
+.reel-card-gradient {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.08) 32%, rgba(0,0,0,0.78) 100%);
+    pointer-events: none;
+}
+
+.reel-play-badge {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(255,255,255,0.38);
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(0,0,0,0.32);
+    backdrop-filter: blur(5px);
+    font-size: 1.05rem;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.reel-card-link:hover .reel-play-badge {
+    transform: translate(-50%, -50%) scale(1.12);
+    background: var(--fb-blue);
+}
+
+.reel-duration {
+    position: absolute;
+    z-index: 2;
+    top: 9px;
+    right: 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(0,0,0,0.48);
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+
+.reel-card-copy {
+    position: absolute;
+    z-index: 2;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 28px 11px 11px;
+    color: #fff;
+}
+
+.reel-card-copy h2 {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0 0 4px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.86rem;
+    font-weight: 800;
+    line-height: 1.45;
+}
+
+.reel-card-copy span {
+    color: rgba(255,255,255,0.78);
+    font-size: 0.72rem;
+}
+
+.reels-empty-state {
+    max-width: 470px;
+    margin: 48px auto;
+    padding: 38px 24px;
+    border: 1px dashed var(--fb-border);
+    border-radius: 20px;
+    background: var(--fb-card);
+}
+
+.reels-empty-icon {
+    display: grid;
+    place-items: center;
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    color: var(--fb-blue);
+    background: #e7f3ff;
+    font-size: 1.8rem;
+}
+
+.reels-empty-state h2 {
+    color: var(--fb-text);
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.reels-empty-state p {
+    color: var(--fb-text-muted);
+    font-size: 0.9rem;
+}
+
+.reels-upload-empty-btn {
+    border-radius: 999px;
+}
+
+.reel-watch-page {
+    max-width: 910px;
+    margin: 0 auto;
+}
+
+.reel-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    color: var(--fb-text-muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.reel-back-link:hover {
+    color: var(--fb-blue);
+}
+
+.reel-watch-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(245px, 0.6fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.reel-player-panel,
+.reel-info-panel,
+.reel-comments-panel {
+    border: 1px solid var(--fb-border);
+    border-radius: 18px;
+    background: var(--fb-card);
+    box-shadow: var(--fb-shadow);
+}
+
+.reel-player-panel {
+    overflow: hidden;
+    background: #08090b;
+}
+
+.reel-player-shell {
+    display: grid;
+    min-height: min(74vh, 720px);
+    place-items: center;
+    background:
+        radial-gradient(circle at 50% 16%, rgba(24, 119, 242, 0.18), transparent 37%),
+        #08090b;
+}
+
+.reel-player {
+    display: block;
+    width: 100%;
+    max-height: min(74vh, 720px);
+    aspect-ratio: 9 / 16;
+    background: #000;
+    object-fit: contain;
+}
+
+.reel-watch-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 10px 8px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    background: #111216;
+}
+
+.reel-action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-width: 48px;
+    min-height: 38px;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 11px;
+    color: rgba(255,255,255,0.88);
+    background: transparent;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+}
+
+.reel-action-button:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.12);
+}
+
+.reel-action-button:active {
+    transform: scale(0.93);
+}
+
+.reel-like-button.is-liked,
+.reel-like-button.is-liked:hover {
+    color: #ff6b81;
+    background: rgba(255,107,129,0.14);
+}
+
+.reel-action-button.is-loading {
+    pointer-events: none;
+    opacity: 0.58;
+}
+
+.reel-action-button.has-error {
+    animation: reelActionShake 0.42s ease;
+}
+
+.reel-copy-link-button.copied {
+    color: #8ce99a;
+    background: rgba(140, 233, 154, 0.13);
+}
+
+@keyframes reelActionShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+}
+
+.reel-info-panel {
+    padding: 18px;
+}
+
+.reel-author-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.reel-author-link {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    gap: 9px;
+    color: var(--fb-text);
+    text-decoration: none;
+}
+
+.reel-author-link:hover {
+    color: var(--fb-blue);
+}
+
+.reel-author-avatar {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    border: 2px solid var(--fb-border);
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.reel-author-link span {
+    display: grid;
+    min-width: 0;
+}
+
+.reel-author-link strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.87rem;
+}
+
+.reel-author-link small,
+.reel-view-count,
+.reel-comment-username {
+    color: var(--fb-text-muted);
+    font-size: 0.72rem;
+}
+
+.reel-view-count {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.reel-info-panel h1 {
+    margin: 18px 0 8px;
+    color: var(--fb-text);
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1.55;
+}
+
+.reel-description {
+    margin: 0;
+    color: var(--fb-text-muted);
+    font-size: 0.9rem;
+    line-height: 1.75;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.reel-comments-panel {
+    margin-top: 18px;
+    padding: 18px;
+}
+
+.reel-comments-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.reel-comments-heading h2 {
+    margin: 0;
+    color: var(--fb-text);
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.reel-comments-heading span {
+    display: grid;
+    min-width: 24px;
+    height: 24px;
+    place-items: center;
+    padding: 0 6px;
+    border-radius: 999px;
+    color: var(--fb-blue);
+    background: #e7f3ff;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.reel-comments-list {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.reel-comment-item {
+    display: flex;
+    gap: 9px;
+}
+
+.reel-comment-content {
+    min-width: 0;
+}
+
+.reel-comment-content p {
+    margin: 3px 0 0;
+    color: var(--fb-text);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.reel-comments-empty {
+    margin: 4px 0 14px;
+    color: var(--fb-text-muted);
+    font-size: 0.88rem;
+}
+
+.reel-comment-form {
+    display: flex;
+    gap: 8px;
+}
+
+.reel-comment-form .form-control {
+    min-width: 0;
+    border-radius: 12px;
+    background: var(--fb-bg);
+}
+
+.reel-comment-form .btn {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    place-items: center;
+    padding: 0;
+    border-radius: 12px;
+}
+
+[data-theme="dark"] .reel-player-panel,
+[data-theme="dark"] .reel-info-panel,
+[data-theme="dark"] .reel-comments-panel,
+[data-theme="dark"] .reels-empty-state {
+    border-color: #3b3d43;
+    background: #242526;
+}
+
+[data-theme="dark"] .reels-page-header h1,
+[data-theme="dark"] .reels-empty-state h2,
+[data-theme="dark"] .reel-info-panel h1,
+[data-theme="dark"] .reel-comments-heading h2,
+[data-theme="dark"] .reel-author-link,
+[data-theme="dark"] .reel-comment-content p {
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .reels-page-header p:not(.reels-eyebrow),
+[data-theme="dark"] .reels-empty-state p,
+[data-theme="dark"] .reel-description,
+[data-theme="dark"] .reel-author-link small,
+[data-theme="dark"] .reel-view-count,
+[data-theme="dark"] .reel-comment-username,
+[data-theme="dark"] .reel-comments-empty {
+    color: #b0b3b8;
+}
+
+[data-theme="dark"] .reel-comments-heading span,
+[data-theme="dark"] .reels-empty-icon {
+    background: rgba(24, 119, 242, 0.2);
+}
+
+[data-theme="dark"] .reel-comment-form .form-control {
+    border-color: #3b3d43;
+    color: #e4e6eb;
+    background: #18191a;
+}
+
+@media (min-width: 768px) {
+    .reels-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .reels-page-header {
+        align-items: flex-start;
+        margin-bottom: 14px;
+    }
+
+    .reels-page-header p:not(.reels-eyebrow) {
+        display: none;
+    }
+
+    .reels-upload-btn {
+        width: 40px;
+        height: 40px;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .reels-upload-btn span {
+        display: none;
+    }
+
+    .reels-grid {
+        gap: 8px;
+    }
+
+    .reel-card-link {
+        border-radius: 12px;
+    }
+
+    .reel-play-badge {
+        width: 42px;
+        height: 42px;
+        font-size: 0.92rem;
+    }
+
+    .reel-card-copy {
+        padding: 22px 9px 9px;
+    }
+
+    .reel-card-copy h2 {
+        font-size: 0.78rem;
+    }
+
+    .reel-watch-layout {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .reel-player-panel {
+        border-radius: 14px;
+    }
+
+    .reel-player-shell,
+    .reel-player {
+        min-height: 0;
+        max-height: 68vh;
+    }
+
+    .reel-info-panel,
+    .reel-comments-panel {
+        border-radius: 14px;
+        padding: 15px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reel-card-link,
+    .reel-card-media img,
+    .reel-play-badge,
+    .reel-action-button {
+        transition: none !important;
+        animation: none !important;
+    }
+}

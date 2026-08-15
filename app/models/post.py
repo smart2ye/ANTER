@@ -15,6 +15,7 @@ class Post(db.Model):
 
     comments = db.relationship('Comment', backref='post', lazy='dynamic', cascade='all, delete-orphan')
     likes = db.relationship('Like', backref='post', lazy='dynamic', cascade='all, delete-orphan')
+    hashtags = db.relationship('Hashtag', secondary='post_hashtags', backref=db.backref('related_posts', lazy='dynamic'), lazy='dynamic')
 
     def like_count(self):
         return self.likes.count()

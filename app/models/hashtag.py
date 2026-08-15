@@ -7,7 +7,7 @@ class Hashtag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    posts = db.relationship('PostHashtag', backref='hashtag', lazy='dynamic', cascade='all, delete-orphan')
+    posts = db.relationship('Post', secondary='post_hashtags', back_populates='hashtags', lazy='dynamic')
     
     def post_count(self):
         return self.posts.count()

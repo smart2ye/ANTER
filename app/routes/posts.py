@@ -4,6 +4,8 @@ from app import db, csrf
 from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag
 from app.forms.post import PostForm
 from app.utils.helpers import extract_hashtags
+from app.utils.image_storage import prepare_image_data
+
 from datetime import datetime
 import os
 import secrets
@@ -253,7 +255,18 @@ def create():
 
         hashtags = extract_hashtags(content)
 
-        post = Post(content=content, author_id=current_user.id)
+        # تخزين الصورة داخل قاعدة البيانات الدائمة عند إرفاقها بالمنشور.
+        image_data, image_mime = prepare_image_data(form.image.data)
+        if form.image.data and not image_data:
+            flash('تعذر قراءة الصورة. استخدم JPG أو PNG أو GIF أو WEBP بحجم ضمن الحد المسموح.', 'danger')
+            return redirect(url_for('posts.create'))
+
+        post = Post(
+            content=content,
+            author_id=current_user.id,
+            image_data=image_data,
+            image_mime=image_mime,
+        )
         db.session.add(post)
         db.session.flush()
 

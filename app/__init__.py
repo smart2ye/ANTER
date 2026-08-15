@@ -1,4 +1,5 @@
-from flask import Flask, session
+from flask import Flask, flash, redirect, request, session, url_for
+from werkzeug.exceptions import RequestEntityTooLarge
 from app.config import Config
 from app.extensions import db, login_manager, csrf
 from app.models import User, CallSignal
@@ -20,6 +21,14 @@ def create_app():
         return User.query.get(int(user_id))
 
     register_blueprints(app)
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def handle_request_too_large(error):
+        if request.path.startswith('/videos/upload'):
+            max_video_mb = app.config['MAX_VIDEO_UPLOAD_BYTES'] // (1024 * 1024)
+            flash(f'تعذر رفع الفيديو لأن حجمه أكبر من الحد المسموح ({max_video_mb} MB).', 'danger')
+            return redirect(url_for('videos.upload'))
+        return 'حجم الطلب أكبر من الحد المسموح.', 413
 
     # توليد مسار إداري سري
     admin_path = os.environ.get("ADMIN_PATH")

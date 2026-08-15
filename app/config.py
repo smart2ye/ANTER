@@ -38,8 +38,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = DATABASE_ENGINE_OPTIONS
     UPLOAD_FOLDER = UPLOAD_FOLDER
-    # A small deployment must reject very large request bodies before they pressure the worker.
-    MAX_CONTENT_LENGTH = env_int('MAX_REQUEST_BYTES', 25 * 1024 * 1024, 5 * 1024 * 1024)
+    # Video files are streamed to a temporary file by Werkzeug, then saved directly to disk.
+    # Keep a small overhead above the video cap for multipart form data and a thumbnail.
+    MAX_CONTENT_LENGTH = env_int('MAX_REQUEST_BYTES', 55 * 1024 * 1024, 10 * 1024 * 1024)
+    MAX_VIDEO_UPLOAD_BYTES = env_int('MAX_VIDEO_UPLOAD_BYTES', 50 * 1024 * 1024, 5 * 1024 * 1024)
     MAX_AUDIO_MESSAGE_BYTES = 10 * 1024 * 1024
     # Admission limits protect a small worker from oversized or highly compressed uploads.
     MAX_IMAGE_BYTES = env_int('MAX_IMAGE_BYTES', 5 * 1024 * 1024, 1 * 1024 * 1024)

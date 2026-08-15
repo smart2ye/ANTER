@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from app.extensions import db, csrf
 from app.models import Video, VideoLike, VideoComment, VideoCommentLike, Notification
@@ -26,6 +26,21 @@ def upload():
 
         if not video_file or not video_file.filename:
             flash('الرجاء اختيار فيديو.', 'danger')
+            return redirect(url_for('videos.upload'))
+
+        # Reject an oversized video before copying it to permanent storage.
+        # The request-level limit also allows a small multipart overhead and optional thumbnail.
+        try:
+            video_file.stream.seek(0, 2)
+            video_size = video_file.stream.tell()
+            video_file.stream.seek(0)
+        except (AttributeError, OSError):
+            video_size = 0
+
+        max_video_bytes = current_app.config['MAX_VIDEO_UPLOAD_BYTES']
+        if video_size > max_video_bytes:
+            max_video_mb = max_video_bytes // (1024 * 1024)
+            flash(f'حجم فيديو الريلز أكبر من الحد المسموح ({max_video_mb} MB). اضغط الفيديو ثم أعد المحاولة.', 'danger')
             return redirect(url_for('videos.upload'))
 
         video_path = save_video_file(video_file, is_reel)

@@ -4,8 +4,9 @@ from flask import current_app
 
 class AIService:
     def __init__(self):
-        self.gemini_key = os.environ.get('GEMINI_API_KEY')
-        self.deepseek_key = os.environ.get('DEERSEEK_API_KEY') # optional
+        # يتم جلب المفتاح من إعدادات التطبيق (Config) التي تقرأ من متغيرات البيئة المشفرة
+        self.gemini_key = current_app.config.get('GEMINI_API_KEY')
+        self.deepseek_key = current_app.config.get('DEEPSEEK_API_KEY')
 
     def generate_response(self, prompt, max_tokens=300):
         # 1. Try Gemini if available (using google-genai or direct REST API)

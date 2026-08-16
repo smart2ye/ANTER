@@ -59,6 +59,9 @@ class Config:
     WEBRTC_TURN_USERNAME = os.environ.get('WEBRTC_TURN_USERNAME', '')
     WEBRTC_TURN_CREDENTIAL = os.environ.get('WEBRTC_TURN_CREDENTIAL', '')
     PERMANENT_SESSION_LIFETIME = 86400
+    
+    # مفاتيح الذكاء الاصطناعي (Hybrid AI)
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 
 for subfolder in ('avatars', 'posts', 'reels', 'videos', 'thumbnails', 'audio'):

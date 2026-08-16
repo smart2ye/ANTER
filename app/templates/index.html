@@ -7,90 +7,104 @@
 <div id="storiesFeedContainer"></div>
 
 <!-- ============================== -->
-<!-- مربع إنشاء منشور سريع -->
+<!-- بطاقة إنشاء منشور سريع -->
 <!-- ============================== -->
-<div class="card shadow-sm mb-4 p-3 border-0 rounded-4" style="background: var(--card-bg);">
-    <div class="d-flex align-items-center gap-3">
-        <img src="{{ avatar_url(current_user) }}"
-             class="rounded-circle" width="48" height="48" style="object-fit: cover; border: 2px solid var(--fb-blue); flex-shrink: 0;">
-        <button class="btn w-100 text-start rounded-pill fw-semibold" 
-                style="background: var(--fb-bg); color: var(--text-muted); border: 1px solid var(--fb-border); padding: 10px 18px; transition: all 0.2s;"
-                data-bs-toggle="modal" 
-                data-bs-target="#quickPostModal"
-                onmouseover="this.style.background='var(--fb-border)'; this.style.borderColor='var(--fb-blue)'" 
-                onmouseout="this.style.background='var(--fb-bg)'; this.style.borderColor='var(--fb-border)'">
-            <i class="fas fa-pen me-1"></i> ماذا يحدث في ذهنك؟
+<section class="quick-composer-card mb-4" aria-label="إنشاء منشور جديد">
+    <div class="quick-composer-top">
+        <img src="{{ avatar_url(current_user) }}" class="quick-composer-avatar" alt="{{ current_user.name }}">
+        <button class="quick-composer-trigger" type="button" data-bs-toggle="modal" data-bs-target="#quickPostModal">
+            <span class="quick-composer-prompt">ما الذي يدور في ذهنك، {{ current_user.name }}؟</span>
+            <span class="quick-composer-subprompt"><i class="fas fa-sparkles"></i> شارك فكرة أو صورة أو رابطاً</span>
         </button>
-        <button class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center" 
-                style="width: 48px; height: 48px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);" 
-                data-bs-toggle="modal" 
-                data-bs-target="#quickPostModal"
-                title="منشور جديد">
-            <i class="fas fa-plus fa-lg"></i>
+        <button class="quick-composer-add" type="button" data-bs-toggle="modal" data-bs-target="#quickPostModal" title="إنشاء منشور جديد" aria-label="إنشاء منشور جديد">
+            <i class="fas fa-plus"></i>
         </button>
     </div>
-</div>
+    <div class="quick-composer-divider"></div>
+    <div class="quick-composer-actions">
+        <button type="button" class="quick-composer-action quick-composer-image-action" data-bs-toggle="modal" data-bs-target="#quickPostModal">
+            <i class="fas fa-image text-success"></i><span>صورة</span>
+        </button>
+        <button type="button" class="quick-composer-action" data-bs-toggle="modal" data-bs-target="#quickPostModal">
+            <i class="fas fa-link text-primary"></i><span>رابط</span>
+        </button>
+        <button type="button" class="quick-composer-action" data-bs-toggle="modal" data-bs-target="#quickPostModal">
+            <i class="fas fa-at text-warning"></i><span>إشارة</span>
+        </button>
+        <button type="button" class="quick-composer-ai-action" data-bs-toggle="modal" data-bs-target="#quickPostModal">
+            <i class="fas fa-wand-magic-sparkles"></i><span>مساعد ANTER</span>
+        </button>
+    </div>
+</section>
 
 <!-- ============================== -->
-<!-- نافذة إنشاء المنشور (بدون CSRF لأن المسار معفى) -->
+<!-- نافذة إنشاء المنشور -->
 <!-- ============================== -->
-<div class="modal fade" id="quickPostModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg" style="background: var(--card-bg);">
-            <div class="modal-header border-0 pb-0">
-                <h6 class="modal-title fw-bold"><i class="fas fa-pen-fancy text-primary me-1"></i> إنشاء منشور</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="quickPostModal" tabindex="-1" aria-labelledby="quickPostModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content composer-modal-content border-0 shadow-lg">
+            <div class="composer-modal-header">
+                <div>
+                    <h5 class="modal-title" id="quickPostModalTitle">إنشاء منشور</h5>
+                    <p>شارك ما يهمك مع مجتمع ANTER</p>
+                </div>
+                <button type="button" class="composer-close-btn" data-bs-dismiss="modal" aria-label="إغلاق"><i class="fas fa-times"></i></button>
             </div>
-            <div class="modal-body pt-2">
-                <div class="d-flex align-items-center mb-3">
-                    <img src="{{ avatar_url(current_user) }}"
-                         class="rounded-circle me-2" width="40" height="40" style="object-fit: cover; border: 2px solid var(--fb-blue);">
+            <div class="modal-body composer-modal-body">
+                <div class="composer-author-row">
+                    <img src="{{ avatar_url(current_user) }}" class="composer-author-avatar" alt="{{ current_user.name }}">
                     <div>
-                        <h6 class="mb-0 fw-bold">{{ current_user.name }}</h6>
-                        <small class="text-muted">@{{ current_user.username }}</small>
+                        <strong>{{ current_user.name }}</strong>
+                        <span>@{{ current_user.username }} <i class="fas fa-globe-asia" title="منشور عام"></i> عام</span>
                     </div>
                 </div>
                 
-                <form method="POST" action="{{ url_for('posts.create') }}" enctype="multipart/form-data">
+                <form id="quickPostForm" method="POST" action="{{ url_for('posts.create') }}" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
-                    <div class="mb-3">
-                        <textarea name="content" id="quickPostContent" class="form-control border-0 shadow-none"
-                                  rows="4" placeholder="ماذا يحدث في ذهنك؟..."
-                                  style="background: var(--fb-bg); border-radius: 16px; resize: none; font-size: 0.95rem;"></textarea>
-                        <div class="d-flex justify-content-between mt-1 px-2">
-                            <small class="text-muted" id="quickCharCount">0 / 2000</small>
-                            <small class="text-muted"><i class="fas fa-at"></i> @للإشارة</small>
-                        </div>
-                        <div class="d-flex flex-wrap gap-2 mt-2 px-1" aria-label="أدوات المساعد الذكي">
-                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill ai-composer-btn" data-action="suggest_post" data-target="#quickPostContent" data-status="#aiComposerStatus" title="اقتراح منشور ذكي">
-                                <i class="fas fa-wand-magic-sparkles me-1"></i> اقترح محتوى
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill ai-composer-btn" data-action="improve_text" data-target="#quickPostContent" data-status="#aiComposerStatus" title="تحسين المسودة الحالية">
-                                <i class="fas fa-pen-nib me-1"></i> حسّن المحتوى
-                            </button>
-                        </div>
-                        <small id="aiComposerStatus" class="d-block text-muted mt-2 px-1" aria-live="polite">اكتب فكرتك ثم استخدم المساعد الذكي، أو اطلب منه اقتراحاً جديداً.</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="border rounded-3 p-3 text-center" style="border: 2px dashed var(--fb-border); cursor: pointer; transition: all 0.3s;" onclick="document.getElementById('quickImageInput').click()">
-                            <i class="fas fa-image fa-2x text-muted mb-2"></i>
-                            <p class="text-muted small mb-0">اضغط لرفع صورة</p>
-                            <input type="file" name="image" id="quickImageInput" class="d-none" accept="image/*" onchange="previewImage(this)">
-                        </div>
-                        <div id="quickImagePreview" class="mt-2" style="display: none; position: relative;">
-                            <img id="quickPreviewImg" src="#" alt="معاينة" class="img-fluid rounded-3" style="max-height: 250px; width: 100%; object-fit: cover;">
-                            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-circle" style="width: 30px; height: 30px; padding: 0; border: none;" onclick="removeImage()">
-                                <i class="fas fa-times"></i>
-                            </button>
+                    <div class="composer-textarea-wrap">
+                        <textarea name="content" id="quickPostContent" class="composer-textarea" rows="5" maxlength="2000" placeholder="اكتب ما يدور في ذهنك...\nيمكنك استخدام @ للإشارة و # للوسوم وإضافة رابط لمعاينته تلقائياً." required></textarea>
+                        <div class="composer-textarea-footer">
+                            <span class="composer-mention-hint"><i class="fas fa-at"></i> اكتب @ لذكر شخص</span>
+                            <span class="composer-char-count" id="quickCharCount">0 / 2000</span>
                         </div>
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-grow-1 py-2 fw-bold rounded-pill">
-                            <i class="fas fa-paper-plane me-1"></i> نشر
+                    <div class="composer-link-hint" id="quickLinkHint" hidden>
+                        <i class="fas fa-link"></i>
+                        <span>سيتم إنشاء معاينة للرابط تلقائياً بعد النشر.</span>
+                    </div>
+
+                    <div class="composer-ai-tools" aria-label="أدوات المساعد الذكي">
+                        <button type="button" class="ai-composer-btn" data-action="suggest_post" data-target="#quickPostContent" data-status="#aiComposerStatus" title="اقتراح منشور ذكي">
+                            <i class="fas fa-wand-magic-sparkles"></i> اقترح محتوى
                         </button>
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="button" class="ai-composer-btn" data-action="improve_text" data-target="#quickPostContent" data-status="#aiComposerStatus" title="تحسين المسودة الحالية">
+                            <i class="fas fa-pen-nib"></i> حسّن المحتوى
+                        </button>
+                        <span id="aiComposerStatus" class="composer-ai-status" aria-live="polite">اكتب فكرتك أو ابدأ باقتراح ذكي.</span>
+                    </div>
+
+                    <div class="composer-media-area" id="quickImageDropZone">
+                        <label for="quickImageInput" class="composer-media-picker">
+                            <span class="composer-media-icon"><i class="fas fa-image"></i></span>
+                            <span><strong>أضف صورة إلى منشورك</strong><small>اسحب الصورة هنا أو اخترها من جهازك</small></span>
+                        </label>
+                        <input type="file" name="image" id="quickImageInput" class="d-none" accept="image/png,image/jpeg,image/gif,image/webp">
+                    </div>
+                    <div id="quickImagePreview" class="composer-image-preview" hidden>
+                        <img id="quickPreviewImg" src="#" alt="معاينة الصورة المرفقة">
+                        <div class="composer-image-preview-overlay">
+                            <span><i class="fas fa-image"></i> صورة مرفقة</span>
+                            <button type="button" onclick="removeImage()" title="إزالة الصورة" aria-label="إزالة الصورة"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="composer-submit-row">
+                        <span class="composer-ready-status"><i class="fas fa-shield-heart"></i> انشر بأمان واحترام</span>
+                        <div class="composer-submit-actions">
+                            <button type="button" class="composer-cancel-btn" data-bs-dismiss="modal">إلغاء</button>
+                            <button type="submit" class="composer-publish-btn" id="quickPostSubmit"><i class="fas fa-paper-plane"></i> نشر المنشور</button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -177,35 +191,89 @@
 </div>
 
 <script>
-    // عداد الأحرف
-    document.querySelector('textarea[name="content"]').addEventListener('input', function() {
-        const count = this.value.length;
-        document.getElementById('quickCharCount').textContent = count + ' / 2000';
-        if (count > 2000) {
-            this.value = this.value.substring(0, 2000);
-            document.getElementById('quickCharCount').textContent = '2000 / 2000';
+    // تجربة الكتابة في بطاقة إنشاء المنشور
+    const quickPostContent = document.getElementById('quickPostContent');
+    const quickCharCount = document.getElementById('quickCharCount');
+    const quickLinkHint = document.getElementById('quickLinkHint');
+    const quickImageInput = document.getElementById('quickImageInput');
+    const quickImageDropZone = document.getElementById('quickImageDropZone');
+    const quickImagePreview = document.getElementById('quickImagePreview');
+    const quickPreviewImg = document.getElementById('quickPreviewImg');
+    const quickPostForm = document.getElementById('quickPostForm');
+    const quickPostSubmit = document.getElementById('quickPostSubmit');
+
+    function updateQuickComposer() {
+        const count = quickPostContent.value.length;
+        quickCharCount.textContent = count + ' / 2000';
+        quickCharCount.classList.toggle('is-near-limit', count >= 1800);
+        quickCharCount.classList.toggle('is-at-limit', count >= 2000);
+        quickLinkHint.hidden = !/https?:\/\/\S+|www\.\S+/i.test(quickPostContent.value);
+
+        quickPostContent.style.height = 'auto';
+        quickPostContent.style.height = Math.min(Math.max(160, quickPostContent.scrollHeight), 340) + 'px';
+    }
+
+    quickPostContent.addEventListener('input', updateQuickComposer);
+
+    // معاينة الصورة والتحقق منها محلياً قبل الإرسال
+    function previewImage(input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            alert('يرجى اختيار ملف صورة صالح.');
+            removeImage();
+            return;
         }
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            quickPreviewImg.src = event.target.result;
+            quickImagePreview.hidden = false;
+            quickImageDropZone.classList.add('has-image');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    quickImageInput.addEventListener('change', function() {
+        previewImage(this);
     });
 
-    // معاينة الصورة
-    function previewImage(input) {
-        const preview = document.getElementById('quickImagePreview');
-        const img = document.getElementById('quickPreviewImg');
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                img.src = e.target.result;
-                preview.style.display = 'block';
-            }
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
+    ['dragenter', 'dragover'].forEach(function(eventName) {
+        quickImageDropZone.addEventListener(eventName, function(event) {
+            event.preventDefault();
+            quickImageDropZone.classList.add('is-dragging');
+        });
+    });
+    ['dragleave', 'drop'].forEach(function(eventName) {
+        quickImageDropZone.addEventListener(eventName, function(event) {
+            event.preventDefault();
+            quickImageDropZone.classList.remove('is-dragging');
+        });
+    });
+    quickImageDropZone.addEventListener('drop', function(event) {
+        const file = event.dataTransfer.files && event.dataTransfer.files[0];
+        if (!file) return;
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        quickImageInput.files = transfer.files;
+        previewImage(quickImageInput);
+    });
 
     function removeImage() {
-        document.getElementById('quickImageInput').value = '';
-        document.getElementById('quickImagePreview').style.display = 'none';
-        document.getElementById('quickPreviewImg').src = '#';
+        quickImageInput.value = '';
+        quickImagePreview.hidden = true;
+        quickPreviewImg.src = '#';
+        quickImageDropZone.classList.remove('has-image', 'is-dragging');
     }
+
+    document.getElementById('quickPostModal').addEventListener('shown.bs.modal', function() {
+        quickPostContent.focus();
+        updateQuickComposer();
+    });
+
+    quickPostForm.addEventListener('submit', function() {
+        quickPostSubmit.disabled = true;
+        quickPostSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري النشر...';
+    });
 
     // نسخ الرابط
     window.copyLink = function(url) {

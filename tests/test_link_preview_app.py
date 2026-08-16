@@ -16,6 +16,7 @@ def main():
 
     app = create_app()
     app.jinja_env.get_template('_post_card.html')
+    app.jinja_env.get_template('index.html')
     with app.app_context():
         columns = {column.name for column in Post.__table__.columns}
         required = {'link_url', 'link_title', 'link_description', 'link_image'}

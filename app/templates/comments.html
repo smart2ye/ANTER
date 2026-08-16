@@ -1,4 +1,3 @@
-<!-- ============================== -->
 <!-- بطاقة التعليقات المشتركة -->
 <!-- ============================== -->
 <div class="comments-list">
@@ -25,6 +24,15 @@
                         </time>
                     </div>
                     <div class="comment-text text-break">{{ comment.content | parse_mentions | safe }}</div>
+                    
+                    {% if comment.audio_url %}
+                    <div class="comment-audio mt-2">
+                        <audio controls preload="metadata" style="max-width: 100%; height: 36px;">
+                            <source src="{{ comment.audio_url }}">
+                            متصفحك لا يدعم تشغيل الصوت
+                        </audio>
+                    </div>
+                    {% endif %}
                     
                     <div class="comment-actions mt-2 d-flex gap-3 align-items-center">
                         <button type="button"
@@ -65,6 +73,16 @@
                                         </time>
                                     </div>
                                     <div class="comment-text text-break small">{{ reply.content | parse_mentions | safe }}</div>
+                                    
+                                    {% if reply.audio_url %}
+                                    <div class="comment-audio mt-2">
+                                        <audio controls preload="metadata" style="max-width: 100%; height: 32px;">
+                                            <source src="{{ reply.audio_url }}">
+                                            متصفحك لا يدعم تشغيل الصوت
+                                        </audio>
+                                    </div>
+                                    {% endif %}
+                                    
                                     <div class="comment-actions mt-1 d-flex gap-3 align-items-center">
                                         <button type="button"
                                                 class="comment-like-btn btn btn-link btn-sm text-decoration-none p-0 small {% if user_reply_like %}text-danger font-weight-bold{% else %}text-muted{% endif %}"
@@ -82,17 +100,24 @@
 
             <!-- نموذج الرد السريع على التعليق -->
             <div class="reply-form-wrapper ms-5 mt-2 d-none" id="reply-form-{{ comment.id }}">
-                <form method="POST" action="{{ url_for('posts.comment', post_id=post.id) }}" class="comment-form">
+                <form method="POST" action="{{ url_for('posts.comment', post_id=post.id) }}" enctype="multipart/form-data" class="comment-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
                     <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                    <input type="file" name="audio" accept="audio/*" class="d-none reply-audio-input" id="reply-audio-{{ comment.id }}">
                     <div class="input-group input-group-sm">
                         <input type="text"
                                name="content"
                                id="input-reply-{{ comment.id }}"
                                class="form-control rounded-pill"
-                               placeholder="اكتب ردك هنا..."
+                               placeholder="اكتب ردك أو سجل صوتياً..."
                                required>
+                        <button type="button" class="btn btn-outline-secondary rounded-circle ms-1 reply-mic-btn" data-comment-id="{{ comment.id }}" title="تسجيل صوتي">
+                            <i class="fas fa-microphone"></i>
+                        </button>
                         <button type="submit" class="btn btn-outline-primary rounded-pill px-3">رد</button>
+                    </div>
+                    <div class="reply-voice-preview mt-1 small text-danger d-none" id="reply-preview-{{ comment.id }}">
+                        <i class="fas fa-microphone-alt"></i> تم تسجيل صوت (جاهز للإرسال)
                     </div>
                 </form>
             </div>
@@ -109,26 +134,34 @@
 <!-- نموذج إضافة تعليق رئيسي جديد -->
 <!-- ============================== -->
 <div class="comment-form-wrapper mt-4 pt-3 border-top">
-    <form method="POST" action="{{ url_for('posts.comment', post_id=post.id) }}" class="comment-form">
+    <form method="POST" action="{{ url_for('posts.comment', post_id=post.id) }}" enctype="multipart/form-data" class="comment-form" id="mainCommentForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+        <input type="file" name="audio" accept="audio/*" class="d-none" id="mainAudioInput">
 
         <div class="d-flex gap-2 align-items-center">
             <img src="{{ avatar_url(current_user) }}"
                  class="comment-avatar rounded-circle"
                  alt="{{ current_user.name }}"
                  style="width: 36px; height: 36px; object-fit: cover; flex-shrink: 0;">
-            <div class="flex-grow-1">
+            <div class="flex-grow-1 position-relative">
                 <input type="text"
                        name="content"
                        id="main-comment-input"
-                       class="form-control rounded-pill"
-                       placeholder="اكتب تعليقاً أو أشر إلى صديق بـ @username..."
+                       class="form-control rounded-pill pe-5"
+                       placeholder="اكتب تعليقاً أو أشر لصديق أو سجل صوتياً..."
                        required
                        style="background: #f0f2f5; border: 1px solid #ced4da;">
+                
+                <button type="button" id="mainMicBtn" class="btn btn-link text-muted position-absolute top-50 translate-middle-y end-0 me-2 p-0" title="تسجيل صوتي">
+                    <i class="fas fa-microphone fa-lg"></i>
+                </button>
             </div>
             <button type="submit" class="btn btn-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" aria-label="إرسال التعليق">
                 <i class="fas fa-paper-plane"></i>
             </button>
+        </div>
+        <div id="mainVoicePreview" class="mt-2 small text-danger d-none">
+            <i class="fas fa-microphone-alt"></i> تم تسجيل صوت (جاهز للإرسال) <button type="button" class="btn btn-link btn-sm text-muted p-0 ms-2" id="cancelMainVoice">إلغاء</button>
         </div>
     </form>
 </div>
@@ -142,7 +175,6 @@
             const inputField = document.getElementById(`input-reply-${commentId}`);
             
             if (formWrapper.classList.contains('d-none')) {
-                // إخفاء أي نماذج ردود أخرى مفتوحة
                 document.querySelectorAll('.reply-form-wrapper').forEach(el => el.classList.add('d-none'));
                 formWrapper.classList.remove('d-none');
                 inputField.value = `@${username} `;
@@ -151,5 +183,96 @@
                 formWrapper.classList.add('d-none');
             }
         });
+    });
+
+    // منطق التسجيل الصوتي للتعليقات
+    let commentRecorder = null;
+    let commentAudioChunks = [];
+
+    // تسجيل التعليق الرئيسي
+    const mainMicBtn = document.getElementById('mainMicBtn');
+    const mainAudioInput = document.getElementById('mainAudioInput');
+    const mainVoicePreview = document.getElementById('mainVoicePreview');
+    const mainCommentInput = document.getElementById('main-comment-input');
+
+    if (mainMicBtn) {
+        mainMicBtn.onclick = async () => {
+            if (commentRecorder && commentRecorder.state === 'recording') {
+                commentRecorder.stop();
+                return;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                commentRecorder = new MediaRecorder(stream);
+                commentAudioChunks = [];
+                commentRecorder.ondataavailable = e => commentAudioChunks.push(e.data);
+                commentRecorder.onstop = () => {
+                    const blob = new Blob(commentAudioChunks, { type: 'audio/webm' });
+                    const file = new File([blob], `comment-${Date.now()}.webm`, { type: 'audio/webm' });
+                    
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    mainAudioInput.files = dataTransfer.files;
+                    
+                    mainVoicePreview.classList.remove('d-none');
+                    mainMicBtn.classList.remove('text-danger');
+                    mainMicBtn.classList.add('text-success');
+                    mainCommentInput.removeAttribute('required');
+                    stream.getTracks().forEach(t => t.stop());
+                };
+                commentRecorder.start();
+                mainMicBtn.classList.add('text-danger', 'fa-beat');
+            } catch (err) {
+                alert('تعذر الوصول إلى الميكروفون');
+            }
+        };
+    }
+
+    const cancelMainVoice = document.getElementById('cancelMainVoice');
+    if (cancelMainVoice) {
+        cancelMainVoice.onclick = () => {
+            mainAudioInput.value = '';
+            mainVoicePreview.classList.add('d-none');
+            mainMicBtn.classList.remove('text-success', 'text-danger');
+            mainMicBtn.classList.add('text-muted');
+            mainCommentInput.setAttribute('required', 'true');
+        };
+    }
+
+    // تسجيل الردود الصوتية
+    document.querySelectorAll('.reply-mic-btn').forEach(btn => {
+        btn.onclick = async () => {
+            const commentId = btn.dataset.commentId;
+            const fileInput = document.getElementById(`reply-audio-${commentId}`);
+            const preview = document.getElementById(`reply-preview-${commentId}`);
+            const inputField = document.getElementById(`input-reply-${commentId}`);
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const recorder = new MediaRecorder(stream);
+                let chunks = [];
+                recorder.ondataavailable = e => chunks.push(e.data);
+                recorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    const file = new File([blob], `reply-${Date.now()}.webm`, { type: 'audio/webm' });
+                    
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    fileInput.files = dt.files;
+                    
+                    preview.classList.remove('d-none');
+                    btn.classList.add('btn-danger', 'text-white');
+                    inputField.removeAttribute('required');
+                    stream.getTracks().forEach(t => t.stop());
+                };
+                recorder.start();
+                btn.classList.add('btn-warning');
+                setTimeout(() => {
+                    if (recorder.state === 'recording') recorder.stop();
+                }, 10000); // حد أقصى 10 ثوانٍ للرد الصوتي السريع أو النقر مرة أخرى للايقاف
+            } catch (err) {
+                alert('تعذر الوصول إلى الميكروفون');
+            }
+        };
     });
 </script>

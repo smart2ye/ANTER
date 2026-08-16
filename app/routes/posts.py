@@ -4,11 +4,12 @@ from app import db, csrf
 from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag
 from app.forms.post import PostForm
 from app.utils.helpers import extract_hashtags
-from app.utils.image_storage import prepare_image_data
+from app.utils.helpers import extract_hashtags, allowed_audio_file
 
 from datetime import datetime
 import os
 import secrets
+import uuid
 
 posts_bp = Blueprint('posts', __name__)
 
@@ -134,11 +135,32 @@ def comment(post_id):
     content = request.form.get('content', '').strip()
     parent_id = request.form.get('parent_id', type=int)
     
-    if not content:
+    uploaded_audio = request.files.get('audio')
+    audio_url = None
+    if uploaded_audio and uploaded_audio.filename:
+        if allowed_audio_file(uploaded_audio.filename):
+            try:
+                audio_bytes = uploaded_audio.read()
+                max_size = current_app.config['MAX_AUDIO_MESSAGE_BYTES']
+                if len(audio_bytes) <= max_size:
+                    ext = uploaded_audio.filename.rsplit('.', 1)[1].lower()
+                    filename = f"comment_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
+                    upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'audio')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    filepath = os.path.join(upload_folder, filename)
+                    uploaded_audio.stream.seek(0)
+                    uploaded_audio.save(filepath)
+                    audio_url = f"/static/uploads/audio/{filename}"
+                    if not content:
+                        content = "🎤 تسجيل صوتي"
+            except Exception:
+                current_app.logger.exception('تعذر حفظ التعليق الصوتي')
+
+    if not content and not audio_url:
         flash('التعليق لا يمكن أن يكون فارغاً', 'danger')
         return redirect(url_for('posts.view_post', public_id=post.public_id))
     
-    comment = Comment(content=content, author_id=current_user.id, post_id=post_id, parent_id=parent_id)
+    comment = Comment(content=content, author_id=current_user.id, post_id=post_id, parent_id=parent_id, audio_url=audio_url)
     db.session.add(comment)
     db.session.flush()
     

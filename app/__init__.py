@@ -78,6 +78,9 @@ def create_app():
             'videos': {
                 'public_id': 'VARCHAR(40)',
             },
+            'comments': {
+                'audio_url': 'VARCHAR(255)',
+            },
             'messages': {
                 'parent_id': 'INTEGER',
                 'is_deleted_everyone': 'BOOLEAN DEFAULT FALSE',

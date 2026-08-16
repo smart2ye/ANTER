@@ -78,6 +78,12 @@ def create_app():
             'videos': {
                 'public_id': 'VARCHAR(40)',
             },
+            'messages': {
+                'parent_id': 'INTEGER',
+                'is_deleted_everyone': 'BOOLEAN DEFAULT FALSE',
+                'deleted_by_sender': 'BOOLEAN DEFAULT FALSE',
+                'deleted_by_receiver': 'BOOLEAN DEFAULT FALSE',
+            },
         }
         with db.engine.begin() as connection:
             for table_name, required_columns in required_columns_by_table.items():

@@ -74,8 +74,8 @@ def chat(user_id):
     other = User.query.get_or_404(user_id)
     messages = Message.query.filter(
         or_(
-            (Message.sender_id == current_user.id) & (Message.receiver_id == other.id),
-            (Message.sender_id == other.id) & (Message.receiver_id == current_user.id),
+            (Message.sender_id == current_user.id) & (Message.receiver_id == other.id) & (Message.deleted_by_sender == False),
+            (Message.sender_id == other.id) & (Message.receiver_id == current_user.id) & (Message.deleted_by_receiver == False),
         )
     ).order_by(Message.created_at.asc()).all()
 
@@ -201,6 +201,7 @@ def send(user_id):
         flash('هذا المستخدم لا يستقبل رسائل منك حاليًا.', 'warning')
         return redirect(url_for('messages.chat', user_id=user_id))
     content = request.form.get('content', '').strip()
+    parent_id = request.form.get('parent_id', type=int)
     uploaded_audio = request.files.get('audio')
     uploaded_attachment = request.files.get('attachment')
     audio_data = None
@@ -257,6 +258,7 @@ def send(user_id):
                 attachment_mime=attachment_mime,
                 attachment_name=attachment_name,
                 attachment_kind=attachment_kind,
+                parent_id=parent_id
             )
             db.session.add(message)
             notification_action = 'voice_message' if audio_data else 'file_message' if attachment_data else 'message'
@@ -275,6 +277,60 @@ def send(user_id):
     else:
         flash('الرسالة فارغة.', 'danger')
     return redirect(url_for('messages.chat', user_id=user_id))
+
+
+@messages_bp.route('/delete/<int:message_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def delete_message(message_id):
+    message = Message.query.get_or_404(message_id)
+    if current_user.id not in {message.sender_id, message.receiver_id}:
+        return jsonify({'success': False, 'message': 'غير مصرح لك'}), 403
+    
+    delete_type = request.form.get('type', 'me') # 'me' or 'everyone'
+    
+    if delete_type == 'everyone':
+        if message.sender_id != current_user.id:
+            return jsonify({'success': False, 'message': 'لا يمكنك حذف رسالة لست مرسلها عند الجميع'}), 403
+        message.is_deleted_everyone = True
+    else:
+        if message.sender_id == current_user.id:
+            message.deleted_by_sender = True
+        else:
+            message.deleted_by_receiver = True
+            
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@messages_bp.route('/forward/<int:message_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def forward_message(message_id):
+    original = Message.query.get_or_404(message_id)
+    target_user_id = request.form.get('target_user_id', type=int)
+    if not target_user_id:
+        return jsonify({'success': False, 'message': 'يجب تحديد مستلم'}), 400
+    
+    target_user = User.query.get_or_404(target_user_id)
+    if not _can_message_user(target_user):
+        return jsonify({'success': False, 'message': 'لا يمكن مراسلة هذا المستخدم'}), 403
+        
+    forwarded = Message(
+        sender_id=current_user.id,
+        receiver_id=target_user_id,
+        content=original.content,
+        audio_data=original.audio_data,
+        audio_mime=original.audio_mime,
+        attachment_data=original.attachment_data,
+        attachment_mime=original.attachment_mime,
+        attachment_name=original.attachment_name,
+        attachment_kind=original.attachment_kind,
+        # يمكن إضافة علامة "رسالة محولة" في المحتوى مستقبلاً
+    )
+    db.session.add(forwarded)
+    db.session.commit()
+    return jsonify({'success': True, 'redirect': url_for('messages.chat', user_id=target_user_id)})
 
 
 @messages_bp.route('/send-audio/<int:user_id>', methods=['POST'])

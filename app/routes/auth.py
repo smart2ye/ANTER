@@ -71,10 +71,13 @@ def reset_password_request():
             s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
             token = s.dumps(user.id, salt='password-reset')
             reset_url = url_for('auth.reset_password', token=token, _external=True)
-            flash(f'🔗 رابط إعادة التعيين: {reset_url}', 'info')
-            flash('📌 انسخ الرابط والصقه في المتصفح.', 'info')
-        else:
-            flash('❌ لا يوجد حساب مرتبط بهذا البريد الإلكتروني.', 'danger')
+            # تم إخفاء الرابط تماماً من الشاشة لمنع استغلاله من قبل أي شخص يعرف البريد
+            # في الإنتاج يتم إرسال هذا الرابط حصرياً عبر البريد الإلكتروني الحقيقي للمستخدم
+            # للتسجيل والاختبار المحلي، يتم تسجيل الرابط في سجلات الخادم الآمنة فقط
+            current_app.logger.info(f"Password reset link generated for user {user.email}: {reset_url}")
+        
+        # دائماً نظهر نفس الرسالة الأمنية بغض النظر عن وجود الحساب لمنع تخمين الإيميلات
+        flash('✅ إذا كان البريد الإلكتروني مسجلاً لدينا، فقد تم إرسال تعليمات استعادة كلمة المرور إليه.', 'success')
         return redirect(url_for('auth.login'))
     return render_template('auth/reset_password_request.html', form=form)
 

@@ -2,7 +2,122 @@ import os
 import uuid
 import re
 import subprocess
+import socket
+import ipaddress
+from urllib.parse import urljoin, urlparse
+
 from flask import current_app, url_for
+
+
+def _is_safe_preview_url(value):
+    """Allow only public HTTP(S) hosts for server-side link previews."""
+    try:
+        parsed = urlparse(value)
+        if parsed.scheme not in {'http', 'https'} or not parsed.hostname:
+            return False
+        if parsed.username or parsed.password:
+            return False
+        host = parsed.hostname.rstrip('.').lower()
+        if host in {'localhost', 'localhost.localdomain'} or host.endswith('.local'):
+            return False
+        for result in socket.getaddrinfo(host, parsed.port or (443 if parsed.scheme == 'https' else 80), type=socket.SOCK_STREAM):
+            address = ipaddress.ip_address(result[4][0])
+            if address.is_private or address.is_loopback or address.is_link_local or address.is_reserved or address.is_multicast or address.is_unspecified:
+                return False
+        return True
+    except (ValueError, OSError, socket.gaierror):
+        return False
+
+
+def extract_link_metadata(text):
+    """Extract safe Open Graph metadata from the first public URL in post text."""
+    if not text:
+        return None, None, None, None
+
+    urls = re.findall(r'https?://[^\s<>\"]+|www\.[^\s<>\"]+', text)
+    if not urls:
+        return None, None, None, None
+
+    target_url = urls[0]
+    if target_url.startswith('www.'):
+        target_url = 'https://' + target_url
+    if not _is_safe_preview_url(target_url):
+        return None, None, None, None
+
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (compatible; ANTER-LinkPreview/1.0)',
+            'Accept': 'text/html,application/xhtml+xml',
+        }
+        session = requests.Session()
+        current_url = target_url
+        response = None
+        for _ in range(3):
+            response = session.get(
+                current_url,
+                headers=headers,
+                timeout=(2, 3),
+                allow_redirects=False,
+                stream=True,
+            )
+            if response.is_redirect or response.is_permanent_redirect:
+                next_url = urljoin(current_url, response.headers.get('Location', ''))
+                response.close()
+                if not _is_safe_preview_url(next_url):
+                    return None, None, None, None
+                current_url = next_url
+                continue
+            break
+
+        if response is None or response.status_code != 200:
+            if response is not None:
+                response.close()
+            return None, None, None, None
+
+        content_type = response.headers.get('Content-Type', '').lower()
+        if content_type and 'html' not in content_type and 'xhtml' not in content_type:
+            response.close()
+            return current_url, urlparse(current_url).netloc, None, None
+
+        body = b''
+        for chunk in response.iter_content(chunk_size=16384):
+            body += chunk
+            if len(body) >= 1024 * 1024:
+                break
+        response.close()
+
+        soup = BeautifulSoup(body, 'html.parser')
+
+        def meta_content(*selectors):
+            for selector in selectors:
+                tag = soup.find('meta', **selector)
+                if tag and tag.get('content'):
+                    return tag['content'].strip()
+            return None
+
+        title = meta_content({'property': 'og:title'}, {'name': 'twitter:title'})
+        if not title and soup.title and soup.title.string:
+            title = soup.title.string.strip()
+
+        description = meta_content(
+            {'property': 'og:description'},
+            {'name': 'description'},
+            {'name': 'twitter:description'},
+        )
+        image = meta_content({'property': 'og:image'}, {'name': 'twitter:image'})
+        if image:
+            image = urljoin(current_url, image)
+            if not _is_safe_preview_url(image):
+                image = None
+
+        domain = urlparse(current_url).netloc
+        return current_url, title or domain, description, image
+    except Exception:
+        return target_url, urlparse(target_url).netloc, None, None
+
 from werkzeug.utils import secure_filename
 
 def allowed_file(filename):

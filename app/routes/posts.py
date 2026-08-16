@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app import db, csrf
 from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag
 from app.forms.post import PostForm
-from app.utils.helpers import extract_hashtags, allowed_audio_file
+from app.utils.helpers import extract_hashtags, allowed_audio_file, extract_link_metadata as extract_safe_link_metadata
 from app.utils.image_storage import prepare_image_data
 
 from datetime import datetime
@@ -30,6 +30,7 @@ def edit(post_id):
         
         post.content = content
         post.updated_at = datetime.utcnow()
+        post.link_url, post.link_title, post.link_description, post.link_image = extract_safe_link_metadata(content)
 
         uploaded_image = form.image.data
         if uploaded_image and getattr(uploaded_image, 'filename', ''):
@@ -306,6 +307,7 @@ def hide(post_id):
     return redirect(url_for('main.index'))
 
 
+
 @posts_bp.route('/create', methods=['GET', 'POST'])
 @login_required
 def create():
@@ -317,6 +319,7 @@ def create():
             return redirect(url_for('posts.create'))
 
         hashtags = extract_hashtags(content)
+        link_url, link_title, link_desc, link_img = extract_safe_link_metadata(content)
 
         # تخزين الصورة داخل قاعدة البيانات الدائمة عند إرفاقها بالمنشور.
         uploaded_image = form.image.data
@@ -332,6 +335,10 @@ def create():
             author_id=current_user.id,
             image_data=image_data,
             image_mime=image_mime,
+            link_url=link_url,
+            link_title=link_title,
+            link_description=link_desc,
+            link_image=link_img,
         )
         db.session.add(post)
         db.session.flush()

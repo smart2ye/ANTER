@@ -11,6 +11,13 @@ class Post(db.Model):
     image = db.Column(db.String(200), default='')
     image_data = db.Column(db.LargeBinary, nullable=True)
     image_mime = db.Column(db.String(100), nullable=True)
+
+    # حقول معاينة الرابط (Link Preview)
+    link_url = db.Column(db.String(500), nullable=True)
+    link_title = db.Column(db.String(255), nullable=True)
+    link_description = db.Column(db.Text, nullable=True)
+    link_image = db.Column(db.String(500), nullable=True)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)

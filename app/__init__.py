@@ -74,6 +74,10 @@ def create_app():
                 'image_data': binary_type,
                 'image_mime': 'VARCHAR(100)',
                 'public_id': 'VARCHAR(40)',
+                'link_url': 'VARCHAR(500)',
+                'link_title': 'VARCHAR(255)',
+                'link_description': 'TEXT',
+                'link_image': 'VARCHAR(500)',
             },
             'videos': {
                 'public_id': 'VARCHAR(40)',

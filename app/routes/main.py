@@ -147,6 +147,12 @@ def api_posts():
             'url': url_for('posts.view_post', public_id=post.public_id),
             'content': post.content,
             'image': post.image,
+            'link_preview': {
+                'url': post.link_url,
+                'title': post.link_title,
+                'description': post.link_description,
+                'image': post.link_image,
+            } if post.link_url else None,
             'created_at': post.created_at.strftime('%Y-%m-%d %H:%M'),
             'author': {
                 'id': post.author.id,

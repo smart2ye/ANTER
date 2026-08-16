@@ -75,6 +75,21 @@
         <p>{{ post.content | linkify_hashtags | parse_mentions | safe }}</p>
     </div>
 
+    {% if post.link_url %}
+    <a class="link-preview-card" href="{{ post.link_url }}" target="_blank" rel="noopener noreferrer nofollow">
+        {% if post.link_image %}
+        <div class="link-preview-image-wrapper">
+            <img src="{{ post.link_image }}" class="link-preview-image" alt="{{ post.link_title or 'معاينة الرابط' }}" loading="lazy" referrerpolicy="no-referrer">
+        </div>
+        {% endif %}
+        <div class="link-preview-body">
+            <div class="link-preview-domain">{{ post.link_url|replace('https://', '')|replace('http://', '')|truncate(80, True, '') }}</div>
+            {% if post.link_title %}<div class="link-preview-title">{{ post.link_title }}</div>{% endif %}
+            {% if post.link_description %}<div class="link-preview-description">{{ post.link_description|truncate(180, True, '…') }}</div>{% endif %}
+        </div>
+    </a>
+    {% endif %}
+
     {% if post.image_data or post.image %}
     <div class="post-image-wrapper">
         <img src="{{ post_image_url(post) }}" class="post-image" alt="صورة المنشور">

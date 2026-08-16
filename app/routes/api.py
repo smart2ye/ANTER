@@ -15,6 +15,12 @@ def get_posts():
         'url': url_for('posts.view_post', public_id=p.public_id),
         'content': p.content,
         'image': p.image,
+        'link_preview': {
+            'url': p.link_url,
+            'title': p.link_title,
+            'description': p.link_description,
+            'image': p.link_image,
+        } if p.link_url else None,
         'created_at': p.created_at.isoformat(),
         'author': {
             'id': p.author.id,

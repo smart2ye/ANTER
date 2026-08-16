@@ -5,8 +5,7 @@ from app.models import User, Post, Comment, Report, Notification
 from datetime import datetime
 import os
 
-admin_path = os.environ.get("ADMIN_PATH") or "admin-" + __import__('secrets').token_urlsafe(8)
-admin_bp = Blueprint('admin', __name__, url_prefix='/' + admin_path)
+admin_bp = Blueprint('admin', __name__)
 
 def admin_required(f):
     from functools import wraps

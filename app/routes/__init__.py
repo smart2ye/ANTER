@@ -21,7 +21,7 @@ def register_blueprints(app):
     app.register_blueprint(messages_bp)
     app.register_blueprint(notifications_bp)
     app.register_blueprint(sse_bp)
-    app.register_blueprint(admin_bp)
+    app.register_blueprint(admin_bp, url_prefix='/' + app.config.get('ADMIN_PATH', 'admin'))
     app.register_blueprint(videos_bp)
     app.register_blueprint(trends_bp)
     app.register_blueprint(api_bp)

@@ -20,6 +20,18 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
+    # توليد مسار إداري سري
+    admin_path = os.environ.get("ADMIN_PATH")
+    if not admin_path:
+        admin_path = "admin-" + secrets.token_urlsafe(10)
+        os.environ["ADMIN_PATH"] = admin_path
+    app.config["ADMIN_PATH"] = admin_path
+
+    print(f"\n{'='*60}")
+    print(f"🔐 مسار لوحة التحكم السري: /{admin_path}")
+    print(f"📌 احفظ هذا المسار في مكان آمن!")
+    print(f"{'='*60}\n")
+
     register_blueprints(app)
     
     from app.routes.stories import stories_bp
@@ -32,18 +44,6 @@ def create_app():
             flash(f'تعذر رفع الفيديو لأن حجمه أكبر من الحد المسموح ({max_video_mb} MB).', 'danger')
             return redirect(url_for('videos.upload'))
         return 'حجم الطلب أكبر من الحد المسموح.', 413
-
-    # توليد مسار إداري سري
-    admin_path = os.environ.get("ADMIN_PATH")
-    if not admin_path:
-        admin_path = "admin-" + secrets.token_urlsafe(10)
-        os.environ["ADMIN_PATH"] = admin_path
-    app.config["ADMIN_PATH"] = admin_path
-
-    print(f"\n{'='*60}")
-    print(f"🔐 مسار لوحة التحكم السري: /{admin_path}")
-    print(f"📌 احفظ هذا المسار في مكان آمن!")
-    print(f"{'='*60}\n")
 
     with app.app_context():
         db.create_all()

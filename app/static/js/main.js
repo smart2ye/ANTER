@@ -437,3 +437,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// معالج زر تلخيص المنشورات بالذكاء الاصطناعي (Hybrid AI Summarizer)
+document.addEventListener('click', function(e) {
+    const aiBtn = e.target.closest('.ai-summarize-btn');
+    if (aiBtn) {
+        const postId = aiBtn.getAttribute('data-post');
+        const summaryBox = document.getElementById(`ai-summary-box-${postId}`);
+        const summaryText = document.getElementById(`ai-summary-text-${postId}`);
+        
+        if (summaryBox) {
+            if (summaryBox.style.display === 'none') {
+                summaryBox.style.display = 'block';
+                summaryText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> جاري توليد الملخص الذكي...';
+                
+                fetch(`/api/ai/summarize/${postId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        summaryText.innerText = data.summary || 'عذراً، تعذر إنشاء الملخص.';
+                    })
+                    .catch(err => {
+                        summaryText.innerText = 'حدث خطأ أثناء الاتصال بخدمة الذكاء الاصطناعي.';
+                    });
+            } else {
+                summaryBox.style.display = 'none';
+            }
+        }
+    }
+});

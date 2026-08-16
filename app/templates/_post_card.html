@@ -39,6 +39,15 @@
     </div>
     {% endif %}
 
+    <!-- صندوق تلخيص الذكاء الاصطناعي -->
+    <div id="ai-summary-box-{{ post.id }}" class="ai-summary-card p-3 mb-2 bg-light border rounded shadow-sm" style="display: none; font-size: 0.9rem; border-right: 4px solid #1877f2 !important;">
+        <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="fw-bold text-primary"><i class="fas fa-brain me-1"></i> ملخص ذكي (Hybrid AI)</span>
+            <button type="button" class="btn-close btn-close-sm" onclick="document.getElementById('ai-summary-box-{{ post.id }}').style.display='none';" aria-label="إغلاق"></button>
+        </div>
+        <p class="mb-0 text-dark" id="ai-summary-text-{{ post.id }}">جاري التلخيص...</p>
+    </div>
+
     <!-- إحصائيات التفاعل -->
     <div class="post-stats">
         <div class="reactions-summary" id="reaction-summary-{{ post.id }}">
@@ -118,9 +127,14 @@
         </div>
 
         <!-- رابط المنشور -->
-        <a href="{{ url_for('posts.view_post', public_id=post.public_id) }}" class="action-btn view-post">
+        <a href="{{ url_for('posts.view_post', public_id=post.public_id) }}" class="action-btn view-post" title="عرض المنشور">
             <i class="fas fa-external-link-alt"></i>
         </a>
+
+        <!-- زر تلخيص بالذكاء الاصطناعي -->
+        <button class="action-btn ai-summarize-btn text-primary" data-post="{{ post.id }}" title="تلخيص بالذكاء الاصطناعي">
+            <i class="fas fa-robot"></i>
+        </button>
 
         <!-- أزرار إدارية (للمالك فقط) -->
         {% if current_user.id == post.author_id %}

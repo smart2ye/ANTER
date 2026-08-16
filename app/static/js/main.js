@@ -376,6 +376,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.addEventListener('input', function(e) {
         if (!e.target.matches('input[type="text"], textarea')) return;
+        
+        // منع الإكمال التلقائي في حقول الرسائل الخاصة
+        if (e.target.closest('.chat-composer') || e.target.id === 'messageInput') return;
+        
         activeInput = e.target;
         const val = activeInput.value;
         const cursorPos = activeInput.selectionStart;

@@ -53,6 +53,11 @@
                         <i class="fas fa-eye-slash me-2"></i> إخفاء المنشور
                     </button>
                 </li>
+                <li>
+                    <button class="dropdown-item py-2 text-dark" onclick="copyToClipboard('{{ post_url }}'); alert('تم نسخ رابط المنشور بنجاح!');">
+                        <i class="fas fa-share-alt me-2"></i> مشاركة المنشور
+                    </button>
+                </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                     <button class="dropdown-item py-2 text-warning fw-semibold" onclick="alert('شكرًا لتنبيهنا. تم إرسال البلاغ للإدارة لمراجعته.');">
@@ -94,9 +99,6 @@
             {% if reactions.sad > 0 %}<span class="reaction-item">😢 {{ reactions.sad }}</span>{% endif %}
         </div>
         {% set comment_count = post.comment_count() %}
-        <div class="comments-count">
-            <i class="far fa-comment"></i> {{ comment_count }}
-        </div>
     </div>
 
     <!-- أزرار التفاعل -->
@@ -126,40 +128,6 @@
             <i class="far fa-comment"></i>
             <span>{{ comment_count }}</span>
         </button>
-
-        <!-- زر المشاركة المطور -->
-        <div class="share-dropdown position-relative">
-            <button class="action-btn share-toggle" type="button" aria-expanded="false" title="مشاركة المنشور">
-                <i class="fas fa-share-alt"></i>
-            </button>
-            <div class="share-modal-card shadow-lg" style="display: none;">
-                <div class="share-modal-header">
-                    <span>مشاركة المنشور</span>
-                    <button type="button" class="share-modal-close" aria-label="إغلاق"><i class="fas fa-times"></i></button>
-                </div>
-                <div class="share-options-grid">
-                    <button type="button" class="share-option-item copy-link-btn" data-url="{{ post_url }}">
-                        <span class="share-icon bg-secondary text-white"><i class="fas fa-link"></i></span>
-                        <span>نسخ الرابط</span>
-                    </button>
-                    <a href="https://wa.me/?text={{ post_url }}" target="_blank" class="share-option-item">
-                        <span class="share-icon bg-success text-white"><i class="fab fa-whatsapp"></i></span>
-                        <span>واتساب</span>
-                    </a>
-                    <a href="https://twitter.com/intent/tweet?url={{ post_url }}" target="_blank" class="share-option-item">
-                        <span class="share-icon bg-dark text-white"><i class="fab fa-x-twitter"></i></span>
-                        <span>تويتر / X</span>
-                    </a>
-                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ post_url }}" target="_blank" class="share-option-item">
-                        <span class="share-icon bg-primary text-white"><i class="fab fa-facebook-f"></i></span>
-                        <span>فيسبوك</span>
-                    </a>
-                </div>
-                <div class="share-link-preview">
-                    <input type="text" class="form-control form-control-sm" value="{{ post_url }}" readonly>
-                </div>
-            </div>
-        </div>
 
         <!-- زر تلخيص بالذكاء الاصطناعي -->
         <button class="action-btn ai-summarize-btn text-primary" data-post="{{ post.id }}" title="تلخيص بالذكاء الاصطناعي">

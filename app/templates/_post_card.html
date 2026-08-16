@@ -27,12 +27,14 @@
                 <i class="fas fa-ellipsis-h"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-2" style="font-size: 0.9rem;">
-                {% if current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin) %}
+                {% if current_user.is_authenticated and current_user.id == post.author_id %}
                 <li>
                     <a class="dropdown-item py-2 text-primary" href="{{ url_for('posts.edit', post_id=post.id) }}">
                         <i class="fas fa-edit me-2"></i> تعديل المنشور
                     </a>
                 </li>
+                {% endif %}
+                {% if current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin) %}
                 <li>
                     <form action="{{ url_for('posts.delete', post_id=post.id) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من حذف هذا المنشور؟');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

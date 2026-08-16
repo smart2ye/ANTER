@@ -17,7 +17,7 @@ posts_bp = Blueprint('posts', __name__)
 @login_required
 def edit(post_id):
     post = Post.query.get_or_404(post_id)
-    if post.author_id != current_user.id and not current_user.is_admin:
+    if post.author_id != current_user.id:
         flash('ليس لديك صلاحية تعديل هذا المنشور', 'danger')
         return redirect(url_for('main.index'))
 

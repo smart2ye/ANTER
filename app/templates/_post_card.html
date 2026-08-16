@@ -161,23 +161,10 @@
             </div>
         </div>
 
-        <!-- رابط المنشور -->
-        <a href="{{ url_for('posts.view_post', public_id=post.public_id) }}" class="action-btn view-post" title="عرض المنشور">
-            <i class="fas fa-external-link-alt"></i>
-        </a>
-
         <!-- زر تلخيص بالذكاء الاصطناعي -->
         <button class="action-btn ai-summarize-btn text-primary" data-post="{{ post.id }}" title="تلخيص بالذكاء الاصطناعي">
             <i class="fas fa-robot"></i>
         </button>
-
-        <!-- أزرار إدارية (للمالك فقط) -->
-        {% if current_user.id == post.author_id %}
-        <div class="post-admin-actions">
-            <a href="{{ url_for('posts.edit', post_id=post.id) }}" class="action-btn edit-btn"><i class="fas fa-edit"></i></a>
-            <button class="action-btn delete-btn" data-post="{{ post.id }}"><i class="fas fa-trash-alt"></i></button>
-        </div>
-        {% endif %}
     </div>
 
     <!-- تُحمّل التعليقات عند فتحها لتفادي استعلامات متكررة لكل بطاقة في الخلاصة. -->

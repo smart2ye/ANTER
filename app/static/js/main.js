@@ -553,3 +553,41 @@ document.addEventListener('click', async function(e) {
         button.innerHTML = previousIcon;
     }
 });
+
+// ==============================================
+// تحويل توقيت المنشورات إلى التوقيت المحلي لجوال المستخدم
+// ==============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const timeElements = document.querySelectorAll('.local-time');
+    timeElements.forEach(el => {
+        const utcStr = el.getAttribute('data-utc');
+        if (!utcStr) return;
+        try {
+            // اعتبار الوقت القادم من الخادم بتوقيت UTC
+            const utcDate = new Date(utcStr.replace(' ', 'T') + 'Z');
+            if (isNaN(utcDate)) return;
+
+            const now = new Date();
+            const diffMs = now - utcDate;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) {
+                el.textContent = 'الآن';
+            } else if (diffMins < 60) {
+                el.textContent = `منذ ${diffMins} دقيقة`;
+            } else if (diffHours < 24) {
+                el.textContent = `منذ ${diffHours} ساعة`;
+            } else if (diffDays === 1) {
+                el.textContent = 'أمس في ' + utcDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } else {
+                // عرض التاريخ المحلي بالتنسيق المناسب لجوال المستخدم
+                const options = { hour: '2-digit', minute: '2-digit', month: 'numeric', day: 'numeric' };
+                el.textContent = utcDate.toLocaleDateString([], options);
+            }
+        } catch (e) {
+            console.error('Error formatting local time:', e);
+        }
+    });
+});

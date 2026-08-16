@@ -42,31 +42,34 @@
         <p>تجمع المنصة بين المنشورات، التعليقات، القصص، المقاطع القصيرة، والرسائل؛ لتمنح المستخدم حرية اختيار الطريقة الأنسب للتعبير والتواصل. كما توفر أدوات مساعدة ذكية لتلخيص المحتوى وتحسين صياغته واقتراح أفكار أو تعليقات، مع بقاء قرار النشر والتعديل دائماً بيد المستخدم.</p>
     </section>
 
-    <section class="rounded-4 p-4 p-md-5 mb-4 border" style="background: linear-gradient(135deg, rgba(24,119,242,.09), rgba(111,66,193,.08));">
+    <section class="rounded-4 p-4 p-md-5 mb-4 border shadow-sm" style="background: linear-gradient(135deg, rgba(24,119,242,.05), rgba(111,66,193,.05));">
         <div class="d-flex flex-column flex-md-row align-items-md-center gap-4">
-            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 76px; height: 76px; font-size: 1.5rem; font-weight: 800;">ع م</div>
+            <div class="flex-shrink-0 text-center">
+                <img src="{{ avatar_url(current_user) if current_user.is_authenticated else url_for('static', filename='uploads/default.png') }}" 
+                     alt="عبدالقادر مهدلي" 
+                     class="rounded-circle border border-4 border-white shadow-sm" 
+                     style="width: 100px; height: 100px; object-fit: cover;">
+            </div>
             <div class="flex-grow-1">
-                <span class="badge rounded-pill text-bg-primary mb-2">مؤسس ANTER</span>
-                <h2 class="h4 fw-bold mb-3">عبدالقادر مهدلي</h2>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h2 class="h4 fw-bold mb-0">عبدالقادر مهدلي</h2>
+                    <span class="badge rounded-pill text-bg-primary">مؤسس ANTER</span>
+                </div>
+                <p class="text-muted small mb-3">مؤسس وصاحب رؤية منصة ANTER - نسعى لبناء مجتمع رقمي عربي هادف ومبتكر.</p>
+                
                 <div class="d-flex flex-column gap-2">
-                    <div class="d-flex align-items-center">
-                        <a href="{{ url_for('users.profile', username='abdulqader.mahdly') }}" class="text-decoration-none d-flex align-items-center text-primary fw-semibold" aria-label="صفحة عبدالقادر مهدلي على ANTER">
-                            <img src="{{ url_for('static', filename='img/favicon.png') }}" alt="ANTER" style="width: 20px; height: 20px; border-radius: 5px; margin-left: 10px;">
-                            <span>صفحتي في ANTER</span>
-                        </a>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <a href="https://facebook.com/abdulqader.mahdly" target="_blank" rel="noopener noreferrer" class="text-decoration-none d-flex align-items-center text-primary" aria-label="صفحة فيسبوك عبدالقادر مهدلي">
-                            <i class="fab fa-facebook text-center" style="width: 20px; font-size: 20px; margin-left: 10px;"></i>
-                            <span>abdulqader.mahdly</span>
-                        </a>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <a href="https://wa.me/967737254619" target="_blank" rel="noopener noreferrer" class="text-decoration-none d-flex align-items-center text-success" aria-label="واتساب عبدالقادر مهدلي">
-                            <i class="fab fa-whatsapp text-center" style="width: 20px; font-size: 20px; margin-left: 10px;"></i>
-                            <span>+967737254619</span>
-                        </a>
-                    </div>
+                    <a href="{{ url_for('users.profile', username='abdulqader.mahdly') }}" class="text-decoration-none d-flex align-items-center text-primary fw-semibold transition-all hover-translate" aria-label="صفحة عبدالقادر مهدلي على ANTER">
+                        <img src="{{ url_for('static', filename='img/favicon.png') }}" alt="ANTER" style="width: 18px; height: 18px; border-radius: 4px; margin-left: 8px;">
+                        <span>صفحتي في ANTER</span>
+                    </a>
+                    <a href="https://facebook.com/abdulqader.mahdly" target="_blank" rel="noopener noreferrer" class="text-decoration-none d-flex align-items-center text-primary transition-all hover-translate" aria-label="صفحة فيسبوك عبدالقادر مهدلي">
+                        <i class="fab fa-facebook-square text-center" style="width: 18px; font-size: 18px; margin-left: 8px;"></i>
+                        <span>abdulqader.mahdly</span>
+                    </a>
+                    <a href="https://wa.me/967737254619" target="_blank" rel="noopener noreferrer" class="text-decoration-none d-flex align-items-center text-success transition-all hover-translate" aria-label="واتساب عبدالقادر مهدلي">
+                        <i class="fab fa-whatsapp text-center" style="width: 18px; font-size: 18px; margin-left: 8px;"></i>
+                        <span>+967737254619</span>
+                    </a>
                 </div>
             </div>
         </div>

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, jsonify, current_app, abort
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from app import db
+from app import db, csrf
 from app.models.story import Story, StoryView
 from app.models.user import User
 
@@ -14,6 +14,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm', 'mov'}
 
 @stories_bp.route('/api/stories', methods=['POST'])
+@csrf.exempt
 @login_required
 def create_story():
     # تحقق من عدد القصص النشطة للمستخدم (حد أقصى 5 قصص نشطة لمنع الضغط)
@@ -121,6 +122,7 @@ def get_user_stories(user_id):
     }), 200
 
 @stories_bp.route('/api/stories/<int:story_id>/view', methods=['POST'])
+@csrf.exempt
 @login_required
 def view_story(story_id):
     story = Story.query.get_or_404(story_id)
@@ -137,6 +139,7 @@ def view_story(story_id):
     return jsonify({'message': 'تم تسجيل المشاهدة'}), 200
 
 @stories_bp.route('/api/stories/<int:story_id>', methods=['DELETE'])
+@csrf.exempt
 @login_required
 def delete_story(story_id):
     story = Story.query.get_or_404(story_id)

@@ -180,6 +180,10 @@ def terms():
 def about():
     return render_template('about.html')
 
+@main_bp.route('/offline.html')
+def offline():
+    return current_app.send_static_file('offline.html')
+
 @main_bp.route('/sitemap.xml')
 def sitemap():
     from app.models import User, Post

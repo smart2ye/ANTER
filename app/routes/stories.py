@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from app import db, csrf
 from app.models.story import Story, StoryView
 from app.models.user import User
+from app.utils.media_urls import avatar_url
 
 stories_bp = Blueprint('stories', __name__)
 
@@ -83,7 +84,7 @@ def get_stories_feed():
                 'user_id': user.id,
                 'username': user.username,
                 'name': user.name or user.username,
-                'avatar': user.avatar or '/static/uploads/default.png',
+                'avatar': avatar_url(user),
                 'stories': [],
                 'all_viewed': True
             }
@@ -116,7 +117,7 @@ def get_user_stories(user_id):
             'id': user.id,
             'username': user.username,
             'name': user.name or user.username,
-            'avatar': user.avatar or '/static/uploads/default.png'
+            'avatar': avatar_url(user)
         },
         'stories': [s.to_dict(current_user.id) for s in stories]
     }), 200

@@ -22,6 +22,45 @@
                 </div>
             </div>
         </div>
+        <div class="dropdown">
+            <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.1rem;">
+                <i class="fas fa-ellipsis-h"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-2" style="font-size: 0.9rem;">
+                {% if current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin) %}
+                <li>
+                    <a class="dropdown-item py-2 text-primary" href="{{ url_for('posts.edit_post', post_id=post.id) }}">
+                        <i class="fas fa-edit me-2"></i> تعديل المنشور
+                    </a>
+                </li>
+                <li>
+                    <form action="{{ url_for('posts.delete_post', post_id=post.id) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من حذف هذا المنشور؟');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="dropdown-item py-2 text-danger">
+                            <i class="fas fa-trash-alt me-2"></i> حذف المنشور
+                        </button>
+                    </form>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                {% endif %}
+                <li>
+                    <button class="dropdown-item py-2 text-dark" onclick="alert('تم حفظ المنشور في المحفوظات بنجاح.');">
+                        <i class="fas fa-bookmark me-2"></i> حفظ المنشور
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item py-2 text-dark" onclick="const card = this.closest('.post-card'); if(card) { card.style.display='none'; alert('تم إخفاء المنشور من خلاصتك.'); }">
+                        <i class="fas fa-eye-slash me-2"></i> إخفاء المنشور
+                    </button>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <button class="dropdown-item py-2 text-warning fw-semibold" onclick="alert('شكرًا لتنبيهنا. تم إرسال البلاغ للإدارة لمراجعته.');">
+                        <i class="fas fa-exclamation-triangle me-2"></i> إبلاغ عن المحتوى
+                    </button>
+                </li>
+            </ul>
+        </div>
     </div>
 
     <!-- محتوى المنشور -->

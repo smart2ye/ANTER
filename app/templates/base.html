@@ -3,10 +3,31 @@
 <head>
 <link rel="manifest" href="/static/manifest.json">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
-<meta name="google-site-verification" content="0N-aOX5CUq1cK_WJCChxfJ2JDu5fYJuR3CRTK_SWjBk" />
+    <meta name="google-site-verification" content="0N-aOX5CUq1cK_WJCChxfJ2JDu5fYJuR3CRTK_SWjBk" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="ANTER - أول شبكة اجتماعية عربية هجينة تدمج بين التواصل البشري الحقيقي وقدرات الذكاء الاصطناعي المتقدمة. اكتشف عالماً جديداً من التفاعل الذكي.">
+    <meta name="keywords" content="أنتر, ANTER, شبكة اجتماعية, تواصل اجتماعي عربي, ذكاء اصطناعي, شبكة هجينة, ريلز عربي, تعليقات صوتية">
+    <meta name="author" content="عبدالقادر مهدلي">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://anter-1.onrender.com/">
+    <meta property="og:title" content="ANTER - الجيل الجديد من الشبكات الاجتماعية العربية">
+    <meta property="og:description" content="تواصل، شارك، واكتشف قوة الذكاء الاصطناعي في أول منصة عربية هجينة.">
+    <meta property="og:image" content="{{ url_for('static', filename='img/logo.png', _external=True) }}">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://anter-1.onrender.com/">
+    <meta property="twitter:title" content="ANTER - أنتر">
+    <meta property="twitter:description" content="أول شبكة اجتماعية عربية هجينة تدمج بين البشر والذكاء الاصطناعي.">
+    <meta property="twitter:image" content="{{ url_for('static', filename='img/logo.png', _external=True) }}">
+
     <title>ANTER - أنتر</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">

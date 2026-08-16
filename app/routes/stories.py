@@ -1,0 +1,157 @@
+import os
+import uuid
+from datetime import datetime, timedelta
+from flask import Blueprint, render_template, request, jsonify, current_app, abort
+from flask_login import login_required, current_user
+from werkzeug.utils import secure_filename
+from app import db
+from app.models.story import Story, StoryView
+from app.models.user import User
+
+stories_bp = Blueprint('stories', __name__)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm', 'mov'}
+
+@stories_bp.route('/api/stories', methods=['POST'])
+@login_required
+def create_story():
+    # تحقق من عدد القصص النشطة للمستخدم (حد أقصى 5 قصص نشطة لمنع الضغط)
+    now = datetime.utcnow()
+    active_count = Story.query.filter_by(user_id=current_user.id, is_active=True).filter(Story.expires_at > now).count()
+    if active_count >= 5:
+        return jsonify({'error': 'لقد وصلت إلى الحد الأقصى للقصص النشطة (5 قصص). انتظر حتى تنتهي صلاحية إحداها.'}), 400
+
+    media = request.files.get('media')
+    caption = request.form.get('caption', '').strip()
+
+    if not media or media.filename == '':
+        return jsonify({'error': 'يرجى إرفاق صورة أو فيديو للقصة'}), 400
+
+    if not allowed_file(media.filename):
+        return jsonify({'error': 'صيغة الملف غير مدعومة'}), 400
+
+    ext = media.filename.rsplit('.', 1)[1].lower()
+    media_type = 'video' if ext in {'mp4', 'webm', 'mov'} else 'image'
+    
+    filename = f"story_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
+    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'stories')
+    os.makedirs(upload_folder, exist_ok=True)
+    filepath = os.path.join(upload_folder, filename)
+    media.save(filepath)
+
+    media_url = f"/static/uploads/stories/{filename}"
+
+    story = Story(
+        user_id=current_user.id,
+        media_url=media_url,
+        media_type=media_type,
+        caption=caption,
+        expires_at=datetime.utcnow() + timedelta(hours=24)
+    )
+    db.session.add(story)
+    db.session.commit()
+
+    return jsonify({'message': 'تم نشر القصة بنجاح', 'story': story.to_dict(current_user.id)}), 201
+
+@stories_bp.route('/api/stories/feed', methods=['GET'])
+@login_required
+def get_stories_feed():
+    now = datetime.utcnow()
+    
+    # جلب المستخدمين الذين يتابعهم المستخدم الحالي + المستخدم نفسه
+    following_ids = [u.id for u in current_user.following]
+    following_ids.append(current_user.id)
+
+    # جلب القصص النشطة التي لم تنتهِ صلاحيتها
+    stories = Story.query.filter(
+        Story.user_id.in_(following_ids),
+        Story.expires_at > now,
+        Story.is_active == True
+    ).order_by(Story.created_at.desc()).all()
+
+    # تجميع القصص حسب المستخدم
+    users_dict = {}
+    for story in stories:
+        user = story.user
+        if not user:
+            continue
+        if user.id not in users_dict:
+            # التحقق مما إذا كانت جميع قصص هذا المستخدم مشاهدة
+            users_dict[user.id] = {
+                'user_id': user.id,
+                'username': user.username,
+                'name': user.name or user.username,
+                'avatar': user.avatar or '/static/uploads/default.png',
+                'stories': [],
+                'all_viewed': True
+            }
+        
+        story_dict = story.to_dict(current_user.id)
+        if not story_dict['viewed'] and story.user_id != current_user.id:
+            users_dict[user.id]['all_viewed'] = False
+        
+        users_dict[user.id]['stories'].append(story_dict)
+
+    # ترتيب المستخدمين: غير المشاهدة أولاً ثم المشاهدة
+    sorted_users = sorted(users_dict.values(), key=lambda x: (x['all_viewed'], -len(x['stories'])))
+
+    return jsonify(sorted_users), 200
+
+@stories_bp.route('/api/user-stories/<int:user_id>', methods=['GET'])
+@login_required
+def get_user_stories(user_id):
+    now = datetime.utcnow()
+    stories = Story.query.filter(
+        Story.user_id == user_id,
+        Story.expires_at > now,
+        Story.is_active == True
+    ).order_by(Story.created_at.asc()).all()
+
+    user = User.query.get_or_404(user_id)
+    
+    return jsonify({
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'name': user.name or user.username,
+            'avatar': user.avatar or '/static/uploads/default.png'
+        },
+        'stories': [s.to_dict(current_user.id) for s in stories]
+    }), 200
+
+@stories_bp.route('/api/stories/<int:story_id>/view', methods=['POST'])
+@login_required
+def view_story(story_id):
+    story = Story.query.get_or_404(story_id)
+    
+    if story.user_id == current_user.id:
+        return jsonify({'message': 'لا يمكن تسجيل مشاهدة قصتك الخاصة'}), 200
+
+    existing_view = StoryView.query.filter_by(story_id=story_id, viewer_id=current_user.id).first()
+    if not existing_view:
+        view = StoryView(story_id=story_id, viewer_id=current_user.id)
+        db.session.add(view)
+        db.session.commit()
+
+    return jsonify({'message': 'تم تسجيل المشاهدة'}), 200
+
+@stories_bp.route('/api/stories/<int:story_id>', methods=['DELETE'])
+@login_required
+def delete_story(story_id):
+    story = Story.query.get_or_404(story_id)
+    if story.user_id != current_user.id:
+        return jsonify({'error': 'غير مسموح لك بحذف هذه القصة'}), 403
+
+    # حذف الملف الفعلي إن وجد
+    try:
+        if story.media_url and story.media_url.startswith('/static/uploads/'):
+            filepath = os.path.join(current_app.root_path, story.media_url.lstrip('/'))
+            if os.path.exists(filepath):
+                os.remove(filepath)
+    except Exception:
+        pass
+
+    db.session.delete(story)
+    db.session.commit()
+    return jsonify({'message': 'تم حذف القصة بنجاح'}), 200

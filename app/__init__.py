@@ -21,6 +21,9 @@ def create_app():
         return User.query.get(int(user_id))
 
     register_blueprints(app)
+    
+    from app.routes.stories import stories_bp
+    app.register_blueprint(stories_bp)
 
     @app.errorhandler(RequestEntityTooLarge)
     def handle_request_too_large(error):
@@ -44,8 +47,11 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        # إنشاء جدول إشارات المكالمات صراحةً على قواعد الإنتاج القائمة.
+        # إنشاء جداول القصص وإشارات المكالمات صراحةً على قواعد الإنتاج القائمة.
         CallSignal.__table__.create(bind=db.engine, checkfirst=True)
+        from app.models.story import Story, StoryView
+        Story.__table__.create(bind=db.engine, checkfirst=True)
+        StoryView.__table__.create(bind=db.engine, checkfirst=True)
         # ترحيل خفيف للتوافق مع قواعد البيانات القائمة قبل دعم الرسائل الصوتية.
         from sqlalchemy import inspect, text
         inspector = inspect(db.engine)

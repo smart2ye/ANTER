@@ -438,30 +438,118 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// معالج زر تلخيص المنشورات بالذكاء الاصطناعي (Hybrid AI Summarizer)
-document.addEventListener('click', function(e) {
+// عميل موحد لواجهات Hybrid AI مع تمرير رمز CSRF في طلبات POST.
+async function anterAiRequest(url, method = 'GET', payload = null) {
+    const headers = { 'Accept': 'application/json' };
+    if (payload) {
+        headers['Content-Type'] = 'application/json';
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+    }
+
+    const response = await fetch(url, {
+        method,
+        headers,
+        credentials: 'same-origin',
+        body: payload ? JSON.stringify(payload) : null,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok === false) {
+        throw new Error(data.error || 'تعذر إتمام طلب الذكاء الاصطناعي.');
+    }
+    return data;
+}
+
+function setAiStatus(button, message, isError = false) {
+    const status = document.querySelector(button.dataset.status || '');
+    if (!status) return;
+    status.textContent = message;
+    status.classList.toggle('text-danger', isError);
+    status.classList.toggle('text-muted', !isError);
+}
+
+// معالج زر تلخيص المنشورات بالذكاء الاصطناعي.
+document.addEventListener('click', async function(e) {
     const aiBtn = e.target.closest('.ai-summarize-btn');
-    if (aiBtn) {
-        const postId = aiBtn.getAttribute('data-post');
-        const summaryBox = document.getElementById(`ai-summary-box-${postId}`);
-        const summaryText = document.getElementById(`ai-summary-text-${postId}`);
-        
-        if (summaryBox) {
-            if (summaryBox.style.display === 'none') {
-                summaryBox.style.display = 'block';
-                summaryText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> جاري توليد الملخص الذكي...';
-                
-                fetch(`/api/ai/summarize/${postId}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        summaryText.innerText = data.summary || 'عذراً، تعذر إنشاء الملخص.';
-                    })
-                    .catch(err => {
-                        summaryText.innerText = 'حدث خطأ أثناء الاتصال بخدمة الذكاء الاصطناعي.';
-                    });
-            } else {
-                summaryBox.style.display = 'none';
-            }
-        }
+    if (!aiBtn) return;
+
+    const postId = aiBtn.getAttribute('data-post');
+    const summaryBox = document.getElementById(`ai-summary-box-${postId}`);
+    const summaryText = document.getElementById(`ai-summary-text-${postId}`);
+    if (!summaryBox || !summaryText) return;
+
+    if (summaryBox.style.display !== 'none') {
+        summaryBox.style.display = 'none';
+        return;
+    }
+
+    summaryBox.style.display = 'block';
+    summaryText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> جاري توليد الملخص الذكي...';
+    try {
+        const data = await anterAiRequest(`/api/ai/summarize/${postId}`);
+        summaryText.textContent = data.summary || 'تعذر إنشاء الملخص.';
+    } catch (error) {
+        summaryText.textContent = error.message || 'حدث خطأ أثناء الاتصال بخدمة الذكاء الاصطناعي.';
+    }
+});
+
+// اقتراح أو تحسين نص منشور؛ يضع النتيجة في الحقل فقط ولا ينشرها تلقائياً.
+document.addEventListener('click', async function(e) {
+    const button = e.target.closest('.ai-composer-btn');
+    if (!button) return;
+
+    const target = document.querySelector(button.dataset.target || '');
+    if (!target) return;
+    const action = button.dataset.action;
+    const previousIcon = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    setAiStatus(button, 'جاري إعداد اقتراح ذكي…');
+
+    try {
+        const data = await anterAiRequest('/api/ai/assist', 'POST', {
+            action,
+            text: target.value,
+        });
+        target.value = data.text || target.value;
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        target.focus();
+        setAiStatus(button, 'تمت إضافة الاقتراح إلى المسودة. راجعه ثم انشره متى أردت.');
+    } catch (error) {
+        setAiStatus(button, error.message || 'تعذر إنشاء الاقتراح.', true);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = previousIcon;
+    }
+});
+
+// اقتراح تعليق على المنشور أو رد؛ لا يُرسل التعليق قبل موافقة المستخدم.
+document.addEventListener('click', async function(e) {
+    const button = e.target.closest('.ai-comment-suggest-btn');
+    if (!button) return;
+
+    const target = document.querySelector(button.dataset.target || '');
+    const postId = button.dataset.postId;
+    if (!target || !postId) return;
+
+    const previousIcon = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    setAiStatus(button, 'جاري اقتراح تعليق…');
+
+    try {
+        const data = await anterAiRequest('/api/ai/assist', 'POST', {
+            action: 'suggest_comment',
+            post_id: Number(postId),
+        });
+        target.value = data.text || '';
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        target.focus();
+        setAiStatus(button, 'تمت إضافة تعليق مقترح؛ يمكنك تعديله قبل الإرسال.');
+    } catch (error) {
+        setAiStatus(button, error.message || 'تعذر اقتراح تعليق.', true);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = previousIcon;
     }
 });

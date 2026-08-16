@@ -3,8 +3,8 @@ from flask_login import login_required, current_user
 from app import db, csrf
 from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag
 from app.forms.post import PostForm
-from app.utils.helpers import extract_hashtags
 from app.utils.helpers import extract_hashtags, allowed_audio_file
+from app.utils.image_storage import prepare_image_data
 
 from datetime import datetime
 import os

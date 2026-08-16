@@ -132,15 +132,32 @@ def view(post_id):
 def comment(post_id):
     post = Post.query.get_or_404(post_id)
     content = request.form.get('content', '').strip()
+    parent_id = request.form.get('parent_id', type=int)
     
     if not content:
         flash('التعليق لا يمكن أن يكون فارغاً', 'danger')
         return redirect(url_for('posts.view_post', public_id=post.public_id))
     
-    comment = Comment(content=content, author_id=current_user.id, post_id=post_id)
+    comment = Comment(content=content, author_id=current_user.id, post_id=post_id, parent_id=parent_id)
     db.session.add(comment)
+    db.session.flush()
     
-    # إنشاء الإشعار ضمن نفس المعاملة حتى لا يُحفظ التعليق جزئيًا عند فشل الإشعار.
+    # معالجة الإشارات (@mention)
+    from app.utils.helpers import parse_mentions
+    import re
+    usernames = re.findall(r'@([\w.]+)', content)
+    for username in usernames:
+        mentioned_user = User.query.filter_by(username=username).first()
+        if mentioned_user and mentioned_user.id != current_user.id:
+            notif = Notification(
+                user_id=mentioned_user.id,
+                actor_id=current_user.id,
+                action='mention',
+                post_id=post_id
+            )
+            db.session.add(notif)
+
+    # إشعار لصاحب المنشور إذا لم يكن هو المعلق
     if post.author_id != current_user.id:
         notification = Notification(
             user_id=post.author_id,
@@ -149,6 +166,18 @@ def comment(post_id):
             post_id=post_id,
         )
         db.session.add(notification)
+        
+    # إذا كان رداً على تعليق، نبه صاحب التعليق الأصلي
+    if parent_id:
+        parent_comment = Comment.query.get(parent_id)
+        if parent_comment and parent_comment.author_id != current_user.id and parent_comment.author_id != post.author_id:
+            reply_notif = Notification(
+                user_id=parent_comment.author_id,
+                actor_id=current_user.id,
+                action='reply',
+                post_id=post_id
+            )
+            db.session.add(reply_notif)
 
     try:
         db.session.commit()
@@ -292,6 +321,20 @@ def create():
                 db.session.add(tag)
                 db.session.flush()
             post.hashtags.append(tag)
+
+        # معالجة الإشارات (@mention) في المنشور
+        import re
+        usernames = re.findall(r'@([\w.]+)', content)
+        for username in usernames:
+            mentioned_user = User.query.filter_by(username=username).first()
+            if mentioned_user and mentioned_user.id != current_user.id:
+                notif = Notification(
+                    user_id=mentioned_user.id,
+                    actor_id=current_user.id,
+                    action='mention',
+                    post_id=post.id
+                )
+                db.session.add(notif)
 
         db.session.commit()
         flash('تم نشر المنشور بنجاح!', 'success')

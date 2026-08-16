@@ -2,37 +2,99 @@
 <!-- بطاقة التعليقات المشتركة -->
 <!-- ============================== -->
 <div class="comments-list">
-    {% for comment in post.comments.order_by('created_at').all() %}
+    {% for comment in post.comments.filter_by(parent_id=None).order_by('created_at').all() %}
         {% set user_comment_like = comment.likes.filter_by(user_id=current_user.id).first() if current_user.is_authenticated else none %}
-        <article class="comment-card comment-item" id="comment-{{ comment.id }}" data-comment-id="{{ comment.id }}">
-            <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-avatar-link" aria-label="{{ comment.author.name }}">
-                <img src="{{ avatar_url(comment.author) }}"
-                     class="comment-avatar"
-                     alt="{{ comment.author.name }}">
-            </a>
-            <div class="comment-content">
-                <div class="comment-header">
-                    <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-author">
-                        {{ comment.author.name }}
-                        {% if comment.author.is_verified %}
-                            <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>
-                        {% endif %}
-                    </a>
-                    <time class="comment-time" datetime="{{ comment.created_at.isoformat() }}">
-                        {{ comment.created_at.strftime('%H:%M · %d/%m') }}
-                    </time>
+        <article class="comment-card comment-item mb-2" id="comment-{{ comment.id }}" data-comment-id="{{ comment.id }}">
+            <div class="d-flex align-start gap-2">
+                <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-avatar-link" aria-label="{{ comment.author.name }}">
+                    <img src="{{ avatar_url(comment.author) }}"
+                         class="comment-avatar rounded-circle"
+                         alt="{{ comment.author.name }}"
+                         style="width: 36px; height: 36px; object-fit: cover;">
+                </a>
+                <div class="comment-content flex-grow-1 bg-light p-3 rounded-4">
+                    <div class="comment-header d-flex justify-content-between align-items-center mb-1">
+                        <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-author fw-bold text-dark text-decoration-none">
+                            {{ comment.author.name }}
+                            {% if comment.author.is_verified %}
+                                <i class="fas fa-check-circle text-primary verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>
+                            {% endif %}
+                        </a>
+                        <time class="comment-time text-muted small" datetime="{{ comment.created_at.isoformat() }}">
+                            {{ comment.created_at.strftime('%H:%M · %d/%m') }}
+                        </time>
+                    </div>
+                    <div class="comment-text text-break">{{ comment.content | parse_mentions | safe }}</div>
+                    
+                    <div class="comment-actions mt-2 d-flex gap-3 align-items-center">
+                        <button type="button"
+                                class="comment-like-btn btn btn-link btn-sm text-decoration-none p-0 {% if user_comment_like %}text-danger font-weight-bold{% else %}text-muted{% endif %}"
+                                data-comment="{{ comment.id }}"
+                                aria-pressed="{{ 'true' if user_comment_like else 'false' }}">
+                            <i class="{% if user_comment_like %}fas{% else %}far{% endif %} fa-heart"></i>
+                            <span class="comment-like-label">إعجاب</span>
+                            <span class="comment-like-count">{{ comment.like_count() }}</span>
+                        </button>
+                        <button type="button" class="btn btn-link btn-sm text-muted text-decoration-none p-0 reply-toggle-btn" data-comment-id="{{ comment.id }}" data-username="{{ comment.author.username }}">
+                            <i class="fas fa-reply"></i> رد
+                        </button>
+                    </div>
                 </div>
-                <div class="comment-text">{{ comment.content }}</div>
-                <div class="comment-actions">
-                    <button type="button"
-                            class="comment-like-btn{% if user_comment_like %} liked{% endif %}"
-                            data-comment="{{ comment.id }}"
-                            aria-pressed="{{ 'true' if user_comment_like else 'false' }}">
-                        <i class="{% if user_comment_like %}fas{% else %}far{% endif %} fa-heart"></i>
-                        <span class="comment-like-label">إعجاب</span>
-                        <span class="comment-like-count">{{ comment.like_count() }}</span>
-                    </button>
+            </div>
+
+            <!-- الردود على التعليق -->
+            {% if comment.replies.count() > 0 %}
+                <div class="replies-list ms-5 mt-2 ps-3 border-start">
+                    {% for reply in comment.replies.order_by('created_at').all() %}
+                        {% set user_reply_like = reply.likes.filter_by(user_id=current_user.id).first() if current_user.is_authenticated else none %}
+                        <div class="reply-card comment-item mb-2" id="comment-{{ reply.id }}" data-comment-id="{{ reply.id }}">
+                            <div class="d-flex align-start gap-2">
+                                <a href="{{ url_for('users.profile', username=reply.author.username) }}" class="comment-avatar-link">
+                                    <img src="{{ avatar_url(reply.author) }}"
+                                         class="comment-avatar rounded-circle"
+                                         alt="{{ reply.author.name }}"
+                                         style="width: 28px; height: 28px; object-fit: cover;">
+                                </a>
+                                <div class="comment-content flex-grow-1 bg-white border p-2 rounded-3">
+                                    <div class="comment-header d-flex justify-content-between align-items-center mb-1">
+                                        <a href="{{ url_for('users.profile', username=reply.author.username) }}" class="comment-author fw-bold text-dark text-decoration-none small">
+                                            {{ reply.author.name }}
+                                        </a>
+                                        <time class="comment-time text-muted small" style="font-size: 0.75rem;" datetime="{{ reply.created_at.isoformat() }}">
+                                            {{ reply.created_at.strftime('%H:%M · %d/%m') }}
+                                        </time>
+                                    </div>
+                                    <div class="comment-text text-break small">{{ reply.content | parse_mentions | safe }}</div>
+                                    <div class="comment-actions mt-1 d-flex gap-3 align-items-center">
+                                        <button type="button"
+                                                class="comment-like-btn btn btn-link btn-sm text-decoration-none p-0 small {% if user_reply_like %}text-danger font-weight-bold{% else %}text-muted{% endif %}"
+                                                data-comment="{{ reply.id }}">
+                                            <i class="{% if user_reply_like %}fas{% else %}far{% endif %} fa-heart"></i>
+                                            <span class="comment-like-count">{{ reply.like_count() }}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
+            {% endif %}
+
+            <!-- نموذج الرد السريع على التعليق -->
+            <div class="reply-form-wrapper ms-5 mt-2 d-none" id="reply-form-{{ comment.id }}">
+                <form method="POST" action="{{ url_for('posts.comment', post_id=post.id) }}" class="comment-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                    <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                    <div class="input-group input-group-sm">
+                        <input type="text"
+                               name="content"
+                               id="input-reply-{{ comment.id }}"
+                               class="form-control rounded-pill"
+                               placeholder="اكتب ردك هنا..."
+                               required>
+                        <button type="submit" class="btn btn-outline-primary rounded-pill px-3">رد</button>
+                    </div>
+                </form>
             </div>
         </article>
     {% else %}
@@ -44,28 +106,50 @@
 </div>
 
 <!-- ============================== -->
-<!-- نموذج إضافة تعليق جديد -->
+<!-- نموذج إضافة تعليق رئيسي جديد -->
 <!-- ============================== -->
-<div class="comment-form-wrapper mt-3">
+<div class="comment-form-wrapper mt-4 pt-3 border-top">
     <form method="POST" action="{{ url_for('posts.comment', post_id=post.id) }}" class="comment-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
 
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
             <img src="{{ avatar_url(current_user) }}"
-                 class="comment-avatar"
+                 class="comment-avatar rounded-circle"
                  alt="{{ current_user.name }}"
-                 style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                 style="width: 36px; height: 36px; object-fit: cover; flex-shrink: 0;">
             <div class="flex-grow-1">
                 <input type="text"
                        name="content"
-                       class="form-control form-control-sm rounded-pill"
-                       placeholder="اكتب تعليقك..."
+                       id="main-comment-input"
+                       class="form-control rounded-pill"
+                       placeholder="اكتب تعليقاً أو أشر إلى صديق بـ @username..."
                        required
-                       style="background: var(--fb-bg); border: 1px solid var(--fb-border);">
+                       style="background: #f0f2f5; border: 1px solid #ced4da;">
             </div>
-            <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3" aria-label="إرسال التعليق">
+            <button type="submit" class="btn btn-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" aria-label="إرسال التعليق">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
     </form>
 </div>
+
+<script>
+    document.querySelectorAll('.reply-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.dataset.commentId;
+            const username = this.dataset.username;
+            const formWrapper = document.getElementById(`reply-form-${commentId}`);
+            const inputField = document.getElementById(`input-reply-${commentId}`);
+            
+            if (formWrapper.classList.contains('d-none')) {
+                // إخفاء أي نماذج ردود أخرى مفتوحة
+                document.querySelectorAll('.reply-form-wrapper').forEach(el => el.classList.add('d-none'));
+                formWrapper.classList.remove('d-none');
+                inputField.value = `@${username} `;
+                inputField.focus();
+            } else {
+                formWrapper.classList.add('d-none');
+            }
+        });
+    });
+</script>

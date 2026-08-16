@@ -152,7 +152,9 @@ def create_app():
 
         return Markup(re.sub(r'#([\w\u0600-\u06FF]+)', replace_tag, escaped_content))
 
+    from app.utils.helpers import parse_mentions
     app.add_template_filter(linkify_hashtags, name='linkify_hashtags')
+    app.add_template_filter(parse_mentions, name='parse_mentions')
 
     # ============================================
     # تحديث آخر ظهور للمستخدم عند كل طلب

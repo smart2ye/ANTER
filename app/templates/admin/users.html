@@ -22,7 +22,7 @@
             <tr>
                 <td>{{ user.id }}</td>
                 <td>
-                    <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" width="30" height="30" class="rounded-circle me-1">
+                    <img src="{{ avatar_url(user) }}" width="30" height="30" class="rounded-circle me-1">
                     {{ user.name }}<br><small class="text-muted">@{{ user.username }}</small>
                 </td>
                 <td>{{ user.email }}</td>
@@ -65,7 +65,10 @@
     document.querySelectorAll('.toggle-user').forEach(btn => {
         btn.addEventListener('click', function() {
             const url = this.dataset.url;
-            fetch(url, { method: 'POST' })
+            fetch(url, { 
+                method: 'POST',
+                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) location.reload();
@@ -76,7 +79,10 @@
     document.querySelectorAll('.make-admin').forEach(btn => {
         btn.addEventListener('click', function() {
             const url = this.dataset.url;
-            fetch(url, { method: 'POST' })
+            fetch(url, { 
+                method: 'POST',
+                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) location.reload();
@@ -88,7 +94,10 @@
         btn.addEventListener('click', function() {
             if (!confirm('هل أنت متأكد من حذف هذا المستخدم نهائياً؟')) return;
             const url = this.dataset.url;
-            fetch(url, { method: 'POST' })
+            fetch(url, { 
+                method: 'POST',
+                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) location.reload();

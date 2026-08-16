@@ -38,7 +38,10 @@
         btn.addEventListener('click', function() {
             if (!confirm('هل أنت متأكد من حذف هذا المنشور نهائياً؟')) return;
             const url = this.dataset.url;
-            fetch(url, { method: 'POST' })
+            fetch(url, { 
+                method: 'POST',
+                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) location.reload();

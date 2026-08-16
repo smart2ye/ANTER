@@ -36,11 +36,9 @@ function loadMorePosts() {
 }
 
 function createPostHtml(post) {
-    // يجب أن تأتي البطاقات الديناميكية من نفس القالب المشترك المستخدم في بقية المسارات.
     return post.html || '';
 }
 
-// اكتشاف التمرير للأسفل
 window.addEventListener('scroll', function() {
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
         loadMorePosts();
@@ -48,7 +46,7 @@ window.addEventListener('scroll', function() {
 });
 
 // ==============================
-// تأثير الإعجاب (like-btn) - يعمل مع الأزرار الديناميكية
+// تأثير الإعجاب (like-btn)
 // ==============================
 document.addEventListener('click', function(e) {
     const btn = e.target.closest('.like-btn');
@@ -68,7 +66,7 @@ document.addEventListener('click', function(e) {
 });
 
 // ==============================
-// تبديل التعليقات - يعمل مع الأزرار الديناميكية
+// تبديل التعليقات
 // ==============================
 document.addEventListener('click', function(e) {
     const btn = e.target.closest('.toggle-comments-btn, .comment-toggle');
@@ -83,7 +81,6 @@ document.addEventListener('click', function(e) {
         commentsDiv.style.display = 'block';
         requestAnimationFrame(() => commentsDiv.classList.add('open'));
 
-        // تُجلب التعليقات مرة واحدة فقط عند فتح النقاش، لتبقى الخلاصة خفيفة.
         if (commentsDiv.dataset.loaded !== 'true') {
             fetch(`/comments/${postId}/fragment`, {credentials: 'include'})
                 .then(res => {
@@ -183,7 +180,7 @@ window.copyLink = function(url) {
 };
 
 // ==============================
-// تفعيل قائمة المشاركة (Dropdown)
+// تفعيل قائمة المشاركة
 // ==============================
 document.addEventListener('mouseenter', function(e) {
     const el = e.target.closest('.share-dropdown');
@@ -201,7 +198,7 @@ document.addEventListener('mouseleave', function(e) {
 }, true);
 
 // ==============================
-// تفعيل قائمة التفاعلات (reaction-picker) - يعمل مع الأزرار الديناميكية
+// تفعيل قائمة التفاعلات
 // ==============================
 document.addEventListener('mouseenter', function(e) {
     const toggle = e.target.closest('.reaction-toggle');
@@ -218,23 +215,8 @@ document.addEventListener('mouseleave', function(e) {
     }
 }, true);
 
-// ==============================
-// معالجة اختيار التفاعل (reaction-option) - يعمل مع الأزرار الديناميكية
-// ==============================
-const reactionNames = {
-    'like': 'إعجاب',
-    'love': 'حب',
-    'haha': 'أضحكني',
-    'angry': 'أغضبني',
-    'sad': 'أحزنني'
-};
-const reactionIcons = {
-    'like': '👍',
-    'love': '🥰',
-    'haha': '🤣',
-    'angry': '😡',
-    'sad': '😢'
-};
+const reactionIcons = { 'like': '👍', 'love': '🥰', 'haha': '🤣', 'angry': '😡', 'sad': '😢' };
+const reactionNames = { 'like': 'إعجاب', 'love': 'حب', 'haha': 'أضحكني', 'angry': 'أغضبني', 'sad': 'أحزنني' };
 
 document.addEventListener('click', function(e) {
     const option = e.target.closest('.reaction-option');
@@ -243,71 +225,32 @@ document.addEventListener('click', function(e) {
 
     const postId = option.dataset.post;
     const reaction = option.dataset.reaction;
-    if (!postId || option.dataset.loading === 'true') return;
-
-    const wrapper = option.closest('.reaction-wrapper');
-    const toggle = wrapper?.querySelector('.reaction-toggle');
+    const toggle = option.closest('.reaction-wrapper')?.querySelector('.reaction-toggle');
     const iconEl = document.getElementById(`reaction-icon-${postId}`);
     const labelEl = document.getElementById(`reaction-label-${postId}`);
     const countEl = document.getElementById(`reaction-count-${postId}`);
     const summary = document.getElementById(`reaction-summary-${postId}`);
-    const picker = option.closest('.reaction-picker');
-
-    option.dataset.loading = 'true';
-    toggle?.classList.add('is-loading');
 
     fetch(`/like/${postId}`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'include',
         body: JSON.stringify({ reaction: reaction })
     })
-        .then(res => {
-            if (!res.ok) throw new Error('reaction request failed');
-            return res.json();
-        })
-        .then(data => {
-            const liked = Boolean(data.liked);
-            if (countEl) countEl.textContent = data.count ?? 0;
-            if (iconEl) iconEl.textContent = liked ? (reactionIcons[reaction] || '👍') : '👍';
-            if (labelEl) labelEl.textContent = liked ? (reactionNames[reaction] || 'إعجاب') : 'إعجاب';
-            toggle?.classList.toggle('reaction-active', liked);
-
-            if (summary) {
-                summary.innerHTML = `<span class="reaction-item">${iconEl ? iconEl.textContent : '👍'} ${data.count ?? 0}</span>`;
-            }
-
-            if (iconEl) {
-                iconEl.classList.remove('reaction-just-selected');
-                requestAnimationFrame(() => iconEl.classList.add('reaction-just-selected'));
-            }
-
-            if (picker) {
-                picker.classList.add('selection-complete');
-                window.setTimeout(() => picker.classList.remove('selection-complete'), 220);
-            }
-        })
-        .catch(() => {
-            toggle?.classList.add('reaction-error');
-            window.setTimeout(() => toggle?.classList.remove('reaction-error'), 500);
-        })
-        .finally(() => {
-            option.dataset.loading = 'false';
-            toggle?.classList.remove('is-loading');
-        });
+    .then(res => res.json())
+    .then(data => {
+        const liked = Boolean(data.liked);
+        if (countEl) countEl.textContent = data.count ?? 0;
+        if (iconEl) iconEl.textContent = liked ? (reactionIcons[reaction] || '👍') : '👍';
+        if (labelEl) labelEl.textContent = liked ? (reactionNames[reaction] || 'إعجاب') : 'إعجاب';
+        toggle?.classList.toggle('reaction-active', liked);
+        if (summary) summary.innerHTML = `<span class="reaction-item">${iconEl?.textContent || '👍'} ${data.count ?? 0}</span>`;
+    });
 });
 
-// ==============================
-// إغلاق قائمة التفاعلات عند النقر خارجها
-// ==============================
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.reaction-wrapper')) {
-        document.querySelectorAll('.reaction-picker').forEach(picker => {
-            picker.style.display = '';
-        });
+        document.querySelectorAll('.reaction-picker').forEach(picker => picker.style.display = '');
     }
 });
 
@@ -329,25 +272,16 @@ document.addEventListener('click', function(e) {
             if (data.success) {
                 const postElement = document.getElementById(`post-${postId}`);
                 if (postElement) {
-                    postElement.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
                     postElement.style.opacity = '0';
-                    postElement.style.transform = 'scale(0.9)';
-                    setTimeout(() => {
-                        postElement.remove();
-                        const remainingPosts = document.querySelectorAll('.fb-post');
-                        if (remainingPosts.length === 0) location.reload();
-                    }, 350);
+                    setTimeout(() => postElement.remove(), 350);
                 }
-            } else {
-                alert('❌ ' + (data.message || 'حدث خطأ أثناء إخفاء المنشور'));
             }
-        })
-        .catch(() => alert('❌ حدث خطأ غير متوقع'));
+        });
     }
 });
 
 // ==============================
-// نظام الأصوات (SoundManager)
+// نظام الأصوات
 // ==============================
 class SoundManager {
     constructor() {
@@ -355,9 +289,7 @@ class SoundManager {
         this.ctx = null;
     }
     _getContext() {
-        if (!this.ctx) {
-            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        }
+        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         return this.ctx;
     }
     _playTone(frequency, duration, type = 'sine', volume = 0.3) {
@@ -380,190 +312,118 @@ class SoundManager {
     like() { this._playTone(1200, 0.1, 'sine', 0.2); }
     publish() { this._playTone(600, 0.1, 'sine', 0.2); setTimeout(() => this._playTone(800, 0.1, 'sine', 0.2), 100); setTimeout(() => this._playTone(1000, 0.15, 'sine', 0.25), 200); }
     follow() { this._playTone(700, 0.12, 'sine', 0.2); setTimeout(() => this._playTone(900, 0.12, 'sine', 0.2), 120); }
-    toggle() { this.enabled = !this.enabled; localStorage.setItem('soundEnabled', this.enabled); return this.enabled; }
 }
 const sounds = new SoundManager();
 
-// ربط الأصوات بالأحداث
 document.addEventListener('click', function(e) {
     if (e.target.closest('.like-btn, .reaction-option, .comment-like-btn')) sounds.like();
 });
 
-// ==============================
-// صوت الإشعارات من التحديث الدوري الموحد في القالب العام
-// ==============================
 let previousNotificationCount = null;
 document.addEventListener('anter:notification-count', function(event) {
     const count = Number(event.detail && event.detail.count);
-    if (!Number.isFinite(count)) return;
-
-    if (previousNotificationCount !== null && count > previousNotificationCount) {
+    if (Number.isFinite(count) && previousNotificationCount !== null && count > previousNotificationCount) {
         sounds.notification();
     }
     previousNotificationCount = count;
-});
-
-
-// ==============================
-// بطاقة المشاركة المنبثقة المطورة
-// ==============================
-function copyShareUrl(url) {
-    if (navigator.clipboard && window.isSecureContext) {
-        return navigator.clipboard.writeText(url);
-    }
-    return new Promise((resolve, reject) => {
-        const input = document.createElement('textarea');
-        input.value = url;
-        input.setAttribute('readonly', '');
-        input.style.position = 'fixed';
-        input.style.opacity = '0';
-        document.body.appendChild(input);
-        input.select();
-        const copied = document.execCommand('copy');
-        document.body.removeChild(input);
-        copied ? resolve() : reject(new Error('copy failed'));
-    });
-}
-
-document.addEventListener('click', function(event) {
-    const toggle = event.target.closest('.share-toggle');
-    const closeButton = event.target.closest('.share-modal-close');
-    const copyButton = event.target.closest('.copy-link-btn');
-
-    if (toggle) {
-        event.preventDefault();
-        const dropdown = toggle.closest('.share-dropdown');
-        const card = dropdown ? dropdown.querySelector('.share-modal-card') : null;
-        document.querySelectorAll('.share-modal-card').forEach((otherCard) => {
-            if (otherCard !== card) otherCard.style.display = 'none';
-        });
-        if (card) {
-            const opening = card.style.display !== 'block';
-            card.style.display = opening ? 'block' : 'none';
-            toggle.setAttribute('aria-expanded', String(opening));
-        }
-        return;
-    }
-
-    if (closeButton) {
-        const dropdown = closeButton.closest('.share-dropdown');
-        const card = closeButton.closest('.share-modal-card');
-        if (card) card.style.display = 'none';
-        dropdown?.querySelector('.share-toggle')?.setAttribute('aria-expanded', 'false');
-        return;
-    }
-
-    if (copyButton) {
-        event.preventDefault();
-        const label = copyButton.querySelector('span:last-child');
-        const originalText = label ? label.textContent : '';
-        copyShareUrl(copyButton.dataset.url)
-            .then(() => {
-                if (label) label.textContent = 'تم النسخ!';
-                copyButton.classList.add('text-success');
-                window.setTimeout(() => {
-                    if (label) label.textContent = originalText;
-                    copyButton.classList.remove('text-success');
-                }, 1800);
-            })
-            .catch(() => {
-                if (label) label.textContent = 'تعذر النسخ';
-                window.setTimeout(() => {
-                    if (label) label.textContent = originalText;
-                }, 1800);
-            });
-        return;
-    }
-
-    if (!event.target.closest('.share-dropdown')) {
-        document.querySelectorAll('.share-modal-card').forEach((card) => {
-            card.style.display = 'none';
-            card.closest('.share-dropdown')?.querySelector('.share-toggle')?.setAttribute('aria-expanded', 'false');
-        });
-    }
-});
-
-document.addEventListener('keydown', function(event) {
-    if (event.key !== 'Escape') return;
-    document.querySelectorAll('.share-modal-card').forEach((card) => {
-        card.style.display = 'none';
-        card.closest('.share-dropdown')?.querySelector('.share-toggle')?.setAttribute('aria-expanded', 'false');
-    });
 });
 
 // ==============================================
 // نظام الإكمال التلقائي للإشارات (@mention Autocomplete)
 // ==============================================
 document.addEventListener('DOMContentLoaded', function() {
-    let dropdown = document.createElement('div');
-    dropdown.className = 'mention-autocomplete-dropdown shadow-sm border rounded bg-white position-absolute';
-    dropdown.style.display = 'none';
-    dropdown.style.zIndex = '1050';
-    dropdown.style.maxHeight = '200px';
-    dropdown.style.overflowY = 'auto';
-    dropdown.style.width = '250px';
+    const dropdown = document.createElement('div');
+    dropdown.className = 'mention-autocomplete-dropdown';
     document.body.appendChild(dropdown);
 
     let activeInput = null;
     let mentionStartIndex = -1;
+    let selectedIndex = -1;
+    let usersList = [];
+
+    function updateDropdown() {
+        if (usersList.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        dropdown.innerHTML = usersList.map((u, i) => `
+            <div class="mention-item ${i === selectedIndex ? 'active' : ''}" data-index="${i}">
+                <img src="${u.avatar}" alt="${u.name}">
+                <div class="mention-info">
+                    <div class="mention-name">${u.name}</div>
+                    <div class="mention-username">@${u.username}</div>
+                </div>
+            </div>
+        `).join('');
+
+        const rect = activeInput.getBoundingClientRect();
+        dropdown.style.top = `${window.scrollY + rect.bottom + 5}px`;
+        dropdown.style.left = `${window.scrollX + rect.left}px`;
+        dropdown.style.display = 'block';
+    }
+
+    function selectUser(index) {
+        if (index < 0 || index >= usersList.length) return;
+        const user = usersList[index];
+        const before = activeInput.value.substring(0, mentionStartIndex);
+        const after = activeInput.value.substring(activeInput.selectionStart);
+        activeInput.value = before + `@${user.username} ` + after;
+        dropdown.style.display = 'none';
+        usersList = [];
+        activeInput.focus();
+    }
 
     document.addEventListener('input', function(e) {
         if (!e.target.matches('input[type="text"], textarea')) return;
         activeInput = e.target;
         const val = activeInput.value;
         const cursorPos = activeInput.selectionStart;
-
         const textBeforeCursor = val.substring(0, cursorPos);
         const match = textBeforeCursor.match(/@([\w\u0600-\u06FF]*)$/);
 
         if (match) {
             const query = match[1];
             mentionStartIndex = cursorPos - match[0].length;
-
             fetch(`/users/api/search?q=${encodeURIComponent(query)}`)
                 .then(res => res.json())
                 .then(users => {
-                    if (users.length === 0) {
-                        dropdown.style.display = 'none';
-                        return;
-                    }
-
-                    let html = '';
-                    users.forEach(u => {
-                        html += `
-                            <div class="mention-item p-2 d-flex align-items-center gap-2 border-bottom" style="cursor: pointer;" data-username="${u.username}">
-                                <img src="${u.avatar}" class="rounded-circle" width="28" height="28" style="object-fit: cover;">
-                                <div style="font-size: 0.85rem; line-height: 1.2;">
-                                    <div class="fw-bold">${u.name}</div>
-                                    <div class="text-muted">@${u.username}</div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    dropdown.innerHTML = html;
-
-                    const rect = activeInput.getBoundingClientRect();
-                    dropdown.style.top = `${window.scrollY + rect.bottom + 5}px`;
-                    dropdown.style.left = `${window.scrollX + rect.left}px`;
-                    dropdown.style.display = 'block';
-
-                    dropdown.querySelectorAll('.mention-item').forEach(item => {
-                        item.addEventListener('mousedown', function(ev) {
-                            ev.preventDefault();
-                            const username = this.dataset.username;
-                            const before = activeInput.value.substring(0, mentionStartIndex);
-                            const after = activeInput.value.substring(activeInput.selectionStart);
-                            activeInput.value = before + `@${username} ` + after;
-                            dropdown.style.display = 'none';
-                            activeInput.focus();
-                        });
-                    });
-                })
-                .catch(() => {
-                    dropdown.style.display = 'none';
+                    usersList = users;
+                    selectedIndex = users.length > 0 ? 0 : -1;
+                    updateDropdown();
                 });
         } else {
             dropdown.style.display = 'none';
+            usersList = [];
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (dropdown.style.display !== 'block') return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = (selectedIndex + 1) % usersList.length;
+            updateDropdown();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = (selectedIndex - 1 + usersList.length) % usersList.length;
+            updateDropdown();
+        } else if (e.key === 'Enter' || e.key === 'Tab') {
+            if (selectedIndex >= 0) {
+                e.preventDefault();
+                selectUser(selectedIndex);
+            }
+        } else if (e.key === 'Escape') {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    dropdown.addEventListener('mousedown', function(e) {
+        const item = e.target.closest('.mention-item');
+        if (item) {
+            e.preventDefault();
+            selectUser(parseInt(item.dataset.index));
         }
     });
 

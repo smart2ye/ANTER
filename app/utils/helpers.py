@@ -53,10 +53,15 @@ def save_audio_file(file):
 
 
 def parse_mentions(text):
+    from app.models import User
     def replace_mention(match):
         username = match.group(1)
-        return f'<a href="{url_for("users.profile", username=username)}" class="mention">@{username}</a>'
-    pattern = r'@([\w.]+)'
+        user = User.query.filter_by(username=username).first()
+        if user:
+            return f'<a href="{url_for("users.profile", username=username)}" class="mention">@{username}</a>'
+        return f'@{username}'
+    # دعم الحروف العربية في الـ Regex للإشارات
+    pattern = r'@([\w\u0600-\u06FF.]+)'
     return re.sub(pattern, replace_mention, text)
 
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'avi', 'mov', 'mkv'}

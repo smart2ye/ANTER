@@ -2598,3 +2598,69 @@ body {
         transform: translateX(-50%);
     }
 }
+
+/* ========================================
+   قائمة الإكمال التلقائي للإشارات (@mention)
+   ======================================== */
+.mention-autocomplete-dropdown {
+    background: var(--fb-card);
+    border: 1px solid var(--fb-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    z-index: 2000;
+    max-height: 250px;
+    overflow-y: auto;
+    width: 260px;
+    position: absolute;
+    display: none;
+}
+
+.mention-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid var(--fb-bg);
+}
+
+.mention-item:last-child {
+    border-bottom: none;
+}
+
+.mention-item:hover, .mention-item.active {
+    background: var(--fb-bg);
+}
+
+.mention-item img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.mention-info {
+    line-height: 1.2;
+}
+
+.mention-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--fb-text);
+}
+
+.mention-username {
+    font-size: 0.75rem;
+    color: var(--fb-text-muted);
+}
+
+[data-theme="dark"] .mention-autocomplete-dropdown {
+    background: #242526;
+    border-color: #3e4042;
+}
+
+[data-theme="dark"] .mention-item:hover, 
+[data-theme="dark"] .mention-item.active {
+    background: #3a3b3c;
+}

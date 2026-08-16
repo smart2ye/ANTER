@@ -17,7 +17,7 @@
     {% if posts %}
         <div class="posts-feed">
             {% for post in posts %}
-                {% set post_url = url_for('posts.view_post', post_id=post.id, _external=True) %}
+                {% set post_url = url_for('posts.view_post', public_id=post.public_id, _external=True) %}
                 {% include "_post_card.html" %}
             {% endfor %}
         </div>

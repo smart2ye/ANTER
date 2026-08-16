@@ -27,8 +27,8 @@ class Story(db.Model):
             'media_url': self.media_url,
             'media_type': self.media_type,
             'caption': self.caption or '',
-            'created_at': self.created_at.isoformat(),
-            'expires_at': self.expires_at.isoformat(),
+            'created_at': self.created_at.isoformat() + 'Z',
+            'expires_at': self.expires_at.isoformat() + 'Z',
             'views_count': self.views.count(),
             'viewed': viewed
         }

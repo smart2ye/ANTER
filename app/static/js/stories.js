@@ -301,10 +301,14 @@ function prevStoryItem(e) {
 
 function formatTimeAgo(isoString) {
     const date = new Date(isoString);
-    const seconds = Math.floor((new Date() - date) / 1000);
-    if (seconds < 60) return 'منذ لحظات';
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    
+    if (seconds < 0) return 'الآن';
+    if (seconds < 60) return `منذ ${seconds}ث`;
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `منذ ${minutes}د`;
     const hours = Math.floor(minutes / 60);
-    return `منذ ${hours}س`;
+    if (hours < 24) return `منذ ${hours}س`;
+    return 'منذ يوم';
 }

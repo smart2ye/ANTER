@@ -490,3 +490,86 @@ document.addEventListener('keydown', function(event) {
         card.closest('.share-dropdown')?.querySelector('.share-toggle')?.setAttribute('aria-expanded', 'false');
     });
 });
+
+// ==============================================
+// نظام الإكمال التلقائي للإشارات (@mention Autocomplete)
+// ==============================================
+document.addEventListener('DOMContentLoaded', function() {
+    let dropdown = document.createElement('div');
+    dropdown.className = 'mention-autocomplete-dropdown shadow-sm border rounded bg-white position-absolute';
+    dropdown.style.display = 'none';
+    dropdown.style.zIndex = '1050';
+    dropdown.style.maxHeight = '200px';
+    dropdown.style.overflowY = 'auto';
+    dropdown.style.width = '250px';
+    document.body.appendChild(dropdown);
+
+    let activeInput = null;
+    let mentionStartIndex = -1;
+
+    document.addEventListener('input', function(e) {
+        if (!e.target.matches('input[type="text"], textarea')) return;
+        activeInput = e.target;
+        const val = activeInput.value;
+        const cursorPos = activeInput.selectionStart;
+
+        const textBeforeCursor = val.substring(0, cursorPos);
+        const match = textBeforeCursor.match(/@([\w\u0600-\u06FF]*)$/);
+
+        if (match) {
+            const query = match[1];
+            mentionStartIndex = cursorPos - match[0].length;
+
+            fetch(`/users/api/search?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(users => {
+                    if (users.length === 0) {
+                        dropdown.style.display = 'none';
+                        return;
+                    }
+
+                    let html = '';
+                    users.forEach(u => {
+                        html += `
+                            <div class="mention-item p-2 d-flex align-items-center gap-2 border-bottom" style="cursor: pointer;" data-username="${u.username}">
+                                <img src="${u.avatar}" class="rounded-circle" width="28" height="28" style="object-fit: cover;">
+                                <div style="font-size: 0.85rem; line-height: 1.2;">
+                                    <div class="fw-bold">${u.name}</div>
+                                    <div class="text-muted">@${u.username}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    dropdown.innerHTML = html;
+
+                    const rect = activeInput.getBoundingClientRect();
+                    dropdown.style.top = `${window.scrollY + rect.bottom + 5}px`;
+                    dropdown.style.left = `${window.scrollX + rect.left}px`;
+                    dropdown.style.display = 'block';
+
+                    dropdown.querySelectorAll('.mention-item').forEach(item => {
+                        item.addEventListener('mousedown', function(ev) {
+                            ev.preventDefault();
+                            const username = this.dataset.username;
+                            const before = activeInput.value.substring(0, mentionStartIndex);
+                            const after = activeInput.value.substring(activeInput.selectionStart);
+                            activeInput.value = before + `@${username} ` + after;
+                            dropdown.style.display = 'none';
+                            activeInput.focus();
+                        });
+                    });
+                })
+                .catch(() => {
+                    dropdown.style.display = 'none';
+                });
+        } else {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target) && e.target !== activeInput) {
+            dropdown.style.display = 'none';
+        }
+    });
+});

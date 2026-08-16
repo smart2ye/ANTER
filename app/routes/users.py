@@ -9,6 +9,32 @@ from datetime import datetime
 
 users_bp = Blueprint('users', __name__, url_prefix='/users')
 
+@users_bp.route('/api/search', methods=['GET'])
+@login_required
+def api_search():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify([])
+    
+    # إزالة علامة @ إن وجدت في بداية البحث
+    if query.startswith('@'):
+        query = query[1:]
+        
+    users = User.query.filter(
+        (User.username.ilike(f'%{query}%')) | (User.name.ilike(f'%{query}%'))
+    ).limit(8).all()
+    
+    from app.utils.media_urls import avatar_url
+    result = [{
+        'id': u.id,
+        'username': u.username,
+        'name': u.name or u.username,
+        'avatar': avatar_url(u),
+        'is_verified': u.is_verified
+    } for u in users]
+    
+    return jsonify(result)
+
 @users_bp.route('/<username>')
 @login_required
 def profile(username):

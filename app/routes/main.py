@@ -186,40 +186,66 @@ def offline():
 
 @main_bp.route('/sitemap.xml')
 def sitemap():
-    from app.models import User, Post
+    """توليد خريطة الموقع (Sitemap) بشكل ديناميكي لضمان أرشفة كافة المنشورات والريلز والمستخدمين."""
+    from app.models import User, Post, Video
+    
+    # الصفحات الثابتة الأساسية
     pages = [
-        {'loc': url_for('main.index', _external=True), 'priority': 1.0},
-        {'loc': url_for('main.about', _external=True), 'priority': 0.8},
-        {'loc': url_for('main.privacy', _external=True), 'priority': 0.5},
-        {'loc': url_for('main.terms', _external=True), 'priority': 0.5},
-        {'loc': url_for('auth.login', _external=True), 'priority': 0.6},
-        {'loc': url_for('auth.register', _external=True), 'priority': 0.7},
-        {'loc': url_for('explore.explore', _external=True), 'priority': 0.9},
-        {'loc': url_for('videos.reels', _external=True), 'priority': 0.8},
+        {'loc': url_for('main.index', _external=True), 'priority': 1.0, 'changefreq': 'always'},
+        {'loc': url_for('main.about', _external=True), 'priority': 0.8, 'changefreq': 'monthly'},
+        {'loc': url_for('main.privacy', _external=True), 'priority': 0.5, 'changefreq': 'monthly'},
+        {'loc': url_for('main.terms', _external=True), 'priority': 0.5, 'changefreq': 'monthly'},
+        {'loc': url_for('auth.login', _external=True), 'priority': 0.6, 'changefreq': 'monthly'},
+        {'loc': url_for('auth.register', _external=True), 'priority': 0.7, 'changefreq': 'monthly'},
+        {'loc': url_for('explore.explore', _external=True), 'priority': 0.9, 'changefreq': 'always'},
+        {'loc': url_for('videos.reels', _external=True), 'priority': 0.8, 'changefreq': 'always'},
     ]
-    users = User.query.limit(100).all()
+    
+    # أرشفة المستخدمين (أحدث 200 مستخدم)
+    users = User.query.order_by(User.created_at.desc()).limit(200).all()
     for user in users:
         pages.append({
             'loc': url_for('users.profile', username=user.username, _external=True),
-            'priority': 0.8,
-            'lastmod': user.created_at.strftime('%Y-%m-%d') if user.created_at else datetime.now().strftime('%Y-%m-%d')
+            'priority': 0.7,
+            'lastmod': (user.created_at or datetime.now()).strftime('%Y-%m-%d'),
+            'changefreq': 'weekly'
         })
-    posts = Post.query.limit(500).all()
+    
+    # أرشفة المنشورات (أحدث 1000 منشور)
+    posts = Post.query.order_by(Post.created_at.desc()).limit(1000).all()
     for post in posts:
         pages.append({
             'loc': url_for('posts.view_post', public_id=post.public_id, _external=True),
             'priority': 0.9,
-            'lastmod': post.created_at.strftime('%Y-%m-%d') if post.created_at else datetime.now().strftime('%Y-%m-%d')
+            'lastmod': (post.updated_at or post.created_at or datetime.now()).strftime('%Y-%m-%d'),
+            'changefreq': 'never'
         })
-    sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        
+    # أرشفة الريلز (أحدث 500 فيديو)
+    videos = Video.query.filter_by(is_reel=True).order_by(Video.created_at.desc()).limit(500).all()
+    for video in videos:
+        pages.append({
+            'loc': url_for('videos.watch', public_id=video.public_id, _external=True),
+            'priority': 0.9,
+            'lastmod': (video.created_at or datetime.now()).strftime('%Y-%m-%d'),
+            'changefreq': 'never'
+        })
+        
+    # بناء ملف XML
+    sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    sitemap_xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    
     for page in pages:
         sitemap_xml += '  <url>\n'
         sitemap_xml += f'    <loc>{page["loc"]}</loc>\n'
         if 'lastmod' in page:
             sitemap_xml += f'    <lastmod>{page["lastmod"]}</lastmod>\n'
+        if 'changefreq' in page:
+            sitemap_xml += f'    <changefreq>{page["changefreq"]}</changefreq>\n'
         if 'priority' in page:
             sitemap_xml += f'    <priority>{page["priority"]:.1f}</priority>\n'
         sitemap_xml += '  </url>\n'
+        
     sitemap_xml += '</urlset>'
     return sitemap_xml, 200, {'Content-Type': 'application/xml'}
 

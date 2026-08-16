@@ -45,10 +45,20 @@
     <section class="rounded-4 p-4 p-md-5 mb-4 border" style="background: linear-gradient(135deg, rgba(24,119,242,.09), rgba(111,66,193,.08));">
         <div class="d-flex flex-column flex-md-row align-items-md-center gap-4">
             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 76px; height: 76px; font-size: 1.5rem; font-weight: 800;">ع م</div>
-            <div>
-                <span class="badge rounded-pill text-bg-primary mb-2">المؤسس</span>
-                <h2 class="h4 fw-bold mb-2">عبدالقادر مهدلي</h2>
-                <p class="mb-0 text-muted">مؤسس ANTER وصاحب رؤيتها. انطلقت الفكرة من إيمانٍ بأن المجتمع العربي يحتاج مساحة تواصل حديثة تضع الإنسان أولاً، وتمنح الأفكار الجيدة فرصة للوصول والنمو.</p>
+            <div class="flex-grow-1">
+                <span class="badge rounded-pill text-bg-primary mb-2">مؤسس ANTER</span>
+                <h2 class="h4 fw-bold mb-3">عبدالقادر مهدلي</h2>
+                <div class="d-flex flex-column flex-sm-row flex-wrap gap-2">
+                    <a href="{{ url_for('users.profile', username='abdulqader.mahdly') }}" class="btn btn-sm btn-outline-primary rounded-pill" aria-label="صفحة عبدالقادر مهدلي على ANTER">
+                        <img src="{{ url_for('static', filename='img/favicon.png') }}" alt="ANTER" style="width: 17px; height: 17px; border-radius: 4px;" class="ms-1"> صفحتي في ANTER
+                    </a>
+                    <a href="https://facebook.com/abdulqader.mahdly" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary rounded-pill" aria-label="صفحة فيسبوك عبدالقادر مهدلي">
+                        <i class="fab fa-facebook-f ms-1"></i> abdulqader.mahdly
+                    </a>
+                    <a href="https://wa.me/967737254619" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success rounded-pill" aria-label="واتساب عبدالقادر مهدلي">
+                        <i class="fab fa-whatsapp ms-1"></i> +967737254619
+                    </a>
+                </div>
             </div>
         </div>
     </section>

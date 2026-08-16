@@ -68,7 +68,13 @@ function renderStoriesBar(users) {
                             <span class="time" id="modalStoryTime"></span>
                         </div>
                     </div>
-                    <button class="story-close-btn" onclick="closeStoryModal()"><i class="fas fa-times"></i></button>
+                    <div class="story-header-actions">
+                        <button class="story-viewers-btn" id="storyViewersToggle" onclick="toggleStoryViewers(event)" style="display: none;" title="من شاهد قصتك">
+                            <i class="fas fa-eye"></i>
+                            <span id="storyViewsCount">0</span>
+                        </button>
+                        <button class="story-close-btn" onclick="closeStoryModal()"><i class="fas fa-times"></i></button>
+                    </div>
                 </div>
 
                 <div class="story-media-container" id="storyMediaContainer">
@@ -76,6 +82,25 @@ function renderStoriesBar(users) {
                 </div>
 
                 <div class="story-caption-box" id="storyCaptionBox" style="display: none;"></div>
+
+                <div class="story-reaction-bar" id="storyReactionBar">
+                    <div class="story-reaction-summary" id="storyReactionSummary"></div>
+                    <div class="story-reaction-buttons" role="group" aria-label="التفاعل مع القصة">
+                        <button type="button" class="story-reaction-btn" data-reaction="like" onclick="sendStoryReaction('like', event)" title="إعجاب">👍</button>
+                        <button type="button" class="story-reaction-btn" data-reaction="love" onclick="sendStoryReaction('love', event)" title="حب">❤️</button>
+                        <button type="button" class="story-reaction-btn" data-reaction="haha" onclick="sendStoryReaction('haha', event)" title="مضحك">😂</button>
+                        <button type="button" class="story-reaction-btn" data-reaction="wow" onclick="sendStoryReaction('wow', event)" title="مندهش">😮</button>
+                        <button type="button" class="story-reaction-btn" data-reaction="fire" onclick="sendStoryReaction('fire', event)" title="رائع">🔥</button>
+                    </div>
+                </div>
+
+                <div class="story-viewers-panel" id="storyViewersPanel" style="display: none;">
+                    <div class="story-viewers-panel-header">
+                        <strong>مشاهدو القصة</strong>
+                        <button type="button" onclick="toggleStoryViewers(event)" aria-label="إغلاق قائمة المشاهدين"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div id="storyViewersList" class="story-viewers-list"></div>
+                </div>
 
                 <button class="story-nav-btn story-prev-btn" onclick="prevStoryItem(event)"><i class="fas fa-chevron-right"></i></button>
                 <button class="story-nav-btn story-next-btn" onclick="nextStoryItem(event)"><i class="fas fa-chevron-left"></i></button>
@@ -221,13 +246,23 @@ function playCurrentStory() {
         mediaContainer.innerHTML = `<img src="${story.media_url}" alt="Story">`;
     }
 
-    // تسجيل المشاهدة
+    updateStoryInteractions(story);
+
+    // تسجيل المشاهدة وتحديث العدد بعد نجاح الطلب
     fetch(`/api/stories/${story.id}/view`, {
         method: 'POST',
         headers: {
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
         }
-    }).catch(() => {});
+    })
+    .then(res => res.json().then(data => ({ok: res.ok, data})))
+    .then(result => {
+        if (result.ok && result.data.story) {
+            Object.assign(story, result.data.story);
+            updateStoryInteractions(story);
+        }
+    })
+    .catch(() => {});
 
     // تشغيل العداد التلقائي
     let startTime = Date.now();
@@ -242,6 +277,102 @@ function playCurrentStory() {
     storyTimer = setTimeout(() => {
         nextStoryItem();
     }, STORY_DURATION);
+}
+
+function getCurrentStory() {
+    const userObj = currentUsersStories[currentUserIndex];
+    return userObj ? userObj.stories[currentStoryIndex] : null;
+}
+
+function escapeStoryHtml(value) {
+    return String(value ?? '').replace(/[&<>\"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#039;'
+    }[char]));
+}
+
+const storyReactionEmojis = {
+    like: '👍',
+    love: '❤️',
+    haha: '😂',
+    wow: '😮',
+    sad: '😢',
+    fire: '🔥'
+};
+
+function updateStoryInteractions(story) {
+    const viewersButton = document.getElementById('storyViewersToggle');
+    const viewersCount = document.getElementById('storyViewsCount');
+    const reactionSummary = document.getElementById('storyReactionSummary');
+    const viewersPanel = document.getElementById('storyViewersPanel');
+
+    if (!viewersButton || !viewersCount || !reactionSummary) return;
+
+    const isOwner = Boolean(story.is_owner);
+    viewersButton.style.display = isOwner ? 'inline-flex' : 'none';
+    viewersCount.textContent = story.views_count || 0;
+    if (!isOwner && viewersPanel) viewersPanel.style.display = 'none';
+
+    const reactions = story.reactions || {};
+    reactionSummary.innerHTML = Object.entries(reactions)
+        .filter(([, count]) => count > 0)
+        .map(([type, count]) => `<span>${storyReactionEmojis[type] || '✨'} ${count}</span>`)
+        .join('');
+
+    document.querySelectorAll('.story-reaction-btn').forEach(button => {
+        button.classList.toggle('active', button.dataset.reaction === story.user_reaction);
+    });
+
+    renderStoryViewers(story.viewers || []);
+}
+
+function renderStoryViewers(viewers) {
+    const list = document.getElementById('storyViewersList');
+    if (!list) return;
+    if (!viewers.length) {
+        list.innerHTML = '<div class="story-no-viewers">لم يشاهد أحد قصتك بعد</div>';
+        return;
+    }
+    list.innerHTML = viewers.map(viewer => `
+        <div class="story-viewer-row">
+            <img src="${escapeStoryHtml(viewer.avatar || '/static/uploads/default.png')}" alt="${escapeStoryHtml(viewer.name || viewer.username)}" loading="lazy">
+            <div class="story-viewer-info">
+                <strong>${escapeStoryHtml(viewer.name || viewer.username)}</strong>
+                <small>@${escapeStoryHtml(viewer.username || '')} · ${escapeStoryHtml(viewer.viewed_at || '')}</small>
+            </div>
+        </div>
+    `).join('');
+}
+
+function toggleStoryViewers(e) {
+    if (e) e.stopPropagation();
+    const panel = document.getElementById('storyViewersPanel');
+    const button = document.getElementById('storyViewersToggle');
+    if (!panel || !button || button.style.display === 'none') return;
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function sendStoryReaction(reactionType, e) {
+    if (e) e.stopPropagation();
+    const story = getCurrentStory();
+    if (!story) return;
+
+    fetch(`/api/stories/${story.id}/react`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({reaction_type: reactionType})
+    })
+    .then(res => res.json().then(data => ({ok: res.ok, data})))
+    .then(result => {
+        if (!result.ok) throw new Error(result.data.error || 'تعذر إرسال التفاعل');
+        if (result.data.story) {
+            Object.assign(story, result.data.story);
+            updateStoryInteractions(story);
+        }
+    })
+    .catch(err => console.error('Story reaction error:', err));
 }
 
 function renderProgressBars(total, activeIdx) {

@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request, jsonify, current_app, abo
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app import db, csrf
-from app.models.story import Story, StoryView
+from app.models.story import Story, StoryView, StoryReaction
 from app.models.user import User
 from app.utils.media_urls import avatar_url
 
@@ -127,9 +127,11 @@ def get_user_stories(user_id):
 @login_required
 def view_story(story_id):
     story = Story.query.get_or_404(story_id)
+    if not story.is_active or story.expires_at <= datetime.utcnow():
+        return jsonify({'error': 'هذه القصة لم تعد متاحة'}), 410
     
     if story.user_id == current_user.id:
-        return jsonify({'message': 'لا يمكن تسجيل مشاهدة قصتك الخاصة'}), 200
+        return jsonify({'message': 'لا يمكن تسجيل مشاهدة قصتك الخاصة', 'story': story.to_dict(current_user.id)}), 200
 
     existing_view = StoryView.query.filter_by(story_id=story_id, viewer_id=current_user.id).first()
     if not existing_view:
@@ -137,7 +139,60 @@ def view_story(story_id):
         db.session.add(view)
         db.session.commit()
 
-    return jsonify({'message': 'تم تسجيل المشاهدة'}), 200
+    return jsonify({'message': 'تم تسجيل المشاهدة', 'story': story.to_dict(current_user.id)}), 200
+
+
+@stories_bp.route('/api/stories/<int:story_id>/react', methods=['POST'])
+@csrf.exempt
+@login_required
+def react_story(story_id):
+    story = Story.query.get_or_404(story_id)
+    if not story.is_active or story.expires_at <= datetime.utcnow():
+        return jsonify({'error': 'هذه القصة لم تعد متاحة'}), 410
+    data = request.get_json() or {}
+    reaction_type = data.get('reaction_type')
+
+    valid_reactions = {'like', 'love', 'haha', 'wow', 'sad', 'fire'}
+    if reaction_type not in valid_reactions:
+        return jsonify({'error': 'نوع التفاعل غير صالح'}), 400
+
+    existing = StoryReaction.query.filter_by(story_id=story_id, user_id=current_user.id).first()
+    if existing:
+        if existing.reaction_type == reaction_type:
+            # إلغاء التفاعل إذا تم النقر عليه مرة أخرى
+            db.session.delete(existing)
+            db.session.commit()
+            action = 'removed'
+        else:
+            existing.reaction_type = reaction_type
+            db.session.commit()
+            action = 'updated'
+    else:
+        reaction = StoryReaction(story_id=story_id, user_id=current_user.id, reaction_type=reaction_type)
+        db.session.add(reaction)
+        db.session.commit()
+        action = 'added'
+
+    return jsonify({
+        'success': True,
+        'action': action,
+        'story': story.to_dict(current_user.id)
+    }), 200
+
+
+@stories_bp.route('/api/stories/<int:story_id>/viewers', methods=['GET'])
+@login_required
+def get_story_viewers(story_id):
+    story = Story.query.get_or_404(story_id)
+    if story.user_id != current_user.id:
+        return jsonify({'error': 'قائمة المشاهدين متاحة لصاحب القصة فقط'}), 403
+
+    return jsonify({
+        'story_id': story.id,
+        'views_count': story.views.count(),
+        'viewers': story.to_dict(current_user.id)['viewers']
+    }), 200
+
 
 @stories_bp.route('/api/stories/<int:story_id>', methods=['DELETE'])
 @csrf.exempt

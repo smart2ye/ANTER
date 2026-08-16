@@ -51,8 +51,9 @@
                         <i class="fas fa-bell fa-lg"></i>
                         <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">0</span>
                     </a>
-                    <a href="{{ url_for('messages.inbox') }}" class="text-white">
+                    <a href="{{ url_for('messages.inbox') }}" class="text-white position-relative">
                         <i class="fas fa-comment-dots fa-lg"></i>
+                        <span id="msg-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; display: none;">0</span>
                     </a>
                     <div class="dropdown">
                         <a href="#" class="text-white dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown">
@@ -207,35 +208,75 @@
     <script src="{{ url_for('static', filename='js/stories.js') }}"></script>
     <script>
         // مصدر واحد وخفيف لتحديث عداد الإشعارات.
-        function updateBadge() {
-            return fetch('/notifications/unread_count', {
+        let previousNotifCount = null;
+
+        function updateBadges() {
+            // تحديث الإشعارات العامة
+            fetch('/notifications/unread_count', {
                 headers: {'Accept': 'application/json'},
                 credentials: 'same-origin',
                 cache: 'no-store'
             })
-                .then(function(res) {
-                    if (!res.ok) throw new Error('تعذر تحديث الإشعارات');
-                    return res.json();
-                })
-                .then(function(data) {
-                    var badge = document.getElementById('notif-badge');
-                    if (badge) {
-                        badge.textContent = data.count;
-                        badge.style.display = data.count > 0 ? 'block' : 'none';
-                    }
-                    document.dispatchEvent(new CustomEvent('anter:notification-count', {
-                        detail: {count: data.count}
-                    }));
-                    return data.count;
-                })
-                .catch(function() {
-                    return null;
-                });
+            .then(res => res.json())
+            .then(data => {
+                var badge = document.getElementById('notif-badge');
+                if (badge) {
+                    badge.textContent = data.count;
+                    badge.style.display = data.count > 0 ? 'block' : 'none';
+                }
+                if (previousNotifCount !== null && data.count > previousNotifCount) {
+                    showToast('لديك إشعار جديد!', 'info');
+                }
+                previousNotifCount = data.count;
+            }).catch(() => {});
+
+            // تحديث الرسائل غير المقروءة
+            fetch('/messages/unread_count', {
+                headers: {'Accept': 'application/json'},
+                credentials: 'same-origin',
+                cache: 'no-store'
+            })
+            .then(res => res.json())
+            .then(data => {
+                var msgBadge = document.getElementById('msg-badge');
+                if (msgBadge) {
+                    msgBadge.textContent = data.count;
+                    msgBadge.style.display = data.count > 0 ? 'block' : 'none';
+                }
+            }).catch(() => {});
+        }
+
+        function showToast(message, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = 'position: fixed; bottom: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-primary border-0 show shadow-lg rounded-3';
+            toast.setAttribute('role', 'alert');
+            toast.style.cssText = 'min-width: 250px; animation: fadeIn 0.3s ease;';
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body d-flex align-items-center gap-2">
+                        <i class="fas fa-bell"></i>
+                        <span>${message}</span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest('.toast').remove()"></button>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => toast.remove(), 3005);
+            }, 4000);
         }
 
         {% if current_user.is_authenticated %}
-        updateBadge();
-        setInterval(updateBadge, 30000);
+        updateBadges();
+        setInterval(updateBadges, 15000);
         {% endif %}
 
         if ('serviceWorker' in navigator) {

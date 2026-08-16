@@ -261,12 +261,8 @@ def send(user_id):
                 parent_id=parent_id
             )
             db.session.add(message)
-            notification_action = 'voice_message' if audio_data else 'file_message' if attachment_data else 'message'
-            db.session.add(Notification(
-                user_id=other.id,
-                actor_id=current_user.id,
-                action=notification_action,
-            ))
+            # تم فصل إشعارات الرسائل عن الإشعارات العامة لتظهر في قسم المراسلة فقط
+            pass
             db.session.commit()
         except Exception:
             db.session.rollback()
@@ -377,11 +373,8 @@ def send_audio_message(user_id):
             audio_mime=audio_mime,
         )
         db.session.add(message)
-        db.session.add(Notification(
-            user_id=other.id,
-            actor_id=current_user.id,
-            action='voice_message',
-        ))
+        # تم فصل إشعارات الرسائل الصوتية عن الإشعارات العامة
+        pass
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -480,11 +473,8 @@ def send_call_signal(user_id):
     db.session.add(signal)
 
     if signal_type == 'invite':
-        db.session.add(Notification(
-            user_id=receiver.id,
-            actor_id=current_user.id,
-            action='voice_call',
-        ))
+        # تم فصل إشعارات المكالمات عن الإشعارات العامة
+        pass
     db.session.commit()
     return jsonify({'success': True, 'signalId': signal.id})
 
@@ -514,3 +504,11 @@ def poll_call_signals(user_id):
     if signals:
         db.session.commit()
     return jsonify({'signals': result})
+
+
+@messages_bp.route('/unread_count')
+@login_required
+def unread_messages_count():
+    """إرجاع عدد الرسائل غير المقروءة لتحديث بادج المراسلة في الوقت الفعلي."""
+    count = Message.query.filter_by(receiver_id=current_user.id, is_read=False, deleted_by_receiver=False).count()
+    return jsonify({'count': count})

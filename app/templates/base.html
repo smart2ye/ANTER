@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 <meta name="google-site-verification" content="0N-aOX5CUq1cK_WJCChxfJ2JDu5fYJuR3CRTK_SWjBk" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -18,11 +19,8 @@
     <!-- الشريط العلوي -->
     <nav class="navbar navbar-expand-lg sticky-top fb-navbar">
         <div class="container-fluid px-3">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="height: 32px; width: 32px; margin-left: 6px;">
-                    <rect x="0" y="0" width="100" height="100" rx="20" ry="20" fill="#1877f2"/>
-                    <text x="50" y="72" font-family="Arial, Helvetica, sans-serif" font-size="60" font-weight="900" fill="white" text-anchor="middle">A</text>
-                </svg>
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="ANTER Logo" style="height: 32px; width: auto; margin-left: 8px; border-radius: 6px;">
                 أنتر
             </a>
             <div class="d-flex align-items-center">

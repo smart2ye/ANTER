@@ -1,18 +1,24 @@
-import os
 import requests
 from flask import current_app
 
 class AIService:
     def __init__(self):
-        # يتم جلب المفتاح من إعدادات التطبيق (Config) التي تقرأ من متغيرات البيئة المشفرة
-        self.gemini_key = current_app.config.get('GEMINI_API_KEY')
-        self.deepseek_key = current_app.config.get('DEEPSEEK_API_KEY')
+        # لا نقوم بجلب المفاتيح هنا لتجنب RuntimeError خارج سياق التطبيق
+        pass
+
+    def get_keys(self):
+        """جلب المفاتيح بأمان من سياق التطبيق الحالي"""
+        gemini_key = current_app.config.get('GEMINI_API_KEY')
+        deepseek_key = current_app.config.get('DEEPSEEK_API_KEY')
+        return gemini_key, deepseek_key
 
     def generate_response(self, prompt, max_tokens=300):
-        # 1. Try Gemini if available (using google-genai or direct REST API)
-        if self.gemini_key:
+        gemini_key, _ = self.get_keys()
+        
+        # 1. Try Gemini if available
+        if gemini_key:
             try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={self.gemini_key}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
                 headers = {"Content-Type": "application/json"}
                 data = {
                     "contents": [{"parts": [{"text": prompt}]}]
@@ -29,7 +35,7 @@ class AIService:
                 current_app.logger.exception('خطأ في استدعاء Gemini API')
 
         # 2. Fallback / Mock response if no API key or failure
-        return "🤖 عذراً، خدمة الذكاء الاصطناعي غير متوفرة مؤقتاً أو تحتاج لمفتاح API صالح."
+        return "🤖 عذراً، خدمة الذكاء الاصطناعي غير متوفرة مؤقتاً أو تحتاج لمفتاح API صالح في الإعدادات."
 
     def summarize_text(self, text):
         prompt = f"قم بتلخيص هذا النص الاجتماعي بأسلوب موجز ومفيد في جملتين أو ثلاث باللغة العربية:\n\n{text}"

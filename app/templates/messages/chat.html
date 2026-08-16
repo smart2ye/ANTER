@@ -231,177 +231,157 @@
 </style>
 
 <script>
-(() => {
+// تعريف المتغيرات والوظائف بشكل عالمي لضمان توفرها
+var otherUserId = Number("{{ other.id }}");
+var otherName = {{ other.name | tojson }};
+var rtcConfig = {{ rtc_config | tojson }};
+var currentMsgId = null;
+var mediaRecorder = null;
+var mediaStream = null;
+var audioChunks = [];
+var recordedAudioFile = null;
+var recordingStartTime = null;
+var recordingTimerInterval = null;
+var peerConnection = null;
+var callStream = null;
+var activeCallId = null;
+var incomingInvite = null;
+var pendingCandidates = [];
+var pollingInProgress = false;
+
+function showMsgActions(id, event) {
+    event.stopPropagation();
+    currentMsgId = id;
+    const row = document.getElementById(`msg-${id}`);
+    const isSent = row.classList.contains('is-sent');
+    const content = row.querySelector('.message-text')?.innerText || '';
+    const menu = document.getElementById('msgContextMenu');
+    
+    document.getElementById('deleteEveryoneBtn').classList.toggle('d-none', !isSent);
+    document.getElementById('copyBtn').classList.toggle('d-none', !content);
+    
+    const rect = event.currentTarget.getBoundingClientRect();
+    menu.style.top = `${rect.top + window.scrollY - 40}px`;
+    menu.style.left = isSent ? `${rect.left}px` : `${rect.right - 180}px`;
+    menu.classList.remove('d-none');
+}
+
+function handleCopy() {
+    const text = document.getElementById(`msg-${currentMsgId}`).querySelector('.message-text').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> تم النسخ';
+        setTimeout(() => btn.innerHTML = original, 1500);
+    });
+}
+
+function handleReply() {
+    const row = document.getElementById(`msg-${currentMsgId}`);
+    const name = row.classList.contains('is-sent') ? 'أنت' : otherName;
+    const text = row.querySelector('.message-text')?.innerText || 'وسائط';
+    
+    document.getElementById('replyParentId').value = currentMsgId;
+    document.getElementById('replyToName').innerText = name;
+    document.getElementById('replyToText').innerText = text;
+    document.getElementById('replyPreview').classList.remove('d-none');
+    document.getElementById('messageInput').focus();
+}
+
+function cancelReply() {
+    document.getElementById('replyParentId').value = '';
+    document.getElementById('replyPreview').classList.add('d-none');
+}
+
+function handleDelete(type) {
+    if (!confirm('هل أنت متأكد من حذف هذه الرسالة؟')) return;
+    const formData = new FormData();
+    formData.append('type', type);
+    fetch(`/messages/delete/${currentMsgId}`, { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => { if (data.success) location.reload(); });
+}
+
+function handleForward() {
+    const modalEl = document.getElementById('forwardModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    loadForwardUsers();
+}
+
+function loadForwardUsers(query = '') {
+    fetch(`/users/api/search?q=${query}`)
+        .then(res => res.json())
+        .then(users => {
+            const list = document.getElementById('forwardUserList');
+            list.innerHTML = users.map(u => `
+                <button class="list-group-item list-group-item-action d-flex align-items-center gap-2" onclick="executeForward(${u.id})">
+                    <img src="${u.avatar}" class="rounded-circle" width="30" height="30">
+                    <span>${u.name}</span>
+                </button>
+            `).join('');
+        });
+}
+
+function executeForward(userId) {
+    const formData = new FormData();
+    formData.append('target_user_id', userId);
+    fetch(`/messages/forward/${currentMsgId}`, { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => { if (data.success) window.location.href = data.redirect; });
+}
+
+function scrollToMsg(id, event) {
+    if(event) event.stopPropagation();
+    const el = document.getElementById(`msg-${id}`);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlight-msg');
+        setTimeout(() => el.classList.remove('highlight-msg'), 2000);
+    }
+}
+
+function showHelp(text, isError = false) {
+    const help = document.getElementById('composerHelp');
+    help.textContent = text;
+    help.className = `composer-help mb-0 mt-2 ${isError ? 'text-danger fw-bold' : 'text-muted'}`;
+    help.classList.remove('d-none');
+}
+
+async function sendVoiceAsJson(file) {
+    const reader = new FileReader();
+    const base64Promise = new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+    });
+    reader.readAsDataURL(file);
+    const audioData = await base64Promise;
+    const response = await fetch(`/messages/send-audio/${otherUserId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            audioData,
+            fileName: file.name,
+            content: document.getElementById('messageInput').value.trim(),
+            parent_id: document.getElementById('replyParentId').value
+        })
+    });
+    if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'فشل إرسال الصوت');
+    }
+    window.location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
     const chatBox = document.getElementById('chatBox');
-    const form = document.getElementById('messageForm');
     const input = document.getElementById('messageInput');
-    const voiceInput = document.getElementById('voiceInput');
-    const attachmentInput = document.getElementById('attachmentInput');
-    const attachmentButton = document.getElementById('attachmentButton');
-    const attachmentPreview = document.getElementById('attachmentPreview');
-    const recordButton = document.getElementById('recordVoiceButton');
-    const clearVoiceButton = document.getElementById('clearVoiceButton');
-    const preview = document.getElementById('voicePreview');
-    const previewAudio = document.getElementById('voicePreviewAudio');
-    const recordingStatus = document.getElementById('recordingStatus');
-    const recordingTimer = document.getElementById('recordingTimer');
-    const composerHelp = document.getElementById('composerHelp');
-    const sendButton = document.getElementById('sendMessageButton');
-    const replyParentId = document.getElementById('replyParentId');
-    const replyPreview = document.getElementById('replyPreview');
-    const msgContextMenu = document.getElementById('msgContextMenu');
-    const forwardModal = new bootstrap.Modal(document.getElementById('forwardModal'));
-    const typingIndicator = document.getElementById('typingIndicator');
+    const form = document.getElementById('messageForm');
+    
+    if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    document.addEventListener('click', () => document.getElementById('msgContextMenu').classList.add('d-none'));
 
-    const otherUserId = Number(document.querySelector('.chat-page').dataset.userId);
-    const otherName = {{ other.name | tojson }};
-    const rtcConfig = {{ rtc_config | tojson }};
-
-    let currentMsgId = null;
-
-    // --- ميزات المراسلة المتقدمة ---
-    window.showMsgActions = (id, event) => {
-        event.stopPropagation();
-        currentMsgId = id;
-        const row = document.getElementById(`msg-${id}`);
-        const isSent = row.classList.contains('is-sent');
-        const content = row.querySelector('.message-text')?.innerText || '';
-        
-        document.getElementById('deleteEveryoneBtn').classList.toggle('d-none', !isSent);
-        document.getElementById('copyBtn').classList.toggle('d-none', !content);
-        
-        const rect = event.currentTarget.getBoundingClientRect();
-        msgContextMenu.style.top = `${rect.top + window.scrollY - 40}px`;
-        msgContextMenu.style.left = isSent ? `${rect.left}px` : `${rect.right - 180}px`;
-        msgContextMenu.classList.remove('d-none');
-    };
-
-    document.addEventListener('click', () => msgContextMenu.classList.add('d-none'));
-
-    window.handleCopy = () => {
-        const text = document.getElementById(`msg-${currentMsgId}`).querySelector('.message-text').innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            const btn = document.getElementById('copyBtn');
-            const original = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check"></i> تم النسخ';
-            setTimeout(() => btn.innerHTML = original, 1500);
-        });
-    };
-
-    window.handleReply = () => {
-        const row = document.getElementById(`msg-${currentMsgId}`);
-        const name = row.classList.contains('is-sent') ? 'أنت' : otherName;
-        const text = row.querySelector('.message-text')?.innerText || 'وسائط';
-        
-        replyParentId.value = currentMsgId;
-        document.getElementById('replyToName').innerText = name;
-        document.getElementById('replyToText').innerText = text;
-        replyPreview.classList.remove('d-none');
-        input.focus();
-    };
-
-    window.cancelReply = () => {
-        replyParentId.value = '';
-        replyPreview.classList.add('d-none');
-    };
-
-    window.handleDelete = (type) => {
-        if (!confirm('هل أنت متأكد من حذف هذه الرسالة؟')) return;
-        const formData = new FormData();
-        formData.append('type', type);
-        fetch(`/messages/delete/${currentMsgId}`, { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => { if (data.success) location.reload(); });
-    };
-
-    window.handleForward = () => {
-        forwardModal.show();
-        loadForwardUsers();
-    };
-
-    const loadForwardUsers = (query = '') => {
-        fetch(`/users/api/search?q=${query}`)
-            .then(res => res.json())
-            .then(users => {
-                const list = document.getElementById('forwardUserList');
-                list.innerHTML = users.map(u => `
-                    <button class="list-group-item list-group-item-action d-flex align-items-center gap-2" onclick="executeForward(${u.id})">
-                        <img src="${u.avatar}" class="rounded-circle" width="30" height="30">
-                        <span>${u.name}</span>
-                    </button>
-                `).join('');
-            });
-    };
-
-    window.executeForward = (userId) => {
-        const formData = new FormData();
-        formData.append('target_user_id', userId);
-        fetch(`/messages/forward/${currentMsgId}`, { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => { if (data.success) window.location.href = data.redirect; });
-    };
-
-    document.getElementById('forwardSearch').oninput = (e) => loadForwardUsers(e.target.value);
-
-    window.scrollToMsg = (id, event) => {
-        event.stopPropagation();
-        const el = document.getElementById(`msg-${id}`);
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.classList.add('highlight-msg');
-            setTimeout(() => el.classList.remove('highlight-msg'), 2000);
-        }
-    };
-
-    // --- منطق التسجيل والمكالمات والمؤشرات (النسخة الأصلية) ---
-    const scrollChatToBottom = () => {
-        if (!chatBox) return;
-        requestAnimationFrame(() => {
-            chatBox.scrollTop = chatBox.scrollHeight;
-            window.setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 120);
-        });
-    };
-    scrollChatToBottom();
-
-    let mediaRecorder = null;
-    let mediaStream = null;
-    let audioChunks = [];
-    let recordedAudioFile = null;
-    let recordingStartTime = null;
-    let recordingTimerInterval = null;
-
-    const showHelp = (text, isError = false) => {
-        composerHelp.textContent = text;
-        composerHelp.className = `composer-help mb-0 mt-2 ${isError ? 'text-danger fw-bold' : 'text-muted'}`;
-        composerHelp.classList.remove('d-none');
-    };
-
-    const sendVoiceAsJson = async (file) => {
-        const reader = new FileReader();
-        const base64Promise = new Promise((resolve, reject) => {
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = reject;
-        });
-        reader.readAsDataURL(file);
-        const audioData = await base64Promise;
-        const response = await fetch(`/messages/send-audio/${otherUserId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                audioData,
-                fileName: file.name,
-                content: input.value.trim(),
-                parent_id: replyParentId.value
-            })
-        });
-        if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.message || 'فشل إرسال الصوت');
-        }
-        window.location.reload();
-    };
-
-    recordButton.addEventListener('click', async () => {
+    document.getElementById('recordVoiceButton').onclick = async () => {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
             return;
@@ -414,132 +394,68 @@
             mediaRecorder.onstop = () => {
                 const blob = new Blob(audioChunks, { type: 'audio/webm' });
                 recordedAudioFile = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
-                previewAudio.src = URL.createObjectURL(blob);
-                preview.classList.remove('d-none');
+                document.getElementById('voicePreviewAudio').src = URL.createObjectURL(blob);
+                document.getElementById('voicePreview').classList.remove('d-none');
                 mediaStream.getTracks().forEach(t => t.stop());
             };
             mediaRecorder.start();
-            recordButton.classList.add('btn-danger', 'is-recording');
-            recordingStatus.classList.remove('d-none');
+            document.getElementById('recordVoiceButton').classList.add('btn-danger', 'is-recording');
+            document.getElementById('recordingStatus').classList.remove('d-none');
             recordingStartTime = Date.now();
             recordingTimerInterval = setInterval(() => {
                 const sec = Math.floor((Date.now() - recordingStartTime) / 1000);
-                recordingTimer.innerText = `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
+                document.getElementById('recordingTimer').innerText = `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
             }, 1000);
         } catch (err) { alert('تعذر الوصول للميكروفون'); }
-    });
+    };
 
-    form.addEventListener('submit', event => {
-        stopTyping();
-        const hasText = input.value.trim().length > 0;
-        const audioFile = recordedAudioFile || voiceInput.files[0];
+    form.onsubmit = event => {
+        const audioFile = recordedAudioFile || document.getElementById('voiceInput').files[0];
         if (audioFile) {
             event.preventDefault();
-            sendButton.disabled = true;
+            document.getElementById('sendMessageButton').disabled = true;
             sendVoiceAsJson(audioFile).catch(err => {
-                sendButton.disabled = false;
+                document.getElementById('sendMessageButton').disabled = false;
                 showHelp(err.message, true);
             });
         }
-    });
-
-    let typingActive = false;
-    let typingStopTimer = null;
-    const sendTypingState = async isTyping => {
-        try {
-            await fetch(`/messages/typing/${otherUserId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ typing: isTyping })
-            });
-        } catch (e) {}
     };
-    const stopTyping = () => {
-        clearTimeout(typingStopTimer);
-        if (typingActive) { typingActive = false; sendTypingState(false); }
-    };
-    input.addEventListener('input', () => {
-        if (!typingActive) { typingActive = true; sendTypingState(true); }
-        clearTimeout(typingStopTimer);
-        typingStopTimer = setTimeout(stopTyping, 2000);
-    });
 
+    document.getElementById('attachmentButton').onclick = () => document.getElementById('attachmentInput').click();
+    document.getElementById('attachmentInput').onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('attachmentPreview').innerText = `📎 ${file.name}`;
+            document.getElementById('attachmentPreview').classList.remove('d-none');
+        }
+    };
+
+    document.getElementById('forwardSearch').oninput = (e) => loadForwardUsers(e.target.value);
+
+    // Polling for typing and calls
     setInterval(async () => {
         if (document.visibilityState === 'hidden') return;
         const res = await fetch(`/messages/typing/${otherUserId}`);
         if (res.ok) {
             const data = await res.json();
-            typingIndicator.classList.toggle('d-none', !data.typing);
+            document.getElementById('typingIndicator').classList.toggle('d-none', !data.typing);
         }
-    }, 3000);
-
-    // --- WebRTC Logic (Restored) ---
-    let peerConnection = null;
-    let callStream = null;
-    let activeCallId = null;
-    let incomingInvite = null;
-    let pendingCandidates = [];
-    let pollingInProgress = false;
-
-    const sendCallSignal = async (type, payload = {}) => {
-        if (!activeCallId) return;
-        await fetch(`/messages/calls/signal/${otherUserId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ callId: activeCallId, type, payload })
-        });
-    };
-
-    const releaseCallResources = () => {
-        if (peerConnection) { peerConnection.close(); peerConnection = null; }
-        if (callStream) callStream.getTracks().forEach(t => t.stop());
-        callStream = null;
-        activeCallId = null;
-        incomingInvite = null;
-        document.getElementById('callPanel').classList.add('d-none');
-        document.getElementById('voiceCallButton').disabled = false;
-    };
-
-    const createPeerConnection = async () => {
-        peerConnection = new RTCPeerConnection(rtcConfig);
-        peerConnection.onicecandidate = e => { if(e.candidate) sendCallSignal('candidate', e.candidate.toJSON()); };
-        peerConnection.ontrack = e => { document.getElementById('remoteAudio').srcObject = e.streams[0]; };
-        if (!callStream) callStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        callStream.getTracks().forEach(t => peerConnection.addTrack(t, callStream));
-    };
-
-    const pollCallSignals = async () => {
-        if (pollingInProgress) return;
-        pollingInProgress = true;
-        try {
-            const res = await fetch(`/messages/calls/poll/${otherUserId}`);
-            if (res.ok) {
-                const data = await res.json();
-                for (const signal of data.signals || []) {
-                    if (signal.type === 'invite' && !activeCallId) {
-                        activeCallId = signal.call_id;
-                        incomingInvite = signal;
-                        document.getElementById('callPanel').classList.remove('d-none');
-                        document.getElementById('incomingCallActions').classList.remove('d-none');
-                        document.getElementById('outgoingCallActions').classList.add('d-none');
-                    } else if (signal.type === 'hangup') releaseCallResources();
+        const callRes = await fetch(`/messages/calls/poll/${otherUserId}`);
+        if (callRes.ok) {
+            const data = await callRes.json();
+            for (const signal of data.signals || []) {
+                if (signal.type === 'invite' && !activeCallId) {
+                    activeCallId = signal.call_id;
+                    document.getElementById('callPanel').classList.remove('d-none');
+                    document.getElementById('incomingCallActions').classList.remove('d-none');
+                    document.getElementById('outgoingCallActions').classList.add('d-none');
+                } else if (signal.type === 'hangup') {
+                    if (peerConnection) peerConnection.close();
+                    document.getElementById('callPanel').classList.add('d-none');
                 }
             }
-        } finally { pollingInProgress = false; }
-    };
-    setInterval(pollCallSignals, 3000);
-
-    document.getElementById('voiceCallButton').onclick = async () => {
-        activeCallId = crypto.randomUUID();
-        document.getElementById('callPanel').classList.remove('d-none');
-        await createPeerConnection();
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        await sendCallSignal('invite', offer);
-    };
-
-    document.getElementById('hangupCallButton').onclick = () => { sendCallSignal('hangup'); releaseCallResources(); };
-
-})();
+        }
+    }, 3000);
+});
 </script>
 {% endblock %}

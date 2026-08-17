@@ -122,7 +122,7 @@
     <div class="post-actions">
         <!-- زر التفاعل -->
         <div class="reaction-wrapper">
-            <button class="action-btn reaction-toggle" data-post="{{ post.id }}">
+            <button type="button" class="action-btn reaction-toggle" data-post="{{ post.id }}" aria-haspopup="true" aria-expanded="false" aria-label="إضافة تفاعل">
                 <span class="reaction-display" id="reaction-display-{{ post.id }}">
                     <span class="reaction-icon" id="reaction-icon-{{ post.id }}">👍</span>
                     <span class="reaction-label" id="reaction-label-{{ post.id }}">إعجاب</span>

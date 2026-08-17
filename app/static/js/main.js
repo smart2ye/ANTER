@@ -198,60 +198,215 @@ document.addEventListener('mouseleave', function(e) {
 }, true);
 
 // ==============================
-// تفعيل قائمة التفاعلات
+// تفاعلات المنشورات: فتح سلس وتحديث مرئي فوري
 // ==============================
-document.addEventListener('mouseenter', function(e) {
-    const toggle = e.target.closest('.reaction-toggle');
-    if (toggle) {
-        const picker = toggle.querySelector('.reaction-picker');
-        if (picker) picker.style.display = 'flex';
-    }
-}, true);
-document.addEventListener('mouseleave', function(e) {
-    const toggle = e.target.closest('.reaction-toggle');
-    if (toggle) {
-        const picker = toggle.querySelector('.reaction-picker');
-        if (picker) picker.style.display = 'none';
-    }
-}, true);
+const reactionIcons = { like: '👍', love: '🥰', haha: '🤣', angry: '😡', sad: '😢' };
+const reactionNames = { like: 'إعجاب', love: 'حب', haha: 'أضحكني', angry: 'أغضبني', sad: 'أحزنني' };
+const reactionRequestsInFlight = new Set();
+const reactionLongPressTimers = new WeakMap();
+let reactionPickerCloseTimer = null;
 
-const reactionIcons = { 'like': '👍', 'love': '🥰', 'haha': '🤣', 'angry': '😡', 'sad': '😢' };
-const reactionNames = { 'like': 'إعجاب', 'love': 'حب', 'haha': 'أضحكني', 'angry': 'أغضبني', 'sad': 'أحزنني' };
+function getReactionElements(postId, wrapper) {
+    return {
+        wrapper,
+        toggle: wrapper?.querySelector('.reaction-toggle'),
+        picker: wrapper?.querySelector('.reaction-picker'),
+        icon: document.getElementById(`reaction-icon-${postId}`),
+        label: document.getElementById(`reaction-label-${postId}`),
+        count: document.getElementById(`reaction-count-${postId}`),
+        summary: document.getElementById(`reaction-summary-${postId}`),
+    };
+}
 
-document.addEventListener('click', function(e) {
-    const option = e.target.closest('.reaction-option');
-    if (!option) return;
-    e.stopPropagation();
+function setReactionPickerOpen(wrapper, isOpen) {
+    if (!wrapper) return;
+    const toggle = wrapper.querySelector('.reaction-toggle');
+    wrapper.classList.toggle('reaction-picker-open', isOpen);
+    if (toggle) toggle.setAttribute('aria-expanded', String(isOpen));
+}
 
-    const postId = option.dataset.post;
-    const reaction = option.dataset.reaction;
-    const toggle = option.closest('.reaction-wrapper')?.querySelector('.reaction-toggle');
-    const iconEl = document.getElementById(`reaction-icon-${postId}`);
-    const labelEl = document.getElementById(`reaction-label-${postId}`);
-    const countEl = document.getElementById(`reaction-count-${postId}`);
-    const summary = document.getElementById(`reaction-summary-${postId}`);
-
-    fetch(`/like/${postId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        credentials: 'include',
-        body: JSON.stringify({ reaction: reaction })
-    })
-    .then(res => res.json())
-    .then(data => {
-        const liked = Boolean(data.liked);
-        if (countEl) countEl.textContent = data.count ?? 0;
-        if (iconEl) iconEl.textContent = liked ? (reactionIcons[reaction] || '👍') : '👍';
-        if (labelEl) labelEl.textContent = liked ? (reactionNames[reaction] || 'إعجاب') : 'إعجاب';
-        toggle?.classList.toggle('reaction-active', liked);
-        if (summary) summary.innerHTML = `<span class="reaction-item">${iconEl?.textContent || '👍'} ${data.count ?? 0}</span>`;
+function closeAllReactionPickers(exceptWrapper = null) {
+    document.querySelectorAll('.reaction-wrapper.reaction-picker-open').forEach(wrapper => {
+        if (wrapper !== exceptWrapper) setReactionPickerOpen(wrapper, false);
     });
+}
+
+function scheduleReactionPickerClose(wrapper) {
+    clearTimeout(reactionPickerCloseTimer);
+    reactionPickerCloseTimer = setTimeout(() => setReactionPickerOpen(wrapper, false), 150);
+}
+
+function playReactionSelectionAnimation(icon) {
+    if (!icon) return;
+    icon.classList.remove('reaction-just-selected');
+    void icon.offsetWidth;
+    icon.classList.add('reaction-just-selected');
+}
+
+function renderReactionSummary(summary, reactionCounts, totalCount) {
+    if (!summary) return;
+    const orderedTypes = ['like', 'love', 'haha', 'angry', 'sad'];
+    const content = orderedTypes
+        .filter(type => Number(reactionCounts?.[type]) > 0)
+        .map(type => `<span class="reaction-item reaction-summary-${type}">${reactionIcons[type]} ${reactionCounts[type]}</span>`)
+        .join('');
+    summary.innerHTML = content || (totalCount > 0 ? `<span class="reaction-item">👍 ${totalCount}</span>` : '');
+}
+
+function updateReactionUi(postId, reaction, data, elements) {
+    const liked = Boolean(data.liked);
+    const activeReaction = liked ? (data.reaction || reaction) : null;
+    if (elements.count) {
+        elements.count.textContent = data.count ?? 0;
+        elements.count.classList.remove('reaction-count-updated');
+        void elements.count.offsetWidth;
+        elements.count.classList.add('reaction-count-updated');
+    }
+    if (elements.icon) elements.icon.textContent = activeReaction ? (reactionIcons[activeReaction] || '👍') : '👍';
+    if (elements.label) elements.label.textContent = activeReaction ? (reactionNames[activeReaction] || 'إعجاب') : 'إعجاب';
+    if (elements.toggle) {
+        elements.toggle.classList.toggle('reaction-active', liked);
+        elements.toggle.dataset.userReaction = activeReaction || '';
+        elements.toggle.dataset.reaction = activeReaction || '';
+        elements.toggle.setAttribute('aria-label', activeReaction ? `تفاعلت بـ ${reactionNames[activeReaction]}` : 'إضافة تفاعل');
+    }
+    elements.wrapper?.querySelectorAll('.reaction-option').forEach(option => {
+        option.classList.toggle('is-selected', option.dataset.reaction === activeReaction);
+    });
+    renderReactionSummary(elements.summary, data.reaction_counts, data.count ?? 0);
+    playReactionSelectionAnimation(elements.icon);
+}
+
+async function submitPostReaction(wrapper, reaction) {
+    const postId = wrapper?.querySelector('.reaction-toggle')?.dataset.post;
+    if (!postId || reactionRequestsInFlight.has(postId)) return;
+
+    const elements = getReactionElements(postId, wrapper);
+    if (!elements.toggle) return;
+    const snapshot = {
+        icon: elements.icon?.textContent,
+        label: elements.label?.textContent,
+        count: elements.count?.textContent,
+        summary: elements.summary?.innerHTML,
+        active: elements.toggle.classList.contains('reaction-active'),
+        reaction: elements.toggle.dataset.reaction || '',
+    };
+
+    reactionRequestsInFlight.add(postId);
+    elements.toggle.classList.add('is-loading');
+    elements.wrapper?.classList.add('reaction-request-pending');
+    if (elements.icon) elements.icon.textContent = reactionIcons[reaction] || '👍';
+    if (elements.label) elements.label.textContent = reactionNames[reaction] || 'إعجاب';
+    elements.toggle.classList.add('reaction-active');
+    playReactionSelectionAnimation(elements.icon);
+
+    try {
+        const response = await fetch(`/like/${postId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'include',
+            body: JSON.stringify({ reaction })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'تعذر تسجيل التفاعل');
+        updateReactionUi(postId, reaction, data, elements);
+    } catch (error) {
+        if (elements.icon) elements.icon.textContent = snapshot.icon || '👍';
+        if (elements.label) elements.label.textContent = snapshot.label || 'إعجاب';
+        if (elements.count) elements.count.textContent = snapshot.count || '0';
+        if (elements.summary) elements.summary.innerHTML = snapshot.summary || '';
+        elements.toggle.classList.toggle('reaction-active', snapshot.active);
+        elements.toggle.dataset.reaction = snapshot.reaction;
+        elements.toggle.dataset.userReaction = snapshot.reaction;
+        elements.toggle.classList.remove('reaction-error');
+        void elements.toggle.offsetWidth;
+        elements.toggle.classList.add('reaction-error');
+        console.error('Post reaction error:', error);
+    } finally {
+        reactionRequestsInFlight.delete(postId);
+        elements.toggle.classList.remove('is-loading');
+        elements.wrapper?.classList.remove('reaction-request-pending');
+    }
+}
+
+document.addEventListener('pointerenter', function(e) {
+    const wrapper = e.target.closest('.reaction-wrapper');
+    if (!wrapper || e.pointerType === 'touch') return;
+    clearTimeout(reactionPickerCloseTimer);
+    closeAllReactionPickers(wrapper);
+    setReactionPickerOpen(wrapper, true);
+}, true);
+
+document.addEventListener('pointerleave', function(e) {
+    const wrapper = e.target.closest('.reaction-wrapper');
+    if (!wrapper || e.pointerType === 'touch') return;
+    scheduleReactionPickerClose(wrapper);
+}, true);
+
+document.addEventListener('focusin', function(e) {
+    const wrapper = e.target.closest('.reaction-wrapper');
+    if (!wrapper) return;
+    clearTimeout(reactionPickerCloseTimer);
+    closeAllReactionPickers(wrapper);
+    setReactionPickerOpen(wrapper, true);
+});
+
+document.addEventListener('focusout', function(e) {
+    const wrapper = e.target.closest('.reaction-wrapper');
+    if (wrapper && !wrapper.contains(e.relatedTarget)) scheduleReactionPickerClose(wrapper);
+});
+
+document.addEventListener('pointerdown', function(e) {
+    const toggle = e.target.closest('.reaction-toggle');
+    if (!toggle || e.pointerType !== 'touch') return;
+    const wrapper = toggle.closest('.reaction-wrapper');
+    const timer = setTimeout(() => {
+        toggle.dataset.longPressOpen = 'true';
+        closeAllReactionPickers(wrapper);
+        setReactionPickerOpen(wrapper, true);
+        if (navigator.vibrate) navigator.vibrate(12);
+    }, 380);
+    reactionLongPressTimers.set(toggle, timer);
+}, true);
+
+['pointerup', 'pointercancel', 'pointerleave'].forEach(eventName => {
+    document.addEventListener(eventName, function(e) {
+        const toggle = e.target.closest('.reaction-toggle');
+        if (!toggle) return;
+        const timer = reactionLongPressTimers.get(toggle);
+        if (timer) clearTimeout(timer);
+        reactionLongPressTimers.delete(toggle);
+    }, true);
 });
 
 document.addEventListener('click', function(e) {
-    if (!e.target.closest('.reaction-wrapper')) {
-        document.querySelectorAll('.reaction-picker').forEach(picker => picker.style.display = '');
+    const option = e.target.closest('.reaction-option');
+    if (option) {
+        e.preventDefault();
+        e.stopPropagation();
+        const wrapper = option.closest('.reaction-wrapper');
+        const picker = option.closest('.reaction-picker');
+        picker?.classList.add('selection-complete');
+        setReactionPickerOpen(wrapper, false);
+        setTimeout(() => picker?.classList.remove('selection-complete'), 180);
+        submitPostReaction(wrapper, option.dataset.reaction);
+        return;
     }
+
+    const toggle = e.target.closest('.reaction-toggle');
+    if (toggle) {
+        e.preventDefault();
+        e.stopPropagation();
+        const wrapper = toggle.closest('.reaction-wrapper');
+        if (toggle.dataset.longPressOpen === 'true') {
+            delete toggle.dataset.longPressOpen;
+            return;
+        }
+        submitPostReaction(wrapper, toggle.dataset.userReaction || 'like');
+        return;
+    }
+
+    if (!e.target.closest('.reaction-wrapper')) closeAllReactionPickers();
 });
 
 // ==============================

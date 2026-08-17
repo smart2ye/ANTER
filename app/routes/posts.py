@@ -116,10 +116,15 @@ def like(post_id):
             db.session.add(notification)
 
     db.session.commit()
+    reaction_counts = {key: 0 for key in allowed_reactions}
+    for stored_reaction in post.likes.all():
+        reaction_counts[stored_reaction.reaction_type] = reaction_counts.get(stored_reaction.reaction_type, 0) + 1
+
     return jsonify({
         'liked': liked,
         'reaction': reaction_type if liked else None,
-        'count': post.likes.count()
+        'count': post.likes.count(),
+        'reaction_counts': reaction_counts
     })
 
 @posts_bp.route('/post/<int:post_id>')

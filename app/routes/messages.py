@@ -15,6 +15,11 @@ from app.extensions import db, csrf
 from app.models import Message, User, Notification, CallSignal, TypingState, Follow
 from app.utils.helpers import get_status_icon, allowed_audio_file
 from app.utils.image_storage import prepare_image_data
+from app.services.anter_assistant import (
+    ASSISTANT_TEXT_ONLY_REPLY,
+    get_assistant_reply,
+    is_anter_assistant,
+)
 
 messages_bp = Blueprint('messages', __name__, url_prefix='/messages')
 CALL_SIGNAL_TYPES = {'invite', 'answer', 'candidate', 'decline', 'hangup'}
@@ -93,6 +98,7 @@ def chat(user_id):
         messages=messages,
         get_status_icon=get_status_icon,
         rtc_config=get_rtc_config(),
+        is_anter_assistant=is_anter_assistant(other),
     )
 
 
@@ -269,6 +275,27 @@ def send(user_id):
             current_app.logger.exception('تعذر إرسال الرسالة')
             flash('تعذر إرسال الرسالة حاليًا. حاول مجددًا.', 'danger')
         else:
+            if is_anter_assistant(other):
+                try:
+                    if audio_data or attachment_data:
+                        assistant_reply = ASSISTANT_TEXT_ONLY_REPLY
+                    else:
+                        assistant_reply, public_error = get_assistant_reply(content)
+                        assistant_reply = assistant_reply or public_error
+
+                    if assistant_reply:
+                        db.session.add(Message(
+                            sender_id=other.id,
+                            receiver_id=current_user.id,
+                            content=assistant_reply,
+                            parent_id=message.id,
+                        ))
+                        db.session.commit()
+                except Exception:
+                    # لا يؤثر فشل رد المساعد في الرسالة الأصلية التي تم حفظها بالفعل.
+                    db.session.rollback()
+                    current_app.logger.exception('تعذر حفظ رد مساعد أنتر')
+
             flash('تم إرسال الرسالة.', 'success')
     else:
         flash('الرسالة فارغة.', 'danger')

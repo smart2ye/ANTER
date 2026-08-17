@@ -9,12 +9,17 @@
         <div class="flex-grow-1">
             <h1 class="h6 mb-0 fw-bold">{{ other.name }}</h1>
             <span class="text-muted small">@{{ other.username }}</span>
+            {% if is_anter_assistant %}
+                <span class="badge text-bg-primary ms-1"><i class="fas fa-robot me-1"></i>مساعد آلي</span>
+            {% endif %}
         </div>
         <span class="typing-indicator d-none" id="typingIndicator" role="status" aria-live="polite">يكتب الآن…</span>
-        <button class="btn btn-outline-primary call-button" type="button" id="voiceCallButton" aria-label="بدء مكالمة صوتية" title="بدء مكالمة صوتية">
-            <i class="fas fa-phone-alt"></i>
-        </button>
-        <span class="badge text-bg-light border"><i class="fas fa-shield-alt me-1"></i>محادثة خاصة</span>
+        {% if not is_anter_assistant %}
+            <button class="btn btn-outline-primary call-button" type="button" id="voiceCallButton" aria-label="بدء مكالمة صوتية" title="بدء مكالمة صوتية">
+                <i class="fas fa-phone-alt"></i>
+            </button>
+        {% endif %}
+        <span class="badge text-bg-light border"><i class="fas {{ 'fa-robot' if is_anter_assistant else 'fa-shield-alt' }} me-1"></i>{{ 'محادثة مع مساعد آلي' if is_anter_assistant else 'محادثة خاصة' }}</span>
     </header>
 
     <div class="chat-box" id="chatBox" aria-live="polite">
@@ -131,19 +136,19 @@
         </div>
 
         <div class="composer-row">
-            <button class="btn btn-light composer-button" type="button" id="recordVoiceButton" title="تسجيل صوتي">
+            <button class="btn btn-light composer-button {{ 'd-none' if is_anter_assistant else '' }}" type="button" id="recordVoiceButton" title="تسجيل صوتي" {% if is_anter_assistant %}disabled{% endif %}>
                 <i class="fas fa-microphone"></i>
             </button>
-            <button class="btn btn-light composer-button" type="button" id="attachmentButton" title="إرفاق ملف">
+            <button class="btn btn-light composer-button {{ 'd-none' if is_anter_assistant else '' }}" type="button" id="attachmentButton" title="إرفاق ملف" {% if is_anter_assistant %}disabled{% endif %}>
                 <i class="fas fa-paperclip"></i>
             </button>
             <input type="file" name="attachment" id="attachmentInput" accept="image/*,.pdf,.txt,.doc,.docx" class="d-none">
-            <input type="text" name="content" id="messageInput" class="form-control composer-input" placeholder="اكتب رسالة..." autocomplete="off" autofocus>
+            <input type="text" name="content" id="messageInput" class="form-control composer-input" placeholder="{{ 'اكتب سؤالك لمساعد أنتر...' if is_anter_assistant else 'اكتب رسالة...' }}" autocomplete="off" autofocus>
             <button class="btn btn-primary composer-send" type="submit" id="sendMessageButton">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
-        <p class="composer-help mb-0 mt-2 d-none" id="composerHelp"></p>
+        <p class="composer-help mb-0 mt-2 {{ '' if is_anter_assistant else 'd-none' }}" id="composerHelp">{{ 'يرد مساعد أنتر على الرسائل النصية فقط. لا تُرسل كلمات المرور أو البيانات الخاصة.' if is_anter_assistant else '' }}</p>
     </form>
 
     <!-- قائمة الخيارات العائمة للرسالة -->
@@ -234,6 +239,7 @@
 // تعريف المتغيرات والوظائف بشكل عالمي لضمان توفرها
 var otherUserId = Number("{{ other.id }}");
 var otherName = {{ other.name | tojson }};
+var isAnterAssistant = {{ is_anter_assistant | tojson }};
 var rtcConfig = {{ rtc_config | tojson }};
 var currentMsgId = null;
 var mediaRecorder = null;
@@ -440,6 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             document.getElementById('typingIndicator').classList.toggle('d-none', !data.typing);
         }
+        if (isAnterAssistant) return;
         const callRes = await fetch(`/messages/calls/poll/${otherUserId}`);
         if (callRes.ok) {
             const data = await callRes.json();

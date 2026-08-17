@@ -47,6 +47,9 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        # إنشاء حساب مساعد أنتر الخدمي مرة واحدة وإعادة استخدامه في كل تشغيل.
+        from app.services.anter_assistant import ensure_anter_assistant_user
+        ensure_anter_assistant_user()
         # إنشاء جداول القصص وإشارات المكالمات صراحةً على قواعد الإنتاج القائمة.
         CallSignal.__table__.create(bind=db.engine, checkfirst=True)
         from app.models.story import Story, StoryView

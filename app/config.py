@@ -21,6 +21,15 @@ def env_int(name, default, minimum=1):
         return default
 
 
+def env_float(name, default, minimum=1.0, maximum=60.0):
+    """Read a bounded float from the environment without risking startup failure."""
+    try:
+        value = float(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        value = default
+    return min(max(value, minimum), maximum)
+
+
 if DATABASE_URI.startswith('sqlite'):
     DATABASE_ENGINE_OPTIONS = {
         'connect_args': {'check_same_thread': False, 'timeout': 30},
@@ -62,6 +71,18 @@ class Config:
     
     # مفاتيح الذكاء الاصطناعي (Hybrid AI)
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+
+    # مساعد أنتر داخل الرسائل: الإعدادات سرّية وتأتي من .env أو بيئة Render.
+    ANTER_ASSISTANT_ENABLED = os.environ.get('ANTER_ASSISTANT_ENABLED', 'true').strip().lower() == 'true'
+    ANTER_ASSISTANT_USERNAME = os.environ.get('ANTER_ASSISTANT_USERNAME', 'anter_assistant').strip() or 'anter_assistant'
+    ANTER_ASSISTANT_EMAIL = os.environ.get('ANTER_ASSISTANT_EMAIL', 'assistant@anter.local').strip() or 'assistant@anter.local'
+    ANTER_ASSISTANT_NAME = os.environ.get('ANTER_ASSISTANT_NAME', 'مساعد أنتر').strip() or 'مساعد أنتر'
+    ANTER_ASSISTANT_MODE = os.environ.get('ANTER_ASSISTANT_MODE', 'hybrid').strip().lower() or 'hybrid'
+    ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS', 1200, 100)
+    ANTER_ASSISTANT_MAX_REPLY_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_REPLY_CHARACTERS', 4000, 300)
+    MINI_LLM_API_URL = os.environ.get('MINI_LLM_API_URL', 'http://127.0.0.1:5050/api/v1/assistant/ask').strip()
+    MINI_LLM_API_KEY = os.environ.get('MINI_LLM_API_KEY', '').strip()
+    MINI_LLM_TIMEOUT_SECONDS = env_float('MINI_LLM_TIMEOUT_SECONDS', 35.0, 5.0, 60.0)
 
 
 for subfolder in ('avatars', 'posts', 'reels', 'videos', 'thumbnails', 'audio'):

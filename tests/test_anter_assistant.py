@@ -91,13 +91,19 @@ class AnterAssistantTests(unittest.TestCase):
             founder_answer, founder_error = get_assistant_reply("من هو مؤسس أنتر؟")
             identity_answer, identity_error = get_assistant_reply("ما اسمك؟")
             overview_answer, overview_error = get_assistant_reply("ما هو ANTER؟")
+            greeting_answer, greeting_error = get_assistant_reply("السلام عليكم ورحمة الله وبركاته، كيف حالك؟")
+            founder_self_intro, founder_self_error = get_assistant_reply("أنا عبدالقادر مهدلي")
 
         self.assertIsNone(founder_error)
         self.assertIsNone(identity_error)
         self.assertIsNone(overview_error)
+        self.assertIsNone(greeting_error)
+        self.assertIsNone(founder_self_error)
         self.assertIn("عبدالقادر مهدلي", founder_answer)
         self.assertIn("مساعد أنتر", identity_answer)
         self.assertIn("شبكة اجتماعية هجينة", overview_answer)
+        self.assertIn("وعليكم السلام", greeting_answer)
+        self.assertIn("مؤسس شبكة ANTER", founder_self_intro)
         mocked_post.assert_not_called()
 
     def test_assistant_chat_renders_bot_identity_and_text_only_hint(self):

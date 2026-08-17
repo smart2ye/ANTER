@@ -76,6 +76,21 @@ def _clean_question(value: Any) -> str:
 def _direct_anter_reply(question: str) -> str | None:
     """إجابات تعريفية مؤكدة لا تحتاج إلى استدعاء نموذج لغوي."""
     normalized = question.casefold()
+
+    founder = current_app.config.get("ANTER_FOUNDER_NAME", "عبدالقادر مهدلي")
+    founder_normalized = founder.casefold()
+    if founder_normalized and founder_normalized in normalized:
+        return f"أهلاً بك يا {founder}. يسعدني التواصل معك بوصفك مؤسس شبكة ANTER. كيف يمكنني مساعدتك اليوم؟"
+
+    greeting_markers = ("السلام عليكم", "مرحبا", "مرحباً", "اهلا", "أهلاً", "هلا")
+    wellbeing_markers = ("كيف حالك", "كيفك", "كيف الحال")
+    if any(marker in normalized for marker in greeting_markers):
+        if "السلام عليكم" in normalized:
+            return "وعليكم السلام ورحمة الله وبركاته. أنا مساعد أنتر، بخير وجاهز لمساعدتك في ANTER. كيف يمكنني خدمتك؟"
+        return "مرحباً بك. أنا مساعد أنتر، بخير وجاهز لمساعدتك في ANTER. كيف يمكنني خدمتك؟"
+    if any(marker in normalized for marker in wellbeing_markers):
+        return "أنا مساعد أنتر، بخير وجاهز لمساعدتك في ANTER. ما الذي تود معرفته أو إنجازه؟"
+
     identity_markers = ("ما اسمك", "ما اسمك؟", "من انت", "من أنت", "من تكون", "انت هنا", "أنت هنا")
     if any(marker in normalized for marker in identity_markers):
         return "أنا مساعد أنتر، المساعد الآلي داخل شبكة ANTER. أساعدك في فهم المنصة وصياغة المحتوى والردود بأسلوب مهذب."
@@ -86,7 +101,6 @@ def _direct_anter_reply(question: str) -> str | None:
 
     founder_markers = ("مؤسس", "المؤسس", "اسس", "أسس")
     if any(marker in normalized for marker in founder_markers):
-        founder = current_app.config.get("ANTER_FOUNDER_NAME", "عبدالقادر مهدلي")
         return f"مؤسس شبكة ANTER هو {founder}."
 
     overview_markers = ("ماهو", "ما هو", "ماهي", "ما هي", "عرف", "عرّف", "عن anter", "عن انتر", "عن أنتر")

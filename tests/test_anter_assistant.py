@@ -74,14 +74,31 @@ class AnterAssistantTests(unittest.TestCase):
         with self.app.app_context(), patch(
             "app.services.anter_assistant.requests.post", return_value=fake_response
         ) as mocked_post:
-            answer, error = get_assistant_reply("ما هي ANTER؟")
+            answer, error = get_assistant_reply("كيف يمكنني تحسين منشور؟")
 
         self.assertIsNone(error)
         self.assertEqual(answer, "أهلاً بك، كيف يمكنني مساعدتك في ANTER؟")
         _, kwargs = mocked_post.call_args
-        self.assertEqual(kwargs["json"], {"question": "ما هي ANTER؟", "mode": "hybrid"})
+        self.assertEqual(kwargs["json"]["mode"], "hybrid")
+        self.assertIn("كيف يمكنني تحسين منشور؟", kwargs["json"]["question"])
+        self.assertIn("أنت مساعد أنتر", kwargs["json"]["question"])
+        self.assertIn("عبدالقادر مهدلي", kwargs["json"]["question"])
         self.assertEqual(kwargs["headers"]["X-API-Key"], "test-mini-llm-key")
         self.assertNotIn("history", kwargs["json"])
+
+    def test_direct_anter_identity_and_founder_answers_do_not_call_model(self):
+        with self.app.app_context(), patch("app.services.anter_assistant.requests.post") as mocked_post:
+            founder_answer, founder_error = get_assistant_reply("من هو مؤسس أنتر؟")
+            identity_answer, identity_error = get_assistant_reply("ما اسمك؟")
+            overview_answer, overview_error = get_assistant_reply("ما هو ANTER؟")
+
+        self.assertIsNone(founder_error)
+        self.assertIsNone(identity_error)
+        self.assertIsNone(overview_error)
+        self.assertIn("عبدالقادر مهدلي", founder_answer)
+        self.assertIn("مساعد أنتر", identity_answer)
+        self.assertIn("شبكة اجتماعية هجينة", overview_answer)
+        mocked_post.assert_not_called()
 
     def test_assistant_chat_renders_bot_identity_and_text_only_hint(self):
         response = self.client.get(f"/messages/{self.assistant_id}")

@@ -21,6 +21,10 @@ ASSISTANT_UNAVAILABLE_REPLY = (
     "مجدداً بعد تشغيل mini-llm والتحقق من إعداد الاتصال المحلي."
 )
 ASSISTANT_TEXT_ONLY_REPLY = "أستطيع حالياً قراءة الرسائل النصية فقط. اكتب سؤالك أو طلبك في رسالة نصية واضحة."
+ANTER_OVERVIEW_REPLY = (
+    "ANTER شبكة اجتماعية هجينة تجمع المستخدمين البشريين مع مزايا ذكاء اصطناعي مساندة. "
+    "تدعم النشر والتعليقات والقصص والريلز والمراسلة، بواجهة عربية واتجاه كتابة من اليمين إلى اليسار."
+)
 
 
 def is_anter_assistant(user: User | None) -> bool:
@@ -69,6 +73,42 @@ def _clean_question(value: Any) -> str:
     return " ".join(str(value or "").split())
 
 
+def _direct_anter_reply(question: str) -> str | None:
+    """إجابات تعريفية مؤكدة لا تحتاج إلى استدعاء نموذج لغوي."""
+    normalized = question.casefold()
+    identity_markers = ("ما اسمك", "ما اسمك؟", "من انت", "من أنت", "من تكون", "انت هنا", "أنت هنا")
+    if any(marker in normalized for marker in identity_markers):
+        return "أنا مساعد أنتر، المساعد الآلي داخل شبكة ANTER. أساعدك في فهم المنصة وصياغة المحتوى والردود بأسلوب مهذب."
+
+    mentions_anter = "anter" in normalized or "انتر" in normalized or "أنتر" in normalized
+    if not mentions_anter:
+        return None
+
+    founder_markers = ("مؤسس", "المؤسس", "اسس", "أسس")
+    if any(marker in normalized for marker in founder_markers):
+        founder = current_app.config.get("ANTER_FOUNDER_NAME", "عبدالقادر مهدلي")
+        return f"مؤسس شبكة ANTER هو {founder}."
+
+    overview_markers = ("ماهو", "ما هو", "ماهي", "ما هي", "عرف", "عرّف", "عن anter", "عن انتر", "عن أنتر")
+    if any(marker in normalized for marker in overview_markers):
+        return ANTER_OVERVIEW_REPLY
+    return None
+
+
+def _assistant_question(question: str) -> str:
+    """سياق عام ثابت؛ لا يضيف تاريخ محادثة أو أي بيانات مستخدم أخرى."""
+    founder = current_app.config.get("ANTER_FOUNDER_NAME", "عبدالقادر مهدلي")
+    return (
+        "أنت مساعد أنتر داخل شبكة ANTER، ولست مساعد إنتر ميلان ولا أي جهة أخرى. "
+        "تحدث بالعربية الفصحى فقط وبأسلوب مهذب ومباشر. "
+        f"مؤسس شبكة ANTER هو {founder}. "
+        "ANTER منصة اجتماعية هجينة تدعم النشر والتعليقات والقصص والريلز والمراسلة. "
+        "لا تقل إنك نموذج من شركة أخرى، ولا تخلط اسم ANTER بالكيانات الرياضية. "
+        "أجب عن السؤال التالي فقط:\n\n"
+        f"{question}"
+    )
+
+
 def get_assistant_reply(question: str) -> tuple[str | None, str | None]:
     """طلب جواب من mini-llm باستخدام السؤال الحالي فقط.
 
@@ -86,13 +126,17 @@ def get_assistant_reply(question: str) -> tuple[str | None, str | None]:
     if len(question) > maximum:
         return None, f"اجعل رسالتك أقصر من {maximum} حرفاً ثم أرسلها مجدداً."
 
+    direct_reply = _direct_anter_reply(question)
+    if direct_reply:
+        return direct_reply, None
+
     api_url = current_app.config.get("MINI_LLM_API_URL", "").strip()
     api_key = current_app.config.get("MINI_LLM_API_KEY", "").strip()
     if not api_url or not api_key:
         return None, ASSISTANT_UNAVAILABLE_REPLY
 
     payload = {
-        "question": question,
+        "question": _assistant_question(question),
         "mode": current_app.config.get("ANTER_ASSISTANT_MODE", "hybrid"),
     }
     headers = {

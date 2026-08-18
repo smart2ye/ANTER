@@ -24,7 +24,7 @@
                         <i class="fas fa-user text-muted"></i>
                     </span>
                     {{ form.username(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.username.errors else ""), 
-                                     placeholder="أدخل اسم المستخدم", style="border-radius: 0 12px 12px 0;") }}
+                                     placeholder="رقم الجوال أو البريد أو المعرف", inputmode="text", autocomplete="username", style="border-radius: 0 12px 12px 0;") }}
                 </div>
                 {% for error in form.username.errors %}
                     <div class="invalid-feedback d-block">{{ error }}</div>
@@ -37,8 +37,9 @@
                     <span class="input-group-text bg-transparent border-end-0" style="border-radius: 12px 0 0 12px;">
                         <i class="fas fa-lock text-muted"></i>
                     </span>
-                    {{ form.password(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.password.errors else ""), 
-                                     placeholder="أدخل كلمة المرور", style="border-radius: 0 12px 12px 0;") }}
+                    {{ form.password(class="form-control border-start-0 border-end-0" + (" is-invalid" if form.password.errors else ""),
+                                     id="loginPasswordInput", placeholder="أدخل كلمة المرور", autocomplete="current-password") }}
+                    <button class="btn btn-outline-secondary" type="button" id="loginPasswordToggle" aria-label="إظهار كلمة المرور" title="إظهار كلمة المرور"><i class="fas fa-eye"></i></button>
                 </div>
                 {% for error in form.password.errors %}
                     <div class="invalid-feedback d-block">{{ error }}</div>
@@ -85,5 +86,19 @@
     @media (max-width: 420px) {
         .auth-brand-logo { width: 68px; height: 68px; }
     }
+    #loginPasswordToggle { border-color: #ced4da; min-height: 42px; }
 </style>
+<script>
+    const loginPasswordInput = document.getElementById('loginPasswordInput');
+    const loginPasswordToggle = document.getElementById('loginPasswordToggle');
+    if (loginPasswordInput && loginPasswordToggle) {
+        loginPasswordToggle.addEventListener('click', () => {
+            const visible = loginPasswordInput.type === 'text';
+            loginPasswordInput.type = visible ? 'password' : 'text';
+            loginPasswordToggle.querySelector('i').className = visible ? 'fas fa-eye' : 'fas fa-eye-slash';
+            loginPasswordToggle.setAttribute('aria-label', visible ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور');
+            loginPasswordToggle.title = visible ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور';
+        });
+    }
+</script>
 {% endblock %}

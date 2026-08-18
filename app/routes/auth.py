@@ -6,6 +6,7 @@ from app.forms.auth import LoginForm, RegistrationForm, ResetPasswordRequestForm
 from itsdangerous import URLSafeTimedSerializer
 from app.utils.helpers import log_user_activity
 from app.services.anter_assistant import ensure_anter_assistant_user, follow_anter_assistant_for_user
+from app.utils.public_ids import generate_public_id
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -37,12 +38,26 @@ def register():
         return redirect(url_for('main.index'))
     form = RegistrationForm()
     if form.validate_on_submit():
+        # المعرف العام يُنشأ تلقائياً ليكون رابطاً عشوائياً لا يحتاج المستخدم إلى اختياره أو تذكره.
+        username = generate_public_id('u')
+        while User.query.filter_by(username=username).first() is not None:
+            username = generate_public_id('u')
+
+        email = (form.email.data or '').strip().lower()
+        # قاعدة البيانات القديمة تتطلب بريداً غير فارغ. لحساب الجوال فقط ننشئ قيمة داخلية
+        # مرتبطة بالمعرف العشوائي ولا تُعرض في الملف الشخصي ولا تصلح كعنوان بريد حقيقي.
+        if not email:
+            email = f'{username}@phone-only.anter.local'
+
+        phone = (form.phone.data or '').strip()
         user = User(
-            username=form.username.data.strip(),
-            email=form.email.data.strip(),
+            username=username,
+            email=email,
             name=form.name.data.strip(),
+            gender=form.gender.data or '',
+            birth_date=form.birth_date.data,
             country_code=form.country_code.data,
-            phone=form.country_code.data + form.phone.data if form.phone.data else None,
+            phone=form.country_code.data + phone if phone else None,
             phone_verified=False,
             terms_agreed=form.terms_agreed.data
         )

@@ -240,16 +240,17 @@ class AnterAssistantTests(unittest.TestCase):
         finally:
             self.app.config["ANTER_ASSISTANT_REVIEW_PASSWORD"] = previous_password
 
-    def test_registration_follows_assistant_by_default(self):
+    def test_phone_registration_generates_random_profile_link_and_default_follow(self):
         anonymous_client = self.app.test_client()
         response = anonymous_client.post(
             "/auth/register",
             data={
-                "username": "new_assistant_follower",
-                "email": "new-assistant-follower@example.com",
                 "name": "متابع جديد",
+                "gender": "male",
+                "birth_date": "1997-05-20",
                 "country_code": "+967",
-                "phone": "",
+                "phone": "737254619",
+                "email": "",
                 "password": "1234",
                 "confirm_password": "1234",
                 "terms_agreed": "y",
@@ -259,9 +260,59 @@ class AnterAssistantTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 302)
         with self.app.app_context():
-            user = User.query.filter_by(username="new_assistant_follower").first()
+            user = User.query.filter_by(phone="+967737254619").first()
             self.assertIsNotNone(user)
+            self.assertTrue(user.username.startswith("u_"))
+            self.assertTrue(user.email.endswith("@phone-only.anter.local"))
+            self.assertEqual(user.gender, "male")
+            self.assertEqual(user.birth_date.isoformat(), "1997-05-20")
             self.assertTrue(user.is_following(db.session.get(User, self.assistant_id)))
+
+        login_response = anonymous_client.post(
+            "/auth/login",
+            data={"username": "+967737254619", "password": "1234"},
+            follow_redirects=False,
+        )
+        self.assertEqual(login_response.status_code, 302)
+
+    def test_email_registration_generates_random_profile_link_and_login_works(self):
+        anonymous_client = self.app.test_client()
+        response = anonymous_client.post(
+            "/auth/register",
+            data={
+                "name": "مستخدمة بريد",
+                "gender": "female",
+                "birth_date": "",
+                "country_code": "+967",
+                "phone": "",
+                "email": "email-login@example.com",
+                "password": "1234",
+                "confirm_password": "1234",
+                "terms_agreed": "y",
+            },
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 302)
+        with self.app.app_context():
+            user = User.query.filter_by(email="email-login@example.com").first()
+            self.assertIsNotNone(user)
+            self.assertTrue(user.username.startswith("u_"))
+            generated_username = user.username
+
+        login_response = anonymous_client.post(
+            "/auth/login",
+            data={"username": "email-login@example.com", "password": "1234"},
+            follow_redirects=False,
+        )
+        self.assertEqual(login_response.status_code, 302)
+
+        username_login_response = self.app.test_client().post(
+            "/auth/login",
+            data={"username": generated_username, "password": "1234"},
+            follow_redirects=False,
+        )
+        self.assertEqual(username_login_response.status_code, 302)
 
     def test_login_page_uses_responsive_anter_logo(self):
         login_page = self.app.test_client().get("/auth/login")
@@ -270,15 +321,22 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertEqual(login_page.status_code, 200)
         self.assertIn("img/logo.png", login_html)
         self.assertIn('class="auth-brand-logo"', login_html)
+        self.assertIn("رقم الجوال أو البريد أو المعرف", login_html)
+        self.assertIn('id="loginPasswordToggle"', login_html)
         self.assertNotIn("text-anchor=\"middle\">A</text>", login_html)
 
     def test_simple_password_is_accepted_with_ui_warning(self):
         registration_page = self.app.test_client().get("/auth/register")
         registration_html = registration_page.get_data(as_text=True)
-        self.assertIn("يمكنك استخدام كلمة بسيطة من 4 أحرف أو أرقام", registration_html)
-        self.assertIn("تحذير: هذه كلمة مرور ضعيفة", registration_html)
+        self.assertIn("تُقبل كلمة بسيطة من 4 أحرف أو أرقام", registration_html)
+        self.assertIn("تحذير: يمكنك المتابعة بهذه الكلمة", registration_html)
         self.assertIn("img/logo.png", registration_html)
-        self.assertIn('class="register-brand-logo"', registration_html)
+        self.assertIn('class="auth-brand-logo"', registration_html)
+        self.assertIn("الاسم الكامل", registration_html)
+        self.assertIn("تاريخ الميلاد", registration_html)
+        self.assertIn("إعادة تأكيد كلمة المرور", registration_html)
+        self.assertIn("data-toggle-password", registration_html)
+        self.assertNotIn('name="username"', registration_html)
         self.assertNotIn("text-anchor=\"middle\">A</text>", registration_html)
 
         with self.app.test_request_context(

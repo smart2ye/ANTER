@@ -1,162 +1,135 @@
 {% extends "base.html" %}
 {% block content %}
-
-<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card shadow-lg border-0 rounded-4 p-4" style="max-width: 460px; width: 100%; background: var(--card-bg);">
-        
+<div class="auth-page d-flex justify-content-center align-items-center">
+    <div class="card auth-card shadow-lg border-0 rounded-4 p-4">
         <div class="text-center mb-4">
             <div class="d-flex justify-content-center">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="شعار ANTER" class="register-brand-logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="شعار ANTER" class="auth-brand-logo">
             </div>
-            <h4 class="fw-bold mt-2">إنشاء حساب جديد</h4>
-            <p class="text-muted small">انضم إلى مجتمع ANTER</p>
+            <h4 class="fw-bold mt-3 mb-1">إنشاء حساب جديد</h4>
+            <p class="text-muted small mb-0">املأ المعلومات الأساسية، وسينشئ ANTER رابط حسابك تلقائياً.</p>
         </div>
 
-        <form method="POST">
+        <form method="POST" novalidate>
             {{ form.hidden_tag() }}
-            
+
             <div class="mb-3">
-                <label class="form-label fw-semibold small">{{ form.username.label }}</label>
+                <label class="form-label fw-semibold small">{{ form.name.label.text }}</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0" style="border-radius: 12px 0 0 12px;">
-                        <i class="fas fa-user text-muted"></i>
-                    </span>
-                    {{ form.username(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.username.errors else ""), 
-                                     placeholder="اختر اسم مستخدم", style="border-radius: 0 12px 12px 0;") }}
+                    <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-id-card text-muted"></i></span>
+                    {{ form.name(class="form-control border-start-0" + (" is-invalid" if form.name.errors else ""), placeholder="اكتب اسمك الكامل", autocomplete="name") }}
                 </div>
-                {% for error in form.username.errors %}
-                    <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
+                {% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">{{ form.gender.label.text }} <span class="text-muted fw-normal">(اختياري)</span></label>
+                    {{ form.gender(class="form-select" + (" is-invalid" if form.gender.errors else "")) }}
+                    {% for error in form.gender.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">{{ form.birth_date.label.text }} <span class="text-muted fw-normal">(اختياري)</span></label>
+                    {{ form.birth_date(type="date", class="form-control" + (" is-invalid" if form.birth_date.errors else ""), autocomplete="bday") }}
+                    {% for error in form.birth_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold small">{{ form.email.label }}</label>
+                <label class="form-label fw-semibold small">{{ form.phone.label.text }}</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0" style="border-radius: 12px 0 0 12px;">
-                        <i class="fas fa-envelope text-muted"></i>
-                    </span>
-                    {{ form.email(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.email.errors else ""), 
-                                  placeholder="example@email.com", style="border-radius: 0 12px 12px 0;") }}
+                    {{ form.country_code(class="form-select country-select") }}
+                    {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""), placeholder="مثال: 737254619", inputmode="tel", autocomplete="tel-national") }}
+                    <span class="input-group-text bg-transparent"><i class="fas fa-mobile-alt text-muted"></i></span>
                 </div>
-                {% for error in form.email.errors %}
-                    <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
+                <small class="form-text">اكتب رقم الجوال أو البريد الإلكتروني على الأقل.</small>
+                {% for error in form.phone.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold small">{{ form.name.label }}</label>
-            <!-- ========== رقم الهاتف ========== -->
-            <div class="mb-3">
-                <label class="form-label fw-semibold small">{{ form.phone.label }}</label>
+                <label class="form-label fw-semibold small">{{ form.email.label.text }}</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0" style="border-radius: 12px 0 0 12px; padding: 0 8px;">
-                        {{ form.country_code(class="form-select border-0 bg-transparent", style="min-width: 80px;") }}
-                    </span>
-                    {{ form.phone(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.phone.errors else ""), 
-                                  placeholder="مثال: 512345678", 
-                                  style="border-radius: 0 12px 12px 0;") }}
+                    <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-envelope text-muted"></i></span>
+                    {{ form.email(class="form-control border-start-0" + (" is-invalid" if form.email.errors else ""), placeholder="example@email.com", inputmode="email", autocomplete="email") }}
                 </div>
-                <div class="small text-muted mt-1">
-                    <i class="fas fa-info-circle"></i>
-                    <span>اختر مفتاح الدولة وأدخل رقم الهاتف (اختياري)</span>
-                </div>
-                {% for error in form.phone.errors %}
-                    <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
-            </div>
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0" style="border-radius: 12px 0 0 12px;">
-                        <i class="fas fa-id-card text-muted"></i>
-                    </span>
-                    {{ form.name(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.name.errors else ""), 
-                                 placeholder="الاسم الكامل", style="border-radius: 0 12px 12px 0;") }}
-                </div>
-                {% for error in form.name.errors %}
-                    <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
+                {% for error in form.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold small">{{ form.password.label }}</label>
+                <label class="form-label fw-semibold small">{{ form.password.label.text }}</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0" style="border-radius: 12px 0 0 12px;">
-                        <i class="fas fa-key text-muted"></i>
-                    </span>
-                    {{ form.password(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.password.errors else ""), 
-                                     placeholder="********", id="passwordInput", style="border-radius: 0 12px 12px 0;") }}
+                    <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-key text-muted"></i></span>
+                    {{ form.password(class="form-control border-start-0 border-end-0" + (" is-invalid" if form.password.errors else ""), id="passwordInput", placeholder="اكتب كلمة المرور", autocomplete="new-password") }}
+                    <button class="btn btn-outline-secondary password-toggle" type="button" data-toggle-password="passwordInput" aria-label="إظهار كلمة المرور" title="إظهار كلمة المرور"><i class="fas fa-eye"></i></button>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-1 gap-2">
-                    <small class="text-muted">يمكنك استخدام كلمة بسيطة من 4 أحرف أو أرقام. الأفضل استخدام عبارة أطول لا تشاركها مع أحد.</small>
+                    <small class="text-muted">تُقبل كلمة بسيطة من 4 أحرف أو أرقام، والأطول أكثر أماناً.</small>
                     <span id="passwordStrength" class="badge bg-secondary">لم تُكتب بعد</span>
                 </div>
                 <small id="passwordWarning" class="d-block mt-1" aria-live="polite"></small>
-                {% for error in form.password.errors %}
-                    <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
+                {% for error in form.password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold small">{{ form.confirm_password.label }}</label>
+                <label class="form-label fw-semibold small">{{ form.confirm_password.label.text }}</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0" style="border-radius: 12px 0 0 12px;">
-                        <i class="fas fa-check-double text-muted"></i>
-                    </span>
-                    {{ form.confirm_password(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.confirm_password.errors else""), 
-                                             placeholder="أعد كتابة كلمة المرور", style="border-radius: 0 12px 12px 0;") }}
+                    <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-check-double text-muted"></i></span>
+                    {{ form.confirm_password(class="form-control border-start-0 border-end-0" + (" is-invalid" if form.confirm_password.errors else ""), id="confirmPasswordInput", placeholder="أعد كتابة كلمة المرور", autocomplete="new-password") }}
+                    <button class="btn btn-outline-secondary password-toggle" type="button" data-toggle-password="confirmPasswordInput" aria-label="إظهار تأكيد كلمة المرور" title="إظهار كلمة المرور"><i class="fas fa-eye"></i></button>
                 </div>
-                {% for error in form.confirm_password.errors %}
-                    <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
+                {% for error in form.confirm_password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
             </div>
 
             <div class="mb-3 form-check">
                 {{ form.terms_agreed(class="form-check-input" + (" is-invalid" if form.terms_agreed.errors else "")) }}
                 {{ form.terms_agreed.label(class="form-check-label small") }}
-                <small class="d-block text-muted">
-                    <a href="{{ url_for('main.terms') }}" target="_blank">الشروط والأحكام</a> و 
-                    <a href="{{ url_for('main.privacy') }}" target="_blank">سياسة الخصوصية</a>
-                </small>
-                {% for error in form.terms_agreed.errors %}
-                    <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
+                <small class="d-block text-muted mt-1"><a href="{{ url_for('main.terms') }}" target="_blank">الشروط والأحكام</a> و <a href="{{ url_for('main.privacy') }}" target="_blank">سياسة الخصوصية</a></small>
+                {% for error in form.terms_agreed.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
             </div>
 
-            {{ form.submit(class="btn btn-primary w-100 py-2 fw-bold rounded-pill mb-3") }}
+            {{ form.submit(class="btn btn-primary w-100 py-2 fw-bold rounded-pill") }}
         </form>
 
         <hr class="my-3">
-        
-        <!-- زر تسجيل الدخول -->
-        <div class="text-center">
-            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill">
-                <i class="fas fa-sign-in-alt me-2"></i> لديك حساب؟ سجل الدخول
-            </a>
-        </div>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill"><i class="fas fa-sign-in-alt me-2"></i>لديك حساب؟ سجل الدخول</a>
     </div>
 </div>
 
 <style>
-    .register-brand-logo {
-        width: 76px;
-        height: 76px;
-        object-fit: contain;
-        border-radius: 18px;
-        box-shadow: 0 8px 22px rgba(24, 119, 242, .18);
-    }
+    .auth-page { min-height: 80vh; padding: 22px 12px; }
+    .auth-card { width: 100%; max-width: 480px; background: var(--card-bg); }
+    .auth-brand-logo { width: 76px; height: 76px; object-fit: contain; border-radius: 18px; box-shadow: 0 8px 22px rgba(24, 119, 242, .18); }
+    .input-group-text, .password-toggle { min-height: 42px; }
+    .country-select { max-width: 154px; }
+    .password-toggle { border-color: #ced4da; }
     @media (max-width: 420px) {
-        .register-brand-logo { width: 68px; height: 68px; }
+        .auth-page { padding: 16px 10px; align-items: flex-start !important; }
+        .auth-card { padding: 20px !important; }
+        .auth-brand-logo { width: 68px; height: 68px; }
+        .country-select { max-width: 132px; font-size: .84rem; }
     }
 </style>
 
 <script>
-    // مؤشر قوة كلمة المرور
     const passwordInput = document.getElementById('passwordInput');
     const strengthBadge = document.getElementById('passwordStrength');
+    const passwordWarning = document.getElementById('passwordWarning');
 
-    if (passwordInput && strengthBadge) {
-        passwordInput.addEventListener('input', function() {
-            const password = this.value;
-            const warning = document.getElementById('passwordWarning');
+    document.querySelectorAll('[data-toggle-password]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const input = document.getElementById(button.dataset.togglePassword);
+            if (!input) return;
+            const visible = input.type === 'text';
+            input.type = visible ? 'password' : 'text';
+            button.querySelector('i').className = visible ? 'fas fa-eye' : 'fas fa-eye-slash';
+            button.setAttribute('aria-label', visible ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور');
+            button.title = visible ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور';
+        });
+    });
+
+    if (passwordInput && strengthBadge && passwordWarning) {
+        passwordInput.addEventListener('input', () => {
+            const password = passwordInput.value;
             let strength = 0;
             if (password.length >= 4) strength++;
             if (password.length >= 8) strength++;
@@ -171,14 +144,14 @@
             strengthBadge.className = `badge ${colors[strength] || 'bg-success'}`;
 
             if (!password) {
-                warning.textContent = '';
-                warning.className = 'd-block mt-1';
+                passwordWarning.textContent = '';
+                passwordWarning.className = 'd-block mt-1';
             } else if (strength <= 2) {
-                warning.textContent = 'تحذير: هذه كلمة مرور ضعيفة ويمكنك المتابعة، لكن يُفضَّل جعلها أطول وإضافة أرقام أو رموز.';
-                warning.className = 'd-block mt-1 text-warning-emphasis';
+                passwordWarning.textContent = 'تحذير: يمكنك المتابعة بهذه الكلمة، لكن الأفضل استخدام كلمة أطول تتضمن حروفاً وأرقاماً.';
+                passwordWarning.className = 'd-block mt-1 text-warning-emphasis';
             } else {
-                warning.textContent = 'جيد، تبدو كلمة المرور أقوى.';
-                warning.className = 'd-block mt-1 text-success';
+                passwordWarning.textContent = 'جيد، تبدو كلمة المرور أقوى.';
+                passwordWarning.className = 'd-block mt-1 text-success';
             }
         });
     }

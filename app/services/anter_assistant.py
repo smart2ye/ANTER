@@ -103,6 +103,17 @@ def _direct_anter_reply(question: str) -> str | None:
     if any(marker in normalized for marker in identity_markers):
         return "أنا مساعد أنتر، المساعد الآلي داخل شبكة ANTER. أساعدك في فهم المنصة وصياغة المحتوى والردود بأسلوب مهذب."
 
+    technical_identity_markers = (
+        "انت groq", "أنت groq", "من groq", "grok", "gemini", "chatgpt", "chat gpt",
+        "من اي نموذج", "من أي نموذج", "ما النموذج", "اي نموذج", "أي نموذج",
+        "ما هي تقنيتك", "كيف تعمل تقنيا", "كيف تعمل تقنياً",
+    )
+    if any(marker in normalized for marker in technical_identity_markers):
+        return (
+            "أنا مساعد أنتر الرسمي داخل شبكة ANTER. لا أعرض تفاصيل التشغيل أو البنية التقنية داخل المحادثة؛ "
+            "تركيزي هو مساعدتك في استخدام المنصة وصياغة المحتوى والردود."
+        )
+
     mentions_anter = "anter" in normalized or "انتر" in normalized or "أنتر" in normalized
     if not mentions_anter:
         return None

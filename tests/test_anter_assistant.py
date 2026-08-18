@@ -268,6 +268,9 @@ class AnterAssistantTests(unittest.TestCase):
         registration_html = registration_page.get_data(as_text=True)
         self.assertIn("يمكنك استخدام كلمة بسيطة من 4 أحرف أو أرقام", registration_html)
         self.assertIn("تحذير: هذه كلمة مرور ضعيفة", registration_html)
+        self.assertIn("img/logo.png", registration_html)
+        self.assertIn('class="register-brand-logo"', registration_html)
+        self.assertNotIn("text-anchor=\"middle\">A</text>", registration_html)
 
         with self.app.test_request_context(
             "/auth/reset_password/test-token",

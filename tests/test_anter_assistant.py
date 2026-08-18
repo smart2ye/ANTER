@@ -263,6 +263,15 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertIsNotNone(user)
             self.assertTrue(user.is_following(db.session.get(User, self.assistant_id)))
 
+    def test_login_page_uses_responsive_anter_logo(self):
+        login_page = self.app.test_client().get("/auth/login")
+        login_html = login_page.get_data(as_text=True)
+
+        self.assertEqual(login_page.status_code, 200)
+        self.assertIn("img/logo.png", login_html)
+        self.assertIn('class="auth-brand-logo"', login_html)
+        self.assertNotIn("text-anchor=\"middle\">A</text>", login_html)
+
     def test_simple_password_is_accepted_with_ui_warning(self):
         registration_page = self.app.test_client().get("/auth/register")
         registration_html = registration_page.get_data(as_text=True)

@@ -7,6 +7,7 @@ from app.utils.helpers import log_user_activity, get_user_activity_summary, get_
 from app.utils.image_storage import prepare_image_data
 from app.services.anter_assistant import is_anter_assistant
 from datetime import datetime
+import re
 
 users_bp = Blueprint('users', __name__, url_prefix='/users')
 
@@ -126,6 +127,7 @@ def settings():
             return redirect(url_for('users.settings'))
         
         # تحديث المعلومات الشخصية
+        desired_username = request.form.get('username')
         gender = request.form.get('gender')
         birth_date_str = request.form.get('birth_date')
         bio = request.form.get('bio')
@@ -133,6 +135,23 @@ def settings():
         is_private = request.form.get('is_private') == 'on'
         message_privacy = request.form.get('message_privacy')
         
+        if desired_username is not None:
+            username = desired_username.strip().lstrip('@')
+            if is_anter_assistant(current_user):
+                flash('اسم مستخدم مساعد أنتر محجوز ولا يمكن تغييره.', 'danger')
+                return redirect(url_for('users.settings'))
+            if not re.fullmatch(r'[A-Za-z0-9_\u0600-\u06FF]{3,30}', username):
+                flash('اسم المستخدم يجب أن يتكون من 3 إلى 30 حرفاً أو رقماً، من دون مسافات. يمكن استخدام الشرطة السفلية _.', 'danger')
+                return redirect(url_for('users.settings'))
+            existing_user = User.query.filter(User.username.ilike(username)).first()
+            if existing_user and existing_user.id != current_user.id:
+                flash('اسم المستخدم هذا مستخدم بالفعل. جرّب اسماً آخر.', 'danger')
+                return redirect(url_for('users.settings'))
+            if username != current_user.username:
+                old_username = current_user.username
+                current_user.username = username
+                log_user_activity(current_user.id, 'username_change', {'from': old_username, 'to': username})
+
         if gender is not None:
             current_user.gender = gender
         if birth_date_str:
@@ -152,7 +171,7 @@ def settings():
         flash('تم تحديث الإعدادات بنجاح.', 'success')
         return redirect(url_for('users.settings'))
     
-    return render_template('settings.html')
+    return render_template('settings.html', is_anter_assistant=is_anter_assistant)
 
 @users_bp.route('/follow/<int:user_id>', methods=['POST'])
 @login_required

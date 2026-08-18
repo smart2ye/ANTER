@@ -314,6 +314,42 @@ class AnterAssistantTests(unittest.TestCase):
         )
         self.assertEqual(username_login_response.status_code, 302)
 
+    def test_user_can_change_username_from_settings_and_open_new_profile_link(self):
+        response = self.client.post(
+            "/users/settings",
+            data={"username": "abdulqader_anter"},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 302)
+
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            self.assertEqual(user.username, "abdulqader_anter")
+
+        profile_response = self.client.get("/users/abdulqader_anter")
+        self.assertEqual(profile_response.status_code, 200)
+        self.assertIn("abdulqader_anter", profile_response.get_data(as_text=True))
+
+    def test_username_settings_reject_duplicate_name(self):
+        with self.app.app_context():
+            duplicate = User(
+                username="taken_username",
+                email="taken-username@example.test",
+                name="اسم محجوز",
+                terms_agreed=True,
+            )
+            duplicate.set_password("1234")
+            db.session.add(duplicate)
+            db.session.commit()
+
+        response = self.client.post(
+            "/users/settings",
+            data={"username": "taken_username"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("اسم المستخدم هذا مستخدم بالفعل", response.get_data(as_text=True))
+
     def test_login_page_uses_responsive_anter_logo(self):
         login_page = self.app.test_client().get("/auth/login")
         login_html = login_page.get_data(as_text=True)

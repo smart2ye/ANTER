@@ -30,6 +30,15 @@
     <div class="mt-4">
         <h6 class="border-bottom pb-2"><i class="fas fa-user-edit"></i> المعلومات الشخصية</h6>
         <form method="POST" action="{{ url_for('users.settings') }}">
+            <div class="mb-3">
+                <label class="form-label fw-semibold"><i class="fas fa-at text-primary"></i> اسم المستخدم ورابط الملف الشخصي</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light">@</span>
+                    <input type="text" name="username" class="form-control" value="{{ current_user.username }}" minlength="3" maxlength="30" pattern="[A-Za-z0-9_\u0600-\u06FF]+" autocomplete="username" dir="auto" {% if is_anter_assistant(current_user) %}readonly{% endif %}>
+                </div>
+                <small class="form-text text-muted">اختر اسماً من 3 إلى 30 حرفاً أو رقماً، من دون مسافات. يمكن استخدام الشرطة السفلية _. رابطك سيكون: {{ request.host_url.rstrip('/') }}/users/{{ current_user.username }}</small>
+                {% if is_anter_assistant(current_user) %}<small class="d-block text-warning mt-1">اسم مستخدم مساعد أنتر محجوز للحساب الرسمي.</small>{% endif %}
+            </div>
             <div class="mb-2">
                 <label class="form-label">الجنس</label>
                 <select name="gender" class="form-control">

@@ -18,7 +18,7 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 from app import _get_admin_path, create_app
 from app.extensions import db
 from app.forms.auth import ResetPasswordForm
-from app.models import AssistantDailyPublication, AssistantMemory, Follow, Message, Notification, Post, User
+from app.models import AssistantDailyPublication, AssistantMemory, Follow, Message, Notification, Post, Report, User
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
@@ -98,6 +98,45 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertNotIn("history", kwargs["json"])
         self.assertNotIn("Groq", answer)
         self.assertNotIn("qwen", answer.casefold())
+
+    def test_report_receipt_is_sent_by_assistant_and_queued_for_human_review(self):
+        with self.app.app_context():
+            post = Post(
+                content='منشور اختبار البلاغ',
+                author_id=self.assistant_id,
+                public_id='p-report-assistant-test',
+            )
+            db.session.add(post)
+            db.session.commit()
+            post_id = post.id
+
+        response = self.client.post(
+            '/report',
+            json={
+                'post_id': post_id,
+                'reason': 'spam',
+                'details': 'تفاصيل اختبارية آمنة.',
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()['success'])
+
+        with self.app.app_context():
+            report = Report.query.filter_by(reporter_id=self.user_id, post_id=post_id).first()
+            self.assertIsNotNone(report)
+            receipt = Message.query.filter_by(
+                sender_id=self.assistant_id,
+                receiver_id=self.user_id,
+            ).order_by(Message.id.desc()).first()
+            self.assertIsNotNone(receipt)
+            self.assertIn('تم استلام بلاغك رقم', receipt.content)
+            self.assertIn('تدخل بشري', receipt.content)
+            review_inbox = Message.query.filter_by(
+                sender_id=self.user_id,
+                receiver_id=self.assistant_id,
+            ).order_by(Message.id.desc()).first()
+            self.assertIsNotNone(review_inbox)
+            self.assertIn(f'بلاغ جديد رقم {report.id}', review_inbox.content)
 
     def test_provider_error_does_not_expose_groq_or_model(self):
         fake_response = Mock(status_code=429)
@@ -271,6 +310,12 @@ class AnterAssistantTests(unittest.TestCase):
                 self.assertEqual(avatar_url(user), "/static/img/default_avatar_male.png")
             self.assertEqual(user.birth_date.isoformat(), "1997-05-20")
             self.assertTrue(user.is_following(db.session.get(User, self.assistant_id)))
+            welcome = Message.query.filter_by(
+                sender_id=self.assistant_id,
+                receiver_id=user.id,
+            ).order_by(Message.id.desc()).first()
+            self.assertIsNotNone(welcome)
+            self.assertIn('مرحباً بك في ANTER', welcome.content)
 
         login_response = anonymous_client.post(
             "/auth/login",

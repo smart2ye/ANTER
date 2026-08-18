@@ -5,6 +5,7 @@ from app.models import Post, Comment, CommentLike, Like, Notification, User, Rep
 from app.forms.post import PostForm
 from app.utils.helpers import extract_hashtags, allowed_audio_file, extract_link_metadata as extract_safe_link_metadata
 from app.utils.image_storage import prepare_image_data
+from app.services.anter_user_messages import send_report_receipt
 
 from datetime import datetime
 import os
@@ -272,28 +273,57 @@ def repost(post_id):
     db.session.commit()
     return jsonify({'reposted': reposted, 'count': post.reposts.count()})
 
+@posts_bp.route('/report', methods=['POST'])
 @posts_bp.route('/report/<int:post_id>', methods=['POST'])
 @login_required
 @csrf.exempt
-def report(post_id):
-    post = Post.query.get_or_404(post_id)
-    reason = request.form.get('reason', '').strip()
-    
-    if not reason:
-        flash('يرجى كتابة سبب التبليغ', 'danger')
-        return redirect(url_for('posts.view_post', public_id=post.public_id))
-    
-    # التحقق من عدم وجود بلاغ مكرر
-    existing = Report.query.filter_by(user_id=current_user.id, post_id=post_id).first()
+def report(post_id=None):
+    """Store a report and acknowledge it through the official assistant account."""
+    payload = request.get_json(silent=True) or {}
+    is_json_request = request.is_json or bool(payload)
+
+    if post_id is None:
+        post_id = payload.get('post_id')
+    try:
+        post_id = int(post_id)
+    except (TypeError, ValueError):
+        post_id = None
+
+    reason = (payload.get('reason') if is_json_request else request.form.get('reason', '')).strip()
+    details = (payload.get('details') if is_json_request else request.form.get('details', '')).strip()
+    post = Post.query.get_or_404(post_id) if post_id else None
+
+    if not post or not reason:
+        message = 'يرجى اختيار منشور وسبب واضح للبلاغ.'
+        if is_json_request:
+            return jsonify({'success': False, 'message': message}), 400
+        flash(message, 'danger')
+        return redirect(url_for('main.index'))
+
+    existing = Report.query.filter_by(reporter_id=current_user.id, post_id=post.id).first()
     if existing:
-        flash('لقد قمت بالفعل بتبليغ عن هذا المنشور', 'warning')
+        message = 'لقد أرسلت بلاغاً سابقاً عن هذا المنشور.'
+        if is_json_request:
+            return jsonify({'success': False, 'message': message}), 409
+        flash(message, 'warning')
         return redirect(url_for('posts.view_post', public_id=post.public_id))
-    
-    report = Report(user_id=current_user.id, post_id=post_id, reason=reason)
+
+    report = Report(
+        reporter_id=current_user.id,
+        post_id=post.id,
+        reason=reason[:200],
+        details=details[:2000],
+        status='pending',
+    )
     db.session.add(report)
+    db.session.flush()
+    send_report_receipt(current_user, report, post)
     db.session.commit()
-    
-    flash('تم تبليغ المنشور، سيتم مراجعته من قبل الإدارة', 'success')
+
+    message = 'تم استلام البلاغ وإحالته للمراجعة البشرية.'
+    if is_json_request:
+        return jsonify({'success': True, 'message': message, 'report_id': report.id})
+    flash(message, 'success')
     return redirect(url_for('posts.view_post', public_id=post.public_id))
 
 @posts_bp.route('/hide/<int:post_id>', methods=['POST'])

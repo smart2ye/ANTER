@@ -6,6 +6,7 @@ from app.forms.auth import LoginForm, RegistrationForm, ResetPasswordRequestForm
 from itsdangerous import URLSafeTimedSerializer
 from app.utils.helpers import log_user_activity
 from app.services.anter_assistant import ensure_anter_assistant_user, follow_anter_assistant_for_user
+from app.services.anter_user_messages import send_welcome_message
 from app.utils.public_ids import generate_public_id
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -72,6 +73,7 @@ def register():
         db.session.add(user)
         db.session.flush()
         follow_anter_assistant_for_user(user, assistant)
+        send_welcome_message(user)
         db.session.commit()
         flash('✅ تم التسجيل بنجاح، يمكنك الدخول الآن.', 'success')
         return redirect(url_for('auth.login'))

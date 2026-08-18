@@ -317,7 +317,7 @@
         var data = {};
         formData.forEach(function(value, key) { data[key] = value; });
 
-        fetch('/posts/report', {
+        fetch('/report', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)

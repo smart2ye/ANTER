@@ -18,7 +18,7 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 from app import create_app
 from app.extensions import db
 from app.forms.auth import ResetPasswordForm
-from app.models import AssistantDailyPublication, AssistantMemory, Follow, Message, Post, User
+from app.models import AssistantDailyPublication, AssistantMemory, Follow, Message, Notification, Post, User
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
@@ -423,6 +423,24 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("المساعد الرسمي لشبكة ANTER", page)
         self.assertIn("متصل الآن", page)
+
+    def test_notifications_page_handles_missing_actor_without_server_error(self):
+        with self.app.app_context():
+            stale_notification = Notification(
+                user_id=self.user_id,
+                actor_id=999999,
+                action="message",
+                is_read=False,
+            )
+            db.session.add(stale_notification)
+            db.session.commit()
+
+        response = self.client.get("/notifications/")
+        html = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("حساب غير متاح", html)
+        self.assertIn("notification-missing-avatar", html)
 
     def test_messages_inbox_shows_online_friends_strip(self):
         with self.app.app_context():

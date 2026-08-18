@@ -9,23 +9,28 @@
     {% if notifications %}
         <div class="list-group">
             {% for notif in notifications %}
+                {% set actor = notif.actor %}
                 {% set link = '#' %}
                 {% if notif.action in ['like', 'comment', 'reply'] and notif.post %}
                     {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
-                {% elif notif.action == 'follow' %}
-                    {% set link = url_for('users.profile', username=notif.actor.username) %}
-                {% elif notif.action in ['message', 'voice_message', 'voice_call'] %}
-                    {% set link = url_for('messages.chat', user_id=notif.actor.id) %}
+                {% elif notif.action == 'follow' and actor %}
+                    {% set link = url_for('users.profile', username=actor.username) %}
+                {% elif notif.action in ['message', 'voice_message', 'voice_call'] and actor %}
+                    {% set link = url_for('messages.chat', user_id=actor.id) %}
                 {% endif %}
 
-                <a href="{{ link }}" class="list-group-item list-group-item-action notification-item {% if not notif.is_read %}unread{% endif %}" 
+                <a href="{{ link }}" class="list-group-item list-group-item-action notification-item {% if not notif.is_read %}unread{% endif %}"
                    data-id="{{ notif.id }}" onclick="markAsRead({{ notif.id }})">
                     <div class="d-flex align-items-center gap-3">
-                        <img src="{{ avatar_url(notif.actor) }}"
-                             class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                        {% if actor %}
+                            <img src="{{ avatar_url(actor) }}" alt="صورة {{ actor.name or actor.username }}"
+                                 class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                        {% else %}
+                            <div class="notification-missing-avatar" aria-label="حساب غير متاح"><i class="fas fa-user-slash"></i></div>
+                        {% endif %}
                         <div class="flex-grow-1">
                             <div class="fw-bold {% if not notif.is_read %}text-primary{% endif %}">
-                                {{ notif.actor.name }}
+                                {% if actor %}{{ actor.name or actor.username }}{% else %}<span class="text-muted">حساب غير متاح</span>{% endif %}
                                 {% if notif.action == 'like' %}
                                     <span class="text-muted fw-normal">أعجب بمنشورك</span>
                                 {% elif notif.action == 'comment' %}
@@ -40,6 +45,8 @@
                                     <span class="text-muted fw-normal">أرسل لك رسالة صوتية</span>
                                 {% elif notif.action == 'voice_call' %}
                                     <span class="text-muted fw-normal">اتصل بك صوتيًا</span>
+                                {% else %}
+                                    <span class="text-muted fw-normal">لديك إشعار سابق</span>
                                 {% endif %}
                             </div>
                             <small class="text-muted">{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
@@ -60,6 +67,10 @@
     {% endif %}
 </div>
 
+<style>
+    .notification-missing-avatar { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 50%; display: grid; place-items: center; background: #edf1f7; color: #8795a8; }
+</style>
+
 <script>
     function markAsRead(notifId) {
         fetch('/notifications/mark_read/' + notifId, {
@@ -69,23 +80,21 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                // تحديث العداد
                 fetch('/notifications/unread_count')
                     .then(r => r.json())
                     .then(d => {
                         const badge = document.querySelector('.badge.bg-primary.rounded-pill');
                         if (badge) badge.textContent = d.count;
-                        // تحديث البادج في الشريط العلوي
                         updateBadge();
                     });
-                // إزالة علامة "جديد" من العنصر
                 const item = document.querySelector(`.notification-item[data-id="${notifId}"]`);
                 if (item) {
                     item.classList.remove('unread');
                     item.querySelector('.badge.bg-danger')?.remove();
                 }
             }
-        });
+        })
+        .catch(() => {});
     }
 </script>
 {% endblock %}

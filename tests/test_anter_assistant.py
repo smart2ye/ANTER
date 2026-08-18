@@ -424,6 +424,23 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn("المساعد الرسمي لشبكة ANTER", page)
         self.assertIn("متصل الآن", page)
 
+    def test_messages_inbox_shows_online_friends_strip(self):
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            assistant = db.session.get(User, self.assistant_id)
+            user.follow(assistant)
+            db.session.commit()
+
+        response = self.client.get("/messages/")
+        html = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("الأصدقاء المتصلون", html)
+        self.assertIn("online-friends-scroll", html)
+        self.assertIn(f"/messages/{self.assistant_id}", html)
+        self.assertIn("مساعد أنتر", html)
+        self.assertIn("online-presence-dot", html)
+
     def test_sending_text_to_assistant_stores_assistant_reply(self):
         with patch(
             "app.routes.messages.get_assistant_reply",

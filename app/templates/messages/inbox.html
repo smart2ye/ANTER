@@ -1,37 +1,94 @@
 {% extends "base.html" %}
 {% block content %}
-<h5><i class="fas fa-envelope text-primary"></i> الرسائل</h5>
-{% if conversations %}
-    {% for user, last_msg in conversations %}
-    <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="text-decoration-none text-dark">
-        <div class="card mb-2 shadow-sm rounded-4 border-0">
-            <div class="card-body d-flex align-items-center">
-                <img src="{{ avatar_url(user) }}" width="50" height="50" class="rounded-circle me-2" style="object-fit: cover;">
-                <div class="flex-grow-1">
-                    <strong>{{ user.name }}</strong>
-                    <p class="text-muted small mb-0">
-                    <div class="post-status mt-1">
-                        {{ get_status_icon(user)|safe }}
+<div class="messages-inbox-page">
+    <div class="messages-inbox-heading d-flex align-items-center mb-3">
+        <h5 class="mb-0"><i class="fas fa-envelope text-primary"></i> الرسائل</h5>
+    </div>
+
+    <section class="online-friends-card mb-4" aria-labelledby="online-friends-title">
+        <div class="d-flex align-items-center justify-content-between px-1 mb-2">
+            <h6 id="online-friends-title" class="mb-0 fw-bold"><span class="online-title-dot"></span>الأصدقاء المتصلون</h6>
+            {% if online_friends %}<span class="small text-muted">{{ online_friends|length }} متصل</span>{% endif %}
+        </div>
+
+        {% if online_friends %}
+        <div class="online-friends-scroll" role="list" aria-label="الأصدقاء المتصلون الآن">
+            {% for user in online_friends %}
+            <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="online-friend" role="listitem" title="مراسلة {{ user.name or user.username }}">
+                <span class="online-avatar-wrap">
+                    <img src="{{ avatar_url(user) }}" alt="صورة {{ user.name or user.username }}" class="online-friend-avatar">
+                    <span class="online-presence-dot" title="متصل الآن"></span>
+                </span>
+                <span class="online-friend-name">{{ (user.name or user.username)|truncate(11, True, '') }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="online-friends-empty">
+            <i class="fas fa-user-clock"></i>
+            <span>لا يوجد أصدقاء متصلون الآن.</span>
+        </div>
+        {% endif %}
+    </section>
+
+    <section aria-labelledby="conversations-title">
+        <h6 id="conversations-title" class="fw-bold mb-2">المحادثات</h6>
+        {% if conversations %}
+            {% for user, last_msg in conversations %}
+            <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="conversation-row text-decoration-none text-dark">
+                <div class="conversation-avatar-wrap">
+                    <img src="{{ avatar_url(user) }}" width="52" height="52" class="rounded-circle" style="object-fit: cover;" alt="صورة {{ user.name or user.username }}">
+                    {% if get_user_status(user)['status'] == 'online' %}<span class="conversation-online-dot"></span>{% endif %}
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        <strong class="conversation-name text-truncate">{{ user.name or user.username }}</strong>
+                        <small class="text-muted text-nowrap">{{ last_msg.created_at.strftime('%H:%M') }}</small>
                     </div>
-                        {% if last_msg.sender_id == current_user.id %}
-                            <span class="text-muted">أنت: </span>
-                        {% endif %}
-                        {% if last_msg.audio_data or last_msg.audio_path %}
-                            رسالة صوتية
-                        {% else %}
-                            {{ last_msg.content[:50] }}
-                        {% endif %}
+                    <p class="text-muted small mb-0 text-truncate">
+                        {% if last_msg.sender_id == current_user.id %}<span>أنت: </span>{% endif %}
+                        {% if last_msg.audio_data or last_msg.audio_path %}رسالة صوتية{% else %}{{ last_msg.content[:70] }}{% endif %}
                     </p>
                 </div>
-                <small class="text-muted">{{ last_msg.created_at.strftime('%H:%M') }}</small>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="text-center text-muted mt-4 py-4">
+                <i class="fas fa-inbox fa-3x mb-2"></i>
+                <p class="mb-0">لا توجد محادثات بعد.</p>
+                <small>ابدأ مراسلة صديق من قائمة المتصلين.</small>
             </div>
-        </div>
-    </a>
-    {% endfor %}
-{% else %}
-    <div class="text-center text-muted mt-4">
-        <i class="fas fa-inbox fa-3x mb-2"></i>
-        <p>لا توجد محادثات بعد.</p>
-    </div>
-{% endif %}
+        {% endif %}
+    </section>
+</div>
+
+<style>
+    .messages-inbox-page { max-width: 760px; margin: 0 auto; }
+    .online-friends-card { background: var(--card-bg, #fff); border: 1px solid rgba(24, 119, 242, .12); border-radius: 18px; padding: 14px 12px 12px; box-shadow: 0 5px 18px rgba(20, 47, 88, .06); }
+    .online-title-dot { display: inline-block; width: 9px; height: 9px; margin-left: 6px; border-radius: 50%; background: #26a649; box-shadow: 0 0 0 3px rgba(38, 166, 73, .13); }
+    .online-friends-scroll { display: flex; gap: 13px; overflow-x: auto; padding: 6px 2px 4px; scrollbar-width: thin; scroll-snap-type: x proximity; }
+    .online-friends-scroll::-webkit-scrollbar { height: 4px; }
+    .online-friends-scroll::-webkit-scrollbar-thumb { background: #cbd8ee; border-radius: 999px; }
+    .online-friend { width: 66px; flex: 0 0 66px; text-align: center; color: inherit; text-decoration: none; scroll-snap-align: start; }
+    .online-avatar-wrap, .conversation-avatar-wrap { position: relative; display: inline-block; }
+    .online-friend-avatar { width: 58px; height: 58px; object-fit: cover; border-radius: 50%; border: 2px solid #e7f0ff; transition: transform .18s ease, border-color .18s ease; }
+    .online-friend:hover .online-friend-avatar, .online-friend:focus .online-friend-avatar { transform: translateY(-2px); border-color: #1877f2; }
+    .online-presence-dot, .conversation-online-dot { position: absolute; border-radius: 50%; background: #26a649; border: 3px solid #fff; }
+    .online-presence-dot { width: 17px; height: 17px; left: 0; bottom: 1px; }
+    .online-friend-name { display: block; margin-top: 5px; font-size: .78rem; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .online-friends-empty { color: var(--text-muted, #6c757d); background: #f7f9fc; border-radius: 12px; padding: 13px; text-align: center; font-size: .9rem; }
+    .online-friends-empty i { color: #8ba7cf; margin-left: 6px; }
+    .conversation-row { display: flex; align-items: center; gap: 11px; padding: 12px 10px; margin-bottom: 5px; border-radius: 15px; transition: background .18s ease, transform .18s ease; }
+    .conversation-row:hover, .conversation-row:focus { background: #f3f8ff; transform: translateX(-2px); }
+    .conversation-online-dot { width: 15px; height: 15px; left: 0; bottom: 1px; }
+    .conversation-name { min-width: 0; }
+    .min-w-0 { min-width: 0; }
+    @media (max-width: 420px) {
+        .online-friends-card { margin-left: -3px; margin-right: -3px; border-radius: 15px; }
+        .online-friend { width: 61px; flex-basis: 61px; }
+        .online-friend-avatar { width: 54px; height: 54px; }
+        .online-friends-scroll { gap: 10px; }
+        .conversation-row { padding: 10px 4px; }
+    }
+</style>
 {% endblock %}

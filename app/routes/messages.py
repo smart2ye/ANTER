@@ -13,7 +13,7 @@ from sqlalchemy import or_
 
 from app.extensions import db, csrf
 from app.models import Message, User, Notification, CallSignal, TypingState, Follow
-from app.utils.helpers import get_status_icon, allowed_audio_file
+from app.utils.helpers import get_status_icon, get_user_status, allowed_audio_file
 from app.utils.image_storage import prepare_image_data
 from app.services.anter_assistant import (
     ASSISTANT_TEXT_ONLY_REPLY,
@@ -67,10 +67,23 @@ def inbox():
     ]
     conversations.sort(key=lambda item: item[1].created_at, reverse=True)
 
+    # يعرض الشريط الحسابات التي يتابعها المستخدم وهي متصلة الآن. النتيجة محدودة
+    # لتبقى الصفحة خفيفة وسريعة على الهاتف، وتُفتح المحادثة مباشرة عند الضغط عليها.
+    followed_users = (
+        User.query.join(Follow, Follow.followed_id == User.id)
+        .filter(Follow.follower_id == current_user.id)
+        .order_by(User.last_seen.desc())
+        .limit(30)
+        .all()
+    )
+    online_friends = [user for user in followed_users if get_user_status(user)['status'] == 'online']
+
     return render_template(
         'messages/inbox.html',
         conversations=conversations,
+        online_friends=online_friends,
         get_status_icon=get_status_icon,
+        get_user_status=get_user_status,
     )
 
 

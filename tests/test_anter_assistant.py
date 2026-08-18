@@ -17,6 +17,7 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 
 from app import create_app
 from app.extensions import db
+from app.forms.auth import ResetPasswordForm
 from app.models import AssistantDailyPublication, AssistantMemory, Follow, Message, Post, User
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
@@ -249,8 +250,8 @@ class AnterAssistantTests(unittest.TestCase):
                 "name": "متابع جديد",
                 "country_code": "+967",
                 "phone": "",
-                "password": "ValidPass1!",
-                "confirm_password": "ValidPass1!",
+                "password": "1234",
+                "confirm_password": "1234",
                 "terms_agreed": "y",
             },
             follow_redirects=False,
@@ -261,6 +262,20 @@ class AnterAssistantTests(unittest.TestCase):
             user = User.query.filter_by(username="new_assistant_follower").first()
             self.assertIsNotNone(user)
             self.assertTrue(user.is_following(db.session.get(User, self.assistant_id)))
+
+    def test_simple_password_is_accepted_with_ui_warning(self):
+        registration_page = self.app.test_client().get("/auth/register")
+        registration_html = registration_page.get_data(as_text=True)
+        self.assertIn("يمكنك استخدام كلمة بسيطة من 4 أحرف أو أرقام", registration_html)
+        self.assertIn("تحذير: هذه كلمة مرور ضعيفة", registration_html)
+
+        with self.app.test_request_context(
+            "/auth/reset_password/test-token",
+            method="POST",
+            data={"password": "1234", "confirm_password": "1234"},
+        ):
+            form = ResetPasswordForm(meta={"csrf": False})
+            self.assertTrue(form.validate())
 
     def test_daily_assistant_publication_is_created_once_per_day(self):
         with self.app.app_context():

@@ -88,10 +88,11 @@
                     {{ form.password(class="form-control border-start-0 rounded-3" + (" is-invalid" if form.password.errors else ""), 
                                      placeholder="********", id="passwordInput", style="border-radius: 0 12px 12px 0;") }}
                 </div>
-                <div class="d-flex justify-content-between mt-1">
-                    <small class="text-muted">يجب أن تحتوي على 8 أحرف، حرف كبير، رقم، رمز خاص</small>
-                    <span id="passwordStrength" class="badge bg-secondary">ضعيف</span>
+                <div class="d-flex justify-content-between align-items-center mt-1 gap-2">
+                    <small class="text-muted">يمكنك استخدام كلمة بسيطة من 4 أحرف أو أرقام. الأفضل استخدام عبارة أطول لا تشاركها مع أحد.</small>
+                    <span id="passwordStrength" class="badge bg-secondary">لم تُكتب بعد</span>
                 </div>
+                <small id="passwordWarning" class="d-block mt-1" aria-live="polite"></small>
                 {% for error in form.password.errors %}
                     <div class="invalid-feedback d-block">{{ error }}</div>
                 {% endfor %}
@@ -145,18 +146,30 @@
     if (passwordInput && strengthBadge) {
         passwordInput.addEventListener('input', function() {
             const password = this.value;
+            const warning = document.getElementById('passwordWarning');
             let strength = 0;
+            if (password.length >= 4) strength++;
             if (password.length >= 8) strength++;
-            if (/[a-z]/.test(password)) strength++;
+            if (/[a-z\u0600-\u06FF]/.test(password)) strength++;
             if (/[A-Z]/.test(password)) strength++;
             if (/[0-9]/.test(password)) strength++;
-            if (/[@$!%*?&]/.test(password)) strength++;
+            if (/[^\w\s]/.test(password)) strength++;
 
-            const levels = ['ضعيف', 'ضعيف', 'متوسط', 'جيد', 'قوي جداً'];
-            const colors = ['bg-secondary', 'bg-danger', 'bg-warning', 'bg-info', 'bg-success'];
-            
-            strengthBadge.textContent = levels[strength] || 'ضعيف';
-            strengthBadge.className = `badge ${colors[strength] || 'bg-secondary'}`;
+            const levels = ['لم تُكتب بعد', 'ضعيف', 'ضعيف', 'متوسط', 'جيد', 'قوي'];
+            const colors = ['bg-secondary', 'bg-danger', 'bg-danger', 'bg-warning', 'bg-info', 'bg-success'];
+            strengthBadge.textContent = levels[strength] || 'قوي';
+            strengthBadge.className = `badge ${colors[strength] || 'bg-success'}`;
+
+            if (!password) {
+                warning.textContent = '';
+                warning.className = 'd-block mt-1';
+            } else if (strength <= 2) {
+                warning.textContent = 'تحذير: هذه كلمة مرور ضعيفة ويمكنك المتابعة، لكن يُفضَّل جعلها أطول وإضافة أرقام أو رموز.';
+                warning.className = 'd-block mt-1 text-warning-emphasis';
+            } else {
+                warning.textContent = 'جيد، تبدو كلمة المرور أقوى.';
+                warning.className = 'd-block mt-1 text-success';
+            }
         });
     }
 </script>

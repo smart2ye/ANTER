@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, Regexp, Optional
+from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, Optional
 from app.models import User
 import re
 
@@ -60,11 +60,7 @@ class RegistrationForm(FlaskForm):
     
     password = PasswordField('كلمة المرور', validators=[
         DataRequired(),
-        Length(min=8, message='يجب أن تكون كلمة المرور 8 أحرف على الأقل.'),
-        Regexp(
-            r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
-            message='يجب أن تحتوي كلمة المرور على: حرف كبير، حرف صغير، رقم، ورمز خاص (@$!%*?&).'
-        )
+        Length(min=4, message='اكتب كلمة مرور من 4 أحرف أو أرقام على الأقل.')
     ])
     confirm_password = PasswordField('تأكيد كلمة المرور', validators=[DataRequired(), EqualTo('password')])
     terms_agreed = BooleanField('أوافق على الشروط والأحكام وسياسة الخصوصية', validators=[DataRequired(message='يجب الموافقة على الشروط والأحكام.')])
@@ -89,16 +85,6 @@ class RegistrationForm(FlaskForm):
             if user:
                 raise ValidationError('رقم الهاتف مستخدم بالفعل.')
 
-    def validate_password(self, password):
-        if not re.search(r'[A-Z]', password.data):
-            raise ValidationError('يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل.')
-        if not re.search(r'[a-z]', password.data):
-            raise ValidationError('يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل.')
-        if not re.search(r'\d', password.data):
-            raise ValidationError('يجب أن تحتوي كلمة المرور على رقم واحد على الأقل.')
-        if not re.search(r'[@$!%*?&]', password.data):
-            raise ValidationError('يجب أن تحتوي كلمة المرور على رمز خاص واحد على الأقل (@$!%*?&).')
-
 # ============================================
 # نماذج إعادة تعيين كلمة المرور
 # ============================================
@@ -109,11 +95,7 @@ class ResetPasswordRequestForm(FlaskForm):
 class ResetPasswordForm(FlaskForm):
     password = PasswordField('كلمة المرور الجديدة', validators=[
         DataRequired(),
-        Length(min=8, message='يجب أن تكون كلمة المرور 8 أحرف على الأقل.'),
-        Regexp(
-            r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
-            message='يجب أن تحتوي كلمة المرور على: حرف كبير، حرف صغير، رقم، ورمز خاص (@$!%*?&).'
-        )
+        Length(min=4, message='اكتب كلمة مرور من 4 أحرف أو أرقام على الأقل.')
     ])
     confirm_password = PasswordField('تأكيد كلمة المرور', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('تغيير كلمة المرور')

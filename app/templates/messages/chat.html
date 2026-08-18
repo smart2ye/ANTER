@@ -59,7 +59,7 @@
                                 {% endif %}
 
                                 {% if msg.content %}
-                                    <p class="message-text mb-1">{{ msg.content }}</p>
+                                    <div class="message-text mb-1{% if is_anter_assistant and msg.sender_id == other.id %} assistant-rich-text{% endif %}">{{ msg.content }}</div>
                                 {% endif %}
                                 
                                 {% if msg.attachment_data %}
@@ -219,6 +219,23 @@
     .is-sent .quoted-message .text-primary { color: #fff !important; }
     .is-sent .quoted-message .text-muted { color: rgba(255,255,255,0.8) !important; }
     .message-meta { display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: 4px; font-size: 0.65rem; opacity: 0.8; }
+    .assistant-rich-text { direction: rtl; text-align: right; line-height: 1.82; overflow-wrap: anywhere; }
+    .assistant-rich-text > *:last-child { margin-bottom: 0; }
+    .assistant-rich-paragraph { margin: 0 0 9px; font-size: .92rem; line-height: 1.82; }
+    .assistant-rich-title { margin: 2px 0 10px; color: #0e4d92; font-size: 1.06rem; font-weight: 800; line-height: 1.55; }
+    .assistant-rich-subtitle { margin: 12px 0 6px; color: #174f8c; font-size: .96rem; font-weight: 750; line-height: 1.6; }
+    .assistant-rich-list { margin: 7px 0 10px; padding-right: 1.25rem; padding-left: 0; }
+    .assistant-rich-list li { margin-bottom: 7px; padding-right: 2px; font-size: .91rem; line-height: 1.75; }
+    .assistant-rich-text strong { font-weight: 800; color: #123f71; }
+    .is-sent .assistant-rich-title, .is-sent .assistant-rich-subtitle, .is-sent .assistant-rich-text strong { color: inherit; }
+    @media (max-width: 480px) {
+        .chat-box { height: min(62vh, 560px); padding: 12px 9px; }
+        .message-bubble { max-width: 92%; padding: 10px 12px; }
+        .assistant-rich-paragraph { font-size: .88rem; line-height: 1.78; }
+        .assistant-rich-title { font-size: 1rem; }
+        .assistant-rich-subtitle { font-size: .92rem; }
+        .assistant-rich-list li { font-size: .87rem; }
+    }
     .reply-preview-container { background: var(--card-bg, #fff); border-top: 1px solid #eee; border-radius: 12px 12px 0 0; }
     .msg-context-menu { position: absolute; background: var(--card-bg, #fff); width: 180px; z-index: 2000; border: 1px solid #ddd; padding: 5px 0; }
     .menu-item { width: 100%; text-align: right; padding: 8px 15px; border: none; background: none; font-size: 0.9rem; transition: background 0.2s; color: inherit; }
@@ -264,6 +281,79 @@ var activeCallId = null;
 var incomingInvite = null;
 var pendingCandidates = [];
 var pollingInProgress = false;
+
+function appendAssistantInlineText(container, text) {
+    const parts = String(text || '').split(/(\*\*[^*]+\*\*)/g);
+    parts.forEach((part) => {
+        const bold = part.match(/^\*\*([^*]+)\*\*$/);
+        if (bold) {
+            const strong = document.createElement('strong');
+            strong.textContent = bold[1].trim();
+            container.appendChild(strong);
+        } else if (part) {
+            container.appendChild(document.createTextNode(part.replace(/\*\*/g, '')));
+        }
+    });
+}
+
+function formatAssistantMessage(messageElement) {
+    const rawText = (messageElement.textContent || '').replace(/\r/g, '').trim();
+    if (!rawText || messageElement.dataset.formatted === 'true') return;
+
+    const lines = rawText.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+    const fragment = document.createDocumentFragment();
+    let activeList = null;
+    let activeListType = '';
+
+    const finishList = () => {
+        activeList = null;
+        activeListType = '';
+    };
+    const addParagraph = (text, className) => {
+        const paragraph = document.createElement(className === 'assistant-rich-title' ? 'h2' : className === 'assistant-rich-subtitle' ? 'h3' : 'p');
+        paragraph.className = className;
+        appendAssistantInlineText(paragraph, text);
+        fragment.appendChild(paragraph);
+    };
+
+    lines.forEach((line) => {
+        const heading = line.match(/^#{1,3}\s+(.+)$/);
+        const ordered = line.match(/^(\d+)[.)]\s+(.+)$/);
+        const unordered = line.match(/^(?:[-•▪])\s+(.+)$/);
+        const boldOnly = line.match(/^\*\*([^*]+)\*\*:?[\s]*$/);
+
+        if (heading) {
+            finishList();
+            addParagraph(heading[1], 'assistant-rich-title');
+        } else if (boldOnly) {
+            finishList();
+            addParagraph(boldOnly[1], 'assistant-rich-subtitle');
+        } else if (ordered || unordered) {
+            const listType = ordered ? 'ol' : 'ul';
+            if (!activeList || activeListType !== listType) {
+                activeList = document.createElement(listType);
+                activeList.className = 'assistant-rich-list';
+                activeListType = listType;
+                fragment.appendChild(activeList);
+            }
+            const item = document.createElement('li');
+            appendAssistantInlineText(item, (ordered || unordered)[2] || (ordered || unordered)[1]);
+            activeList.appendChild(item);
+        } else {
+            finishList();
+            addParagraph(line, 'assistant-rich-paragraph');
+        }
+    });
+
+    if (fragment.childNodes.length) {
+        messageElement.replaceChildren(fragment);
+        messageElement.dataset.formatted = 'true';
+    }
+}
+
+function formatAssistantMessages() {
+    document.querySelectorAll('.assistant-rich-text').forEach(formatAssistantMessage);
+}
 
 function showMsgActions(id, event) {
     event.stopPropagation();
@@ -395,6 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('messageForm');
     const clearAssistantMemoryButton = document.getElementById('clearAssistantMemoryButton');
     
+    formatAssistantMessages();
     if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
     if (clearAssistantMemoryButton) {
         clearAssistantMemoryButton.addEventListener('click', async () => {

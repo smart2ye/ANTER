@@ -414,6 +414,9 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn("يرد مساعد أنتر على الرسائل النصية فقط", page)
         self.assertIn("يتذكر مساعد أنتر الاسم والسياق والتفضيلات داخل ANTER فقط", page)
         self.assertIn('id="clearAssistantMemoryButton"', page)
+        self.assertIn("assistant-rich-text", page)
+        self.assertIn("formatAssistantMessages", page)
+        self.assertIn("assistant-rich-title", page)
         self.assertNotIn('id="voiceCallButton"', page)
 
     def test_assistant_profile_shows_online_badge_and_identity(self):

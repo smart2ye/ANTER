@@ -20,7 +20,7 @@ from app.services.anter_assistant import (
     get_assistant_reply,
     is_anter_assistant,
 )
-from app.services.anter_memory import clear_memory, remember_user_message
+from app.services.anter_memory import clear_memory, remember_assistant_reply, remember_user_message
 
 messages_bp = Blueprint('messages', __name__, url_prefix='/messages')
 CALL_SIGNAL_TYPES = {'invite', 'answer', 'candidate', 'decline', 'hangup'}
@@ -311,6 +311,7 @@ def send(user_id):
                             parent_id=message.id,
                         ))
                         db.session.commit()
+                        remember_assistant_reply(current_user, other, assistant_reply)
                 except Exception:
                     # لا يؤثر فشل رد المساعد في الرسالة الأصلية التي تم حفظها بالفعل.
                     db.session.rollback()

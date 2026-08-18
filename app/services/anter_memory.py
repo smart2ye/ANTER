@@ -15,8 +15,8 @@ from app.extensions import db
 from app.models import AssistantMemory, User
 
 
-MAX_CONTEXT_ITEMS = 6
-MAX_CONTEXT_CHARS = 220
+MAX_CONTEXT_ITEMS = 12
+MAX_CONTEXT_CHARS = 320
 MAX_PREFERENCE_ITEMS = 6
 MAX_PREFERENCE_CHARS = 180
 
@@ -88,6 +88,16 @@ def display_name(user: User, assistant: User) -> str:
     return _clean_text(user.name or user.username, 60) or "صديقي"
 
 
+def _append_context(memory: AssistantMemory, role: str, text: str) -> None:
+    recent_context = _load_list(memory.recent_context_json)
+    recent_context.append({
+        "role": role,
+        "text": text,
+        "at": datetime.utcnow().isoformat(timespec="seconds"),
+    })
+    memory.recent_context_json = _save_list(recent_context[-MAX_CONTEXT_ITEMS:])
+
+
 def remember_user_message(user: User, assistant: User, question: str) -> None:
     """يحفظ سياقاً محلياً محدوداً، ولا يحفظ المحتوى الحساس أو طلب محو الذاكرة."""
     question = _clean_text(question, MAX_CONTEXT_CHARS)
@@ -97,8 +107,6 @@ def remember_user_message(user: User, assistant: User, question: str) -> None:
     memory = _get_memory(user, assistant, create=True)
     changed = False
     preferences = _load_list(memory.preferences_json)
-    recent_context = _load_list(memory.recent_context_json)
-
     name_match = _NAME_PATTERN.search(question)
     if name_match:
         preferred_name = _clean_text(name_match.group(1), 60)
@@ -124,15 +132,35 @@ def remember_user_message(user: User, assistant: User, question: str) -> None:
                 preferences.append({"kind": "preference", "value": preference})
                 changed = True
 
-    recent_context.append({
-        "role": "user",
-        "text": question,
-        "at": datetime.utcnow().isoformat(timespec="seconds"),
-    })
-    recent_context = recent_context[-MAX_CONTEXT_ITEMS:]
-    memory.recent_context_json = _save_list(recent_context)
+    _append_context(memory, "user", question)
     memory.preferences_json = _save_list(preferences[-MAX_PREFERENCE_ITEMS:])
     db.session.commit()
+
+
+def remember_assistant_reply(user: User, assistant: User, answer: str) -> None:
+    """Keep the assistant side of the short local conversation for useful recall."""
+    answer = _clean_text(answer, MAX_CONTEXT_CHARS)
+    if not answer or _is_sensitive(answer):
+        return
+    memory = _get_memory(user, assistant, create=True)
+    _append_context(memory, "assistant", answer)
+    db.session.commit()
+
+
+def recent_conversation(user: User, assistant: User) -> list[dict[str, str]]:
+    """Return a small local-only transcript suitable for recall and continuity prompts."""
+    memory = _get_memory(user, assistant)
+    if memory is None:
+        return []
+    items: list[dict[str, str]] = []
+    for item in _load_list(memory.recent_context_json):
+        if not isinstance(item, dict):
+            continue
+        role = item.get("role")
+        text = _clean_text(item.get("text"), MAX_CONTEXT_CHARS)
+        if role in {"user", "assistant"} and text:
+            items.append({"role": role, "text": text})
+    return items[-MAX_CONTEXT_ITEMS:]
 
 
 def clear_memory(user: User, assistant: User) -> bool:
@@ -159,16 +187,7 @@ def preference_values(user: User, assistant: User) -> list[str]:
 
 
 def recent_user_context(user: User, assistant: User) -> list[str]:
-    memory = _get_memory(user, assistant)
-    if memory is None:
-        return []
-    values: list[str] = []
-    for item in _load_list(memory.recent_context_json):
-        if isinstance(item, dict) and item.get("role") == "user":
-            value = _clean_text(item.get("text"), MAX_CONTEXT_CHARS)
-            if value:
-                values.append(value)
-    return values[-MAX_CONTEXT_ITEMS:]
+    return [item["text"] for item in recent_conversation(user, assistant) if item["role"] == "user"]
 
 
 def local_memory_reply(question: str, user: User | None, assistant: User | None) -> str | None:
@@ -200,10 +219,13 @@ def local_memory_reply(question: str, user: User | None, assistant: User | None)
         return f"أتذكر التفضيلات التي طلبت مني حفظها: {listed}. يمكنك طلب مسح الذاكرة في أي وقت."
 
     if any(marker in normalized for marker in ("ما آخر ما سألته", "ما الذي قلته سابقا", "ما الذي قلته سابقاً", "هل تتذكر سياق")):
-        context = recent_user_context(user, assistant)
+        context = recent_conversation(user, assistant)
         if not context:
-            return "لا يوجد سياق محفوظ بعد لهذه المحادثة."
-        last_item = context[-2] if len(context) > 1 else context[-1]
-        return f"آخر ما أتذكره من سياقك في هذه المحادثة: «{last_item}»."
+            return "لم نتبادل رسائل كافية بعد لأحتفظ بسياق هذه المحادثة."
+        last_user = next((item["text"] for item in reversed(context) if item["role"] == "user"), "")
+        last_assistant = next((item["text"] for item in reversed(context) if item["role"] == "assistant"), "")
+        if last_user and last_assistant:
+            return f"نعم، أتذكر أننا كنا نتحدث عن: «{last_user}». وكان آخر ردي: «{last_assistant}»."
+        return f"نعم، أتذكر أننا كنا نتحدث عن: «{last_user or context[-1]['text']}»."
 
     return None

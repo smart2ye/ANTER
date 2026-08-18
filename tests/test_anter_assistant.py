@@ -23,7 +23,7 @@ from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
 )
-from app.services.anter_memory import remember_user_message
+from app.services.anter_memory import remember_assistant_reply, remember_user_message, recent_conversation
 from app.services.anter_daily_publication import ensure_daily_assistant_post
 from app.services.anter_assistant import (
     ensure_anter_assistant_followed_by_all_users,
@@ -231,6 +231,7 @@ class AnterAssistantTests(unittest.TestCase):
             assistant = db.session.get(User, self.assistant_id)
             remember_user_message(user, assistant, "نادني رائد")
             remember_user_message(user, assistant, "تذكر أنني أفضل الردود المختصرة")
+            remember_assistant_reply(user, assistant, "تمام يا رائد، سأجعل الردود مختصرة وواضحة.")
 
             greeting, greeting_error = get_assistant_reply("مرحبا", user=user, assistant=assistant)
             memory_answer, memory_error = get_assistant_reply("ماذا تتذكر عني؟", user=user, assistant=assistant)
@@ -241,8 +242,23 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIsNone(context_error)
         self.assertIn("رائد", greeting)
         self.assertIn("أفضل الردود المختصرة", memory_answer)
-        self.assertIn("آخر ما أتذكره", context_answer)
+        self.assertIn("كنا نتحدث عن", context_answer)
+        self.assertIn("سأجعل الردود مختصرة", context_answer)
         mocked_post.assert_not_called()
+
+    def test_local_conversation_memory_keeps_both_sides_and_excludes_sensitive_text(self):
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            assistant = db.session.get(User, self.assistant_id)
+            remember_user_message(user, assistant, "أريد ترتيب أفكاري للمنشور القادم")
+            remember_assistant_reply(user, assistant, "بكل سرور، لنرتب الفكرة في نقاط قصيرة.")
+            remember_user_message(user, assistant, "كلمة المرور: لا تحفظ هذا النص")
+            conversation = recent_conversation(user, assistant)
+
+        self.assertEqual([item['role'] for item in conversation[-2:]], ['user', 'assistant'])
+        self.assertIn('ترتيب أفكاري', conversation[-2]['text'])
+        self.assertIn('لنرتب الفكرة', conversation[-1]['text'])
+        self.assertNotIn('كلمة المرور', ' '.join(item['text'] for item in conversation))
 
     def test_memory_ignores_sensitive_text(self):
         with self.app.app_context():

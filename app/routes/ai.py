@@ -28,7 +28,7 @@ def ai_complete():
     response, error = ai_service.generate_response(prompt)
     if error:
         return _json_error(error, 503)
-    return jsonify({'ok': True, 'response': response})
+    return jsonify({'ok': True, 'response': response, 'engine': AIService.DISPLAY_NAME})
 
 
 @ai_bp.route('/api/ai/summarize/<int:post_id>', methods=['GET'])
@@ -38,7 +38,7 @@ def summarize_post(post_id):
     summary, error = ai_service.summarize_text(post.content)
     if error:
         return _json_error(error, 503)
-    return jsonify({'ok': True, 'summary': summary})
+    return jsonify({'ok': True, 'summary': summary, 'engine': AIService.DISPLAY_NAME})
 
 
 @ai_bp.route('/api/ai/assist', methods=['POST'])
@@ -71,4 +71,4 @@ def assist_writing():
 
     if error:
         return _json_error(error, 503)
-    return jsonify({'ok': True, 'action': action, 'text': result})
+    return jsonify({'ok': True, 'action': action, 'text': result, 'engine': AIService.DISPLAY_NAME})

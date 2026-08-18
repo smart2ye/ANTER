@@ -72,6 +72,14 @@ class Config:
     # مفاتيح الذكاء الاصطناعي (Hybrid AI)
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
+    # mini-llm Arabic: مسار كتابة ANTER للمحتوى والتحسين. تبقى القيم الفعلية في بيئة الخادم فقط.
+    MINI_LLM_ARABIC_ENABLED = os.environ.get('MINI_LLM_ARABIC_ENABLED', 'true').strip().lower() == 'true'
+    MINI_LLM_ARABIC_API_KEY = os.environ.get('MINI_LLM_ARABIC_API_KEY', os.environ.get('GROQ_API_KEY', '')).strip()
+    MINI_LLM_ARABIC_MODEL = os.environ.get(
+        'MINI_LLM_ARABIC_MODEL', os.environ.get('GROQ_MODEL', 'qwen/qwen3.6-27b')
+    ).strip() or 'qwen/qwen3.6-27b'
+    MINI_LLM_ARABIC_TIMEOUT_SECONDS = env_float('MINI_LLM_ARABIC_TIMEOUT_SECONDS', 30.0, 5.0, 60.0)
+
     # مساعد أنتر داخل الرسائل: الإعدادات سرّية وتأتي من .env أو بيئة Render.
     ANTER_ASSISTANT_ENABLED = os.environ.get('ANTER_ASSISTANT_ENABLED', 'true').strip().lower() == 'true'
     ANTER_ASSISTANT_DAILY_POSTS_ENABLED = os.environ.get('ANTER_ASSISTANT_DAILY_POSTS_ENABLED', 'true').strip().lower() == 'true'

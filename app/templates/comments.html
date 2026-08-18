@@ -114,7 +114,7 @@
                         <button type="button" class="btn btn-outline-secondary rounded-circle ms-1 reply-mic-btn" data-comment-id="{{ comment.id }}" title="تسجيل صوتي">
                             <i class="fas fa-microphone"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-primary rounded-circle ms-1 ai-comment-suggest-btn" data-post-id="{{ post.id }}" data-target="#input-reply-{{ comment.id }}" data-status="#reply-ai-status-{{ comment.id }}" title="اقتراح رد ذكي" aria-label="اقتراح رد ذكي">
+                        <button type="button" class="btn btn-outline-primary rounded-circle ms-1 ai-comment-suggest-btn" data-post-id="{{ post.id }}" data-target="#input-reply-{{ comment.id }}" data-status="#reply-ai-status-{{ comment.id }}" title="اقتراح رد عبر mini-llm Arabic" aria-label="اقتراح رد عبر mini-llm Arabic">
                             <i class="fas fa-robot"></i>
                         </button>
                         <button type="submit" class="btn btn-outline-primary rounded-pill px-3">رد</button>
@@ -160,7 +160,7 @@
                     <i class="fas fa-microphone fa-lg"></i>
                 </button>
             </div>
-            <button type="button" class="btn btn-outline-primary rounded-circle p-2 d-flex align-items-center justify-content-center ai-comment-suggest-btn" style="width: 38px; height: 38px;" data-post-id="{{ post.id }}" data-target="#main-comment-input" data-status="#mainCommentAiStatus" title="اقتراح تعليق ذكي" aria-label="اقتراح تعليق ذكي">
+            <button type="button" class="btn btn-outline-primary rounded-circle p-2 d-flex align-items-center justify-content-center ai-comment-suggest-btn" style="width: 38px; height: 38px;" data-post-id="{{ post.id }}" data-target="#main-comment-input" data-status="#mainCommentAiStatus" title="اقتراح تعليق عبر mini-llm Arabic" aria-label="اقتراح تعليق عبر mini-llm Arabic">
                 <i class="fas fa-robot"></i>
             </button>
             <button type="submit" class="btn btn-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" aria-label="إرسال التعليق">

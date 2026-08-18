@@ -15,7 +15,7 @@ os.environ["ADMIN_PATH"] = "admin-antar-assistant-test"
 os.environ["GROQ_API_KEY"] = "test-groq-key"
 os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 
-from app import create_app
+from app import _get_admin_path, create_app
 from app.extensions import db
 from app.forms.auth import ResetPasswordForm
 from app.models import AssistantDailyPublication, AssistantMemory, Follow, Message, Notification, Post, User
@@ -485,5 +485,31 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertEqual(messages[-1].parent_id, messages[-2].id)
 
 
-if __name__ == "__main__":
+class AdminPathSecurityTests(unittest.TestCase):
+    def test_explicit_admin_path_is_normalized(self):
+        with patch.dict(os.environ, {"ADMIN_PATH": "/admin-fixed-route/"}, clear=False):
+            self.assertEqual(
+                _get_admin_path({"SECRET_KEY": "unused-when-explicit"}),
+                "admin-fixed-route",
+            )
+
+    def test_fallback_path_is_stable_for_same_secret(self):
+        with patch.dict(os.environ, {"ADMIN_PATH": ""}, clear=False):
+            config = {"SECRET_KEY": "stable-test-secret"}
+            first_path = _get_admin_path(config)
+            second_path = _get_admin_path(config)
+
+        self.assertEqual(first_path, second_path)
+        self.assertTrue(first_path.startswith("admin-"))
+        self.assertGreater(len(first_path), len("admin-"))
+
+    def test_fallback_path_changes_when_secret_changes(self):
+        with patch.dict(os.environ, {"ADMIN_PATH": ""}, clear=False):
+            first_path = _get_admin_path({"SECRET_KEY": "first-secret"})
+            second_path = _get_admin_path({"SECRET_KEY": "second-secret"})
+
+        self.assertNotEqual(first_path, second_path)
+
+
+if __name__ == '__main__':
     unittest.main()

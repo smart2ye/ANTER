@@ -4,9 +4,28 @@ from app.config import Config
 from app.extensions import db, login_manager, csrf
 from app.models import User, CallSignal
 from app.routes import register_blueprints
+import hashlib
+import hmac
 import os
-import secrets
 from datetime import datetime, timedelta
+
+
+_ADMIN_PATH_SALT = b"anter-admin-path-v1"
+
+
+def _get_admin_path(config):
+    """Return an explicit route or a stable, non-logged fallback route."""
+    configured_path = os.environ.get("ADMIN_PATH", "").strip().strip("/")
+    if configured_path:
+        return configured_path
+
+    secret_key = str(config.get("SECRET_KEY", "")).encode("utf-8")
+    if not secret_key:
+        raise RuntimeError("SECRET_KEY must be configured before creating the application.")
+
+    digest = hmac.new(secret_key, _ADMIN_PATH_SALT, hashlib.sha256).hexdigest()[:24]
+    return f"admin-{digest}"
+
 
 def create_app():
     app = Flask(__name__)
@@ -20,17 +39,9 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    # توليد مسار إداري سري
-    admin_path = os.environ.get("ADMIN_PATH")
-    if not admin_path:
-        admin_path = "admin-" + secrets.token_urlsafe(10)
-        os.environ["ADMIN_PATH"] = admin_path
-    app.config["ADMIN_PATH"] = admin_path
-
-    print(f"\n{'='*60}")
-    print(f"🔐 مسار لوحة التحكم السري: /{admin_path}")
-    print(f"📌 احفظ هذا المسار في مكان آمن!")
-    print(f"{'='*60}\n")
+    # يبقى المسار ثابتاً عبر إعادة التشغيل ولا يُطبع في السجلات.
+    # يمكن تدويره صراحةً عبر متغير البيئة ADMIN_PATH.
+    app.config["ADMIN_PATH"] = _get_admin_path(app.config)
 
     register_blueprints(app)
     

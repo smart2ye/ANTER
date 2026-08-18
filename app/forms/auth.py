@@ -42,7 +42,7 @@ COUNTRY_CODES = [
 ]
 
 GENDER_CHOICES = [
-    ('', 'أفضل عدم التحديد'),
+    ('', 'اختر الجنس'),
     ('male', 'ذكر'),
     ('female', 'أنثى'),
 ]
@@ -57,7 +57,7 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(FlaskForm):
     name = StringField('الاسم الكامل', validators=[DataRequired(), Length(min=2, max=100)])
-    gender = SelectField('الجنس', choices=GENDER_CHOICES, validators=[Optional()])
+    gender = SelectField('الجنس', choices=GENDER_CHOICES, validators=[DataRequired(message='اختر الجنس لتحديد الأيقونة الافتراضية.')])
     birth_date = DateField('تاريخ الميلاد', format='%Y-%m-%d', validators=[Optional()])
     country_code = SelectField('مفتاح الدولة', choices=COUNTRY_CODES, default='+967')
     phone = StringField('رقم الجوال', validators=[Optional(), Length(min=6, max=15, message='رقم الجوال يجب أن يكون بين 6 و15 رقماً.')])

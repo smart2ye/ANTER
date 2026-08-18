@@ -24,8 +24,9 @@
 
             <div class="row g-2 mb-3">
                 <div class="col-6">
-                    <label class="form-label fw-semibold small">{{ form.gender.label.text }} <span class="text-muted fw-normal">(اختياري)</span></label>
+                    <label class="form-label fw-semibold small">{{ form.gender.label.text }}</label>
                     {{ form.gender(class="form-select" + (" is-invalid" if form.gender.errors else "")) }}
+                    <small class="form-text">يحدد الأيقونة الافتراضية للحساب.</small>
                     {% for error in form.gender.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                 </div>
                 <div class="col-6">

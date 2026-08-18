@@ -1,11 +1,12 @@
 """مساعد أنتر داخل الدردشة.
 
-يرسل نص الرسالة الحالية فقط إلى mini-llm عبر واجهته الخادمية المحمية.
-لا تُرسل مفاتيح أو ملفات مرفقة أو تاريخ المحادثة إلى الخدمة.
+يستخدم موفّر ذكاء خادمي واحداً لحماية المفتاح. لا يرسل سوى نص الرسالة
+الحالية، ولا يذكر المزوّد أو اسم النموذج في واجهة المستخدم.
 """
 
 from __future__ import annotations
 
+import re
 import secrets
 from typing import Any
 
@@ -16,15 +17,16 @@ from app.extensions import db
 from app.models import User
 
 
+GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions"
 ASSISTANT_UNAVAILABLE_REPLY = (
-    "أنا مساعد أنتر. تعذر الوصول إلى خدمة المساعد الآن، لذا أستطيع المساعدة "
-    "مجدداً بعد تشغيل mini-llm والتحقق من إعداد الاتصال المحلي."
+    "أنا مساعد أنتر. أحتاج إلى لحظة قبل أن أتمكن من الرد؛ حاول إرسال رسالتك مجدداً بعد قليل."
 )
 ASSISTANT_TEXT_ONLY_REPLY = "أستطيع حالياً قراءة الرسائل النصية فقط. اكتب سؤالك أو طلبك في رسالة نصية واضحة."
 ANTER_OVERVIEW_REPLY = (
     "ANTER شبكة اجتماعية هجينة تجمع المستخدمين البشريين مع مزايا ذكاء اصطناعي مساندة. "
     "تدعم النشر والتعليقات والقصص والريلز والمراسلة، بواجهة عربية واتجاه كتابة من اليمين إلى اليسار."
 )
+THINKING_BLOCK = re.compile(r"<think>.*?(?:</think>|$)", flags=re.IGNORECASE | re.DOTALL)
 
 
 def is_anter_assistant(user: User | None) -> bool:
@@ -73,6 +75,12 @@ def _clean_question(value: Any) -> str:
     return " ".join(str(value or "").split())
 
 
+def _clean_answer(value: Any) -> str:
+    """يزيل أي تفكير داخلي أو فراغات زائدة قبل عرض النص للمستخدم."""
+    answer = THINKING_BLOCK.sub("", str(value or ""))
+    return _clean_question(answer)
+
+
 def _direct_anter_reply(question: str) -> str | None:
     """إجابات تعريفية مؤكدة لا تحتاج إلى استدعاء نموذج لغوي."""
     normalized = question.casefold()
@@ -109,22 +117,32 @@ def _direct_anter_reply(question: str) -> str | None:
     return None
 
 
-def _assistant_question(question: str) -> str:
-    """سياق عام ثابت؛ لا يضيف تاريخ محادثة أو أي بيانات مستخدم أخرى."""
+def _assistant_system_prompt() -> str:
+    """هوية ثابتة لا تحتوي على بيانات المستخدم أو تفاصيل البنية الداخلية."""
     founder = current_app.config.get("ANTER_FOUNDER_NAME", "عبدالقادر مهدلي")
     return (
-        "أنت مساعد أنتر داخل شبكة ANTER، ولست مساعد إنتر ميلان ولا أي جهة أخرى. "
-        "تحدث بالعربية الفصحى فقط وبأسلوب مهذب ومباشر. "
+        "أنت مساعد أنتر الرسمي داخل شبكة ANTER الاجتماعية. "
+        "تحدث بالعربية الفصحى فقط وبأسلوب مهذب ومباشر ومفيد. "
         f"مؤسس شبكة ANTER هو {founder}. "
         "ANTER منصة اجتماعية هجينة تدعم النشر والتعليقات والقصص والريلز والمراسلة. "
-        "لا تقل إنك نموذج من شركة أخرى، ولا تخلط اسم ANTER بالكيانات الرياضية. "
-        "أجب عن السؤال التالي فقط:\n\n"
-        f"{question}"
+        "عرّف نفسك دائماً باسم «مساعد أنتر» فقط عند الحاجة. "
+        "لا تذكر اسم أي نموذج أو شركة أو مزوّد ذكاء اصطناعي أو واجهة برمجية، ولا تذكر تفاصيل تشغيلية داخلية. "
+        "لا تخلط ANTER بالكيانات الرياضية أو بأي منصة أخرى. "
+        "لا تدّع أنك إنسان، ولا تخترع حقائق عن المنصة. "
+        "إن لم تكن متأكداً، وضّح ذلك باختصار واقترح طريقة آمنة للتحقق. "
+        "اكتب الإجابة النهائية فقط من دون أي وسوم تفكير أو تحليل داخلي."
     )
 
 
+def _safe_provider_error(status_code: int | None = None) -> str:
+    """رسالة عامة لا تكشف هوية المزوّد أو تفاصيل الشبكة."""
+    if status_code == 429:
+        return "أنا مساعد أنتر. وصلت خدمة المساعد إلى حد مؤقت؛ انتظر قليلاً ثم أرسل رسالتك مجدداً."
+    return ASSISTANT_UNAVAILABLE_REPLY
+
+
 def get_assistant_reply(question: str) -> tuple[str | None, str | None]:
-    """طلب جواب من mini-llm باستخدام السؤال الحالي فقط.
+    """إرجاع جواب مساعد أنتر باستخدام الرسالة الحالية فقط.
 
     يعيد ``(text, None)`` عند النجاح، أو ``(None, public_message)`` عند التعذر.
     لا تمرر تفاصيل الشبكة أو مفاتيح API إلى واجهة الدردشة أو السجل.
@@ -144,41 +162,48 @@ def get_assistant_reply(question: str) -> tuple[str | None, str | None]:
     if direct_reply:
         return direct_reply, None
 
-    api_url = current_app.config.get("MINI_LLM_API_URL", "").strip()
-    api_key = current_app.config.get("MINI_LLM_API_KEY", "").strip()
-    if not api_url or not api_key:
+    api_key = current_app.config.get("ANTER_ASSISTANT_GROQ_API_KEY", "").strip()
+    if not api_key:
+        current_app.logger.warning("مفتاح موفّر مساعد أنتر غير مضبوط.")
         return None, ASSISTANT_UNAVAILABLE_REPLY
 
     payload = {
-        "question": _assistant_question(question),
-        "mode": current_app.config.get("ANTER_ASSISTANT_MODE", "hybrid"),
+        "model": current_app.config["ANTER_ASSISTANT_GROQ_MODEL"],
+        "messages": [
+            {"role": "system", "content": _assistant_system_prompt()},
+            {"role": "user", "content": question},
+        ],
+        "temperature": 0.45,
+        "max_tokens": current_app.config["ANTER_ASSISTANT_GROQ_MAX_TOKENS"],
+        "reasoning_effort": "none",
     }
     headers = {
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "X-API-Key": api_key,
-        "User-Agent": "ANTER-Assistant/1.0",
+        "Accept": "application/json",
+        "User-Agent": "ANTER-Assistant/1.1",
     }
-    timeout = current_app.config["MINI_LLM_TIMEOUT_SECONDS"]
+    timeout = current_app.config["ANTER_ASSISTANT_GROQ_TIMEOUT_SECONDS"]
 
     try:
-        response = requests.post(api_url, json=payload, headers=headers, timeout=timeout)
+        response = requests.post(GROQ_CHAT_URL, json=payload, headers=headers, timeout=timeout)
     except requests.RequestException:
-        current_app.logger.warning("تعذر الوصول إلى خدمة mini-llm لمساعد أنتر.")
-        return None, ASSISTANT_UNAVAILABLE_REPLY
+        current_app.logger.warning("تعذر الوصول إلى مزود مساعد أنتر.")
+        return None, _safe_provider_error()
 
     if response.status_code != 200:
-        current_app.logger.warning("تعذر طلب mini-llm لمساعد أنتر: HTTP %s", response.status_code)
-        return None, ASSISTANT_UNAVAILABLE_REPLY
+        current_app.logger.warning("تعذر طلب مزود مساعد أنتر: HTTP %s", response.status_code)
+        return None, _safe_provider_error(response.status_code)
 
     try:
         data = response.json()
-    except ValueError:
-        current_app.logger.warning("استجابة mini-llm لمساعد أنتر ليست JSON صالحاً.")
-        return None, ASSISTANT_UNAVAILABLE_REPLY
+        answer = _clean_answer(data["choices"][0]["message"].get("content"))
+    except (IndexError, KeyError, TypeError, ValueError):
+        current_app.logger.warning("استجابة مساعد أنتر غير صالحة.")
+        return None, _safe_provider_error()
 
-    answer = _clean_question(data.get("answer"))
-    if not data.get("ok") or not answer:
-        return None, ASSISTANT_UNAVAILABLE_REPLY
+    if not answer:
+        return None, _safe_provider_error()
 
     max_reply = current_app.config["ANTER_ASSISTANT_MAX_REPLY_CHARACTERS"]
     if len(answer) > max_reply:

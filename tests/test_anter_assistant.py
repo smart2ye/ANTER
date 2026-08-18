@@ -12,7 +12,8 @@ except FileNotFoundError:
 
 os.environ["DATABASE_URL"] = "sqlite:///" + _TEST_DB
 os.environ["ADMIN_PATH"] = "admin-antar-assistant-test"
-os.environ["MINI_LLM_API_KEY"] = "test-mini-llm-key"
+os.environ["GROQ_API_KEY"] = "test-groq-key"
+os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 
 from app import create_app
 from app.extensions import db
@@ -31,8 +32,9 @@ class AnterAssistantTests(unittest.TestCase):
             TESTING=True,
             WTF_CSRF_ENABLED=False,
             ANTER_ASSISTANT_ENABLED=True,
-            MINI_LLM_API_URL="http://127.0.0.1:5050/api/v1/assistant/ask",
-            MINI_LLM_API_KEY="test-mini-llm-key",
+            ANTER_ASSISTANT_GROQ_API_KEY="test-groq-key",
+            ANTER_ASSISTANT_GROQ_MODEL="qwen/qwen3.6-27b",
+            ANTER_ASSISTANT_GROQ_MAX_TOKENS=700,
         )
         with cls.app.app_context():
             cls.assistant = ensure_anter_assistant_user()
@@ -64,11 +66,10 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertTrue(assistant.is_verified)
             self.assertEqual(assistant.message_privacy, "everyone")
 
-    def test_service_sends_only_current_question_to_mini_llm(self):
+    def test_service_sends_only_current_question_to_groq_without_exposing_provider(self):
         fake_response = Mock(status_code=200)
         fake_response.json.return_value = {
-            "ok": True,
-            "answer": "أهلاً بك، كيف يمكنني مساعدتك في ANTER؟",
+            "choices": [{"message": {"content": "<think>تفكير داخلي</think> أهلاً بك، كيف يمكنني مساعدتك في ANTER؟"}}],
         }
 
         with self.app.app_context(), patch(
@@ -79,12 +80,27 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIsNone(error)
         self.assertEqual(answer, "أهلاً بك، كيف يمكنني مساعدتك في ANTER؟")
         _, kwargs = mocked_post.call_args
-        self.assertEqual(kwargs["json"]["mode"], "hybrid")
-        self.assertIn("كيف يمكنني تحسين منشور؟", kwargs["json"]["question"])
-        self.assertIn("أنت مساعد أنتر", kwargs["json"]["question"])
-        self.assertIn("عبدالقادر مهدلي", kwargs["json"]["question"])
-        self.assertEqual(kwargs["headers"]["X-API-Key"], "test-mini-llm-key")
+        self.assertEqual(kwargs["json"]["model"], "qwen/qwen3.6-27b")
+        self.assertEqual(kwargs["json"]["messages"][-1], {"role": "user", "content": "كيف يمكنني تحسين منشور؟"})
+        self.assertIn("أنت مساعد أنتر", kwargs["json"]["messages"][0]["content"])
+        self.assertIn("عبدالقادر مهدلي", kwargs["json"]["messages"][0]["content"])
+        self.assertEqual(kwargs["json"]["reasoning_effort"], "none")
+        self.assertEqual(kwargs["headers"]["Authorization"], "Bearer test-groq-key")
         self.assertNotIn("history", kwargs["json"])
+        self.assertNotIn("Groq", answer)
+        self.assertNotIn("qwen", answer.casefold())
+
+    def test_provider_error_does_not_expose_groq_or_model(self):
+        fake_response = Mock(status_code=429)
+        with self.app.app_context(), patch(
+            "app.services.anter_assistant.requests.post", return_value=fake_response
+        ):
+            answer, error = get_assistant_reply("ساعدني في كتابة منشور")
+
+        self.assertIsNone(answer)
+        self.assertIn("حد مؤقت", error)
+        self.assertNotIn("groq", error.casefold())
+        self.assertNotIn("qwen", error.casefold())
 
     def test_direct_anter_identity_and_founder_answers_do_not_call_model(self):
         with self.app.app_context(), patch("app.services.anter_assistant.requests.post") as mocked_post:

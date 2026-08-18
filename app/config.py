@@ -78,12 +78,15 @@ class Config:
     ANTER_ASSISTANT_EMAIL = os.environ.get('ANTER_ASSISTANT_EMAIL', 'assistant@anter.local').strip() or 'assistant@anter.local'
     ANTER_ASSISTANT_NAME = os.environ.get('ANTER_ASSISTANT_NAME', 'مساعد أنتر').strip() or 'مساعد أنتر'
     ANTER_FOUNDER_NAME = os.environ.get('ANTER_FOUNDER_NAME', 'عبدالقادر مهدلي').strip() or 'عبدالقادر مهدلي'
-    ANTER_ASSISTANT_MODE = os.environ.get('ANTER_ASSISTANT_MODE', 'hybrid').strip().lower() or 'hybrid'
     ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS', 1200, 100)
     ANTER_ASSISTANT_MAX_REPLY_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_REPLY_CHARACTERS', 4000, 300)
-    MINI_LLM_API_URL = os.environ.get('MINI_LLM_API_URL', 'http://127.0.0.1:5050/api/v1/assistant/ask').strip()
-    MINI_LLM_API_KEY = os.environ.get('MINI_LLM_API_KEY', '').strip()
-    MINI_LLM_TIMEOUT_SECONDS = env_float('MINI_LLM_TIMEOUT_SECONDS', 35.0, 5.0, 60.0)
+    ANTER_ASSISTANT_GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '').strip()
+    ANTER_ASSISTANT_GROQ_MODEL = os.environ.get(
+        'ANTER_ASSISTANT_GROQ_MODEL',
+        os.environ.get('GROQ_MODEL', 'qwen/qwen3.6-27b'),
+    ).strip() or 'qwen/qwen3.6-27b'
+    ANTER_ASSISTANT_GROQ_TIMEOUT_SECONDS = env_float('ANTER_ASSISTANT_GROQ_TIMEOUT_SECONDS', 40.0, 5.0, 60.0)
+    ANTER_ASSISTANT_GROQ_MAX_TOKENS = env_int('ANTER_ASSISTANT_GROQ_MAX_TOKENS', 700, 120)
 
 
 for subfolder in ('avatars', 'posts', 'reels', 'videos', 'thumbnails', 'audio'):

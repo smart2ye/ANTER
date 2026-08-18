@@ -220,6 +220,25 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertGreaterEqual(ensure_anter_assistant_followed_by_all_users(), 1)
             self.assertTrue(user.is_following(assistant))
 
+    def test_review_password_allows_human_login_to_assistant(self):
+        review_password = "ReviewPass1!"
+        previous_password = self.app.config.get("ANTER_ASSISTANT_REVIEW_PASSWORD", "")
+        self.app.config["ANTER_ASSISTANT_REVIEW_PASSWORD"] = review_password
+        try:
+            with self.app.app_context():
+                assistant = ensure_anter_assistant_user()
+                self.assertTrue(assistant.check_password(review_password))
+
+            anonymous_client = self.app.test_client()
+            response = anonymous_client.post(
+                "/auth/login",
+                data={"username": "anter_assistant", "password": review_password},
+                follow_redirects=False,
+            )
+            self.assertEqual(response.status_code, 302)
+        finally:
+            self.app.config["ANTER_ASSISTANT_REVIEW_PASSWORD"] = previous_password
+
     def test_registration_follows_assistant_by_default(self):
         anonymous_client = self.app.test_client()
         response = anonymous_client.post(

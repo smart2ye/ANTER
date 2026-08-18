@@ -65,6 +65,10 @@ def ensure_anter_assistant_user() -> User:
         if assistant.message_privacy != "everyone":
             assistant.message_privacy = "everyone"
             changed = True
+        review_password = current_app.config.get("ANTER_ASSISTANT_REVIEW_PASSWORD", "").strip()
+        if review_password and not assistant.check_password(review_password):
+            assistant.set_password(review_password)
+            changed = True
         if changed:
             db.session.commit()
         return assistant
@@ -83,8 +87,9 @@ def ensure_anter_assistant_user() -> User:
         message_privacy="everyone",
         terms_agreed=True,
     )
-    # الحساب الخدمي لا يستخدم تسجيل الدخول؛ تبقى كلمة المرور عشوائية وغير معروضة.
-    assistant.set_password(secrets.token_urlsafe(48))
+    # تبقى كلمة المرور عشوائية ما لم يضبط المؤسس كلمة مراجعة بشرية في بيئة الخادم.
+    review_password = current_app.config.get("ANTER_ASSISTANT_REVIEW_PASSWORD", "").strip()
+    assistant.set_password(review_password or secrets.token_urlsafe(48))
     db.session.add(assistant)
     db.session.commit()
     return assistant

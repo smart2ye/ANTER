@@ -4,6 +4,8 @@ from flask import current_app, url_for
 
 
 def _legacy_static_url(path, default='default.png'):
+    if path and str(path).startswith('img/'):
+        return url_for('static', filename=path)
     if path:
         full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], path)
         if os.path.isfile(full_path):

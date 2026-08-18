@@ -50,10 +50,16 @@ def register():
             email = f'{username}@phone-only.anter.local'
 
         phone = (form.phone.data or '').strip()
+        default_avatar = (
+            'img/default_avatar_female.png'
+            if form.gender.data == 'female'
+            else 'img/default_avatar_male.png'
+        )
         user = User(
             username=username,
             email=email,
             name=form.name.data.strip(),
+            avatar=default_avatar,
             gender=form.gender.data or '',
             birth_date=form.birth_date.data,
             country_code=form.country_code.data,

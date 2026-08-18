@@ -30,6 +30,7 @@ from app.services.anter_assistant import (
     follow_anter_assistant_for_user,
 )
 from app.utils.helpers import get_user_status
+from app.utils.media_urls import avatar_url
 
 
 class AnterAssistantTests(unittest.TestCase):
@@ -265,6 +266,9 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertTrue(user.username.startswith("u_"))
             self.assertTrue(user.email.endswith("@phone-only.anter.local"))
             self.assertEqual(user.gender, "male")
+            self.assertEqual(user.avatar, "img/default_avatar_male.png")
+            with self.app.test_request_context():
+                self.assertEqual(avatar_url(user), "/static/img/default_avatar_male.png")
             self.assertEqual(user.birth_date.isoformat(), "1997-05-20")
             self.assertTrue(user.is_following(db.session.get(User, self.assistant_id)))
 
@@ -298,6 +302,9 @@ class AnterAssistantTests(unittest.TestCase):
             user = User.query.filter_by(email="email-login@example.com").first()
             self.assertIsNotNone(user)
             self.assertTrue(user.username.startswith("u_"))
+            self.assertEqual(user.avatar, "img/default_avatar_female.png")
+            with self.app.test_request_context():
+                self.assertEqual(avatar_url(user), "/static/img/default_avatar_female.png")
             generated_username = user.username
 
         login_response = anonymous_client.post(

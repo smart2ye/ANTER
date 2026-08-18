@@ -17,11 +17,12 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 
 from app import create_app
 from app.extensions import db
-from app.models import Message, User
+from app.models import AssistantMemory, Message, User
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
 )
+from app.services.anter_memory import remember_user_message
 
 
 class AnterAssistantTests(unittest.TestCase):
@@ -139,6 +140,58 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertNotIn("Groq", provider_answer)
         mocked_post.assert_not_called()
 
+    def test_local_memory_personalizes_greeting_and_never_calls_provider(self):
+        with self.app.app_context(), patch("app.services.anter_assistant.requests.post") as mocked_post:
+            user = db.session.get(User, self.user_id)
+            assistant = db.session.get(User, self.assistant_id)
+            remember_user_message(user, assistant, "نادني رائد")
+            remember_user_message(user, assistant, "تذكر أنني أفضل الردود المختصرة")
+
+            greeting, greeting_error = get_assistant_reply("مرحبا", user=user, assistant=assistant)
+            memory_answer, memory_error = get_assistant_reply("ماذا تتذكر عني؟", user=user, assistant=assistant)
+            context_answer, context_error = get_assistant_reply("هل تتذكر سياق حديثي؟", user=user, assistant=assistant)
+
+        self.assertIsNone(greeting_error)
+        self.assertIsNone(memory_error)
+        self.assertIsNone(context_error)
+        self.assertIn("رائد", greeting)
+        self.assertIn("أفضل الردود المختصرة", memory_answer)
+        self.assertIn("آخر ما أتذكره", context_answer)
+        mocked_post.assert_not_called()
+
+    def test_memory_ignores_sensitive_text(self):
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            assistant = db.session.get(User, self.assistant_id)
+            AssistantMemory.query.filter_by(user_id=user.id, assistant_id=assistant.id).delete()
+            db.session.commit()
+
+            remember_user_message(user, assistant, "تذكر أن كلمة المرور الخاصة بي سرية")
+            memory = AssistantMemory.query.filter_by(user_id=user.id, assistant_id=assistant.id).first()
+
+        self.assertIsNone(memory)
+
+    def test_memory_clear_route_removes_only_assistant_memory(self):
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            assistant = db.session.get(User, self.assistant_id)
+            remember_user_message(user, assistant, "تذكر أنني أفضل الردود المختصرة")
+            self.assertIsNotNone(AssistantMemory.query.filter_by(user_id=user.id, assistant_id=assistant.id).first())
+            message_count_before_clear = Message.query.filter_by(
+                sender_id=self.user_id,
+                receiver_id=self.assistant_id,
+            ).count()
+
+        response = self.client.post(f"/messages/assistant-memory/{self.assistant_id}/clear")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()["success"])
+        with self.app.app_context():
+            self.assertIsNone(AssistantMemory.query.filter_by(user_id=self.user_id, assistant_id=self.assistant_id).first())
+            self.assertEqual(
+                Message.query.filter_by(sender_id=self.user_id, receiver_id=self.assistant_id).count(),
+                message_count_before_clear,
+            )
+
     def test_assistant_chat_renders_bot_identity_and_text_only_hint(self):
         response = self.client.get(f"/messages/{self.assistant_id}")
         page = response.get_data(as_text=True)
@@ -146,6 +199,8 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("مساعد آلي", page)
         self.assertIn("يرد مساعد أنتر على الرسائل النصية فقط", page)
+        self.assertIn("يتذكر مساعد أنتر الاسم والسياق والتفضيلات داخل ANTER فقط", page)
+        self.assertIn('id="clearAssistantMemoryButton"', page)
         self.assertNotIn('id="voiceCallButton"', page)
 
     def test_sending_text_to_assistant_stores_assistant_reply(self):

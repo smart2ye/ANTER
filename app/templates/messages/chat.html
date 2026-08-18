@@ -22,6 +22,15 @@
         <span class="badge text-bg-light border"><i class="fas {{ 'fa-robot' if is_anter_assistant else 'fa-shield-alt' }} me-1"></i>{{ 'محادثة مع مساعد آلي' if is_anter_assistant else 'محادثة خاصة' }}</span>
     </header>
 
+    {% if is_anter_assistant %}
+        <div class="assistant-memory-notice d-flex align-items-center justify-content-between gap-2 mb-3" role="status">
+            <span><i class="fas fa-brain me-1"></i>يتذكر مساعد أنتر الاسم والسياق والتفضيلات داخل ANTER فقط. يمكنك مسح الذاكرة متى شئت.</span>
+            <button class="btn btn-sm btn-outline-secondary text-nowrap" type="button" id="clearAssistantMemoryButton">
+                <i class="fas fa-eraser me-1"></i>مسح الذاكرة
+            </button>
+        </div>
+    {% endif %}
+
     <div class="chat-box" id="chatBox" aria-live="polite">
         {% if messages %}
             {% for msg in messages %}
@@ -215,6 +224,7 @@
     .menu-item { width: 100%; text-align: right; padding: 8px 15px; border: none; background: none; font-size: 0.9rem; transition: background 0.2s; color: inherit; }
     .menu-item:hover { background: #f0f2f5; }
     .chat-composer { background: var(--card-bg, #fff); padding: 10px; border-radius: 18px; border: 1px solid #eee; box-shadow: 0 4px 18px rgba(0,0,0,.04); }
+    .assistant-memory-notice { padding: 10px 12px; border: 1px solid rgba(24,119,242,.18); background: rgba(24,119,242,.06); color: #24405f; border-radius: 14px; font-size: .85rem; }
     .composer-row { display: flex; gap: 8px; align-items: center; }
     .composer-input { border-radius: 20px; background: #f0f2f5; border: none; min-height: 42px; }
     .chat-attachment img { max-width: 280px; border-radius: 10px; }
@@ -383,8 +393,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatBox = document.getElementById('chatBox');
     const input = document.getElementById('messageInput');
     const form = document.getElementById('messageForm');
+    const clearAssistantMemoryButton = document.getElementById('clearAssistantMemoryButton');
     
     if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    if (clearAssistantMemoryButton) {
+        clearAssistantMemoryButton.addEventListener('click', async () => {
+            if (!confirm('هل تريد مسح ذاكرة مساعد أنتر؟ لن يُحذف سجل الرسائل.')) return;
+            clearAssistantMemoryButton.disabled = true;
+            try {
+                const response = await fetch(`/messages/assistant-memory/${otherUserId}/clear`, { method: 'POST' });
+                const data = await response.json();
+                showHelp(data.message || 'تم مسح الذاكرة.', !response.ok);
+            } catch (error) {
+                showHelp('تعذر الاتصال لمسح الذاكرة. حاول مجدداً.', true);
+            } finally {
+                clearAssistantMemoryButton.disabled = false;
+            }
+        });
+    }
     document.addEventListener('click', () => document.getElementById('msgContextMenu').classList.add('d-none'));
 
     document.getElementById('recordVoiceButton').onclick = async () => {

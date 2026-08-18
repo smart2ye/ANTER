@@ -20,6 +20,7 @@ from app.services.anter_assistant import (
     get_assistant_reply,
     is_anter_assistant,
 )
+from app.services.anter_memory import clear_memory, remember_user_message
 
 messages_bp = Blueprint('messages', __name__, url_prefix='/messages')
 CALL_SIGNAL_TYPES = {'invite', 'answer', 'candidate', 'decline', 'hangup'}
@@ -280,7 +281,13 @@ def send(user_id):
                     if audio_data or attachment_data:
                         assistant_reply = ASSISTANT_TEXT_ONLY_REPLY
                     else:
-                        assistant_reply, public_error = get_assistant_reply(content)
+                        # تحفظ الذاكرة محلياً داخل ANTER فقط، ثم يرسل المساعد السؤال الحالي وحده للخدمة الخارجية عند الحاجة.
+                        remember_user_message(current_user, other, content)
+                        assistant_reply, public_error = get_assistant_reply(
+                            content,
+                            user=current_user,
+                            assistant=other,
+                        )
                         assistant_reply = assistant_reply or public_error
 
                     if assistant_reply:
@@ -300,6 +307,25 @@ def send(user_id):
     else:
         flash('الرسالة فارغة.', 'danger')
     return redirect(url_for('messages.chat', user_id=user_id))
+
+
+@messages_bp.route('/assistant-memory/<int:user_id>/clear', methods=['POST'])
+@login_required
+@csrf.exempt
+def clear_assistant_memory(user_id):
+    """محو ذاكرة مساعد أنتر للمستخدم الحالي من دون حذف سجل الدردشة."""
+    other = User.query.get_or_404(user_id)
+    if not is_anter_assistant(other):
+        return jsonify({'success': False, 'message': 'هذه الميزة متاحة داخل محادثة مساعد أنتر فقط.'}), 404
+
+    try:
+        clear_memory(current_user, other)
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('تعذر مسح ذاكرة مساعد أنتر')
+        return jsonify({'success': False, 'message': 'تعذر مسح الذاكرة حالياً. حاول مجدداً.'}), 500
+
+    return jsonify({'success': True, 'message': 'تم مسح ذاكرة مساعد أنتر الخاصة بك. بقي سجل الرسائل كما هو.'})
 
 
 @messages_bp.route('/delete/<int:message_id>', methods=['POST'])

@@ -1,7 +1,8 @@
 """مساعد أنتر داخل الدردشة.
 
-يستخدم موفّر ذكاء خادمي واحداً لحماية المفتاح. لا يرسل سوى نص الرسالة
-الحالية، ولا يذكر المزوّد أو اسم النموذج في واجهة المستخدم.
+تُحفظ الذاكرة والسياق محلياً داخل ANTER. وعند الحاجة إلى إجابة عامة، لا يرسل
+المساعد إلى الخدمة الخارجية سوى نص الرسالة الحالية، ولا يذكر المزوّد أو اسم
+النموذج في واجهة المستخدم.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from flask import current_app
 
 from app.extensions import db
 from app.models import User
+from app.services.anter_memory import display_name, local_memory_reply
 
 
 GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -85,9 +87,14 @@ def _clean_answer(value: Any) -> str:
     return _clean_question(answer)
 
 
-def _direct_anter_reply(question: str) -> str | None:
+def _direct_anter_reply(
+    question: str,
+    user: User | None = None,
+    assistant: User | None = None,
+) -> str | None:
     """إجابات تعريفية مؤكدة لا تحتاج إلى استدعاء نموذج لغوي."""
     normalized = question.casefold()
+    name = display_name(user, assistant) if user is not None and assistant is not None else "صديقي"
 
     founder = current_app.config.get("ANTER_FOUNDER_NAME", "عبدالقادر مهدلي")
     founder_normalized = founder.casefold()
@@ -98,10 +105,10 @@ def _direct_anter_reply(question: str) -> str | None:
     wellbeing_markers = ("كيف حالك", "كيفك", "كيف الحال")
     if any(marker in normalized for marker in greeting_markers):
         if "السلام عليكم" in normalized:
-            return "وعليكم السلام ورحمة الله وبركاته. أنا مساعد أنتر، بخير وجاهز لمساعدتك في ANTER. كيف يمكنني خدمتك؟"
-        return "مرحباً بك. أنا مساعد أنتر، بخير وجاهز لمساعدتك في ANTER. كيف يمكنني خدمتك؟"
+            return f"وعليكم السلام ورحمة الله وبركاته يا {name}. أنا مساعد أنتر، بخير وجاهز لمساعدتك في ANTER. كيف يمكنني خدمتك؟"
+        return f"مرحباً يا {name}. أنا مساعد أنتر، بخير وجاهز لمساعدتك في ANTER. كيف يمكنني خدمتك؟"
     if any(marker in normalized for marker in wellbeing_markers):
-        return "أنا مساعد أنتر، بخير وجاهز لمساعدتك في ANTER. ما الذي تود معرفته أو إنجازه؟"
+        return f"أنا مساعد أنتر، بخير يا {name} وجاهز لمساعدتك في ANTER. ما الذي تود معرفته أو إنجازه؟"
 
     identity_markers = ("ما اسمك", "ما اسمك؟", "من انت", "من أنت", "من تكون", "انت هنا", "أنت هنا")
     if any(marker in normalized for marker in identity_markers):
@@ -154,11 +161,15 @@ def _safe_provider_error(status_code: int | None = None) -> str:
     return ASSISTANT_UNAVAILABLE_REPLY
 
 
-def get_assistant_reply(question: str) -> tuple[str | None, str | None]:
-    """إرجاع جواب مساعد أنتر باستخدام الرسالة الحالية فقط.
+def get_assistant_reply(
+    question: str,
+    user: User | None = None,
+    assistant: User | None = None,
+) -> tuple[str | None, str | None]:
+    """إرجاع جواب مساعد أنتر باستخدام السؤال الحالي وذاكرة محلية محدودة.
 
-    يعيد ``(text, None)`` عند النجاح، أو ``(None, public_message)`` عند التعذر.
-    لا تمرر تفاصيل الشبكة أو مفاتيح API إلى واجهة الدردشة أو السجل.
+    تُعالَج أوامر الذاكرة والترحيب بالاسم محلياً. أما الطلب الخارجي فيتضمن
+    السؤال الحالي فقط، ولا يرسل الاسم أو التفضيلات أو سياق الذاكرة.
     """
     if not current_app.config.get("ANTER_ASSISTANT_ENABLED", True):
         return None, "مساعد أنتر معطل مؤقتاً من إعدادات الخادم."
@@ -171,7 +182,11 @@ def get_assistant_reply(question: str) -> tuple[str | None, str | None]:
     if len(question) > maximum:
         return None, f"اجعل رسالتك أقصر من {maximum} حرفاً ثم أرسلها مجدداً."
 
-    direct_reply = _direct_anter_reply(question)
+    memory_reply = local_memory_reply(question, user, assistant)
+    if memory_reply:
+        return memory_reply, None
+
+    direct_reply = _direct_anter_reply(question, user=user, assistant=assistant)
     if direct_reply:
         return direct_reply, None
 

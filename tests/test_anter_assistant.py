@@ -17,12 +17,18 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 
 from app import create_app
 from app.extensions import db
-from app.models import AssistantMemory, Message, User
+from app.models import AssistantDailyPublication, AssistantMemory, Follow, Message, Post, User
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
 )
 from app.services.anter_memory import remember_user_message
+from app.services.anter_daily_publication import ensure_daily_assistant_post
+from app.services.anter_assistant import (
+    ensure_anter_assistant_followed_by_all_users,
+    follow_anter_assistant_for_user,
+)
+from app.utils.helpers import get_user_status
 
 
 class AnterAssistantTests(unittest.TestCase):
@@ -192,6 +198,66 @@ class AnterAssistantTests(unittest.TestCase):
                 message_count_before_clear,
             )
 
+    def test_assistant_is_followed_by_existing_user_and_always_online(self):
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            assistant = db.session.get(User, self.assistant_id)
+            Follow.query.filter_by(follower_id=user.id, followed_id=assistant.id).delete()
+            db.session.commit()
+
+            self.assertTrue(follow_anter_assistant_for_user(user, assistant))
+            db.session.commit()
+            self.assertFalse(follow_anter_assistant_for_user(user, assistant))
+            self.assertEqual(
+                Follow.query.filter_by(follower_id=user.id, followed_id=assistant.id).count(),
+                1,
+            )
+            self.assertEqual(get_user_status(assistant)["status"], "online")
+            self.assertEqual(get_user_status(assistant)["last_seen"], "متصل الآن")
+
+            Follow.query.filter_by(follower_id=user.id, followed_id=assistant.id).delete()
+            db.session.commit()
+            self.assertGreaterEqual(ensure_anter_assistant_followed_by_all_users(), 1)
+            self.assertTrue(user.is_following(assistant))
+
+    def test_registration_follows_assistant_by_default(self):
+        anonymous_client = self.app.test_client()
+        response = anonymous_client.post(
+            "/auth/register",
+            data={
+                "username": "new_assistant_follower",
+                "email": "new-assistant-follower@example.com",
+                "name": "متابع جديد",
+                "country_code": "+967",
+                "phone": "",
+                "password": "ValidPass1!",
+                "confirm_password": "ValidPass1!",
+                "terms_agreed": "y",
+            },
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 302)
+        with self.app.app_context():
+            user = User.query.filter_by(username="new_assistant_follower").first()
+            self.assertIsNotNone(user)
+            self.assertTrue(user.is_following(db.session.get(User, self.assistant_id)))
+
+    def test_daily_assistant_publication_is_created_once_per_day(self):
+        with self.app.app_context():
+            AssistantDailyPublication.query.delete()
+            db.session.query(Post).filter(Post.author_id == self.assistant_id).delete()
+            db.session.commit()
+
+            first_post = ensure_daily_assistant_post()
+            second_post = ensure_daily_assistant_post()
+
+            self.assertIsNotNone(first_post)
+            self.assertEqual(first_post.id, second_post.id)
+            self.assertEqual(first_post.author_id, self.assistant_id)
+            self.assertIn("مساعد أنتر", first_post.content)
+            self.assertEqual(AssistantDailyPublication.query.count(), 1)
+
     def test_assistant_chat_renders_bot_identity_and_text_only_hint(self):
         response = self.client.get(f"/messages/{self.assistant_id}")
         page = response.get_data(as_text=True)
@@ -202,6 +268,14 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn("يتذكر مساعد أنتر الاسم والسياق والتفضيلات داخل ANTER فقط", page)
         self.assertIn('id="clearAssistantMemoryButton"', page)
         self.assertNotIn('id="voiceCallButton"', page)
+
+    def test_assistant_profile_shows_online_badge_and_identity(self):
+        response = self.client.get("/users/anter_assistant")
+        page = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("المساعد الرسمي لشبكة ANTER", page)
+        self.assertIn("متصل الآن", page)
 
     def test_sending_text_to_assistant_stores_assistant_reply(self):
         with patch(

@@ -74,6 +74,7 @@ class Config:
 
     # مساعد أنتر داخل الرسائل: الإعدادات سرّية وتأتي من .env أو بيئة Render.
     ANTER_ASSISTANT_ENABLED = os.environ.get('ANTER_ASSISTANT_ENABLED', 'true').strip().lower() == 'true'
+    ANTER_ASSISTANT_DAILY_POSTS_ENABLED = os.environ.get('ANTER_ASSISTANT_DAILY_POSTS_ENABLED', 'true').strip().lower() == 'true'
     ANTER_ASSISTANT_USERNAME = os.environ.get('ANTER_ASSISTANT_USERNAME', 'anter_assistant').strip() or 'anter_assistant'
     ANTER_ASSISTANT_EMAIL = os.environ.get('ANTER_ASSISTANT_EMAIL', 'assistant@anter.local').strip() or 'assistant@anter.local'
     ANTER_ASSISTANT_NAME = os.environ.get('ANTER_ASSISTANT_NAME', 'مساعد أنتر').strip() or 'مساعد أنتر'

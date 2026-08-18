@@ -30,7 +30,13 @@
                         <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>
                     {% endif %}
                     <span class="text-muted small">@{{ user.username }}</span>
+                    {% if is_anter_assistant %}
+                        <span class="assistant-profile-status"><span class="assistant-online-dot"></span>متصل الآن</span>
+                    {% endif %}
                 </div>
+                {% if is_anter_assistant %}
+                    <div class="assistant-profile-label"><i class="fas fa-robot me-1"></i>المساعد الرسمي لشبكة ANTER</div>
+                {% endif %}
                 
                 {% if user.bio %}
                     <p class="mt-2 mb-0" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-color);">{{ user.bio }}</p>
@@ -91,6 +97,12 @@
         </div>
     </div>
 </div>
+
+<style>
+    .assistant-profile-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; background: rgba(25, 135, 84, .10); color: #137a47; font-size: .78rem; font-weight: 700; }
+    .assistant-online-dot { width: 8px; height: 8px; border-radius: 50%; background: #20c778; box-shadow: 0 0 0 3px rgba(32, 199, 120, .16); }
+    .assistant-profile-label { display: inline-block; margin-top: 9px; padding: 5px 10px; border-radius: 999px; background: rgba(24, 119, 242, .09); color: #1769c2; font-size: .82rem; font-weight: 700; }
+</style>
 
 <!-- ============================== -->
 <!-- تبويبات الملف الشخصي -->

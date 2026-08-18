@@ -315,7 +315,12 @@ def get_user_activity_summary(user_id, limit=50):
 from datetime import datetime, timedelta
 
 def get_user_status(user):
-    """إرجاع حالة المستخدم (متصل / غير متصل)"""
+    """إرجاع حالة المستخدم (متصل / غير متصل)."""
+    from flask import current_app
+
+    assistant_username = current_app.config.get('ANTER_ASSISTANT_USERNAME', 'anter_assistant')
+    if user and user.username == assistant_username:
+        return {'status': 'online', 'last_seen': 'متصل الآن'}
     if not user or not user.last_seen:
         return {'status': 'offline', 'last_seen': 'منذ فترة'}
     

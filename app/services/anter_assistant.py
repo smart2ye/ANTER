@@ -15,7 +15,7 @@ import requests
 from flask import current_app
 
 from app.extensions import db
-from app.models import User
+from app.models import Follow, User
 from app.services.anter_memory import display_name, local_memory_reply
 
 
@@ -52,6 +52,16 @@ def ensure_anter_assistant_user() -> User:
         if not assistant.is_verified:
             assistant.is_verified = True
             changed = True
+        if assistant.name != current_app.config["ANTER_ASSISTANT_NAME"]:
+            assistant.name = current_app.config["ANTER_ASSISTANT_NAME"]
+            changed = True
+        assistant_bio = (
+            "نموذج عربي يمني جديد قيد التأسيس داخل شبكة ANTER. "
+            "لم يُطلق بعد، ويطوّره عبدالقادر مهدلي لخدمة مجتمع أنتر."
+        )
+        if assistant.bio != assistant_bio:
+            assistant.bio = assistant_bio
+            changed = True
         if assistant.message_privacy != "everyone":
             assistant.message_privacy = "everyone"
             changed = True
@@ -63,7 +73,10 @@ def ensure_anter_assistant_user() -> User:
         username=username,
         email=current_app.config["ANTER_ASSISTANT_EMAIL"],
         name=current_app.config["ANTER_ASSISTANT_NAME"],
-        bio="مساعد آلي داخل ANTER للمساعدة في الأسئلة وصياغة المحتوى بأسلوب مهذب.",
+        bio=(
+            "نموذج عربي يمني جديد قيد التأسيس داخل شبكة ANTER. "
+            "لم يُطلق بعد، ويطوّره عبدالقادر مهدلي لخدمة مجتمع أنتر."
+        ),
         avatar="default.png",
         is_verified=True,
         is_private=False,
@@ -75,6 +88,41 @@ def ensure_anter_assistant_user() -> User:
     db.session.add(assistant)
     db.session.commit()
     return assistant
+
+
+def follow_anter_assistant_for_user(user: User, assistant: User | None = None) -> bool:
+    """يتأكد من أن المستخدم يتابع حساب مساعد أنتر مرة واحدة فقط."""
+    assistant = assistant or ensure_anter_assistant_user()
+    if user.id == assistant.id:
+        return False
+    exists = Follow.query.filter_by(follower_id=user.id, followed_id=assistant.id).first()
+    if exists is not None:
+        return False
+    db.session.add(Follow(follower_id=user.id, followed_id=assistant.id))
+    return True
+
+
+def ensure_anter_assistant_followed_by_all_users() -> int:
+    """ترقية الحسابات القائمة لتتابع مساعد أنتر مع تجنب التكرار."""
+    assistant = ensure_anter_assistant_user()
+    user_ids = [
+        row[0] for row in db.session.query(User.id).filter(User.id != assistant.id).all()
+    ]
+    existing_follower_ids = {
+        row[0]
+        for row in db.session.query(Follow.follower_id).filter(
+            Follow.followed_id == assistant.id,
+            Follow.follower_id.in_(user_ids) if user_ids else False,
+        ).all()
+    }
+    created = 0
+    for user_id in user_ids:
+        if user_id not in existing_follower_ids:
+            db.session.add(Follow(follower_id=user_id, followed_id=assistant.id))
+            created += 1
+    if created:
+        db.session.commit()
+    return created
 
 
 def _clean_question(value: Any) -> str:

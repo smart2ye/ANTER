@@ -99,6 +99,44 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertNotIn("Groq", answer)
         self.assertNotIn("qwen", answer.casefold())
 
+    def test_founder_can_switch_to_assistant_and_back(self):
+        previous_owner = self.app.config['ANTER_ASSISTANT_SWITCH_OWNER_USERNAME']
+        self.app.config['ANTER_ASSISTANT_SWITCH_OWNER_USERNAME'] = 'assistant_test_user'
+        try:
+            switch_response = self.client.post('/auth/switch-to-assistant', follow_redirects=False)
+            self.assertEqual(switch_response.status_code, 302)
+            with self.client.session_transaction() as session:
+                self.assertEqual(session.get('_user_id'), str(self.assistant_id))
+                self.assertEqual(session.get('anter_assistant_switch_owner_id'), self.user_id)
+
+            return_response = self.client.post('/auth/switch-back-to-owner', follow_redirects=False)
+            self.assertEqual(return_response.status_code, 302)
+            with self.client.session_transaction() as session:
+                self.assertEqual(session.get('_user_id'), str(self.user_id))
+                self.assertIsNone(session.get('anter_assistant_switch_owner_id'))
+        finally:
+            self.app.config['ANTER_ASSISTANT_SWITCH_OWNER_USERNAME'] = previous_owner
+
+    def test_non_owner_cannot_switch_to_assistant(self):
+        with self.app.app_context():
+            other = User(
+                username='unapproved_switch_user',
+                email='unapproved-switch@example.test',
+                name='مستخدم غير مخول',
+                terms_agreed=True,
+            )
+            other.set_password('not-used-in-test')
+            db.session.add(other)
+            db.session.commit()
+            other_id = other.id
+
+        unapproved_client = self.app.test_client()
+        with unapproved_client.session_transaction() as session:
+            session['_user_id'] = str(other_id)
+            session['_fresh'] = True
+        response = unapproved_client.post('/auth/switch-to-assistant')
+        self.assertEqual(response.status_code, 403)
+
     def test_report_receipt_is_sent_by_assistant_and_queued_for_human_review(self):
         with self.app.app_context():
             post = Post(

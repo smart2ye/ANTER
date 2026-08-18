@@ -168,6 +168,17 @@ def create_app():
     app.add_template_global(avatar_url, name='avatar_url')
     app.add_template_global(post_image_url, name='post_image_url')
 
+    @app.context_processor
+    def inject_assistant_account_switching():
+        from flask_login import current_user
+        from app.services.anter_account_switching import can_switch_back, can_switch_to_assistant
+
+        switch_owner_id = session.get('anter_assistant_switch_owner_id')
+        return {
+            'can_switch_to_anter_assistant': can_switch_to_assistant(current_user),
+            'can_switch_back_to_owner': can_switch_back(current_user, switch_owner_id),
+        }
+
     # تحويل الوسوم في المحتوى النصي إلى روابط لصفحات الوسوم، مع إبقاء النص آمناً.
     from flask import url_for
     from markupsafe import Markup, escape

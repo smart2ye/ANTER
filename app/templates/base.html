@@ -63,6 +63,21 @@
                             <li><a class="dropdown-item" href="{{ url_for('users.profile', username=current_user.username) }}"><i class="fas fa-user"></i> ملفي</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('users.settings') }}"><i class="fas fa-cog"></i> الإعدادات</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('users.activity_log') }}"><i class="fas fa-history"></i> سجل النشاط</a></li>
+                            {% if can_switch_to_anter_assistant %}
+                            <li>
+                                <form method="POST" action="{{ url_for('auth.switch_to_assistant') }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item text-primary"><i class="fas fa-robot"></i> التبديل إلى مساعد أنتر</button>
+                                </form>
+                            </li>
+                            {% elif can_switch_back_to_owner %}
+                            <li>
+                                <form method="POST" action="{{ url_for('auth.switch_back_to_owner') }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item text-primary"><i class="fas fa-user-shield"></i> العودة إلى حسابي الشخصي</button>
+                                </form>
+                            </li>
+                            {% endif %}
                             <li><a class="dropdown-item" href="{{ url_for('posts.create') }}"><i class="fas fa-plus-circle"></i> منشور جديد</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</a></li>

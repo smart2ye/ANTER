@@ -81,6 +81,10 @@ class Config:
     # كلمة مرور مراجعة بشرية اختيارية؛ لا توضع في Git وتُضبط محلياً أو في بيئة Render فقط.
     ANTER_ASSISTANT_REVIEW_PASSWORD = os.environ.get('ANTER_ASSISTANT_REVIEW_PASSWORD', '')
     ANTER_FOUNDER_NAME = os.environ.get('ANTER_FOUNDER_NAME', 'عبدالقادر مهدلي').strip() or 'عبدالقادر مهدلي'
+    # حساب المؤسس الوحيد المسموح له بتبديل الجلسة إلى حساب مساعد أنتر.
+    ANTER_ASSISTANT_SWITCH_OWNER_USERNAME = os.environ.get(
+        'ANTER_ASSISTANT_SWITCH_OWNER_USERNAME', 'abdulqader.mahdly'
+    ).strip().lstrip('@') or 'abdulqader.mahdly'
     ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS', 1200, 100)
     ANTER_ASSISTANT_MAX_REPLY_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_REPLY_CHARACTERS', 4000, 300)
     ANTER_ASSISTANT_GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '').strip()

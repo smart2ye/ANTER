@@ -232,6 +232,43 @@ class AnterAssistantTests(unittest.TestCase):
         )
         self.assertFalse(activity_after.get_json()['isTyping'])
 
+    def test_mobile_api_sending_text_to_assistant_stores_assistant_reply(self):
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            assistant = db.session.get(User, self.assistant_id)
+            if not user.is_following(assistant):
+                db.session.add(Follow(follower_id=user.id, followed_id=assistant.id))
+            if not assistant.is_following(user):
+                db.session.add(Follow(follower_id=assistant.id, followed_id=user.id))
+            db.session.commit()
+            assistant_username = assistant.username
+
+        login_response = self.client.post('/api/mobile/v1/auth/login', json={
+            'identifier': 'assistant_test_user', 'password': 'not-used-in-test'
+        })
+        token = login_response.get_json()['accessToken']
+        with patch(
+            'app.routes.mobile_api.get_assistant_reply',
+            return_value=('مرحباً، أنا مساعد أنتر.', None),
+        ):
+            response = self.client.post(
+                f'/api/mobile/v1/conversations/{assistant_username}/messages',
+                headers={'Authorization': f'Bearer {token}'},
+                json={'content': 'مرحبا'},
+            )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.get_json()['assistantMessage']['content'], 'مرحباً، أنا مساعد أنتر.')
+        with self.app.app_context():
+            messages = Message.query.filter(
+                ((Message.sender_id == self.user_id) & (Message.receiver_id == self.assistant_id))
+                | ((Message.sender_id == self.assistant_id) & (Message.receiver_id == self.user_id))
+            ).order_by(Message.created_at.asc()).all()
+            self.assertGreaterEqual(len(messages), 2)
+            self.assertEqual(messages[-1].sender_id, self.assistant_id)
+            self.assertEqual(messages[-1].content, 'مرحباً، أنا مساعد أنتر.')
+            self.assertEqual(messages[-1].parent_id, messages[-2].id)
+
     def test_service_sends_only_current_question_to_groq_without_exposing_provider(self):
         fake_response = Mock(status_code=200)
         fake_response.json.return_value = {

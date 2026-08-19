@@ -5,6 +5,8 @@ from sqlalchemy import or_
 
 from app.extensions import csrf, db
 from app.models import Follow, Message, TypingState, User
+from app.services.anter_assistant import get_assistant_reply, is_anter_assistant
+from app.services.anter_memory import remember_assistant_reply, remember_user_message
 from app.services.mobile_api_auth import issue_mobile_token, mobile_api_required, revoke_mobile_token
 
 
@@ -54,6 +56,36 @@ def _typing_state_payload(sender, receiver):
         db.session.commit()
         state = None
     return {'isTyping': state is not None}
+
+
+def _create_assistant_reply(user, assistant, user_message):
+    """ينشئ رد مساعد أنتر لمسار Messenger من دون التأثير على حفظ رسالة المستخدم."""
+    try:
+        remember_user_message(user, assistant, user_message.content)
+        assistant_reply, public_error = get_assistant_reply(
+            user_message.content,
+            user=user,
+            assistant=assistant,
+        )
+        assistant_reply = assistant_reply or public_error
+        if not assistant_reply:
+            return None
+
+        reply = Message(
+            sender_id=assistant.id,
+            receiver_id=user.id,
+            content=assistant_reply,
+            parent_id=user_message.id,
+        )
+        db.session.add(reply)
+        db.session.commit()
+        remember_assistant_reply(user, assistant, assistant_reply)
+        return reply
+    except Exception:
+        # رسالة المستخدم حُفظت قبل هذا الاستدعاء، لذا لا ينبغي لفشل المساعد أن يلغيها.
+        db.session.rollback()
+        current_app.logger.exception('تعذر حفظ رد مساعد أنتر عبر الواجهة المحمولة')
+        return None
 
 
 @mobile_api_bp.route('/auth/login', methods=['POST'])
@@ -219,4 +251,8 @@ def send_message(username):
     message = Message(sender_id=user.id, receiver_id=other.id, content=content)
     db.session.add(message)
     db.session.commit()
-    return jsonify({'message': _message_payload(message)}), 201
+    assistant_message = _create_assistant_reply(user, other, message) if is_anter_assistant(other) else None
+    payload = {'message': _message_payload(message)}
+    if assistant_message is not None:
+        payload['assistantMessage'] = _message_payload(assistant_message)
+    return jsonify(payload), 201

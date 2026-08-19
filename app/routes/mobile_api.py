@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Blueprint, current_app, g, jsonify, request
 from sqlalchemy import or_
 
 from app.extensions import csrf, db
-from app.models import Follow, Message, User
+from app.models import Follow, Message, TypingState, User
 from app.services.mobile_api_auth import issue_mobile_token, mobile_api_required, revoke_mobile_token
 
 
@@ -44,6 +44,16 @@ def _message_payload(message):
 
 def _target_from_username(username):
     return User.query.filter_by(username=(username or '').strip().lstrip('@')).first()
+
+
+def _typing_state_payload(sender, receiver):
+    cutoff = datetime.utcnow() - timedelta(seconds=current_app.config['MOBILE_API_TYPING_TTL_SECONDS'])
+    state = TypingState.query.filter_by(sender_id=sender.id, receiver_id=receiver.id).first()
+    if state is not None and state.updated_at < cutoff:
+        db.session.delete(state)
+        db.session.commit()
+        state = None
+    return {'isTyping': state is not None}
 
 
 @mobile_api_bp.route('/auth/login', methods=['POST'])
@@ -152,6 +162,42 @@ def list_messages(username):
     if changed:
         db.session.commit()
     return jsonify({'user': _user_payload(other), 'messages': [_message_payload(row) for row in rows]})
+
+
+@mobile_api_bp.route('/conversations/<string:username>/activity', methods=['GET'])
+@mobile_api_required
+def conversation_activity(username):
+    user = g.mobile_user
+    other = _target_from_username(username)
+    if other is None:
+        return _json_error('المستخدم غير موجود.', 404)
+    if not _is_mutual_follow(user, other):
+        return _json_error('تتطلب المحادثة متابعة متبادلة بين الحسابين.', 403)
+    return jsonify(_typing_state_payload(other, user))
+
+
+@mobile_api_bp.route('/conversations/<string:username>/typing', methods=['POST'])
+@mobile_api_required
+def update_typing_state(username):
+    user = g.mobile_user
+    other = _target_from_username(username)
+    if other is None:
+        return _json_error('المستخدم غير موجود.', 404)
+    if not _is_mutual_follow(user, other):
+        return _json_error('تتطلب المحادثة متابعة متبادلة بين الحسابين.', 403)
+    data = request.get_json(silent=True) or {}
+    is_typing = data.get('isTyping') is True
+    state = TypingState.query.filter_by(sender_id=user.id, receiver_id=other.id).first()
+    if is_typing:
+        if state is None:
+            state = TypingState(sender_id=user.id, receiver_id=other.id)
+            db.session.add(state)
+        else:
+            state.updated_at = datetime.utcnow()
+    elif state is not None:
+        db.session.delete(state)
+    db.session.commit()
+    return jsonify({'isTyping': is_typing})
 
 
 @mobile_api_bp.route('/conversations/<string:username>/messages', methods=['POST'])

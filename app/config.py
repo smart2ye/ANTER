@@ -70,6 +70,7 @@ class Config:
     # رموز تطبيق ANTER Messenger تخص جهازاً واحداً ولا تُحفظ قيمتها الخام في قاعدة البيانات.
     MOBILE_API_TOKEN_TTL_SECONDS = env_int('MOBILE_API_TOKEN_TTL_SECONDS', 43200, 900)
     MOBILE_API_MAX_MESSAGE_CHARS = env_int('MOBILE_API_MAX_MESSAGE_CHARS', 2000, 100)
+    MOBILE_API_TYPING_TTL_SECONDS = env_int('MOBILE_API_TYPING_TTL_SECONDS', 8, 3)
     PERMANENT_SESSION_LIFETIME = 86400
     
     # مفاتيح الذكاء الاصطناعي (Hybrid AI)

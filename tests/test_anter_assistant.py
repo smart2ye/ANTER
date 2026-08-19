@@ -19,7 +19,7 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 from app import _get_admin_path, create_app
 from app.extensions import db
 from app.forms.auth import ResetPasswordForm
-from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Follow, Message, MobileAccessToken, Notification, Post, Report, User
+from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Follow, Message, MobileAccessToken, Notification, Post, Report, TypingState, User
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
@@ -167,6 +167,70 @@ class AnterAssistantTests(unittest.TestCase):
             json={'content': 'محاولة يجب منعها'},
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_mobile_api_shares_typing_and_read_state_only_between_mutual_follows(self):
+        with self.app.app_context():
+            sender = User.query.get(self.user_id)
+            receiver = User.query.filter_by(username='mobile_api_typing_peer').first()
+            if receiver is None:
+                receiver = User(
+                    username='mobile_api_typing_peer',
+                    email='mobile-api-typing-peer@example.test',
+                    name='طرف اختبار الكتابة',
+                    terms_agreed=True,
+                )
+                receiver.set_password('typing-peer-password')
+                db.session.add(receiver)
+                db.session.flush()
+            if not sender.is_following(receiver):
+                db.session.add(Follow(follower_id=sender.id, followed_id=receiver.id))
+            if not receiver.is_following(sender):
+                db.session.add(Follow(follower_id=receiver.id, followed_id=sender.id))
+            TypingState.query.filter_by(sender_id=sender.id, receiver_id=receiver.id).delete()
+            db.session.commit()
+
+        sender_login = self.client.post('/api/mobile/v1/auth/login', json={
+            'identifier': 'assistant_test_user', 'password': 'not-used-in-test'
+        })
+        receiver_client = self.app.test_client()
+        receiver_login = receiver_client.post('/api/mobile/v1/auth/login', json={
+            'identifier': 'mobile_api_typing_peer', 'password': 'typing-peer-password'
+        })
+        sender_headers = {'Authorization': f"Bearer {sender_login.get_json()['accessToken']}"}
+        receiver_headers = {'Authorization': f"Bearer {receiver_login.get_json()['accessToken']}"}
+
+        typing_start = self.client.post(
+            '/api/mobile/v1/conversations/mobile_api_typing_peer/typing',
+            headers=sender_headers, json={'isTyping': True},
+        )
+        self.assertEqual(typing_start.status_code, 200)
+        activity = receiver_client.get(
+            '/api/mobile/v1/conversations/assistant_test_user/activity', headers=receiver_headers,
+        )
+        self.assertEqual(activity.status_code, 200)
+        self.assertTrue(activity.get_json()['isTyping'])
+
+        sent = self.client.post(
+            '/api/mobile/v1/conversations/mobile_api_typing_peer/messages',
+            headers=sender_headers, json={'content': 'تحقق من حالة القراءة'},
+        )
+        message_id = sent.get_json()['message']['id']
+        receiver_client.get('/api/mobile/v1/conversations/assistant_test_user/messages', headers=receiver_headers)
+        sender_view = self.client.get(
+            '/api/mobile/v1/conversations/mobile_api_typing_peer/messages', headers=sender_headers,
+        )
+        read_message = next(row for row in sender_view.get_json()['messages'] if row['id'] == message_id)
+        self.assertTrue(read_message['isRead'])
+
+        typing_stop = self.client.post(
+            '/api/mobile/v1/conversations/mobile_api_typing_peer/typing',
+            headers=sender_headers, json={'isTyping': False},
+        )
+        self.assertEqual(typing_stop.status_code, 200)
+        activity_after = receiver_client.get(
+            '/api/mobile/v1/conversations/assistant_test_user/activity', headers=receiver_headers,
+        )
+        self.assertFalse(activity_after.get_json()['isTyping'])
 
     def test_service_sends_only_current_question_to_groq_without_exposing_provider(self):
         fake_response = Mock(status_code=200)

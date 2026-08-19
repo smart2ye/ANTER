@@ -764,6 +764,8 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn('مكالمة صادرة مستلمة', caller_chat)
         self.assertIn('data-retry-call', caller_chat)
         self.assertIn('data-retry-call', receiver_chat)
+        self.assertIn('enableCallNotificationsButton', caller_chat)
+        self.assertIn('enableCallNotificationsButton', receiver_chat)
         self.assertIn('مكالمة واردة مستلمة', receiver_chat)
         self.assertIn('تم رفض مكالمتك', caller_chat)
         self.assertIn('لم يُرد على مكالمتك', caller_chat)

@@ -9,6 +9,13 @@ if (scripts.length !== 1) {
   throw new Error(`عدد كتل JavaScript غير متوقع: ${scripts.length}`);
 }
 
+if (scripts[0].includes("if (document.visibilityState === 'hidden' || pollingInProgress) return;")) {
+  throw new Error('استطلاع إشارات المكالمة يجب ألا يتوقف عندما تصبح الصفحة غير نشطة.');
+}
+if (!scripts[0].includes('const callRes = await fetch(`/messages/calls/poll/${otherUserId}`);')) {
+  throw new Error('مسار استطلاع إشارات المكالمة غير موجود.');
+}
+
 const requiredFragments = [
   'RTCPeerConnection',
   'getUserMedia',
@@ -19,6 +26,12 @@ const requiredFragments = [
   'sendCallSignal',
   'handleCallSignal',
   'startRinging',
+  'desktopNotificationsSupported',
+  'requestCallNotificationPermission',
+  'showIncomingDesktopNotification',
+  'closeIncomingCallNotification',
+  'Notification.requestPermission',
+  "new Notification('مكالمة واردة عبر ANTER'",
   'stopRinging',
   'startNoAnswerTimeout',
   "reason: 'no_answer'",

@@ -15,6 +15,9 @@
         </div>
         <span class="typing-indicator d-none" id="typingIndicator" role="status" aria-live="polite">يكتب الآن…</span>
         {% if not is_anter_assistant and can_call %}
+            <button class="btn btn-outline-secondary call-button" type="button" id="enableCallNotificationsButton" aria-label="تفعيل إشعارات المكالمات" title="تفعيل إشعارات المكالمات">
+                <i class="fas fa-bell"></i>
+            </button>
             <button class="btn btn-outline-primary call-button" type="button" id="voiceCallButton" aria-label="بدء مكالمة صوتية" title="بدء مكالمة صوتية">
                 <i class="fas fa-phone-alt"></i>
             </button>
@@ -327,6 +330,7 @@
 // تعريف المتغيرات والوظائف بشكل عالمي لضمان توفرها
 var otherUserId = Number("{{ other.id }}");
 var otherName = {{ other.name | tojson }};
+var otherAvatarUrl = {{ avatar_url(other) | tojson }};
 var isAnterAssistant = {{ is_anter_assistant | tojson }};
 var rtcConfig = {{ rtc_config | tojson }};
 var currentMsgId = null;
@@ -349,6 +353,7 @@ var ringtoneInterval = null;
 var noAnswerTimeout = null;
 var originalDocumentTitle = document.title;
 var CALL_NO_ANSWER_TIMEOUT_MS = 30000;
+var incomingCallNotification = null;
 
 function appendAssistantInlineText(container, text) {
     const parts = String(text || '').split(/(\*\*[^*]+\*\*)/g);
@@ -560,6 +565,73 @@ function showCallPanel(status, incoming = false, ringing = false) {
     setCallStatus(status);
 }
 
+function desktopNotificationsSupported() {
+    return 'Notification' in window;
+}
+
+async function requestCallNotificationPermission() {
+    if (!desktopNotificationsSupported()) {
+        showHelp('هذا المتصفح لا يدعم إشعارات سطح المكتب.', true);
+        return 'unsupported';
+    }
+    if (Notification.permission === 'default') {
+        try {
+            await Notification.requestPermission();
+        } catch (error) {
+            showHelp('تعذر طلب إذن إشعارات المكالمات.', true);
+            return 'denied';
+        }
+    }
+    if (Notification.permission === 'granted') {
+        showHelp('تم تفعيل إشعارات سطح المكتب للمكالمات الواردة.');
+        return 'granted';
+    }
+    showHelp('لم يُمنح إذن إشعارات سطح المكتب. يمكنك تفعيله من إعدادات المتصفح.', true);
+    return Notification.permission;
+}
+
+function shouldShowIncomingDesktopNotification() {
+    return desktopNotificationsSupported()
+        && Notification.permission === 'granted'
+        && (document.hidden || !document.hasFocus());
+}
+
+function closeIncomingCallNotification() {
+    if (incomingCallNotification) incomingCallNotification.close();
+    incomingCallNotification = null;
+}
+
+function showIncomingDesktopNotification(callId) {
+    if (!shouldShowIncomingDesktopNotification()) return;
+    closeIncomingCallNotification();
+    try {
+        const notification = new Notification('مكالمة واردة عبر ANTER', {
+            body: `${otherName} يتصل بك الآن`,
+            icon: otherAvatarUrl,
+            tag: `anter-call-${callId}`,
+            renotify: true,
+            requireInteraction: true,
+        });
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+            window.setTimeout(() => document.getElementById('answerCallButton')?.focus(), 0);
+        };
+        notification.onclose = () => {
+            if (incomingCallNotification === notification) incomingCallNotification = null;
+        };
+        incomingCallNotification = notification;
+    } catch (error) {
+        // يبقى التنبيه المرئي ونغمة الرنين متاحين عند منع الإشعار من النظام.
+    }
+}
+
+function notifyIncomingCallIfNeeded() {
+    if (incomingInvite && activeCallId === incomingInvite.callId) {
+        showIncomingDesktopNotification(activeCallId);
+    }
+}
+
 function playRingtonePulse() {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return;
@@ -663,6 +735,7 @@ function resetCallUi() {
 
 function closeCall() {
     clearNoAnswerTimeout();
+    closeIncomingCallNotification();
     stopRinging();
     if (peerConnection) {
         peerConnection.onicecandidate = null;
@@ -843,6 +916,7 @@ async function handleCallSignal(signal) {
         incomingInvite = signal;
         showCallPanel(`${otherName} يتصل بك…`, true, true);
         startRinging(true);
+        showIncomingDesktopNotification(callId);
         return;
     }
 
@@ -903,6 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('messageForm');
     const clearAssistantMemoryButton = document.getElementById('clearAssistantMemoryButton');
     const voiceCallButton = document.getElementById('voiceCallButton');
+    const enableCallNotificationsButton = document.getElementById('enableCallNotificationsButton');
     const answerCallButton = document.getElementById('answerCallButton');
     const declineCallButton = document.getElementById('declineCallButton');
     const hangupCallButton = document.getElementById('hangupCallButton');
@@ -910,6 +985,13 @@ document.addEventListener('DOMContentLoaded', () => {
     formatAssistantMessages();
     if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
     if (voiceCallButton) voiceCallButton.addEventListener('click', startVoiceCall);
+    if (enableCallNotificationsButton) {
+        enableCallNotificationsButton.addEventListener('click', requestCallNotificationPermission);
+    }
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) notifyIncomingCallIfNeeded();
+    });
+    window.addEventListener('blur', () => window.setTimeout(notifyIncomingCallIfNeeded, 0));
     document.querySelectorAll('[data-retry-call]').forEach((button) => {
         button.addEventListener('click', startVoiceCall);
     });
@@ -985,15 +1067,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('forwardSearch').oninput = (e) => loadForwardUsers(e.target.value);
 
-    // Polling for typing and WebRTC signals. يمنع القفل تداخل طلبات الاستطلاع البطيئة.
+    // نخفف استطلاع «يكتب الآن» في الخلفية، لكن إشارات المكالمة تستمر كي يصل تنبيه سطح المكتب.
     setInterval(async () => {
-        if (document.visibilityState === 'hidden' || pollingInProgress) return;
+        if (pollingInProgress) return;
         pollingInProgress = true;
         try {
-            const res = await fetch(`/messages/typing/${otherUserId}`);
-            if (res.ok) {
-                const data = await res.json();
-                document.getElementById('typingIndicator').classList.toggle('d-none', !data.typing);
+            if (document.visibilityState !== 'hidden') {
+                const res = await fetch(`/messages/typing/${otherUserId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('typingIndicator').classList.toggle('d-none', !data.typing);
+                }
             }
             if (isAnterAssistant) return;
             const callRes = await fetch(`/messages/calls/poll/${otherUserId}`);

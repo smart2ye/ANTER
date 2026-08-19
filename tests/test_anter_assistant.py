@@ -634,6 +634,88 @@ class AnterAssistantTests(unittest.TestCase):
             ).first()
         self.assertIsNotNone(allowed)
 
+    def test_call_signals_require_mutual_following_and_are_delivered_once(self):
+        with self.app.app_context():
+            caller = User.query.filter_by(username='voice_call_test_caller').first()
+            if caller is None:
+                caller = User(
+                    username='voice_call_test_caller',
+                    email='voice-call-caller@example.test',
+                    name='متصل اختبار',
+                    terms_agreed=True,
+                )
+                caller.set_password('1234')
+                db.session.add(caller)
+
+            receiver = User.query.filter_by(username='voice_call_test_receiver').first()
+            if receiver is None:
+                receiver = User(
+                    username='voice_call_test_receiver',
+                    email='voice-call-receiver@example.test',
+                    name='مستقبل اختبار',
+                    terms_agreed=True,
+                )
+                receiver.set_password('1234')
+                db.session.add(receiver)
+            db.session.commit()
+            caller_id = caller.id
+            receiver_id = receiver.id
+
+            Follow.query.filter_by(follower_id=caller_id, followed_id=receiver_id).delete()
+            Follow.query.filter_by(follower_id=receiver_id, followed_id=caller_id).delete()
+            db.session.add(Follow(follower_id=caller_id, followed_id=receiver_id))
+            db.session.commit()
+
+        caller_client = self.app.test_client()
+        receiver_client = self.app.test_client()
+        with caller_client.session_transaction() as session:
+            session['_user_id'] = str(caller_id)
+            session['_fresh'] = True
+        with receiver_client.session_transaction() as session:
+            session['_user_id'] = str(receiver_id)
+            session['_fresh'] = True
+
+        # متابعة أحادية تكفي للمراسلة، لكنها لا تكفي للاتصال الصوتي.
+        unilateral = caller_client.post(
+            f'/messages/calls/signal/{receiver_id}',
+            json={'callId': 'voice-call-integration', 'type': 'invite', 'payload': {'description': {'type': 'offer'}}},
+        )
+        self.assertEqual(unilateral.status_code, 403)
+
+        with self.app.app_context():
+            db.session.add(Follow(follower_id=receiver_id, followed_id=caller_id))
+            db.session.commit()
+
+        invite = caller_client.post(
+            f'/messages/calls/signal/{receiver_id}',
+            json={'callId': 'voice-call-integration', 'type': 'invite', 'payload': {'description': {'type': 'offer', 'sdp': 'offer-sdp'}}},
+        )
+        self.assertEqual(invite.status_code, 200)
+        self.assertTrue(invite.get_json()['success'])
+
+        received_invite = receiver_client.get(f'/messages/calls/poll/{caller_id}')
+        self.assertEqual(received_invite.status_code, 200)
+        invite_signals = received_invite.get_json()['signals']
+        self.assertEqual(len(invite_signals), 1)
+        self.assertEqual(invite_signals[0]['callId'], 'voice-call-integration')
+        self.assertEqual(invite_signals[0]['type'], 'invite')
+        self.assertEqual(invite_signals[0]['payload']['description']['type'], 'offer')
+
+        # تُعلّم الإشارة كمستلمة فلا تعود في عملية الاستطلاع التالية.
+        self.assertEqual(receiver_client.get(f'/messages/calls/poll/{caller_id}').get_json()['signals'], [])
+
+        answer = receiver_client.post(
+            f'/messages/calls/signal/{caller_id}',
+            json={'callId': 'voice-call-integration', 'type': 'answer', 'payload': {'description': {'type': 'answer', 'sdp': 'answer-sdp'}}},
+        )
+        self.assertEqual(answer.status_code, 200)
+
+        received_answer = caller_client.get(f'/messages/calls/poll/{receiver_id}')
+        answer_signals = received_answer.get_json()['signals']
+        self.assertEqual(len(answer_signals), 1)
+        self.assertEqual(answer_signals[0]['type'], 'answer')
+        self.assertEqual(answer_signals[0]['payload']['description']['type'], 'answer')
+
     def test_call_signal_requires_following_target(self):
         with self.app.app_context():
             target = User.query.filter_by(username='call_follow_required_target').first()

@@ -92,6 +92,7 @@ def inbox():
 def chat(user_id):
     other = User.query.get_or_404(user_id)
     can_message = _can_message_user(other)
+    can_call = _can_call_user(other)
     messages = Message.query.filter(
         or_(
             (Message.sender_id == current_user.id) & (Message.receiver_id == other.id) & (Message.deleted_by_sender == False),
@@ -115,6 +116,7 @@ def chat(user_id):
         rtc_config=get_rtc_config(),
         is_anter_assistant=is_anter_assistant(other),
         can_message=can_message,
+        can_call=can_call,
     )
 
 
@@ -141,6 +143,11 @@ def _can_message_user(other):
             followed_id=current_user.id,
         ).first() is not None
     return True
+
+
+def _can_call_user(other):
+    """الاتصال الصوتي يتطلب متابعة متبادلة لحماية المستخدمين من الدعوات غير المرغوبة."""
+    return _can_message_user(other) and other.is_following(current_user)
 
 
 def _prepare_chat_attachment(uploaded_file):
@@ -523,8 +530,6 @@ def send_call_signal(user_id):
     receiver = User.query.get_or_404(user_id)
     if receiver.id == current_user.id:
         return jsonify({'success': False, 'message': 'لا يمكن الاتصال بالنفس.'}), 400
-    if not _can_message_user(receiver):
-        return jsonify({'success': False, 'message': 'يجب متابعة هذا المستخدم أولاً قبل بدء اتصال.'}), 403
 
     data = request.get_json(silent=True) or {}
     call_id = str(data.get('callId', '')).strip()
@@ -533,6 +538,11 @@ def send_call_signal(user_id):
 
     if not call_id or len(call_id) > 64 or signal_type not in CALL_SIGNAL_TYPES:
         return jsonify({'success': False, 'message': 'بيانات مكالمة غير صالحة.'}), 400
+
+    # الاتصال الصوتي أكثر حساسية من الرسائل؛ لذلك يتطلب متابعة متبادلة قبل
+    # تمرير أي إشارة WebRTC، سواء أكانت دعوة أم رداً تقنياً.
+    if not _can_call_user(receiver):
+        return jsonify({'success': False, 'message': 'يتطلب الاتصال الصوتي متابعة متبادلة بين الحسابين.'}), 403
 
     try:
         payload_json = json.dumps(payload, ensure_ascii=False)

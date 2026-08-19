@@ -14,7 +14,7 @@
             {% endif %}
         </div>
         <span class="typing-indicator d-none" id="typingIndicator" role="status" aria-live="polite">يكتب الآن…</span>
-        {% if not is_anter_assistant and can_message %}
+        {% if not is_anter_assistant and can_call %}
             <button class="btn btn-outline-primary call-button" type="button" id="voiceCallButton" aria-label="بدء مكالمة صوتية" title="بدء مكالمة صوتية">
                 <i class="fas fa-phone-alt"></i>
             </button>
@@ -291,6 +291,8 @@ var callStream = null;
 var activeCallId = null;
 var incomingInvite = null;
 var pendingCandidates = [];
+var queuedOutgoingCandidates = [];
+var callSignalReady = false;
 var pollingInProgress = false;
 
 function appendAssistantInlineText(container, text) {
@@ -481,6 +483,252 @@ function showHelp(text, isError = false) {
     help.classList.remove('d-none');
 }
 
+function setCallStatus(text) {
+    const status = document.getElementById('callStatus');
+    if (status) status.textContent = text;
+}
+
+function showCallPanel(status, incoming = false) {
+    const panel = document.getElementById('callPanel');
+    const incomingActions = document.getElementById('incomingCallActions');
+    const outgoingActions = document.getElementById('outgoingCallActions');
+    if (!panel || !incomingActions || !outgoingActions) return;
+    panel.classList.remove('d-none');
+    incomingActions.classList.toggle('d-none', !incoming);
+    outgoingActions.classList.toggle('d-none', incoming);
+    setCallStatus(status);
+}
+
+function createCallId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return `call-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+async function sendCallSignal(type, payload = {}, callId = activeCallId) {
+    if (!callId) throw new Error('تعذر تحديد معرف الاتصال.');
+    const response = await fetch(`/messages/calls/signal/${otherUserId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ callId, type, payload })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) {
+        throw new Error(data.message || 'تعذر إرسال إشارة الاتصال.');
+    }
+    return data;
+}
+
+function stopCallMedia() {
+    if (callStream) callStream.getTracks().forEach((track) => track.stop());
+    callStream = null;
+    const remoteAudio = document.getElementById('remoteAudio');
+    if (remoteAudio) remoteAudio.srcObject = null;
+}
+
+function resetCallUi() {
+    const panel = document.getElementById('callPanel');
+    if (panel) panel.classList.add('d-none');
+    const incomingActions = document.getElementById('incomingCallActions');
+    const outgoingActions = document.getElementById('outgoingCallActions');
+    if (incomingActions) incomingActions.classList.add('d-none');
+    if (outgoingActions) outgoingActions.classList.remove('d-none');
+}
+
+function closeCall() {
+    if (peerConnection) {
+        peerConnection.onicecandidate = null;
+        peerConnection.ontrack = null;
+        peerConnection.onconnectionstatechange = null;
+        peerConnection.close();
+    }
+    peerConnection = null;
+    activeCallId = null;
+    incomingInvite = null;
+    pendingCandidates = [];
+    queuedOutgoingCandidates = [];
+    callSignalReady = false;
+    stopCallMedia();
+    resetCallUi();
+}
+
+async function endCall(notifyPeer = true) {
+    const callId = activeCallId;
+    if (notifyPeer && callId) {
+        try {
+            await sendCallSignal('hangup', {}, callId);
+        } catch (error) {
+            // ينتهي الاتصال محلياً حتى لو اختفت الشبكة أثناء الإنهاء.
+        }
+    }
+    closeCall();
+}
+
+async function applyPendingCandidates() {
+    if (!peerConnection || !peerConnection.remoteDescription) return;
+    const candidates = pendingCandidates;
+    pendingCandidates = [];
+    for (const candidate of candidates) {
+        try {
+            await peerConnection.addIceCandidate(candidate);
+        } catch (error) {
+            console.warn('تعذر إضافة مرشح الاتصال الوارد.', error);
+        }
+    }
+}
+
+async function flushQueuedOutgoingCandidates() {
+    const candidates = queuedOutgoingCandidates;
+    queuedOutgoingCandidates = [];
+    for (const candidate of candidates) {
+        try {
+            await sendCallSignal('candidate', { candidate });
+        } catch (error) {
+            console.warn('تعذر إرسال مرشح الاتصال المؤجل.', error);
+        }
+    }
+}
+
+async function ensurePeerConnection() {
+    if (peerConnection) return peerConnection;
+    if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
+        throw new Error('المتصفح لا يدعم الاتصال الصوتي المباشر.');
+    }
+
+    callStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const connection = new RTCPeerConnection(rtcConfig);
+    callStream.getTracks().forEach((track) => connection.addTrack(track, callStream));
+    connection.ontrack = (event) => {
+        const remoteAudio = document.getElementById('remoteAudio');
+        if (remoteAudio) {
+            remoteAudio.srcObject = event.streams[0] || new MediaStream([event.track]);
+            remoteAudio.play().catch(() => {});
+        }
+    };
+    connection.onicecandidate = async (event) => {
+        if (!event.candidate || !activeCallId) return;
+        const candidate = event.candidate.toJSON();
+        // قد تُنتج المتصفحات مرشح ICE قبل اكتمال إرسال الدعوة أو الإجابة.
+        // نؤجله حتى تصل إشارة الوصف أولاً إلى الطرف الآخر.
+        if (!callSignalReady) {
+            queuedOutgoingCandidates.push(candidate);
+            return;
+        }
+        try {
+            await sendCallSignal('candidate', { candidate });
+        } catch (error) {
+            console.warn('تعذر إرسال مرشح الاتصال.', error);
+        }
+    };
+    connection.onconnectionstatechange = () => {
+        if (connection.connectionState === 'connected') {
+            setCallStatus('المكالمة متصلة.');
+        } else if (['failed', 'closed'].includes(connection.connectionState)) {
+            closeCall();
+        }
+    };
+    peerConnection = connection;
+    return connection;
+}
+
+async function startVoiceCall() {
+    try {
+        activeCallId = createCallId();
+        callSignalReady = false;
+        queuedOutgoingCandidates = [];
+        showCallPanel('جارٍ طلب إذن الميكروفون…');
+        const connection = await ensurePeerConnection();
+        const offer = await connection.createOffer();
+        await connection.setLocalDescription(offer);
+        await sendCallSignal('invite', { description: connection.localDescription });
+        callSignalReady = true;
+        await flushQueuedOutgoingCandidates();
+        setCallStatus('جارٍ الاتصال بالطرف الآخر…');
+    } catch (error) {
+        showHelp(error.message || 'تعذر بدء الاتصال الصوتي.', true);
+        closeCall();
+    }
+}
+
+async function acceptIncomingCall() {
+    const invite = incomingInvite;
+    const description = invite?.payload?.description;
+    if (!invite || !description || description.type !== 'offer') {
+        showHelp('تعذر قراءة دعوة الاتصال.', true);
+        closeCall();
+        return;
+    }
+    try {
+        activeCallId = invite.callId;
+        callSignalReady = false;
+        queuedOutgoingCandidates = [];
+        showCallPanel('جارٍ تجهيز الاتصال…');
+        const connection = await ensurePeerConnection();
+        await connection.setRemoteDescription(description);
+        await applyPendingCandidates();
+        const answer = await connection.createAnswer();
+        await connection.setLocalDescription(answer);
+        await sendCallSignal('answer', { description: connection.localDescription });
+        callSignalReady = true;
+        await flushQueuedOutgoingCandidates();
+        setCallStatus('تم قبول المكالمة. جارٍ الاتصال…');
+    } catch (error) {
+        showHelp(error.message || 'تعذر قبول الاتصال.', true);
+        await endCall(true);
+    }
+}
+
+async function declineIncomingCall() {
+    const callId = incomingInvite?.callId || activeCallId;
+    if (callId) {
+        try {
+            await sendCallSignal('decline', {}, callId);
+        } catch (error) {
+            showHelp(error.message || 'تعذر رفض الاتصال.', true);
+        }
+    }
+    closeCall();
+}
+
+async function handleCallSignal(signal) {
+    const type = signal?.type;
+    const callId = signal?.callId;
+    if (!type || !callId) return;
+
+    if (type === 'invite') {
+        if (activeCallId && activeCallId !== callId) {
+            try { await sendCallSignal('decline', {}, callId); } catch (error) {}
+            return;
+        }
+        activeCallId = callId;
+        incomingInvite = signal;
+        showCallPanel(`${otherName} يتصل بك…`, true);
+        return;
+    }
+
+    if (callId !== activeCallId) return;
+    if (type === 'answer' && peerConnection && signal.payload?.description) {
+        await peerConnection.setRemoteDescription(signal.payload.description);
+        await applyPendingCandidates();
+        setCallStatus('جارٍ ربط الصوت…');
+    } else if (type === 'candidate' && signal.payload?.candidate) {
+        if (peerConnection?.remoteDescription) {
+            try {
+                await peerConnection.addIceCandidate(signal.payload.candidate);
+            } catch (error) {
+                console.warn('تعذر إضافة مرشح الاتصال.', error);
+            }
+        } else {
+            pendingCandidates.push(signal.payload.candidate);
+        }
+    } else if (type === 'decline') {
+        showHelp('رفض الطرف الآخر الاتصال.', true);
+        closeCall();
+    } else if (type === 'hangup') {
+        showHelp('أنهى الطرف الآخر المكالمة.');
+        closeCall();
+    }
+}
+
 async function sendVoiceAsJson(file) {
     const reader = new FileReader();
     const base64Promise = new Promise((resolve, reject) => {
@@ -511,9 +759,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('messageInput');
     const form = document.getElementById('messageForm');
     const clearAssistantMemoryButton = document.getElementById('clearAssistantMemoryButton');
+    const voiceCallButton = document.getElementById('voiceCallButton');
+    const answerCallButton = document.getElementById('answerCallButton');
+    const declineCallButton = document.getElementById('declineCallButton');
+    const hangupCallButton = document.getElementById('hangupCallButton');
     
     formatAssistantMessages();
     if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    if (voiceCallButton) voiceCallButton.addEventListener('click', startVoiceCall);
+    if (answerCallButton) answerCallButton.addEventListener('click', acceptIncomingCall);
+    if (declineCallButton) declineCallButton.addEventListener('click', declineIncomingCall);
+    if (hangupCallButton) hangupCallButton.addEventListener('click', () => endCall(true));
+
     if (clearAssistantMemoryButton) {
         clearAssistantMemoryButton.addEventListener('click', async () => {
             if (!confirm('هل تريد مسح ذاكرة مساعد أنتر؟ لن يُحذف سجل الرسائل.')) return;
@@ -582,31 +839,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('forwardSearch').oninput = (e) => loadForwardUsers(e.target.value);
 
-    // Polling for typing and calls
+    // Polling for typing and WebRTC signals. يمنع القفل تداخل طلبات الاستطلاع البطيئة.
     setInterval(async () => {
-        if (document.visibilityState === 'hidden') return;
-        const res = await fetch(`/messages/typing/${otherUserId}`);
-        if (res.ok) {
-            const data = await res.json();
-            document.getElementById('typingIndicator').classList.toggle('d-none', !data.typing);
-        }
-        if (isAnterAssistant) return;
-        const callRes = await fetch(`/messages/calls/poll/${otherUserId}`);
-        if (callRes.ok) {
-            const data = await callRes.json();
-            for (const signal of data.signals || []) {
-                if (signal.type === 'invite' && !activeCallId) {
-                    activeCallId = signal.call_id;
-                    document.getElementById('callPanel').classList.remove('d-none');
-                    document.getElementById('incomingCallActions').classList.remove('d-none');
-                    document.getElementById('outgoingCallActions').classList.add('d-none');
-                } else if (signal.type === 'hangup') {
-                    if (peerConnection) peerConnection.close();
-                    document.getElementById('callPanel').classList.add('d-none');
-                }
+        if (document.visibilityState === 'hidden' || pollingInProgress) return;
+        pollingInProgress = true;
+        try {
+            const res = await fetch(`/messages/typing/${otherUserId}`);
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('typingIndicator').classList.toggle('d-none', !data.typing);
             }
+            if (isAnterAssistant) return;
+            const callRes = await fetch(`/messages/calls/poll/${otherUserId}`);
+            if (callRes.ok) {
+                const data = await callRes.json();
+                for (const signal of data.signals || []) await handleCallSignal(signal);
+            }
+        } catch (error) {
+            console.warn('تعذر الاستعلام عن حالة الاتصال.', error);
+        } finally {
+            pollingInProgress = false;
         }
-    }, 3000);
+    }, 2500);
 });
 </script>
 {% endblock %}

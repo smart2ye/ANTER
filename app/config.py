@@ -67,6 +67,9 @@ class Config:
     WEBRTC_TURN_URL = os.environ.get('WEBRTC_TURN_URL', '')
     WEBRTC_TURN_USERNAME = os.environ.get('WEBRTC_TURN_USERNAME', '')
     WEBRTC_TURN_CREDENTIAL = os.environ.get('WEBRTC_TURN_CREDENTIAL', '')
+    # رموز تطبيق ANTER Messenger تخص جهازاً واحداً ولا تُحفظ قيمتها الخام في قاعدة البيانات.
+    MOBILE_API_TOKEN_TTL_SECONDS = env_int('MOBILE_API_TOKEN_TTL_SECONDS', 43200, 900)
+    MOBILE_API_MAX_MESSAGE_CHARS = env_int('MOBILE_API_MAX_MESSAGE_CHARS', 2000, 100)
     PERMANENT_SESSION_LIFETIME = 86400
     
     # مفاتيح الذكاء الاصطناعي (Hybrid AI)

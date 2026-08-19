@@ -25,3 +25,4 @@ from .video_comment_like import VideoCommentLike
 from .story import Story, StoryView, StoryReaction
 from .assistant_memory import AssistantMemory
 from .assistant_daily_publication import AssistantDailyPublication
+from .mobile_access_token import MobileAccessToken

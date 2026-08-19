@@ -12,6 +12,7 @@ from .trends import trends_bp
 from .api import api_bp
 from .media import media_bp
 from .ai import ai_bp
+from .mobile_api import mobile_api_bp
 
 def register_blueprints(app):
     app.register_blueprint(auth_bp)
@@ -28,3 +29,4 @@ def register_blueprints(app):
     app.register_blueprint(api_bp)
     app.register_blueprint(media_bp)
     app.register_blueprint(ai_bp)
+    app.register_blueprint(mobile_api_bp)

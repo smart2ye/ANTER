@@ -2,7 +2,7 @@ from flask import Flask, flash, redirect, request, session, url_for
 from werkzeug.exceptions import RequestEntityTooLarge
 from app.config import Config
 from app.extensions import db, login_manager, csrf
-from app.models import User, CallSignal, CallLog
+from app.models import User, CallSignal, CallLog, MobileAccessToken
 from app.routes import register_blueprints
 import hashlib
 import hmac
@@ -68,6 +68,7 @@ def create_app():
         # إنشاء جداول القصص وإشارات وسجل المكالمات صراحةً على قواعد الإنتاج القائمة.
         CallSignal.__table__.create(bind=db.engine, checkfirst=True)
         CallLog.__table__.create(bind=db.engine, checkfirst=True)
+        MobileAccessToken.__table__.create(bind=db.engine, checkfirst=True)
         from app.models.story import Story, StoryView
         Story.__table__.create(bind=db.engine, checkfirst=True)
         StoryView.__table__.create(bind=db.engine, checkfirst=True)

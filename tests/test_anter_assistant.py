@@ -19,7 +19,7 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 from app import _get_admin_path, create_app
 from app.extensions import db
 from app.forms.auth import ResetPasswordForm
-from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Follow, Message, Notification, Post, Report, User
+from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Follow, Message, MobileAccessToken, Notification, Post, Report, User
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
@@ -78,6 +78,95 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertEqual(assistant.username, self.app.config["ANTER_ASSISTANT_USERNAME"])
             self.assertTrue(assistant.is_verified)
             self.assertEqual(assistant.message_privacy, "everyone")
+
+    def test_mobile_api_authenticates_device_and_delivers_messages_between_mutual_follows(self):
+        with self.app.app_context():
+            sender = User.query.get(self.user_id)
+            receiver = User.query.filter_by(username='mobile_api_receiver').first()
+            if receiver is None:
+                receiver = User(
+                    username='mobile_api_receiver',
+                    email='mobile-api-receiver@example.test',
+                    name='مستلم API',
+                    terms_agreed=True,
+                )
+                receiver.set_password('receiver-test-password')
+                db.session.add(receiver)
+                db.session.flush()
+            if not sender.is_following(receiver):
+                db.session.add(Follow(follower_id=sender.id, followed_id=receiver.id))
+            if not receiver.is_following(sender):
+                db.session.add(Follow(follower_id=receiver.id, followed_id=sender.id))
+            db.session.commit()
+            receiver_id = receiver.id
+
+        sender_login = self.client.post('/api/mobile/v1/auth/login', json={
+            'identifier': 'assistant_test_user',
+            'password': 'not-used-in-test',
+            'deviceName': 'هاتف المرسل',
+        })
+        self.assertEqual(sender_login.status_code, 201)
+        sender_token = sender_login.get_json()['accessToken']
+        self.assertGreater(len(sender_token), 40)
+        with self.app.app_context():
+            stored = MobileAccessToken.query.filter_by(user_id=self.user_id).order_by(MobileAccessToken.id.desc()).first()
+            self.assertIsNotNone(stored)
+            self.assertNotEqual(stored.token_hash, sender_token)
+
+        receiver_client = self.app.test_client()
+        receiver_login = receiver_client.post('/api/mobile/v1/auth/login', json={
+            'identifier': 'mobile_api_receiver',
+            'password': 'receiver-test-password',
+        })
+        self.assertEqual(receiver_login.status_code, 201)
+        receiver_token = receiver_login.get_json()['accessToken']
+
+        sender_headers = {'Authorization': f'Bearer {sender_token}'}
+        receiver_headers = {'Authorization': f'Bearer {receiver_token}'}
+        send_response = self.client.post(
+            '/api/mobile/v1/conversations/mobile_api_receiver/messages',
+            headers=sender_headers,
+            json={'content': 'رسالة حية من تطبيق ANTER Messenger'},
+        )
+        self.assertEqual(send_response.status_code, 201)
+        message_id = send_response.get_json()['message']['id']
+
+        receive_response = receiver_client.get(
+            '/api/mobile/v1/conversations/assistant_test_user/messages',
+            headers=receiver_headers,
+        )
+        self.assertEqual(receive_response.status_code, 200)
+        messages = receive_response.get_json()['messages']
+        self.assertTrue(any(item['id'] == message_id and item['content'].startswith('رسالة حية') for item in messages))
+        with self.app.app_context():
+            self.assertTrue(Message.query.get(message_id).is_read)
+            self.assertEqual(User.query.get(receiver_id).username, 'mobile_api_receiver')
+
+    def test_mobile_api_blocks_messages_without_mutual_follow(self):
+        with self.app.app_context():
+            outsider = User.query.filter_by(username='mobile_api_outsider').first()
+            if outsider is None:
+                outsider = User(
+                    username='mobile_api_outsider',
+                    email='mobile-api-outsider@example.test',
+                    name='حساب غير متابع',
+                    terms_agreed=True,
+                )
+                outsider.set_password('outsider-test-password')
+                db.session.add(outsider)
+                db.session.commit()
+
+        login_response = self.client.post('/api/mobile/v1/auth/login', json={
+            'identifier': 'assistant_test_user',
+            'password': 'not-used-in-test',
+        })
+        token = login_response.get_json()['accessToken']
+        response = self.client.post(
+            '/api/mobile/v1/conversations/mobile_api_outsider/messages',
+            headers={'Authorization': f'Bearer {token}'},
+            json={'content': 'محاولة يجب منعها'},
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_service_sends_only_current_question_to_groq_without_exposing_provider(self):
         fake_response = Mock(status_code=200)

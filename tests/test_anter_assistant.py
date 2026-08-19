@@ -716,6 +716,15 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertEqual(answer_signals[0]['type'], 'answer')
         self.assertEqual(answer_signals[0]['payload']['description']['type'], 'answer')
 
+        no_answer = caller_client.post(
+            f'/messages/calls/signal/{receiver_id}',
+            json={'callId': 'voice-call-integration', 'type': 'hangup', 'payload': {'reason': 'no_answer'}},
+        )
+        self.assertEqual(no_answer.status_code, 200)
+        received_hangup = receiver_client.get(f'/messages/calls/poll/{caller_id}').get_json()['signals']
+        self.assertEqual(received_hangup[0]['type'], 'hangup')
+        self.assertEqual(received_hangup[0]['payload']['reason'], 'no_answer')
+
     def test_call_signal_requires_following_target(self):
         with self.app.app_context():
             target = User.query.filter_by(username='call_follow_required_target').first()

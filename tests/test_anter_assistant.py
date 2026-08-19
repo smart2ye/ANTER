@@ -19,7 +19,7 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 from app import _get_admin_path, create_app
 from app.extensions import db
 from app.forms.auth import ResetPasswordForm
-from app.models import AssistantDailyPublication, AssistantMemory, Follow, Message, Notification, Post, Report, User
+from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Follow, Message, Notification, Post, Report, User
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
@@ -716,14 +716,55 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertEqual(answer_signals[0]['type'], 'answer')
         self.assertEqual(answer_signals[0]['payload']['description']['type'], 'answer')
 
-        no_answer = caller_client.post(
+        completed = caller_client.post(
             f'/messages/calls/signal/{receiver_id}',
-            json={'callId': 'voice-call-integration', 'type': 'hangup', 'payload': {'reason': 'no_answer'}},
+            json={'callId': 'voice-call-integration', 'type': 'hangup', 'payload': {}},
         )
-        self.assertEqual(no_answer.status_code, 200)
+        self.assertEqual(completed.status_code, 200)
+        self.assertEqual(receiver_client.get(f'/messages/calls/poll/{caller_id}').get_json()['signals'][0]['type'], 'hangup')
+
+        declined_invite = caller_client.post(
+            f'/messages/calls/signal/{receiver_id}',
+            json={'callId': 'voice-call-declined', 'type': 'invite', 'payload': {'description': {'type': 'offer'}}},
+        )
+        self.assertEqual(declined_invite.status_code, 200)
+        declined = receiver_client.post(
+            f'/messages/calls/signal/{caller_id}',
+            json={'callId': 'voice-call-declined', 'type': 'decline', 'payload': {}},
+        )
+        self.assertEqual(declined.status_code, 200)
+
+        missed_invite = caller_client.post(
+            f'/messages/calls/signal/{receiver_id}',
+            json={'callId': 'voice-call-missed', 'type': 'invite', 'payload': {'description': {'type': 'offer'}}},
+        )
+        self.assertEqual(missed_invite.status_code, 200)
+        missed = caller_client.post(
+            f'/messages/calls/signal/{receiver_id}',
+            json={'callId': 'voice-call-missed', 'type': 'hangup', 'payload': {'reason': 'no_answer'}},
+        )
+        self.assertEqual(missed.status_code, 200)
         received_hangup = receiver_client.get(f'/messages/calls/poll/{caller_id}').get_json()['signals']
-        self.assertEqual(received_hangup[0]['type'], 'hangup')
-        self.assertEqual(received_hangup[0]['payload']['reason'], 'no_answer')
+        self.assertEqual(received_hangup[-1]['type'], 'hangup')
+        self.assertEqual(received_hangup[-1]['payload']['reason'], 'no_answer')
+
+        with self.app.app_context():
+            completed_log = CallLog.query.filter_by(call_id='voice-call-integration').first()
+            declined_log = CallLog.query.filter_by(call_id='voice-call-declined').first()
+            missed_log = CallLog.query.filter_by(call_id='voice-call-missed').first()
+            self.assertEqual(completed_log.status, 'completed')
+            self.assertIsNotNone(completed_log.answered_at)
+            self.assertEqual(declined_log.status, 'declined')
+            self.assertEqual(missed_log.status, 'missed')
+            self.assertIsNone(missed_log.answered_at)
+
+        caller_chat = caller_client.get(f'/messages/{receiver_id}').get_data(as_text=True)
+        receiver_chat = receiver_client.get(f'/messages/{caller_id}').get_data(as_text=True)
+        self.assertIn('data-call-id="voice-call-integration"', caller_chat)
+        self.assertIn('مكالمة صادرة مستلمة', caller_chat)
+        self.assertIn('مكالمة واردة مستلمة', receiver_chat)
+        self.assertIn('تم رفض مكالمتك', caller_chat)
+        self.assertIn('لم يُرد على مكالمتك', caller_chat)
 
     def test_call_signal_requires_following_target(self):
         with self.app.app_context():
@@ -789,7 +830,13 @@ class AnterAssistantTests(unittest.TestCase):
                 receiver_id=second_party.id,
                 content='محتوى خاص بين طرفين آخرين لا يجب كشفه',
             )
-            db.session.add(private_message)
+            private_call = CallLog(
+                call_id='private-call-log-not-for-third-party',
+                caller_id=first_party.id,
+                receiver_id=second_party.id,
+                status='missed',
+            )
+            db.session.add_all([private_message, private_call])
             db.session.commit()
             first_party_id = first_party.id
 
@@ -799,6 +846,7 @@ class AnterAssistantTests(unittest.TestCase):
         # حالة 200 هنا تعني فتح قناة جديدة فارغة مع الطرف الأول، لا كشف محادثته مع طرف ثالث.
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('محتوى خاص بين طرفين آخرين لا يجب كشفه', page)
+        self.assertNotIn('private-call-log-not-for-third-party', page)
 
     def test_non_participant_cannot_forward_a_private_message(self):
         with self.app.app_context():

@@ -32,9 +32,11 @@
     {% endif %}
 
     <div class="chat-box" id="chatBox" aria-live="polite">
-        {% if messages %}
-            {% for msg in messages %}
-                <article class="message-row {% if msg.sender_id == current_user.id %}is-sent{% else %}is-received{% endif %}" id="msg-{{ msg.id }}" data-id="{{ msg.id }}">
+        {% if timeline %}
+            {% for entry in timeline %}
+                {% if entry.kind == 'message' %}
+                    {% set msg = entry.item %}
+                    <article class="message-row {% if msg.sender_id == current_user.id %}is-sent{% else %}is-received{% endif %}" id="msg-{{ msg.id }}" data-id="{{ msg.id }}">
                     <div class="message-bubble-container">
                         <div class="message-bubble shadow-sm" onclick="showMsgActions({{ msg.id }}, event)">
                             {% if msg.is_deleted_everyone %}
@@ -101,7 +103,37 @@
                             </div>
                         </div>
                     </div>
-                </article>
+                    </article>
+                {% else %}
+                    {% set call = entry.item %}
+                    {% set is_outgoing_call = call.caller_id == current_user.id %}
+                    <article class="call-log-row" data-call-id="{{ call.call_id }}">
+                        <div class="call-log-card call-log-{{ call.status }}">
+                            <i class="fas {{ 'fa-phone-alt' if call.status in ['answered', 'completed'] else 'fa-phone-slash' }} call-log-icon"></i>
+                            <div class="call-log-content">
+                                <strong>
+                                    {% if call.status == 'answered' or call.status == 'completed' %}
+                                        {{ 'مكالمة صادرة مستلمة' if is_outgoing_call else 'مكالمة واردة مستلمة' }}
+                                    {% elif call.status == 'declined' %}
+                                        {{ 'تم رفض مكالمتك' if is_outgoing_call else 'مكالمة واردة مرفوضة' }}
+                                    {% elif call.status == 'missed' %}
+                                        {{ 'لم يُرد على مكالمتك' if is_outgoing_call else 'مكالمة واردة لم يُرد عليها' }}
+                                    {% elif call.status == 'cancelled' %}
+                                        {{ 'تم إلغاء المكالمة' }}
+                                    {% else %}
+                                        {{ 'مكالمة صادرة جارية' if is_outgoing_call else 'مكالمة واردة جارية' }}
+                                    {% endif %}
+                                </strong>
+                                <small>
+                                    {{ call.started_at.strftime('%H:%M') }}
+                                    {% if call.duration_seconds is not none and call.duration_seconds > 0 %}
+                                        · {{ call.duration_seconds // 60 }} د {{ call.duration_seconds % 60 }} ث
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </article>
+                {% endif %}
             {% endfor %}
         {% else %}
             <div class="chat-empty text-center text-muted" id="chatEmpty">
@@ -220,6 +252,14 @@
     .chat-header { background: var(--card-bg, #fff); border: 1px solid rgba(0,0,0,.07); border-radius: 16px; padding: 12px 14px; box-shadow: 0 4px 18px rgba(0,0,0,.04); }
     .chat-box { height: min(65vh, 600px); overflow-y: auto; padding: 18px; border-radius: 18px; background: #f8f9fa; border: 1px solid rgba(0,0,0,.06); scroll-behavior: smooth; }
     .message-row { display: flex; margin-bottom: 12px; position: relative; }
+    .call-log-row { display: flex; justify-content: center; margin: 13px 0; }
+    .call-log-card { display: inline-flex; align-items: center; gap: 9px; max-width: 92%; padding: 9px 13px; border: 1px solid #dbe7f6; border-radius: 14px; background: #f7faff; color: #24405f; }
+    .call-log-card.call-log-answered, .call-log-card.call-log-completed { border-color: #bce7ce; background: #f2fbf5; color: #176f3b; }
+    .call-log-card.call-log-declined, .call-log-card.call-log-missed, .call-log-card.call-log-cancelled { border-color: #f1d0d2; background: #fff7f7; color: #9a3941; }
+    .call-log-icon { font-size: 1rem; }
+    .call-log-content { display: flex; flex-direction: column; gap: 1px; text-align: right; }
+    .call-log-content strong { font-size: .84rem; }
+    .call-log-content small { color: inherit; opacity: .72; font-size: .73rem; }
     .message-row.is-sent { justify-content: flex-start; }
     .message-row.is-received { justify-content: flex-end; }
     .message-bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; position: relative; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 7px rgba(0,0,0,.05); }

@@ -12,7 +12,7 @@ from werkzeug.utils import secure_filename
 from sqlalchemy import or_
 
 from app.extensions import db, csrf
-from app.models import Message, User, Notification, CallSignal, TypingState, Follow
+from app.models import Message, User, Notification, CallSignal, CallLog, TypingState, Follow
 from app.utils.helpers import get_status_icon, get_user_status, allowed_audio_file
 from app.utils.image_storage import prepare_image_data
 from app.services.anter_assistant import (
@@ -100,6 +100,21 @@ def chat(user_id):
         )
     ).order_by(Message.created_at.asc()).all()
 
+    call_logs = CallLog.query.filter(
+        or_(
+            (CallLog.caller_id == current_user.id) & (CallLog.receiver_id == other.id),
+            (CallLog.caller_id == other.id) & (CallLog.receiver_id == current_user.id),
+        )
+    ).order_by(CallLog.started_at.asc()).all()
+    timeline = [
+        {'kind': 'message', 'item': message, 'created_at': message.created_at}
+        for message in messages
+    ] + [
+        {'kind': 'call', 'item': call_log, 'created_at': call_log.started_at}
+        for call_log in call_logs
+    ]
+    timeline.sort(key=lambda entry: entry['created_at'])
+
     unread_changed = False
     for message in messages:
         if message.receiver_id == current_user.id and not message.is_read:
@@ -112,6 +127,7 @@ def chat(user_id):
         'messages/chat.html',
         other=other,
         messages=messages,
+        timeline=timeline,
         get_status_icon=get_status_icon,
         rtc_config=get_rtc_config(),
         is_anter_assistant=is_anter_assistant(other),
@@ -148,6 +164,44 @@ def _can_message_user(other):
 def _can_call_user(other):
     """الاتصال الصوتي يتطلب متابعة متبادلة لحماية المستخدمين من الدعوات غير المرغوبة."""
     return _can_message_user(other) and other.is_following(current_user)
+
+
+def _update_call_log(receiver, call_id, signal_type, payload):
+    """ينشئ أو يحدّث سجلاً وصفياً للمكالمة من دون حفظ أي صوت أو محتوى اتصال."""
+    now = datetime.utcnow()
+    if signal_type == 'invite':
+        existing = CallLog.query.filter_by(call_id=call_id).first()
+        if existing is None:
+            db.session.add(CallLog(
+                call_id=call_id,
+                caller_id=current_user.id,
+                receiver_id=receiver.id,
+                status='ringing',
+                started_at=now,
+            ))
+        return
+
+    call_log = CallLog.query.filter_by(call_id=call_id).first()
+    if call_log is None or {call_log.caller_id, call_log.receiver_id} != {current_user.id, receiver.id}:
+        return
+
+    if signal_type == 'answer' and call_log.status == 'ringing':
+        call_log.status = 'answered'
+        call_log.answered_at = now
+    elif signal_type == 'decline' and call_log.status == 'ringing':
+        call_log.status = 'declined'
+        call_log.ended_at = now
+    elif signal_type == 'hangup' and call_log.ended_at is None:
+        reason = payload.get('reason') if isinstance(payload, dict) else None
+        if reason == 'no_answer':
+            call_log.status = 'missed'
+        elif call_log.answered_at is not None:
+            call_log.status = 'completed'
+        else:
+            call_log.status = 'cancelled'
+        call_log.ended_at = now
+        if call_log.answered_at is not None:
+            call_log.duration_seconds = max(0, int((now - call_log.answered_at).total_seconds()))
 
 
 def _prepare_chat_attachment(uploaded_file):
@@ -554,6 +608,8 @@ def send_call_signal(user_id):
     # تنظيف الإشارات القديمة لتبقى قاعدة البيانات صغيرة.
     expiry = datetime.utcnow() - timedelta(hours=1)
     CallSignal.query.filter(CallSignal.created_at < expiry).delete(synchronize_session=False)
+
+    _update_call_log(receiver, call_id, signal_type, payload)
 
     signal = CallSignal(
         call_id=call_id,

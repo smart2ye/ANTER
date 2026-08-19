@@ -9,6 +9,7 @@ from .like import Like
 from .follow import Follow
 from .message import Message
 from .call_signal import CallSignal
+from .call_log import CallLog
 from .typing_state import TypingState
 from .notification import Notification
 from .comment_like import CommentLike

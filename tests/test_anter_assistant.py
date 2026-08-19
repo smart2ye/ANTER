@@ -586,6 +586,37 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertEqual(messages[-1].parent_id, messages[-2].id)
 
 
+    def test_chat_page_never_exposes_messages_between_other_users(self):
+        with self.app.app_context():
+            first_party = User.query.filter_by(username='chat_isolation_first_party').first()
+            if first_party is None:
+                first_party = User(username='chat_isolation_first_party', email='chat-isolation-first@example.test', name='الطرف الأول', terms_agreed=True)
+                first_party.set_password('1234')
+                db.session.add(first_party)
+
+            second_party = User.query.filter_by(username='chat_isolation_second_party').first()
+            if second_party is None:
+                second_party = User(username='chat_isolation_second_party', email='chat-isolation-second@example.test', name='الطرف الثاني', terms_agreed=True)
+                second_party.set_password('1234')
+                db.session.add(second_party)
+            db.session.commit()
+
+            private_message = Message(
+                sender_id=first_party.id,
+                receiver_id=second_party.id,
+                content='محتوى خاص بين طرفين آخرين لا يجب كشفه',
+            )
+            db.session.add(private_message)
+            db.session.commit()
+            first_party_id = first_party.id
+
+        response = self.client.get(f'/messages/{first_party_id}')
+        page = response.get_data(as_text=True)
+
+        # حالة 200 هنا تعني فتح قناة جديدة فارغة مع الطرف الأول، لا كشف محادثته مع طرف ثالث.
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('محتوى خاص بين طرفين آخرين لا يجب كشفه', page)
+
     def test_non_participant_cannot_forward_a_private_message(self):
         with self.app.app_context():
             sender = User.query.filter_by(username='security_message_sender').first()

@@ -14,7 +14,7 @@
             {% endif %}
         </div>
         <span class="typing-indicator d-none" id="typingIndicator" role="status" aria-live="polite">يكتب الآن…</span>
-        {% if not is_anter_assistant %}
+        {% if not is_anter_assistant and can_message %}
             <button class="btn btn-outline-primary call-button" type="button" id="voiceCallButton" aria-label="بدء مكالمة صوتية" title="بدء مكالمة صوتية">
                 <i class="fas fa-phone-alt"></i>
             </button>
@@ -111,6 +111,13 @@
         {% endif %}
     </div>
 
+    {% if not can_message %}
+        <aside class="alert alert-info d-flex align-items-center justify-content-between gap-2 mt-3 mb-2" role="status">
+            <span>لمراسلة {{ other.name }} أو بدء اتصال معه، تابعه أولاً.</span>
+            <a class="btn btn-sm btn-primary text-nowrap" href="{{ url_for('users.profile', username=other.username) }}">عرض الملف الشخصي</a>
+        </aside>
+    {% endif %}
+
     <!-- معاينة الرد قبل الإرسال -->
     <div id="replyPreview" class="reply-preview-container d-none shadow-sm">
         <div class="d-flex align-items-center gap-2 p-2">
@@ -146,19 +153,22 @@
         </div>
 
         <div class="composer-row">
-            <button class="btn btn-light composer-button {{ 'd-none' if is_anter_assistant else '' }}" type="button" id="recordVoiceButton" title="تسجيل صوتي" {% if is_anter_assistant %}disabled{% endif %}>
+            <button class="btn btn-light composer-button {{ 'd-none' if is_anter_assistant else '' }}" type="button" id="recordVoiceButton" title="تسجيل صوتي" {% if is_anter_assistant or not can_message %}disabled{% endif %}>
                 <i class="fas fa-microphone"></i>
             </button>
-            <button class="btn btn-light composer-button {{ 'd-none' if is_anter_assistant else '' }}" type="button" id="attachmentButton" title="إرفاق ملف" {% if is_anter_assistant %}disabled{% endif %}>
+            <button class="btn btn-light composer-button {{ 'd-none' if is_anter_assistant else '' }}" type="button" id="attachmentButton" title="إرفاق ملف" {% if is_anter_assistant or not can_message %}disabled{% endif %}>
                 <i class="fas fa-paperclip"></i>
             </button>
-            <input type="file" name="attachment" id="attachmentInput" accept="image/*,.pdf,.txt,.doc,.docx" class="d-none">
-            <input type="text" name="content" id="messageInput" class="form-control composer-input" placeholder="{{ 'اكتب سؤالك لمساعد أنتر...' if is_anter_assistant else 'اكتب رسالة...' }}" autocomplete="off" autofocus>
-            <button class="btn btn-primary composer-send" type="submit" id="sendMessageButton">
+            <input type="file" name="attachment" id="attachmentInput" accept="image/*,.pdf,.txt,.doc,.docx" class="d-none" {% if not can_message %}disabled{% endif %}>
+            <input type="text" name="content" id="messageInput" class="form-control composer-input" placeholder="{{ 'اكتب سؤالك لمساعد أنتر...' if is_anter_assistant else 'اكتب رسالة...' }}" autocomplete="off" {% if not can_message %}disabled aria-describedby="followToMessageHint"{% else %}autofocus{% endif %}>
+            <button class="btn btn-primary composer-send" type="submit" id="sendMessageButton" {% if not can_message %}disabled{% endif %}>
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
         <p class="composer-help mb-0 mt-2 {{ '' if is_anter_assistant else 'd-none' }}" id="composerHelp">{{ 'يرد مساعد أنتر على الرسائل النصية فقط. لا تُرسل كلمات المرور أو البيانات الخاصة.' if is_anter_assistant else '' }}</p>
+        {% if not can_message %}
+            <p class="composer-help mb-0 mt-2" id="followToMessageHint">تابع هذا الحساب أولاً لتفعيل الكتابة والرسائل الصوتية والمرفقات.</p>
+        {% endif %}
     </form>
 
     <!-- قائمة الخيارات العائمة للرسالة -->
@@ -417,7 +427,7 @@ function handleForward() {
 }
 
 function loadForwardUsers(query = '') {
-    fetch(`/users/api/search?q=${query}`)
+    fetch(`/users/api/search?q=${encodeURIComponent(query)}&following_only=1`)
         .then(res => res.json())
         .then(users => {
             const list = document.getElementById('forwardUserList');

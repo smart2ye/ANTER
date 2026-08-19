@@ -61,6 +61,9 @@ class AnterAssistantTests(unittest.TestCase):
                 db.session.commit()
             cls.user_id = user.id
             cls.assistant_id = cls.assistant.id
+            # يتابع مستخدم الاختبار المساعد افتراضياً، كما تفعل عملية التسجيل الفعلية.
+            if follow_anter_assistant_for_user(user, cls.assistant):
+                db.session.commit()
 
     def setUp(self):
         self.client = self.app.test_client()
@@ -562,6 +565,95 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn(f"/messages/{self.assistant_id}", html)
         self.assertIn("مساعد أنتر", html)
         self.assertIn("online-presence-dot", html)
+
+    def test_message_send_requires_following_target(self):
+        with self.app.app_context():
+            target = User.query.filter_by(username='message_follow_required_target').first()
+            if target is None:
+                target = User(
+                    username='message_follow_required_target',
+                    email='message-follow-required@example.test',
+                    name='هدف اختبار المراسلة',
+                    terms_agreed=True,
+                )
+                target.set_password('1234')
+                db.session.add(target)
+                db.session.commit()
+            target_id = target.id
+
+        response = self.client.post(
+            f'/messages/send/{target_id}',
+            data={'content': 'لا يجب أن تُحفظ هذه الرسالة'},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 302)
+        with self.app.app_context():
+            blocked = Message.query.filter_by(
+                sender_id=self.user_id,
+                receiver_id=target_id,
+                content='لا يجب أن تُحفظ هذه الرسالة',
+            ).first()
+        self.assertIsNone(blocked)
+
+        chat_response = self.client.get(f'/messages/{target_id}')
+        chat_html = chat_response.get_data(as_text=True)
+        self.assertEqual(chat_response.status_code, 200)
+        self.assertIn('تابعه أولاً', chat_html)
+        self.assertIn('id="sendMessageButton" disabled', chat_html)
+
+    def test_following_target_allows_message_send(self):
+        with self.app.app_context():
+            target = User.query.filter_by(username='message_follow_allowed_target').first()
+            if target is None:
+                target = User(
+                    username='message_follow_allowed_target',
+                    email='message-follow-allowed@example.test',
+                    name='هدف متابعة مسموح',
+                    terms_agreed=True,
+                )
+                target.set_password('1234')
+                db.session.add(target)
+                db.session.commit()
+            user = db.session.get(User, self.user_id)
+            if not user.is_following(target):
+                db.session.add(Follow(follower_id=user.id, followed_id=target.id))
+                db.session.commit()
+            target_id = target.id
+
+        response = self.client.post(
+            f'/messages/send/{target_id}',
+            data={'content': 'رسالة مسموح بها بعد المتابعة'},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 302)
+        with self.app.app_context():
+            allowed = Message.query.filter_by(
+                sender_id=self.user_id,
+                receiver_id=target_id,
+                content='رسالة مسموح بها بعد المتابعة',
+            ).first()
+        self.assertIsNotNone(allowed)
+
+    def test_call_signal_requires_following_target(self):
+        with self.app.app_context():
+            target = User.query.filter_by(username='call_follow_required_target').first()
+            if target is None:
+                target = User(
+                    username='call_follow_required_target',
+                    email='call-follow-required@example.test',
+                    name='هدف اتصال اختبار',
+                    terms_agreed=True,
+                )
+                target.set_password('1234')
+                db.session.add(target)
+                db.session.commit()
+            target_id = target.id
+
+        response = self.client.post(
+            f'/messages/calls/signal/{target_id}',
+            json={'callId': 'follow-required-test', 'type': 'invite', 'payload': {}},
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_sending_text_to_assistant_stores_assistant_reply(self):
         with patch(

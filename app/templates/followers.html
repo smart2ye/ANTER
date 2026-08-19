@@ -71,9 +71,13 @@
                         </button>
                     {% endif %}
                 {% endif %}
-                <a href="{{ url_for('messages.chat', user_id=u.id) }}" class="btn btn-sm btn-outline-success rounded-pill">
-                    <i class="fas fa-envelope"></i>
-                </a>
+                {% if current_user.id != u.id %}
+                    <span class="message-action {{ '' if current_user.is_following(u) else 'd-none' }}">
+                        <a href="{{ url_for('messages.chat', user_id=u.id) }}" class="btn btn-sm btn-outline-success rounded-pill" aria-label="مراسلة {{ u.name }}">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                    </span>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
@@ -104,6 +108,7 @@
                             : '<i class="fas fa-user-plus"></i> متابعة';
                         this.classList.toggle('btn-primary');
                         this.classList.toggle('btn-outline-secondary');
+                        this.parentElement.querySelector('.message-action')?.classList.toggle('d-none', !data.following);
                     }
                 });
         });

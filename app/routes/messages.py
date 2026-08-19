@@ -91,6 +91,7 @@ def inbox():
 @login_required
 def chat(user_id):
     other = User.query.get_or_404(user_id)
+    can_message = _can_message_user(other)
     messages = Message.query.filter(
         or_(
             (Message.sender_id == current_user.id) & (Message.receiver_id == other.id) & (Message.deleted_by_sender == False),
@@ -113,6 +114,7 @@ def chat(user_id):
         get_status_icon=get_status_icon,
         rtc_config=get_rtc_config(),
         is_anter_assistant=is_anter_assistant(other),
+        can_message=can_message,
     )
 
 
@@ -121,6 +123,15 @@ CHAT_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 
 def _can_message_user(other):
+    """تحدد ما إذا كان المستخدم الحالي يستطيع بدء تواصل خاص مع الحساب المحدد."""
+    if other.id == current_user.id:
+        return False
+
+    # سياسة ANTER: لا تبدأ مراسلة جديدة إلا مع حساب يتابعه المرسل بالفعل.
+    if not current_user.is_following(other):
+        return False
+
+    # تحترم هذه الطبقة أيضاً إعداد خصوصية المستلم، إن فُعّل.
     privacy = getattr(other, 'message_privacy', 'everyone') or 'everyone'
     if privacy == 'none':
         return False
@@ -164,7 +175,7 @@ def set_typing(user_id):
     """Store a short-lived typing snapshot; every request returns immediately."""
     other = User.query.get_or_404(user_id)
     if not _can_message_user(other):
-        return jsonify({'success': False, 'typing': False, 'message': 'المراسلة غير متاحة لهذا المستخدم.'}), 403
+        return jsonify({'success': False, 'typing': False, 'message': 'يجب متابعة هذا المستخدم أولاً قبل بدء المراسلة.'}), 403
 
     data = request.get_json(silent=True) or request.form
     value = data.get('typing', False)
@@ -218,7 +229,7 @@ AUDIO_MIME_BY_EXTENSION = {
 def send(user_id):
     other = User.query.get_or_404(user_id)
     if not _can_message_user(other):
-        flash('هذا المستخدم لا يستقبل رسائل منك حاليًا.', 'warning')
+        flash('يجب متابعة هذا المستخدم أولاً قبل بدء المراسلة، أو أن إعدادات خصوصيته تمنع الرسائل.', 'warning')
         return redirect(url_for('messages.chat', user_id=user_id))
     content = request.form.get('content', '').strip()
     parent_id = request.form.get('parent_id', type=int)
@@ -379,7 +390,7 @@ def forward_message(message_id):
     
     target_user = User.query.get_or_404(target_user_id)
     if not _can_message_user(target_user):
-        return jsonify({'success': False, 'message': 'لا يمكن مراسلة هذا المستخدم'}), 403
+        return jsonify({'success': False, 'message': 'يجب متابعة هذا المستخدم أولاً قبل إعادة توجيه الرسالة إليه.'}), 403
         
     forwarded = Message(
         sender_id=current_user.id,
@@ -405,7 +416,7 @@ def send_audio_message(user_id):
     """استقبال الصوت كـ base64 لتجاوز فشل multipart في بعض بيئات الإنتاج."""
     other = User.query.get_or_404(user_id)
     if not _can_message_user(other):
-        return jsonify({'success': False, 'message': 'هذا المستخدم لا يستقبل رسائل منك حاليًا.'}), 403
+        return jsonify({'success': False, 'message': 'يجب متابعة هذا المستخدم أولاً قبل إرسال رسالة صوتية.'}), 403
     data = request.get_json(silent=True) or {}
     encoded_audio = data.get('audioData')
     filename = str(data.get('fileName', '')).strip()
@@ -512,6 +523,8 @@ def send_call_signal(user_id):
     receiver = User.query.get_or_404(user_id)
     if receiver.id == current_user.id:
         return jsonify({'success': False, 'message': 'لا يمكن الاتصال بالنفس.'}), 400
+    if not _can_message_user(receiver):
+        return jsonify({'success': False, 'message': 'يجب متابعة هذا المستخدم أولاً قبل بدء اتصال.'}), 403
 
     data = request.get_json(silent=True) or {}
     call_id = str(data.get('callId', '')).strip()

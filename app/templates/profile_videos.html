@@ -22,7 +22,9 @@
                 <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAccountModal"><i class="fas fa-trash-alt"></i> حذف</button>
             {% else %}
                 <div class="d-flex gap-2">
-                    <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="btn btn-success btn-sm"><i class="fas fa-envelope"></i> رسالة</a>
+                    {% if is_following %}
+                        <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="btn btn-success btn-sm"><i class="fas fa-envelope"></i> رسالة</a>
+                    {% endif %}
                     {% if is_following %}
                         <button class="btn btn-outline-secondary btn-sm follow-btn" data-user="{{ user.id }}" data-following="true">غير متابعة</button>
                     {% else %}

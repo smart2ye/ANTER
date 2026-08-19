@@ -22,9 +22,15 @@ def api_search():
     if query.startswith('@'):
         query = query[1:]
         
-    users = User.query.filter(
+    users_query = User.query.filter(
         (User.username.ilike(f'%{query}%')) | (User.name.ilike(f'%{query}%'))
-    ).limit(8).all()
+    )
+    if request.args.get('following_only') == '1':
+        # تستخدم إعادة توجيه الرسائل هذا الخيار حتى لا تعرض إلا الحسابات التي يتابعها المستخدم الحالي.
+        users_query = users_query.join(Follow, Follow.followed_id == User.id).filter(
+            Follow.follower_id == current_user.id,
+        )
+    users = users_query.limit(8).all()
     
     from app.utils.media_urls import avatar_url
     result = [{

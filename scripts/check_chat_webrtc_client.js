@@ -13,6 +13,8 @@ const requiredFragments = [
   'RTCPeerConnection',
   'getUserMedia',
   'startVoiceCall',
+  'data-retry-call',
+  "querySelectorAll('[data-retry-call]')",
   'acceptIncomingCall',
   'sendCallSignal',
   'handleCallSignal',

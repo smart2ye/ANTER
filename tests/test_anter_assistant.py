@@ -762,6 +762,8 @@ class AnterAssistantTests(unittest.TestCase):
         receiver_chat = receiver_client.get(f'/messages/{caller_id}').get_data(as_text=True)
         self.assertIn('data-call-id="voice-call-integration"', caller_chat)
         self.assertIn('مكالمة صادرة مستلمة', caller_chat)
+        self.assertIn('data-retry-call', caller_chat)
+        self.assertIn('data-retry-call', receiver_chat)
         self.assertIn('مكالمة واردة مستلمة', receiver_chat)
         self.assertIn('تم رفض مكالمتك', caller_chat)
         self.assertIn('لم يُرد على مكالمتك', caller_chat)

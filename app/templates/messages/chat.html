@@ -131,6 +131,11 @@
                                     {% endif %}
                                 </small>
                             </div>
+                            {% if can_call and call.status != 'ringing' %}
+                                <button type="button" class="btn btn-sm btn-outline-primary call-log-retry" data-retry-call data-call-id="{{ call.call_id }}" aria-label="معاودة الاتصال بـ {{ other.name }}">
+                                    <i class="fas fa-phone-alt"></i><span>معاودة الاتصال</span>
+                                </button>
+                            {% endif %}
                         </div>
                     </article>
                 {% endif %}
@@ -260,6 +265,7 @@
     .call-log-content { display: flex; flex-direction: column; gap: 1px; text-align: right; }
     .call-log-content strong { font-size: .84rem; }
     .call-log-content small { color: inherit; opacity: .72; font-size: .73rem; }
+    .call-log-retry { display: inline-flex; align-items: center; gap: 5px; margin-right: 4px; border-radius: 999px; font-size: .74rem; white-space: nowrap; }
     .message-row.is-sent { justify-content: flex-start; }
     .message-row.is-received { justify-content: flex-end; }
     .message-bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; position: relative; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 7px rgba(0,0,0,.05); }
@@ -756,6 +762,10 @@ async function ensurePeerConnection() {
 }
 
 async function startVoiceCall() {
+    if (activeCallId || peerConnection) {
+        showHelp('توجد مكالمة جارية بالفعل. أنهِها قبل معاودة الاتصال.', true);
+        return;
+    }
     try {
         activeCallId = createCallId();
         callSignalReady = false;
@@ -900,6 +910,9 @@ document.addEventListener('DOMContentLoaded', () => {
     formatAssistantMessages();
     if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
     if (voiceCallButton) voiceCallButton.addEventListener('click', startVoiceCall);
+    document.querySelectorAll('[data-retry-call]').forEach((button) => {
+        button.addEventListener('click', startVoiceCall);
+    });
     if (answerCallButton) answerCallButton.addEventListener('click', acceptIncomingCall);
     if (declineCallButton) declineCallButton.addEventListener('click', declineIncomingCall);
     if (hangupCallButton) hangupCallButton.addEventListener('click', () => endCall(true));

@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 
@@ -501,7 +502,8 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertIsNotNone(first_post)
             self.assertEqual(first_post.id, second_post.id)
             self.assertEqual(first_post.author_id, self.assistant_id)
-            self.assertIn("مساعد أنتر", first_post.content)
+            self.assertTrue(first_post.content.strip())
+            self.assertIn("#ANTER", first_post.content)
             self.assertEqual(AssistantDailyPublication.query.count(), 1)
 
     def test_assistant_chat_renders_bot_identity_and_text_only_hint(self):
@@ -582,6 +584,81 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertEqual(messages[-1].sender_id, self.assistant_id)
             self.assertEqual(messages[-1].content, "مرحباً، أنا مساعد أنتر.")
             self.assertEqual(messages[-1].parent_id, messages[-2].id)
+
+
+    def test_non_participant_cannot_forward_a_private_message(self):
+        with self.app.app_context():
+            sender = User.query.filter_by(username='security_message_sender').first()
+            if sender is None:
+                sender = User(username='security_message_sender', email='security-message-sender@example.test', name='مرسل اختبار', terms_agreed=True)
+                sender.set_password('1234')
+                db.session.add(sender)
+
+            recipient = User.query.filter_by(username='security_message_recipient').first()
+            if recipient is None:
+                recipient = User(username='security_message_recipient', email='security-message-recipient@example.test', name='مستلم اختبار', terms_agreed=True)
+                recipient.set_password('1234')
+                db.session.add(recipient)
+
+            target = User.query.filter_by(username='security_message_target').first()
+            if target is None:
+                target = User(username='security_message_target', email='security-message-target@example.test', name='هدف اختبار', terms_agreed=True)
+                target.set_password('1234')
+                db.session.add(target)
+            db.session.commit()
+
+            private_message = Message(
+                sender_id=sender.id,
+                receiver_id=recipient.id,
+                content='رسالة خاصة لفحص الصلاحيات',
+            )
+            db.session.add(private_message)
+            db.session.commit()
+            message_id = private_message.id
+            target_id = target.id
+
+        response = self.client.post(
+            f'/messages/forward/{message_id}',
+            data={'target_user_id': target_id},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(response.get_json()['success'])
+
+        with self.app.app_context():
+            copied = Message.query.filter_by(
+                receiver_id=target_id,
+                content='رسالة خاصة لفحص الصلاحيات',
+            ).count()
+        self.assertEqual(copied, 0)
+
+    def test_forward_message_rejects_request_without_csrf_token_when_enabled(self):
+        with self.app.app_context():
+            private_message = Message(
+                sender_id=self.user_id,
+                receiver_id=self.assistant_id,
+                content='رسالة مملوكة للمستخدم لاختبار CSRF',
+            )
+            db.session.add(private_message)
+            db.session.commit()
+            message_id = private_message.id
+
+        previous_csrf = self.app.config['WTF_CSRF_ENABLED']
+        self.app.config['WTF_CSRF_ENABLED'] = True
+        try:
+            response = self.client.post(
+                f'/messages/forward/{message_id}',
+                data={'target_user_id': self.assistant_id},
+            )
+        finally:
+            self.app.config['WTF_CSRF_ENABLED'] = previous_csrf
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_forward_user_list_uses_dom_text_not_untrusted_html(self):
+        template = Path(self.app.root_path, 'templates', 'messages', 'chat.html').read_text(encoding='utf-8')
+        self.assertIn("name.textContent = String(user.name || '');", template)
+        self.assertIn('list.replaceChildren();', template)
+        self.assertNotIn('list.innerHTML = users.map', template)
 
 
 class AdminPathSecurityTests(unittest.TestCase):

@@ -123,6 +123,7 @@
     </div>
 
     <form method="POST" action="{{ url_for('messages.send', user_id=other.id) }}" enctype="multipart/form-data" class="chat-composer mt-2" id="messageForm" novalidate>
+        <input type="hidden" name="csrf_token" id="chatCsrfToken" value="{{ csrf_token() }}">
         <input type="hidden" name="parent_id" id="replyParentId">
         <input type="file" name="audio" id="voiceInput" accept="audio/*" capture="microphone" class="d-none">
         <div class="attachment-preview d-none" id="attachmentPreview" role="status"></div>
@@ -420,18 +421,34 @@ function loadForwardUsers(query = '') {
         .then(res => res.json())
         .then(users => {
             const list = document.getElementById('forwardUserList');
-            list.innerHTML = users.map(u => `
-                <button class="list-group-item list-group-item-action d-flex align-items-center gap-2" onclick="executeForward(${u.id})">
-                    <img src="${u.avatar}" class="rounded-circle" width="30" height="30">
-                    <span>${u.name}</span>
-                </button>
-            `).join('');
+            list.replaceChildren();
+
+            users.forEach(user => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'list-group-item list-group-item-action d-flex align-items-center gap-2';
+                button.addEventListener('click', () => executeForward(Number(user.id)));
+
+                const avatar = document.createElement('img');
+                avatar.src = String(user.avatar || '');
+                avatar.alt = '';
+                avatar.className = 'rounded-circle';
+                avatar.width = 30;
+                avatar.height = 30;
+
+                const name = document.createElement('span');
+                name.textContent = String(user.name || '');
+
+                button.append(avatar, name);
+                list.appendChild(button);
+            });
         });
 }
 
 function executeForward(userId) {
     const formData = new FormData();
     formData.append('target_user_id', userId);
+    formData.append('csrf_token', document.getElementById('chatCsrfToken')?.value || '');
     fetch(`/messages/forward/${currentMsgId}`, { method: 'POST', body: formData })
         .then(res => res.json())
         .then(data => { if (data.success) window.location.href = data.redirect; });

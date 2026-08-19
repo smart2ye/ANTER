@@ -368,9 +368,11 @@ def delete_message(message_id):
 
 @messages_bp.route('/forward/<int:message_id>', methods=['POST'])
 @login_required
-@csrf.exempt
 def forward_message(message_id):
     original = Message.query.get_or_404(message_id)
+    if current_user.id not in {original.sender_id, original.receiver_id}:
+        return jsonify({'success': False, 'message': 'غير مصرح لك بإعادة توجيه هذه الرسالة.'}), 403
+
     target_user_id = request.form.get('target_user_id', type=int)
     if not target_user_id:
         return jsonify({'success': False, 'message': 'يجب تحديد مستلم'}), 400

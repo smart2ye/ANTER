@@ -37,6 +37,11 @@ _MEMORY_PATTERN = re.compile(
     r"^\s*(?:تذكر|تذكّر|احفظ|سجل|سجّل|تعلم|تعلّم)\s+(?:أنني|اني|أني|إنني)?\s*(.+)",
     flags=re.IGNORECASE,
 )
+_SELF_ROLE_PATTERN = re.compile(
+    r"(?:^|[،؛.!؟]\s*)(?:أنا|انا)\s+(?P<name>[\u0600-\u06FF][\u0600-\u06FF\w-]{1,30})\s+"
+    r"(?P<role>(?:مدير|مسؤول|رئيس|مؤسس|مطور|مشرف|منسق)[^.!؟\n]{0,140})",
+    flags=re.IGNORECASE,
+)
 
 
 def _clean_text(value: Any, maximum: int) -> str:
@@ -118,6 +123,19 @@ def remember_user_message(user: User, assistant: User, question: str) -> None:
             preferences.append({"kind": "preferred_name", "value": preferred_name})
             changed = True
 
+    role_match = _SELF_ROLE_PATTERN.search(question)
+    if role_match:
+        stated_name = _clean_text(role_match.group("name"), 60)
+        stated_role = _clean_text(role_match.group("role"), MAX_PREFERENCE_CHARS)
+        if stated_name and stated_role and not _is_sensitive(stated_role):
+            preferences = [
+                item for item in preferences
+                if not isinstance(item, dict) or item.get("kind") not in {"preferred_name", "role_description"}
+            ]
+            preferences.append({"kind": "preferred_name", "value": stated_name})
+            preferences.append({"kind": "role_description", "value": stated_role})
+            changed = True
+
     preference_match = _MEMORY_PATTERN.search(question)
     if preference_match:
         preference = _clean_text(preference_match.group(1), MAX_PREFERENCE_CHARS)
@@ -186,6 +204,18 @@ def preference_values(user: User, assistant: User) -> list[str]:
     return values[-MAX_PREFERENCE_ITEMS:]
 
 
+def role_description(user: User, assistant: User) -> str:
+    memory = _get_memory(user, assistant)
+    if memory is None:
+        return ""
+    for item in reversed(_load_list(memory.preferences_json)):
+        if isinstance(item, dict) and item.get("kind") == "role_description":
+            value = _clean_text(item.get("value"), MAX_PREFERENCE_CHARS)
+            if value and not _is_sensitive(value):
+                return value
+    return ""
+
+
 def recent_user_context(user: User, assistant: User) -> list[str]:
     return [item["text"] for item in recent_conversation(user, assistant) if item["role"] == "user"]
 
@@ -226,6 +256,14 @@ def local_memory_reply(question: str, user: User | None, assistant: User | None)
             return "لا أحتفظ بتفضيلات عنك بعد. يمكنك أن تكتب مثلاً: «تذكر أنني أفضل الردود المختصرة»."
         listed = "، ".join(f"«{value}»" for value in preferences)
         return f"أتذكر التفضيلات التي طلبت مني حفظها: {listed}. يمكنك طلب مسح الذاكرة في أي وقت."
+
+    role_markers = ("ماهي وظيفتي", "ما هي وظيفتي", "ما وظيفتي", "ما عملي", "ما هو دوري", "ما دوري")
+    reminder_markers = ("لكنني شاركتك", "لكنني قلت لك", "قلت لك قبل قليل", "اخبرتك قبل قليل", "أخبرتك قبل قليل")
+    if any(marker in normalized for marker in role_markers + reminder_markers):
+        saved_role = role_description(user, assistant)
+        if saved_role:
+            return f"صحيح، أخبرتني أنك {display_name(user, assistant)}، {saved_role}."
+        return "لا أرى دوراً وظيفياً صريحاً محفوظاً في هذه المحادثة بعد. يمكنك كتابته بهذه الصيغة: «أنا … مدير …» وسأتذكره داخل هذه المحادثة."
 
     identity_markers = ("من انا", "من أنا", "من كنت", "من أكون")
     previous_turn_markers = ("قبل رسالتين", "قبل رسالتان", "الرسالة التي سبقت", "ما الرسالة السابقة")

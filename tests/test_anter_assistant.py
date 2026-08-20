@@ -581,6 +581,27 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertNotIn("تحسين واجهة الرسائل", answer)
         mocked_post.assert_not_called()
 
+    def test_local_memory_recalls_stated_job_role_without_provider(self):
+        with self.app.app_context(), patch("app.services.anter_assistant.requests.post") as mocked_post:
+            user = db.session.get(User, self.user_id)
+            assistant = db.session.get(User, self.assistant_id)
+            AssistantMemory.query.filter_by(user_id=user.id, assistant_id=assistant.id).delete()
+            db.session.commit()
+            remember_user_message(
+                user,
+                assistant,
+                "السلام عليكم ورحمة الله وبركاته، أنا محمود مدير قسم المساعدة في شبكة أنتر",
+            )
+            role_answer, role_error = get_assistant_reply("ماهي وظيفتي الآن؟", user=user, assistant=assistant)
+            reminder_answer, reminder_error = get_assistant_reply("لكنني شاركتك قبل قليل", user=user, assistant=assistant)
+
+        self.assertIsNone(role_error)
+        self.assertIsNone(reminder_error)
+        self.assertIn("محمود", role_answer)
+        self.assertIn("مدير قسم المساعدة", role_answer)
+        self.assertIn("مدير قسم المساعدة", reminder_answer)
+        mocked_post.assert_not_called()
+
     def test_memory_ignores_sensitive_text(self):
         with self.app.app_context():
             user = db.session.get(User, self.user_id)

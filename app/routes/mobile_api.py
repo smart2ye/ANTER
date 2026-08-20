@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from app.extensions import csrf, db
 from app.models import Follow, Message, TypingState, User
 from app.services.anter_assistant import get_assistant_reply, is_anter_assistant
-from app.services.anter_memory import remember_assistant_reply, remember_user_message
+from app.services.anter_memory import clear_memory, remember_assistant_reply, remember_user_message
 from app.services.mobile_api_auth import issue_mobile_token, mobile_api_required, revoke_mobile_token
 
 
@@ -206,6 +206,27 @@ def conversation_activity(username):
     if not _is_mutual_follow(user, other):
         return _json_error('تتطلب المحادثة متابعة متبادلة بين الحسابين.', 403)
     return jsonify(_typing_state_payload(other, user))
+
+
+@mobile_api_bp.route('/conversations/<string:username>/assistant-memory/clear', methods=['POST'])
+@mobile_api_required
+def clear_conversation_assistant_memory(username):
+    """يمسح ذاكرة مساعد ANTER للمستخدم صاحب الرمز فقط، لا سجل الرسائل."""
+    user = g.mobile_user
+    other = _target_from_username(username)
+    if other is None:
+        return _json_error('المستخدم غير موجود.', 404)
+    if not _is_mutual_follow(user, other):
+        return _json_error('تتطلب المحادثة متابعة متبادلة بين الحسابين.', 403)
+    if not is_anter_assistant(other):
+        return _json_error('هذه الميزة متاحة داخل محادثة مساعد أنتر فقط.', 404)
+    try:
+        clear_memory(user, other)
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('تعذر مسح ذاكرة مساعد أنتر عبر الواجهة المحمولة')
+        return _json_error('تعذر مسح ذاكرة مساعد أنتر حالياً. حاول مجدداً.', 500)
+    return jsonify({'success': True, 'message': 'تم مسح ذاكرة مساعد أنتر. بقي سجل المحادثة كما هو.'})
 
 
 @mobile_api_bp.route('/conversations/<string:username>/typing', methods=['POST'])

@@ -269,6 +269,31 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertEqual(messages[-1].content, 'مرحباً، أنا مساعد أنتر.')
             self.assertEqual(messages[-1].parent_id, messages[-2].id)
 
+    def test_mobile_api_clears_only_current_users_assistant_memory(self):
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            assistant = db.session.get(User, self.assistant_id)
+            if not user.is_following(assistant):
+                db.session.add(Follow(follower_id=user.id, followed_id=assistant.id))
+            if not assistant.is_following(user):
+                db.session.add(Follow(follower_id=assistant.id, followed_id=user.id))
+            db.session.commit()
+            remember_user_message(user, assistant, 'أريد أن تتذكر اسمي المفضل.')
+            self.assertTrue(AssistantMemory.query.filter_by(user_id=user.id, assistant_id=assistant.id).count())
+            assistant_username = assistant.username
+
+        login_response = self.client.post('/api/mobile/v1/auth/login', json={
+            'identifier': 'assistant_test_user', 'password': 'not-used-in-test'
+        })
+        response = self.client.post(
+            f'/api/mobile/v1/conversations/{assistant_username}/assistant-memory/clear',
+            headers={'Authorization': f"Bearer {login_response.get_json()['accessToken']}"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        with self.app.app_context():
+            self.assertEqual(AssistantMemory.query.filter_by(user_id=self.user_id, assistant_id=self.assistant_id).count(), 0)
+
     def test_service_sends_only_current_question_to_groq_without_exposing_provider(self):
         fake_response = Mock(status_code=200)
         fake_response.json.return_value = {

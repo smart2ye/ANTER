@@ -394,8 +394,10 @@ class AnterAssistantTests(unittest.TestCase):
 
         self.assertIsNone(error)
         self.assertIsNotNone(answer)
-        self.assertIn("تتقدم ANTER تدريجياً", answer)
-        self.assertLess(len(answer), 300)
+        self.assertIn("منصة ANTER", answer)
+        self.assertIn("ANTER Messenger", answer)
+        self.assertIn("mini-llm Arabic", answer)
+        self.assertLess(len(answer), 350)
         self.assertNotIn("مزوّد", answer)
 
     def test_founder_can_switch_to_assistant_and_back(self):

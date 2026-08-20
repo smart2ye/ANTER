@@ -1143,6 +1143,10 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertEqual(messages[-1].content, "مرحباً، أنا مساعد أنتر.")
             self.assertEqual(messages[-1].parent_id, messages[-2].id)
 
+        page = self.client.get(f"/messages/{self.assistant_id}").get_data(as_text=True)
+        self.assertIn("مرحباً، أنا مساعد أنتر.", page)
+        self.assertNotIn('class="quoted-message mb-2', page)
+
 
     def test_chat_page_never_exposes_messages_between_other_users(self):
         with self.app.app_context():

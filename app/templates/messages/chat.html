@@ -49,7 +49,7 @@
                                 <p class="message-text mb-1 text-muted fst-italic small"><i class="fas fa-ban me-1"></i>تم حذف هذه الرسالة</p>
                             {% else %}
                                 <!-- عرض الرد (الاقتباس) -->
-                                {% if msg.parent %}
+                                {% if msg.parent and not (is_anter_assistant and msg.sender_id == other.id) %}
                                     <div class="quoted-message mb-2 p-2 rounded border-start border-4 border-primary bg-opacity-10 bg-primary" onclick="scrollToMsg({{ msg.parent_id }}, event)">
                                         <small class="d-block fw-bold text-primary">{{ 'أنت' if msg.parent.sender_id == current_user.id else other.name }}</small>
                                         <small class="text-truncate d-block text-muted">

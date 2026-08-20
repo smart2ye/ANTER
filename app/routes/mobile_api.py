@@ -33,6 +33,7 @@ def _is_mutual_follow(user, other):
 
 
 def _message_payload(message):
+    parent = message.parent
     return {
         'id': message.id,
         'senderId': message.sender_id,
@@ -41,6 +42,12 @@ def _message_payload(message):
         'createdAt': message.created_at.isoformat() + 'Z',
         'isRead': bool(message.is_read),
         'parentId': message.parent_id,
+        'parent': {
+            'id': parent.id,
+            'senderId': parent.sender_id,
+            'content': '' if parent.is_deleted_everyone else (parent.content or ''),
+            'isDeletedEveryone': bool(parent.is_deleted_everyone),
+        } if parent is not None else None,
     }
 
 
@@ -178,11 +185,12 @@ def list_messages(username):
     if not _is_mutual_follow(user, other):
         return _json_error('تتطلب المحادثة متابعة متبادلة بين الحسابين.', 403)
     after_id = request.args.get('afterId', type=int) or 0
+    visible_to_user = or_(
+        (Message.sender_id == user.id) & (Message.receiver_id == other.id) & (Message.deleted_by_sender == False),
+        (Message.sender_id == other.id) & (Message.receiver_id == user.id) & (Message.deleted_by_receiver == False),
+    )
     rows = Message.query.filter(
-        or_(
-            (Message.sender_id == user.id) & (Message.receiver_id == other.id),
-            (Message.sender_id == other.id) & (Message.receiver_id == user.id),
-        ),
+        visible_to_user,
         Message.id > max(after_id, 0),
         Message.is_deleted_everyone == False,
     ).order_by(Message.id.asc()).limit(100).all()
@@ -269,7 +277,20 @@ def send_message(username):
     content = content.strip()
     if not content or len(content) > current_app.config['MOBILE_API_MAX_MESSAGE_CHARS']:
         return _json_error('يجب أن تكون الرسالة بين 1 و2000 حرف.', 400)
-    message = Message(sender_id=user.id, receiver_id=other.id, content=content)
+    parent_id = data.get('parentId')
+    if parent_id is not None and (not isinstance(parent_id, int) or parent_id < 1):
+        return _json_error('الرسالة المرجعية غير صالحة.', 400)
+    if parent_id is not None:
+        parent = Message.query.filter(
+            Message.id == parent_id,
+            or_(
+                (Message.sender_id == user.id) & (Message.receiver_id == other.id),
+                (Message.sender_id == other.id) & (Message.receiver_id == user.id),
+            ),
+        ).first()
+        if parent is None:
+            return _json_error('لا يمكنك الرد على رسالة خارج هذه المحادثة.', 403)
+    message = Message(sender_id=user.id, receiver_id=other.id, content=content, parent_id=parent_id)
     db.session.add(message)
     db.session.commit()
     assistant_message = _create_assistant_reply(user, other, message) if is_anter_assistant(other) else None
@@ -277,3 +298,64 @@ def send_message(username):
     if assistant_message is not None:
         payload['assistantMessage'] = _message_payload(assistant_message)
     return jsonify(payload), 201
+
+
+@mobile_api_bp.route('/messages/<int:message_id>', methods=['DELETE'])
+@mobile_api_required
+def delete_message(message_id):
+    user = g.mobile_user
+    message = Message.query.get(message_id)
+    if message is None:
+        return _json_error('الرسالة غير موجودة.', 404)
+    if user.id not in {message.sender_id, message.receiver_id}:
+        return _json_error('غير مصرح لك بحذف هذه الرسالة.', 403)
+    data = request.get_json(silent=True) or {}
+    scope = data.get('scope', 'me')
+    if scope not in {'me', 'everyone'}:
+        return _json_error('نطاق الحذف غير صالح.', 400)
+    if scope == 'everyone':
+        if message.sender_id != user.id:
+            return _json_error('لا يمكنك حذف رسالة غير مرسلة منك عند الجميع.', 403)
+        message.is_deleted_everyone = True
+    elif message.sender_id == user.id:
+        message.deleted_by_sender = True
+    else:
+        message.deleted_by_receiver = True
+    db.session.commit()
+    return jsonify({'success': True, 'scope': scope})
+
+
+@mobile_api_bp.route('/messages/<int:message_id>/forward', methods=['POST'])
+@mobile_api_required
+def forward_message(message_id):
+    user = g.mobile_user
+    original = Message.query.get(message_id)
+    if original is None:
+        return _json_error('الرسالة غير موجودة.', 404)
+    if user.id not in {original.sender_id, original.receiver_id}:
+        return _json_error('غير مصرح لك بإعادة توجيه هذه الرسالة.', 403)
+    if original.is_deleted_everyone:
+        return _json_error('لا يمكن إعادة توجيه رسالة محذوفة عند الجميع.', 409)
+    data = request.get_json(silent=True) or {}
+    target_username = data.get('targetUsername')
+    if not isinstance(target_username, str) or not target_username.strip():
+        return _json_error('يجب تحديد مستلم الرسالة.', 400)
+    target = _target_from_username(target_username)
+    if target is None:
+        return _json_error('المستخدم غير موجود.', 404)
+    if not _is_mutual_follow(user, target):
+        return _json_error('تتطلب إعادة التوجيه متابعة متبادلة مع المستلم.', 403)
+    forwarded = Message(
+        sender_id=user.id,
+        receiver_id=target.id,
+        content=original.content,
+        audio_data=original.audio_data,
+        audio_mime=original.audio_mime,
+        attachment_data=original.attachment_data,
+        attachment_mime=original.attachment_mime,
+        attachment_name=original.attachment_name,
+        attachment_kind=original.attachment_kind,
+    )
+    db.session.add(forwarded)
+    db.session.commit()
+    return jsonify({'success': True, 'message': _message_payload(forwarded)}), 201

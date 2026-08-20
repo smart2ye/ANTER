@@ -294,6 +294,70 @@ class AnterAssistantTests(unittest.TestCase):
         with self.app.app_context():
             self.assertEqual(AssistantMemory.query.filter_by(user_id=self.user_id, assistant_id=self.assistant_id).count(), 0)
 
+    def test_mobile_api_supports_reply_and_sender_only_delete_everyone(self):
+        with self.app.app_context():
+            sender = db.session.get(User, self.user_id)
+            receiver = User.query.filter_by(username='mobile_api_reply_receiver').first()
+            if receiver is None:
+                receiver = User(username='mobile_api_reply_receiver', email='mobile-reply@example.test', name='مستلم الرد', terms_agreed=True)
+                receiver.set_password('reply-receiver-password')
+                db.session.add(receiver)
+                db.session.flush()
+            if not sender.is_following(receiver):
+                db.session.add(Follow(follower_id=sender.id, followed_id=receiver.id))
+            if not receiver.is_following(sender):
+                db.session.add(Follow(follower_id=receiver.id, followed_id=sender.id))
+            db.session.commit()
+
+        sender_login = self.client.post('/api/mobile/v1/auth/login', json={'identifier': 'assistant_test_user', 'password': 'not-used-in-test'})
+        receiver_client = self.app.test_client()
+        receiver_login = receiver_client.post('/api/mobile/v1/auth/login', json={'identifier': 'mobile_api_reply_receiver', 'password': 'reply-receiver-password'})
+        sender_headers = {'Authorization': f"Bearer {sender_login.get_json()['accessToken']}"}
+        receiver_headers = {'Authorization': f"Bearer {receiver_login.get_json()['accessToken']}"}
+        original = self.client.post('/api/mobile/v1/conversations/mobile_api_reply_receiver/messages', headers=sender_headers, json={'content': 'رسالة أصلية'}).get_json()['message']
+        reply = receiver_client.post('/api/mobile/v1/conversations/assistant_test_user/messages', headers=receiver_headers, json={'content': 'هذا رد', 'parentId': original['id']})
+        self.assertEqual(reply.status_code, 201)
+        sender_rows = self.client.get('/api/mobile/v1/conversations/mobile_api_reply_receiver/messages', headers=sender_headers).get_json()['messages']
+        saved_reply = next(row for row in sender_rows if row['id'] == reply.get_json()['message']['id'])
+        self.assertEqual(saved_reply['parent']['id'], original['id'])
+        self.assertEqual(saved_reply['parent']['content'], 'رسالة أصلية')
+        self.assertEqual(receiver_client.delete(f"/api/mobile/v1/messages/{original['id']}", headers=receiver_headers, json={'scope': 'everyone'}).status_code, 403)
+        self.assertEqual(self.client.delete(f"/api/mobile/v1/messages/{original['id']}", headers=sender_headers, json={'scope': 'everyone'}).status_code, 200)
+
+    def test_mobile_api_forwards_only_participants_message_to_mutual_follow(self):
+        with self.app.app_context():
+            sender = db.session.get(User, self.user_id)
+            source = User.query.filter_by(username='mobile_api_forward_source').first()
+            target = User.query.filter_by(username='mobile_api_forward_target').first()
+            for username, email, name, password in [
+                ('mobile_api_forward_source', 'mobile-forward-source@example.test', 'مرسل المصدر', 'forward-source-password'),
+                ('mobile_api_forward_target', 'mobile-forward-target@example.test', 'مستلم التحويل', 'forward-target-password'),
+            ]:
+                if User.query.filter_by(username=username).first() is None:
+                    account = User(username=username, email=email, name=name, terms_agreed=True)
+                    account.set_password(password)
+                    db.session.add(account)
+            db.session.flush()
+            source = User.query.filter_by(username='mobile_api_forward_source').first()
+            target = User.query.filter_by(username='mobile_api_forward_target').first()
+            for account in (source, target):
+                if not sender.is_following(account):
+                    db.session.add(Follow(follower_id=sender.id, followed_id=account.id))
+                if not account.is_following(sender):
+                    db.session.add(Follow(follower_id=account.id, followed_id=sender.id))
+            db.session.commit()
+
+        login = self.client.post('/api/mobile/v1/auth/login', json={'identifier': 'assistant_test_user', 'password': 'not-used-in-test'})
+        headers = {'Authorization': f"Bearer {login.get_json()['accessToken']}"}
+        original = self.client.post('/api/mobile/v1/conversations/mobile_api_forward_source/messages', headers=headers, json={'content': 'نص قابل لإعادة التوجيه'}).get_json()['message']
+        forwarded = self.client.post(f"/api/mobile/v1/messages/{original['id']}/forward", headers=headers, json={'targetUsername': 'mobile_api_forward_target'})
+        self.assertEqual(forwarded.status_code, 201)
+        self.assertEqual(forwarded.get_json()['message']['content'], 'نص قابل لإعادة التوجيه')
+        target_client = self.app.test_client()
+        target_login = target_client.post('/api/mobile/v1/auth/login', json={'identifier': 'mobile_api_forward_target', 'password': 'forward-target-password'})
+        rows = target_client.get('/api/mobile/v1/conversations/assistant_test_user/messages', headers={'Authorization': f"Bearer {target_login.get_json()['accessToken']}"}).get_json()['messages']
+        self.assertTrue(any(row['id'] == forwarded.get_json()['message']['id'] for row in rows))
+
     def test_service_sends_only_current_question_to_groq_without_exposing_provider(self):
         fake_response = Mock(status_code=200)
         fake_response.json.return_value = {

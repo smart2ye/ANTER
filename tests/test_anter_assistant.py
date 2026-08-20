@@ -561,6 +561,26 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn('لنرتب الفكرة', conversation[-1]['text'])
         self.assertNotIn('كلمة المرور', ' '.join(item['text'] for item in conversation))
 
+    def test_local_memory_recalls_identity_and_message_two_turns_back_without_provider(self):
+        with self.app.app_context(), patch("app.services.anter_assistant.requests.post") as mocked_post:
+            user = db.session.get(User, self.user_id)
+            assistant = db.session.get(User, self.assistant_id)
+            AssistantMemory.query.filter_by(user_id=user.id, assistant_id=assistant.id).delete()
+            db.session.commit()
+            remember_user_message(user, assistant, "أنا عبدالقادر مهدلي")
+            remember_assistant_reply(user, assistant, "أهلاً بك يا عبدالقادر.")
+            remember_user_message(user, assistant, "أريد تحسين واجهة الرسائل")
+            remember_assistant_reply(user, assistant, "سنركز على سهولة القراءة في الهاتف.")
+            question = "لو قلت لك الآن من أنا؟ وما هي الرسالة التي سبقت قبل رسالتين؟"
+            remember_user_message(user, assistant, question)
+            answer, error = get_assistant_reply(question, user=user, assistant=assistant)
+
+        self.assertIsNone(error)
+        self.assertIn("أنا عبدالقادر مهدلي", answer)
+        self.assertIn("وقبل رسالتين", answer)
+        self.assertNotIn("تحسين واجهة الرسائل", answer)
+        mocked_post.assert_not_called()
+
     def test_memory_ignores_sensitive_text(self):
         with self.app.app_context():
             user = db.session.get(User, self.user_id)

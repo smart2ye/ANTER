@@ -190,6 +190,15 @@ def recent_user_context(user: User, assistant: User) -> list[str]:
     return [item["text"] for item in recent_conversation(user, assistant) if item["role"] == "user"]
 
 
+def _prior_user_messages(question: str, user: User, assistant: User) -> list[str]:
+    """يعيد رسائل المستخدم السابقة فقط، ويستثني السؤال الحالي إن كان قد حُفظ للتو."""
+    messages = recent_user_context(user, assistant)
+    cleaned_question = _clean_text(question, MAX_CONTEXT_CHARS)
+    if messages and _clean_text(messages[-1], MAX_CONTEXT_CHARS) == cleaned_question:
+        messages = messages[:-1]
+    return messages
+
+
 def local_memory_reply(question: str, user: User | None, assistant: User | None) -> str | None:
     """يعالج أوامر الذاكرة والاستدعاءات محلياً بلا إرسال أي بيانات للخارج."""
     if user is None or assistant is None:
@@ -217,6 +226,34 @@ def local_memory_reply(question: str, user: User | None, assistant: User | None)
             return "لا أحتفظ بتفضيلات عنك بعد. يمكنك أن تكتب مثلاً: «تذكر أنني أفضل الردود المختصرة»."
         listed = "، ".join(f"«{value}»" for value in preferences)
         return f"أتذكر التفضيلات التي طلبت مني حفظها: {listed}. يمكنك طلب مسح الذاكرة في أي وقت."
+
+    identity_markers = ("من انا", "من أنا", "من كنت", "من أكون")
+    previous_turn_markers = ("قبل رسالتين", "قبل رسالتان", "الرسالة التي سبقت", "ما الرسالة السابقة")
+    asks_identity = any(marker in normalized for marker in identity_markers)
+    asks_previous_turn = any(marker in normalized for marker in previous_turn_markers)
+    if asks_identity or asks_previous_turn:
+        previous_messages = _prior_user_messages(question, user, assistant)
+        parts: list[str] = []
+        if asks_identity:
+            identity_message = next(
+                (
+                    item for item in reversed(previous_messages)
+                    if re.search(r"(?:^|\s)(?:أنا|اني|اسمي)\s+", item, flags=re.IGNORECASE)
+                ),
+                "",
+            )
+            if identity_message:
+                parts.append(f"ذكرت لي قبل قليل: «{identity_message}».")
+            else:
+                parts.append(f"لا أرى تعريفاً صريحاً باسمك في هذه المحادثة، وسأناديك {display_name(user, assistant)}.")
+        if asks_previous_turn:
+            if len(previous_messages) >= 2:
+                parts.append(f"وقبل رسالتين قلت: «{previous_messages[-2]}».")
+            elif previous_messages:
+                parts.append(f"آخر رسالة سابقة وجدتها هي: «{previous_messages[-1]}».")
+            else:
+                parts.append("لا توجد رسائل سابقة محفوظة في سياق هذه المحادثة بعد.")
+        return " ".join(parts)
 
     if any(marker in normalized for marker in ("ما آخر ما سألته", "ما الذي قلته سابقا", "ما الذي قلته سابقاً", "هل تتذكر سياق")):
         context = recent_conversation(user, assistant)

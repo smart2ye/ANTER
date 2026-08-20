@@ -297,6 +297,8 @@
         // صفحة الدردشة تستلم إشارة WebRTC كاملة بنفسها. في الصفحات الأخرى
         // نعرض دعوة مرئية تقود المستخدم إلى المحادثة، من دون تعليمها مستلمة.
         const announcedIncomingCalls = new Set();
+        const CALL_ALERT_POLL_INTERVAL_MS = 12000;
+        let callAlertPollInProgress = false;
 
         function showIncomingCallToast(call) {
             if (announcedIncomingCalls.has(call.callId)) return;
@@ -348,16 +350,23 @@
         }
 
         async function pollIncomingCallsOutsideChat() {
+            if (callAlertPollInProgress) return;
+            callAlertPollInProgress = true;
             try {
                 const response = await fetch('/messages/calls/pending', { credentials: 'same-origin', cache: 'no-store' });
                 if (!response.ok) return;
                 const data = await response.json();
                 (data.signals || []).forEach(showIncomingCallToast);
-            } catch (_) {}
+            } catch (_) {
+                // يبقى العداد العام مستقلاً عن تنبيه المكالمات عند تعذر الشبكة مؤقتاً.
+            } finally {
+                callAlertPollInProgress = false;
+            }
         }
 
-        pollIncomingCallsOutsideChat();
-        setInterval(pollIncomingCallsOutsideChat, 2500);
+        // نؤخر أول طلب قليلاً حتى لا يتزامن مع عدادات الصفحة واشتراك الإشعارات عند التحميل.
+        window.setTimeout(pollIncomingCallsOutsideChat, 3000);
+        setInterval(pollIncomingCallsOutsideChat, CALL_ALERT_POLL_INTERVAL_MS);
         {% endif %}
         {% endif %}
 

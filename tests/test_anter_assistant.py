@@ -1059,6 +1059,10 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn('تم رفض مكالمتك', caller_chat)
         self.assertIn('لم يُرد على مكالمتك', caller_chat)
 
+        receiver_inbox = receiver_client.get('/messages/').get_data(as_text=True)
+        self.assertIn('pollIncomingCallsOutsideChat', receiver_inbox)
+        self.assertIn('CALL_ALERT_POLL_INTERVAL_MS = 12000', receiver_inbox)
+
     def test_call_signal_requires_following_target(self):
         with self.app.app_context():
             target = User.query.filter_by(username='call_follow_required_target').first()

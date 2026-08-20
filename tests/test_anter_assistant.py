@@ -382,6 +382,22 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertNotIn("Groq", answer)
         self.assertNotIn("qwen", answer.casefold())
 
+    def test_anter_status_question_uses_concise_local_reply(self):
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            assistant = db.session.get(User, self.assistant_id)
+            answer, error = get_assistant_reply(
+                "وين وصلنا في أنتر ما يخص المنصة؟",
+                user=user,
+                assistant=assistant,
+            )
+
+        self.assertIsNone(error)
+        self.assertIsNotNone(answer)
+        self.assertIn("تتقدم ANTER تدريجياً", answer)
+        self.assertLess(len(answer), 300)
+        self.assertNotIn("مزوّد", answer)
+
     def test_founder_can_switch_to_assistant_and_back(self):
         previous_owner = self.app.config['ANTER_ASSISTANT_SWITCH_OWNER_USERNAME']
         self.app.config['ANTER_ASSISTANT_SWITCH_OWNER_USERNAME'] = 'assistant_test_user'

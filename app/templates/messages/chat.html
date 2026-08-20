@@ -298,9 +298,9 @@
     .is-sent .quoted-message .text-primary { color: #fff !important; }
     .is-sent .quoted-message .text-muted { color: rgba(255,255,255,0.8) !important; }
     .message-meta { display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: 4px; font-size: 0.65rem; opacity: 0.8; }
-    .assistant-rich-text { direction: rtl; text-align: right; line-height: 1.82; overflow-wrap: anywhere; }
+    .assistant-rich-text { direction: rtl; text-align: right; font-size: .9rem; line-height: 1.76; overflow-wrap: break-word; word-break: normal; }
     .assistant-rich-text > *:last-child { margin-bottom: 0; }
-    .assistant-rich-paragraph { margin: 0 0 9px; font-size: .92rem; line-height: 1.82; }
+    .assistant-rich-paragraph { margin: 0 0 8px; font-size: inherit; line-height: inherit; }
     .assistant-rich-title { margin: 2px 0 10px; color: #0e4d92; font-size: 1.06rem; font-weight: 800; line-height: 1.55; }
     .assistant-rich-subtitle { margin: 12px 0 6px; color: #174f8c; font-size: .96rem; font-weight: 750; line-height: 1.6; }
     .assistant-rich-list { margin: 7px 0 10px; padding-right: 1.25rem; padding-left: 0; }
@@ -320,10 +320,11 @@
         .chat-composer { width: 100%; min-width: 0; padding: 8px; border-radius: 16px; }
         .composer-row { min-width: 0; gap: 6px; }
         .composer-input { min-width: 0; }
-        .assistant-rich-paragraph { font-size: .88rem; line-height: 1.78; }
-        .assistant-rich-title { font-size: 1rem; }
-        .assistant-rich-subtitle { font-size: .92rem; }
-        .assistant-rich-list li { font-size: .87rem; }
+        .assistant-rich-text { font-size: clamp(.82rem, 3.35vw, .9rem); line-height: 1.72; }
+        .assistant-rich-paragraph { margin-bottom: 7px; }
+        .assistant-rich-title { font-size: .98rem; margin-bottom: 8px; }
+        .assistant-rich-subtitle { font-size: .9rem; margin: 10px 0 5px; }
+        .assistant-rich-list li { font-size: inherit; margin-bottom: 5px; line-height: 1.68; }
     }
     .reply-preview-container { background: var(--card-bg, #fff); border-top: 1px solid #eee; border-radius: 12px 12px 0 0; }
     .msg-context-menu { position: absolute; background: var(--card-bg, #fff); width: 180px; z-index: 2000; border: 1px solid #ddd; padding: 5px 0; }

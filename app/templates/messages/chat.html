@@ -355,6 +355,16 @@ var originalDocumentTitle = document.title;
 var CALL_NO_ANSWER_TIMEOUT_MS = 30000;
 var incomingCallNotification = null;
 
+function getCallMediaUnavailableMessage() {
+    if (!window.isSecureContext) {
+        return 'لا يمكن استخدام الميكروفون عبر رابط HTTP على الهاتف. افتح ANTER عبر HTTPS ثم أعد المحاولة.';
+    }
+    if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
+        return 'هذا المتصفح لا يدعم الميكروفون أو الاتصال الصوتي المباشر.';
+    }
+    return '';
+}
+
 function appendAssistantInlineText(container, text) {
     const parts = String(text || '').split(/(\*\*[^*]+\*\*)/g);
     parts.forEach((part) => {
@@ -792,9 +802,8 @@ async function flushQueuedOutgoingCandidates() {
 
 async function ensurePeerConnection() {
     if (peerConnection) return peerConnection;
-    if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
-        throw new Error('المتصفح لا يدعم الاتصال الصوتي المباشر.');
-    }
+    const mediaUnavailableMessage = getCallMediaUnavailableMessage();
+    if (mediaUnavailableMessage) throw new Error(mediaUnavailableMessage);
 
     callStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     const connection = new RTCPeerConnection(rtcConfig);
@@ -839,6 +848,11 @@ async function startVoiceCall() {
         showHelp('توجد مكالمة جارية بالفعل. أنهِها قبل معاودة الاتصال.', true);
         return;
     }
+    const mediaUnavailableMessage = getCallMediaUnavailableMessage();
+    if (mediaUnavailableMessage) {
+        showHelp(mediaUnavailableMessage, true);
+        return;
+    }
     try {
         activeCallId = createCallId();
         callSignalReady = false;
@@ -864,6 +878,15 @@ async function acceptIncomingCall() {
     const description = invite?.payload?.description;
     if (!invite || !description || description.type !== 'offer') {
         showHelp('تعذر قراءة دعوة الاتصال.', true);
+        closeCall();
+        return;
+    }
+    const mediaUnavailableMessage = getCallMediaUnavailableMessage();
+    if (mediaUnavailableMessage) {
+        showHelp(mediaUnavailableMessage, true);
+        try {
+            await sendCallSignal('decline', { reason: 'media_unavailable' }, invite.callId);
+        } catch (_) {}
         closeCall();
         return;
     }
@@ -938,7 +961,9 @@ async function handleCallSignal(signal) {
             pendingCandidates.push(signal.payload.candidate);
         }
     } else if (type === 'decline') {
-        showHelp('رفض الطرف الآخر الاتصال.');
+        showHelp(signal.payload?.reason === 'media_unavailable'
+            ? 'تعذر على الطرف الآخر تشغيل الميكروفون. يجب أن يفتح ANTER عبر HTTPS ويمنح إذن الميكروفون.'
+            : 'رفض الطرف الآخر الاتصال.');
         closeCall();
     } else if (type === 'hangup') {
         showHelp(signal.payload?.reason === 'no_answer' ? 'انتهى رنين الاتصال لعدم الرد.' : 'أنهى الطرف الآخر المكالمة.');

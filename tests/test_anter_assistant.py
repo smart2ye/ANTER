@@ -1062,6 +1062,8 @@ class AnterAssistantTests(unittest.TestCase):
         receiver_inbox = receiver_client.get('/messages/').get_data(as_text=True)
         self.assertIn('pollIncomingCallsOutsideChat', receiver_inbox)
         self.assertIn('CALL_ALERT_POLL_INTERVAL_MS = 12000', receiver_inbox)
+        self.assertIn('لا يمكن استخدام الميكروفون عبر رابط HTTP على الهاتف', receiver_chat)
+        self.assertIn("reason: 'media_unavailable'", receiver_chat)
 
     def test_call_signal_requires_following_target(self):
         with self.app.app_context():

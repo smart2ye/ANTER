@@ -24,6 +24,7 @@ from app.services.anter_memory import clear_memory, remember_assistant_reply, re
 
 messages_bp = Blueprint('messages', __name__, url_prefix='/messages')
 CALL_SIGNAL_TYPES = {'invite', 'answer', 'candidate', 'decline', 'hangup'}
+CALL_MEDIA_TYPES = {'voice', 'video'}
 
 
 def get_rtc_config():
@@ -166,6 +167,14 @@ def _can_call_user(other):
     return _can_message_user(other) and other.is_following(current_user)
 
 
+def _call_type_from_payload(payload):
+    """إرجاع نوع وسائط آمن لسجل المكالمة؛ القيم الغريبة تعود للصوت."""
+    if not isinstance(payload, dict):
+        return 'voice'
+    requested = str(payload.get('callType', 'voice')).strip().lower()
+    return requested if requested in CALL_MEDIA_TYPES else 'voice'
+
+
 def _update_call_log(receiver, call_id, signal_type, payload):
     """ينشئ أو يحدّث سجلاً وصفياً للمكالمة من دون حفظ أي صوت أو محتوى اتصال."""
     now = datetime.utcnow()
@@ -176,6 +185,7 @@ def _update_call_log(receiver, call_id, signal_type, payload):
                 call_id=call_id,
                 caller_id=current_user.id,
                 receiver_id=receiver.id,
+                call_type=_call_type_from_payload(payload),
                 status='ringing',
                 started_at=now,
             ))
@@ -681,6 +691,7 @@ def pending_call_invites():
             'callerName': caller.name,
             'callerUsername': caller.username,
             'chatUrl': url_for('messages.chat', user_id=caller.id),
+            'callType': getattr(CallLog.query.filter_by(call_id=signal.call_id).first(), 'call_type', 'voice'),
             'createdAt': signal.created_at.isoformat() + 'Z',
         })
     return jsonify({'signals': result})

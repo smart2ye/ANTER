@@ -4,7 +4,7 @@ from app.extensions import db
 
 
 class CallLog(db.Model):
-    """سجل وصفي لمكالمة صوتية؛ لا يحتوي مطلقاً على صوت أو نص المكالمة."""
+    """سجل وصفي لمكالمة صوتية أو فيديو؛ لا يحتوي مطلقاً على محتوى المكالمة."""
 
     __tablename__ = 'call_logs'
 
@@ -12,6 +12,8 @@ class CallLog(db.Model):
     call_id = db.Column(db.String(64), nullable=False, unique=True, index=True)
     caller_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    # voice | video — يحفظ النوع فقط ولا يحفظ صوتاً أو صورة من المكالمة.
+    call_type = db.Column(db.String(16), nullable=False, default='voice', index=True)
     # ringing | answered | declined | missed | cancelled
     status = db.Column(db.String(20), nullable=False, default='ringing', index=True)
     started_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)

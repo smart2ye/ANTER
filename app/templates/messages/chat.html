@@ -21,6 +21,9 @@
             <button class="btn btn-outline-primary call-button" type="button" id="voiceCallButton" aria-label="بدء مكالمة صوتية" title="بدء مكالمة صوتية">
                 <i class="fas fa-phone-alt"></i>
             </button>
+            <button class="btn btn-outline-primary call-button" type="button" id="videoCallButton" aria-label="بدء مكالمة فيديو" title="بدء مكالمة فيديو">
+                <i class="fas fa-video"></i>
+            </button>
         {% endif %}
         <span class="badge text-bg-light border"><i class="fas {{ 'fa-robot' if is_anter_assistant else 'fa-shield-alt' }} me-1"></i>{{ 'محادثة مع مساعد آلي' if is_anter_assistant else 'محادثة خاصة' }}</span>
     </header>
@@ -112,7 +115,7 @@
                     {% set is_outgoing_call = call.caller_id == current_user.id %}
                     <article class="call-log-row" data-call-id="{{ call.call_id }}">
                         <div class="call-log-card call-log-{{ call.status }}">
-                            <i class="fas {{ 'fa-phone-alt' if call.status in ['answered', 'completed'] else 'fa-phone-slash' }} call-log-icon"></i>
+                            <i class="fas {{ 'fa-video' if call.call_type == 'video' else ('fa-phone-alt' if call.status in ['answered', 'completed'] else 'fa-phone-slash') }} call-log-icon"></i>
                             <div class="call-log-content">
                                 <strong>
                                     {% if call.status == 'answered' or call.status == 'completed' %}
@@ -127,6 +130,7 @@
                                         {{ 'مكالمة صادرة جارية' if is_outgoing_call else 'مكالمة واردة جارية' }}
                                     {% endif %}
                                 </strong>
+                                {% if call.call_type == 'video' %}<span class="call-log-kind"><i class="fas fa-video"></i> فيديو</span>{% endif %}
                                 <small>
                                     {{ call.started_at.strftime('%H:%M') }}
                                     {% if call.duration_seconds is not none and call.duration_seconds > 0 %}
@@ -135,8 +139,8 @@
                                 </small>
                             </div>
                             {% if can_call and call.status != 'ringing' %}
-                                <button type="button" class="btn btn-sm btn-outline-primary call-log-retry" data-retry-call data-call-id="{{ call.call_id }}" aria-label="معاودة الاتصال بـ {{ other.name }}">
-                                    <i class="fas fa-phone-alt"></i><span>معاودة الاتصال</span>
+                                <button type="button" class="btn btn-sm btn-outline-primary call-log-retry" data-retry-call data-call-id="{{ call.call_id }}" data-call-type="{{ call.call_type }}" aria-label="معاودة الاتصال بـ {{ other.name }}">
+                                    <i class="fas {{ 'fa-video' if call.call_type == 'video' else 'fa-phone-alt' }}"></i><span>{{ 'معاودة فيديو' if call.call_type == 'video' else 'معاودة الاتصال' }}</span>
                                 </button>
                             {% endif %}
                         </div>
@@ -240,13 +244,21 @@
     </div>
 
     <audio id="remoteAudio" autoplay></audio>
-    <div class="call-panel d-none" id="callPanel" role="dialog" aria-live="assertive" aria-label="مكالمة صوتية">
+    <div class="call-panel d-none" id="callPanel" role="dialog" aria-live="assertive" aria-label="مكالمة عبر ANTER">
+        <div class="call-video-stage d-none" id="callVideoStage" aria-label="بث الفيديو">
+            <video id="remoteVideo" autoplay playsinline aria-label="فيديو الطرف الآخر"></video>
+            <video id="localVideo" autoplay muted playsinline aria-label="معاينة الكاميرا المحلية"></video>
+        </div>
         <div class="call-avatar"><img src="{{ avatar_url(other) }}" alt="{{ other.name }}"></div>
         <h2 class="h5 mb-1" id="callTitle">مكالمة صوتية</h2>
         <p class="call-ringing-label d-none" id="callRingingLabel" role="status" aria-live="assertive"></p>
         <p class="mb-3 text-white-50" id="callStatus">جارٍ التجهيز…</p>
         <div class="call-actions" id="outgoingCallActions">
             <button type="button" class="btn btn-danger call-action" id="hangupCallButton"><i class="fas fa-phone-slash"></i> إنهاء</button>
+        </div>
+        <div class="call-media-controls d-none" id="callMediaControls">
+            <button type="button" class="btn btn-outline-light call-action" id="toggleMicButton"><i class="fas fa-microphone"></i> كتم الصوت</button>
+            <button type="button" class="btn btn-outline-light call-action d-none" id="toggleCameraButton"><i class="fas fa-video"></i> إيقاف الكاميرا</button>
         </div>
         <div class="call-actions d-none" id="incomingCallActions">
             <button type="button" class="btn btn-success call-action" id="answerCallButton"><i class="fas fa-phone-alt"></i> قبول</button>
@@ -256,9 +268,9 @@
 </section>
 
 <style>
-    .chat-page { max-width: 820px; margin: 0 auto; position: relative; }
+    .chat-page { max-width: 860px; margin: 0 auto; position: relative; }
     .chat-header { background: var(--card-bg, #fff); border: 1px solid rgba(0,0,0,.07); border-radius: 16px; padding: 12px 14px; box-shadow: 0 4px 18px rgba(0,0,0,.04); }
-    .chat-box { height: min(65vh, 600px); overflow-y: auto; padding: 18px; border-radius: 18px; background: #f8f9fa; border: 1px solid rgba(0,0,0,.06); scroll-behavior: smooth; }
+    .chat-box { height: min(65vh, 620px); overflow-y: auto; padding: clamp(12px, 2.6vw, 20px); border-radius: 20px; background: linear-gradient(160deg, #fbfcff, #f4f8fc); border: 1px solid rgba(0,0,0,.06); scroll-behavior: smooth; }
     .message-row { display: flex; margin-bottom: 12px; position: relative; }
     .call-log-row { display: flex; justify-content: center; margin: 13px 0; }
     .call-log-card { display: inline-flex; align-items: center; gap: 9px; max-width: 92%; padding: 9px 13px; border: 1px solid #dbe7f6; border-radius: 14px; background: #f7faff; color: #24405f; }
@@ -268,11 +280,13 @@
     .call-log-content { display: flex; flex-direction: column; gap: 1px; text-align: right; }
     .call-log-content strong { font-size: .84rem; }
     .call-log-content small { color: inherit; opacity: .72; font-size: .73rem; }
+    .call-log-kind { color: inherit; opacity: .82; font-size: .7rem; font-weight: 700; }
     .call-log-retry { display: inline-flex; align-items: center; gap: 5px; margin-right: 4px; border-radius: 999px; font-size: .74rem; white-space: nowrap; }
     .message-row.is-sent { justify-content: flex-start; }
     .message-row.is-received { justify-content: flex-end; }
-    .message-bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; position: relative; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 7px rgba(0,0,0,.05); }
+    .message-bubble { max-width: min(85%, 580px); padding: 11px 14px; border-radius: 19px; position: relative; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; box-shadow: 0 3px 10px rgba(0,0,0,.055); overflow-wrap: anywhere; }
     .message-bubble:active { transform: scale(0.98); }
+    .message-bubble:hover { box-shadow: 0 6px 15px rgba(24, 74, 127, .12); }
     .is-sent .message-bubble { background: #1877f2; color: #fff; border-bottom-right-radius: 4px; }
     .is-received .message-bubble { background: #fff; color: #1f2937; border-bottom-left-radius: 4px; }
     .quoted-message { font-size: 0.85rem; margin-bottom: 6px; cursor: pointer; }
@@ -318,12 +332,18 @@
     [data-theme="dark"] .is-received .message-bubble { background: #3a3b3c; color: #e4e6eb; }
     [data-theme="dark"] .composer-input { background: #3a3b3c; color: #e4e6eb; }
     [data-theme="dark"] .menu-item:hover { background: #3e4042; }
-    .call-panel { position: fixed; z-index: 1080; inset: 0; padding: 34px 20px; background: rgba(10, 23, 41, .92); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .call-panel { position: fixed; z-index: 1080; inset: 0; padding: 34px 20px; background: rgba(10, 23, 41, .94); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     .call-panel.is-ringing .call-avatar { animation: call-ring-pulse 1.35s ease-in-out infinite; }
     .call-ringing-label { min-height: 1.5rem; color: #b9dcff; font-size: .9rem; font-weight: 700; }
     @keyframes call-ring-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(87, 174, 255, .54); transform: scale(1); } 50% { box-shadow: 0 0 0 22px rgba(87, 174, 255, 0); transform: scale(1.035); } }
     .call-avatar { width: 112px; height: 112px; margin-bottom: 20px; padding: 5px; background: rgba(255,255,255,.16); border-radius: 50%; }
     .call-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .call-video-stage { width: min(92vw, 760px); aspect-ratio: 16 / 9; position: relative; overflow: hidden; margin-bottom: 18px; border: 1px solid rgba(255,255,255,.24); border-radius: 22px; background: #081525; box-shadow: 0 18px 48px rgba(0,0,0,.32); }
+    .call-video-stage video { width: 100%; height: 100%; object-fit: cover; background: #081525; }
+    #localVideo { position: absolute; left: 13px; bottom: 13px; width: clamp(96px, 22%, 180px); height: auto; aspect-ratio: 4 / 3; border: 2px solid rgba(255,255,255,.76); border-radius: 14px; box-shadow: 0 7px 20px rgba(0,0,0,.35); transform: scaleX(-1); }
+    .call-panel.is-video .call-avatar { display: none; }
+    .call-media-controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 11px; }
+    @media (max-width: 480px) { .chat-header { border-radius: 14px; padding: 10px; gap: 6px; } .call-button { width: 36px; padding-right: 0; padding-left: 0; } .chat-box { border-radius: 15px; } .message-bubble { max-width: 92%; } .call-video-stage { width: 100%; border-radius: 16px; } }
 </style>
 
 <script>
@@ -342,6 +362,7 @@ var recordingStartTime = null;
 var recordingTimerInterval = null;
 var peerConnection = null;
 var callStream = null;
+var activeCallType = 'voice';
 var activeCallId = null;
 var incomingInvite = null;
 var pendingCandidates = [];
@@ -355,9 +376,17 @@ var originalDocumentTitle = document.title;
 var CALL_NO_ANSWER_TIMEOUT_MS = 30000;
 var incomingCallNotification = null;
 
-function getCallMediaUnavailableMessage() {
+function normalizeCallType(value) {
+    return value === 'video' ? 'video' : 'voice';
+}
+
+function getCallTitle(callType = activeCallType) {
+    return normalizeCallType(callType) === 'video' ? 'مكالمة فيديو' : 'مكالمة صوتية';
+}
+
+function getCallMediaUnavailableMessage(callType = activeCallType) {
     if (!window.isSecureContext) {
-        return 'لا يمكن استخدام الميكروفون عبر رابط HTTP على الهاتف. افتح ANTER عبر HTTPS ثم أعد المحاولة.';
+        return `لا يمكن استخدام ${normalizeCallType(callType) === 'video' ? 'الكاميرا والميكروفون' : 'الميكروفون'} عبر رابط HTTP على الهاتف. افتح ANTER عبر HTTPS ثم أعد المحاولة.`;
     }
     if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
         return 'هذا المتصفح لا يدعم الميكروفون أو الاتصال الصوتي المباشر.';
@@ -563,13 +592,22 @@ function showCallPanel(status, incoming = false, ringing = false) {
     const incomingActions = document.getElementById('incomingCallActions');
     const outgoingActions = document.getElementById('outgoingCallActions');
     const ringingLabel = document.getElementById('callRingingLabel');
+    const title = document.getElementById('callTitle');
+    const videoStage = document.getElementById('callVideoStage');
+    const mediaControls = document.getElementById('callMediaControls');
+    const cameraButton = document.getElementById('toggleCameraButton');
     if (!panel || !incomingActions || !outgoingActions) return;
     panel.classList.remove('d-none');
+    panel.classList.toggle('is-video', activeCallType === 'video');
     panel.classList.toggle('is-ringing', ringing);
     incomingActions.classList.toggle('d-none', !incoming);
     outgoingActions.classList.toggle('d-none', incoming);
+    if (title) title.textContent = getCallTitle();
+    if (videoStage) videoStage.classList.toggle('d-none', activeCallType !== 'video');
+    if (mediaControls) mediaControls.classList.remove('d-none');
+    if (cameraButton) cameraButton.classList.toggle('d-none', activeCallType !== 'video');
     if (ringingLabel) {
-        ringingLabel.textContent = incoming ? `اتصال وارد من ${otherName}` : 'جارٍ الرنين…';
+        ringingLabel.textContent = incoming ? `اتصال وارد من ${otherName}` : `جارٍ رنين ${getCallTitle()}…`;
         ringingLabel.classList.toggle('d-none', !ringing);
     }
     setCallStatus(status);
@@ -731,6 +769,10 @@ function stopCallMedia() {
     callStream = null;
     const remoteAudio = document.getElementById('remoteAudio');
     if (remoteAudio) remoteAudio.srcObject = null;
+    const remoteVideo = document.getElementById('remoteVideo');
+    const localVideo = document.getElementById('localVideo');
+    if (remoteVideo) remoteVideo.srcObject = null;
+    if (localVideo) localVideo.srcObject = null;
 }
 
 function resetCallUi() {
@@ -759,6 +801,7 @@ function closeCall() {
     pendingCandidates = [];
     queuedOutgoingCandidates = [];
     callSignalReady = false;
+    activeCallType = 'voice';
     stopCallMedia();
     resetCallUi();
 }
@@ -802,16 +845,26 @@ async function flushQueuedOutgoingCandidates() {
 
 async function ensurePeerConnection() {
     if (peerConnection) return peerConnection;
-    const mediaUnavailableMessage = getCallMediaUnavailableMessage();
+    const mediaUnavailableMessage = getCallMediaUnavailableMessage(activeCallType);
     if (mediaUnavailableMessage) throw new Error(mediaUnavailableMessage);
 
-    callStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    callStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: activeCallType === 'video' ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } : false,
+    });
+    const localVideo = document.getElementById('localVideo');
+    if (localVideo && activeCallType === 'video') localVideo.srcObject = callStream;
     const connection = new RTCPeerConnection(rtcConfig);
     callStream.getTracks().forEach((track) => connection.addTrack(track, callStream));
     connection.ontrack = (event) => {
+        const remoteStream = event.streams[0] || new MediaStream([event.track]);
+        if (event.track.kind === 'video') {
+            const remoteVideo = document.getElementById('remoteVideo');
+            if (remoteVideo) remoteVideo.srcObject = remoteStream;
+        }
         const remoteAudio = document.getElementById('remoteAudio');
         if (remoteAudio) {
-            remoteAudio.srcObject = event.streams[0] || new MediaStream([event.track]);
+            remoteAudio.srcObject = remoteStream;
             remoteAudio.play().catch(() => {});
         }
     };
@@ -843,12 +896,13 @@ async function ensurePeerConnection() {
     return connection;
 }
 
-async function startVoiceCall() {
+async function startCall(callType = 'voice') {
     if (activeCallId || peerConnection) {
         showHelp('توجد مكالمة جارية بالفعل. أنهِها قبل معاودة الاتصال.', true);
         return;
     }
-    const mediaUnavailableMessage = getCallMediaUnavailableMessage();
+    activeCallType = normalizeCallType(callType);
+    const mediaUnavailableMessage = getCallMediaUnavailableMessage(activeCallType);
     if (mediaUnavailableMessage) {
         showHelp(mediaUnavailableMessage, true);
         return;
@@ -857,21 +911,24 @@ async function startVoiceCall() {
         activeCallId = createCallId();
         callSignalReady = false;
         queuedOutgoingCandidates = [];
-        showCallPanel('جارٍ طلب إذن الميكروفون…');
+        showCallPanel(`جارٍ طلب إذن ${activeCallType === 'video' ? 'الكاميرا والميكروفون' : 'الميكروفون'}…`);
         const connection = await ensurePeerConnection();
         const offer = await connection.createOffer();
         await connection.setLocalDescription(offer);
-        await sendCallSignal('invite', { description: connection.localDescription });
+        await sendCallSignal('invite', { description: connection.localDescription, callType: activeCallType });
         callSignalReady = true;
         await flushQueuedOutgoingCandidates();
         showCallPanel('في انتظار رد الطرف الآخر…', false, true);
         startRinging(false);
         startNoAnswerTimeout(activeCallId);
     } catch (error) {
-        showHelp(error.message || 'تعذر بدء الاتصال الصوتي.', true);
+        showHelp(error.message || `تعذر بدء ${getCallTitle(activeCallType)}.`, true);
         closeCall();
     }
 }
+
+function startVoiceCall() { return startCall('voice'); }
+function startVideoCall() { return startCall('video'); }
 
 async function acceptIncomingCall() {
     const invite = incomingInvite;
@@ -881,7 +938,8 @@ async function acceptIncomingCall() {
         closeCall();
         return;
     }
-    const mediaUnavailableMessage = getCallMediaUnavailableMessage();
+    activeCallType = normalizeCallType(invite.payload?.callType);
+    const mediaUnavailableMessage = getCallMediaUnavailableMessage(activeCallType);
     if (mediaUnavailableMessage) {
         showHelp(mediaUnavailableMessage, true);
         try {
@@ -937,7 +995,8 @@ async function handleCallSignal(signal) {
         }
         activeCallId = callId;
         incomingInvite = signal;
-        showCallPanel(`${otherName} يتصل بك…`, true, true);
+        activeCallType = normalizeCallType(signal.payload?.callType);
+        showCallPanel(`${otherName} يتصل بك عبر ${getCallTitle(activeCallType)}…`, true, true);
         startRinging(true);
         showIncomingDesktopNotification(callId);
         return;
@@ -969,6 +1028,22 @@ async function handleCallSignal(signal) {
         showHelp(signal.payload?.reason === 'no_answer' ? 'انتهى رنين الاتصال لعدم الرد.' : 'أنهى الطرف الآخر المكالمة.');
         closeCall();
     }
+}
+
+function toggleMicrophone() {
+    const track = callStream?.getAudioTracks?.()[0];
+    if (!track) return;
+    track.enabled = !track.enabled;
+    const button = document.getElementById('toggleMicButton');
+    if (button) button.innerHTML = track.enabled ? '<i class="fas fa-microphone"></i> كتم الصوت' : '<i class="fas fa-microphone-slash"></i> تشغيل الصوت';
+}
+
+function toggleCamera() {
+    const track = callStream?.getVideoTracks?.()[0];
+    if (!track) return;
+    track.enabled = !track.enabled;
+    const button = document.getElementById('toggleCameraButton');
+    if (button) button.innerHTML = track.enabled ? '<i class="fas fa-video"></i> إيقاف الكاميرا' : '<i class="fas fa-video-slash"></i> تشغيل الكاميرا';
 }
 
 async function pollCallSignalsNow() {
@@ -1009,14 +1084,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('messageForm');
     const clearAssistantMemoryButton = document.getElementById('clearAssistantMemoryButton');
     const voiceCallButton = document.getElementById('voiceCallButton');
+    const videoCallButton = document.getElementById('videoCallButton');
     const enableCallNotificationsButton = document.getElementById('enableCallNotificationsButton');
     const answerCallButton = document.getElementById('answerCallButton');
     const declineCallButton = document.getElementById('declineCallButton');
     const hangupCallButton = document.getElementById('hangupCallButton');
+    const toggleMicButton = document.getElementById('toggleMicButton');
+    const toggleCameraButton = document.getElementById('toggleCameraButton');
     
     formatAssistantMessages();
     if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
     if (voiceCallButton) voiceCallButton.addEventListener('click', startVoiceCall);
+    if (videoCallButton) videoCallButton.addEventListener('click', startVideoCall);
     if (enableCallNotificationsButton) {
         enableCallNotificationsButton.addEventListener('click', requestCallNotificationPermission);
     }
@@ -1025,11 +1104,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     window.addEventListener('blur', () => window.setTimeout(notifyIncomingCallIfNeeded, 0));
     document.querySelectorAll('[data-retry-call]').forEach((button) => {
-        button.addEventListener('click', startVoiceCall);
+        button.addEventListener('click', () => startCall(button.dataset.callType || 'voice'));
     });
     if (answerCallButton) answerCallButton.addEventListener('click', acceptIncomingCall);
     if (declineCallButton) declineCallButton.addEventListener('click', declineIncomingCall);
     if (hangupCallButton) hangupCallButton.addEventListener('click', () => endCall(true));
+    if (toggleMicButton) toggleMicButton.addEventListener('click', toggleMicrophone);
+    if (toggleCameraButton) toggleCameraButton.addEventListener('click', toggleCamera);
 
     if (clearAssistantMemoryButton) {
         clearAssistantMemoryButton.addEventListener('click', async () => {

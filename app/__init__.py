@@ -111,6 +111,9 @@ def create_app():
                 'deleted_by_sender': 'BOOLEAN DEFAULT FALSE',
                 'deleted_by_receiver': 'BOOLEAN DEFAULT FALSE',
             },
+            'call_logs': {
+                'call_type': "VARCHAR(16) NOT NULL DEFAULT 'voice'",
+            },
         }
         with db.engine.begin() as connection:
             for table_name, required_columns in required_columns_by_table.items():

@@ -1042,6 +1042,7 @@ class AnterAssistantTests(unittest.TestCase):
             declined_log = CallLog.query.filter_by(call_id='voice-call-declined').first()
             missed_log = CallLog.query.filter_by(call_id='voice-call-missed').first()
             self.assertEqual(completed_log.status, 'completed')
+            self.assertEqual(completed_log.call_type, 'voice')
             self.assertIsNotNone(completed_log.answered_at)
             self.assertEqual(declined_log.status, 'declined')
             self.assertEqual(missed_log.status, 'missed')
@@ -1058,11 +1059,27 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn('مكالمة واردة مستلمة', receiver_chat)
         self.assertIn('تم رفض مكالمتك', caller_chat)
         self.assertIn('لم يُرد على مكالمتك', caller_chat)
+        self.assertIn('videoCallButton', caller_chat)
+
+        video_invite = caller_client.post(
+            f'/messages/calls/signal/{receiver_id}',
+            json={'callId': 'video-call-integration', 'type': 'invite', 'payload': {
+                'callType': 'video',
+                'description': {'type': 'offer', 'sdp': 'video-offer-sdp'},
+            }},
+        )
+        self.assertEqual(video_invite.status_code, 200)
+        video_pending = receiver_client.get('/messages/calls/pending').get_json()['signals']
+        self.assertEqual(video_pending[0]['callType'], 'video')
+        with self.app.app_context():
+            video_log = CallLog.query.filter_by(call_id='video-call-integration').first()
+            self.assertEqual(video_log.call_type, 'video')
 
         receiver_inbox = receiver_client.get('/messages/').get_data(as_text=True)
         self.assertIn('pollIncomingCallsOutsideChat', receiver_inbox)
         self.assertIn('CALL_ALERT_POLL_INTERVAL_MS = 12000', receiver_inbox)
-        self.assertIn('لا يمكن استخدام الميكروفون عبر رابط HTTP على الهاتف', receiver_chat)
+        self.assertIn('function getCallMediaUnavailableMessage(callType', receiver_chat)
+        self.assertIn('افتح ANTER عبر HTTPS ثم أعد المحاولة.', receiver_chat)
         self.assertIn("reason: 'media_unavailable'", receiver_chat)
 
     def test_call_signal_requires_following_target(self):

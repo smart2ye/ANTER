@@ -268,23 +268,27 @@
 </section>
 
 <style>
-    .chat-page { max-width: 860px; margin: 0 auto; position: relative; }
-    .chat-header { background: var(--card-bg, #fff); border: 1px solid rgba(0,0,0,.07); border-radius: 16px; padding: 12px 14px; box-shadow: 0 4px 18px rgba(0,0,0,.04); }
-    .chat-box { height: min(65vh, 620px); overflow-y: auto; padding: clamp(12px, 2.6vw, 20px); border-radius: 20px; background: linear-gradient(160deg, #fbfcff, #f4f8fc); border: 1px solid rgba(0,0,0,.06); scroll-behavior: smooth; }
-    .message-row { display: flex; margin-bottom: 12px; position: relative; }
-    .call-log-row { display: flex; justify-content: center; margin: 13px 0; }
-    .call-log-card { display: inline-flex; align-items: center; gap: 9px; max-width: 92%; padding: 9px 13px; border: 1px solid #dbe7f6; border-radius: 14px; background: #f7faff; color: #24405f; }
+    html, body { max-width: 100%; overflow-x: clip; }
+    .chat-page, .chat-page * { box-sizing: border-box; }
+    .chat-page { width: 100%; min-width: 0; max-width: 860px; margin: 0 auto; position: relative; overflow-x: clip; }
+    .chat-header { min-width: 0; flex-wrap: wrap; background: var(--card-bg, #fff); border: 1px solid rgba(0,0,0,.07); border-radius: 16px; padding: 12px 14px; box-shadow: 0 4px 18px rgba(0,0,0,.04); }
+    .chat-header .flex-grow-1 { min-width: 0; }
+    .chat-header h1, .chat-header .text-muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-box { width: 100%; min-width: 0; height: min(65vh, 620px); overflow-x: hidden; overflow-y: auto; padding: clamp(12px, 2.6vw, 20px); border-radius: 20px; background: linear-gradient(160deg, #fbfcff, #f4f8fc); border: 1px solid rgba(0,0,0,.06); scroll-behavior: smooth; }
+    .message-row { display: flex; width: 100%; min-width: 0; margin-bottom: 12px; position: relative; }
+    .call-log-row { display: flex; width: 100%; min-width: 0; justify-content: center; margin: 13px 0; }
+    .call-log-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; width: min(100%, 560px); min-width: 0; max-width: 100%; padding: 10px 13px; border: 1px solid #dbe7f6; border-radius: 16px; background: #f7faff; color: #24405f; }
     .call-log-card.call-log-answered, .call-log-card.call-log-completed { border-color: #bce7ce; background: #f2fbf5; color: #176f3b; }
     .call-log-card.call-log-declined, .call-log-card.call-log-missed, .call-log-card.call-log-cancelled { border-color: #f1d0d2; background: #fff7f7; color: #9a3941; }
     .call-log-icon { font-size: 1rem; }
-    .call-log-content { display: flex; flex-direction: column; gap: 1px; text-align: right; }
-    .call-log-content strong { font-size: .84rem; }
+    .call-log-content { display: flex; min-width: 0; flex-direction: column; gap: 2px; text-align: right; }
+    .call-log-content strong { overflow-wrap: break-word; font-size: .84rem; }
     .call-log-content small { color: inherit; opacity: .72; font-size: .73rem; }
     .call-log-kind { color: inherit; opacity: .82; font-size: .7rem; font-weight: 700; }
-    .call-log-retry { display: inline-flex; align-items: center; gap: 5px; margin-right: 4px; border-radius: 999px; font-size: .74rem; white-space: nowrap; }
+    .call-log-retry { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; margin-right: 4px; border-radius: 999px; font-size: .74rem; white-space: nowrap; }
     .message-row.is-sent { justify-content: flex-start; }
     .message-row.is-received { justify-content: flex-end; }
-    .message-bubble { max-width: min(85%, 580px); padding: 11px 14px; border-radius: 19px; position: relative; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; box-shadow: 0 3px 10px rgba(0,0,0,.055); overflow-wrap: anywhere; }
+    .message-bubble { min-width: 74px; max-width: min(85%, 580px); padding: 11px 14px; border-radius: 19px; position: relative; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; box-shadow: 0 3px 10px rgba(0,0,0,.055); overflow-wrap: break-word; word-break: normal; }
     .message-bubble:active { transform: scale(0.98); }
     .message-bubble:hover { box-shadow: 0 6px 15px rgba(24, 74, 127, .12); }
     .is-sent .message-bubble { background: #1877f2; color: #fff; border-bottom-right-radius: 4px; }
@@ -303,9 +307,19 @@
     .assistant-rich-list li { margin-bottom: 7px; padding-right: 2px; font-size: .91rem; line-height: 1.75; }
     .assistant-rich-text strong { font-weight: 800; color: #123f71; }
     .is-sent .assistant-rich-title, .is-sent .assistant-rich-subtitle, .is-sent .assistant-rich-text strong { color: inherit; }
-    @media (max-width: 480px) {
-        .chat-box { height: min(62vh, 560px); padding: 12px 9px; }
-        .message-bubble { max-width: 92%; padding: 10px 12px; }
+    @media (max-width: 575.98px) {
+        .chat-header { gap: 8px !important; padding: 10px; border-radius: 14px; }
+        .chat-header .flex-grow-1 { flex: 1 1 calc(100% - 102px); }
+        .chat-header .typing-indicator { order: 10; flex-basis: 100%; }
+        .chat-header .badge { order: 11; margin-inline-start: auto; }
+        .call-button { flex: 0 0 42px; width: 42px; height: 42px; padding: 0; }
+        .chat-box { height: min(62vh, 560px); padding: 12px 9px; border-radius: 16px; }
+        .message-bubble { min-width: 70px; max-width: calc(100% - 20px); padding: 10px 12px; }
+        .call-log-card { grid-template-columns: auto minmax(0, 1fr); padding: 11px; border-radius: 15px; }
+        .call-log-retry { grid-column: 1 / -1; width: 100%; margin: 2px 0 0; min-height: 34px; }
+        .chat-composer { width: 100%; min-width: 0; padding: 8px; border-radius: 16px; }
+        .composer-row { min-width: 0; gap: 6px; }
+        .composer-input { min-width: 0; }
         .assistant-rich-paragraph { font-size: .88rem; line-height: 1.78; }
         .assistant-rich-title { font-size: 1rem; }
         .assistant-rich-subtitle { font-size: .92rem; }
@@ -343,7 +357,7 @@
     #localVideo { position: absolute; left: 13px; bottom: 13px; width: clamp(96px, 22%, 180px); height: auto; aspect-ratio: 4 / 3; border: 2px solid rgba(255,255,255,.76); border-radius: 14px; box-shadow: 0 7px 20px rgba(0,0,0,.35); transform: scaleX(-1); }
     .call-panel.is-video .call-avatar { display: none; }
     .call-media-controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 11px; }
-    @media (max-width: 480px) { .chat-header { border-radius: 14px; padding: 10px; gap: 6px; } .call-button { width: 36px; padding-right: 0; padding-left: 0; } .chat-box { border-radius: 15px; } .message-bubble { max-width: 92%; } .call-video-stage { width: 100%; border-radius: 16px; } }
+    @media (max-width: 480px) { .call-video-stage { width: 100%; border-radius: 16px; } }
 </style>
 
 <script>

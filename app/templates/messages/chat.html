@@ -946,6 +946,13 @@ async function handleCallSignal(signal) {
     }
 }
 
+async function pollCallSignalsNow() {
+    const callRes = await fetch(`/messages/calls/poll/${otherUserId}`);
+    if (!callRes.ok) return;
+    const data = await callRes.json();
+    for (const signal of data.signals || []) await handleCallSignal(signal);
+}
+
 async function sendVoiceAsJson(file) {
     const reader = new FileReader();
     const base64Promise = new Promise((resolve, reject) => {
@@ -1080,17 +1087,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             if (isAnterAssistant) return;
-            const callRes = await fetch(`/messages/calls/poll/${otherUserId}`);
-            if (callRes.ok) {
-                const data = await callRes.json();
-                for (const signal of data.signals || []) await handleCallSignal(signal);
-            }
+            await pollCallSignalsNow();
         } catch (error) {
             console.warn('تعذر الاستعلام عن حالة الاتصال.', error);
         } finally {
             pollingInProgress = false;
         }
     }, 2500);
+    // لا ننتظر دورة الاستطلاع الأولى؛ قد تكون دعوة الاتصال وصلت قبل فتح الدردشة.
+    pollCallSignalsNow().catch(() => {});
 });
 </script>
 {% endblock %}

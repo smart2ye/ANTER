@@ -972,6 +972,16 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertEqual(invite.status_code, 200)
         self.assertTrue(invite.get_json()['success'])
 
+        # يمكن لصندوق الرسائل وأي صفحة عامة إظهار المكالمة من دون استهلاك
+        # الإشارة؛ تبقى دعوة WebRTC محفوظة إلى أن يفتح المستلم المحادثة.
+        pending = receiver_client.get('/messages/calls/pending')
+        self.assertEqual(pending.status_code, 200)
+        pending_signals = pending.get_json()['signals']
+        self.assertEqual(len(pending_signals), 1)
+        self.assertEqual(pending_signals[0]['callId'], 'voice-call-integration')
+        self.assertIn(f'/messages/{caller_id}', pending_signals[0]['chatUrl'])
+        self.assertEqual(caller_client.get('/messages/calls/pending').get_json()['signals'], [])
+
         received_invite = receiver_client.get(f'/messages/calls/poll/{caller_id}')
         self.assertEqual(received_invite.status_code, 200)
         invite_signals = received_invite.get_json()['signals']

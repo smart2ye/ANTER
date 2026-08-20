@@ -292,6 +292,73 @@
         {% if current_user.is_authenticated %}
         updateBadges();
         setInterval(updateBadges, 15000);
+
+        {% if request.endpoint != 'messages.chat' %}
+        // صفحة الدردشة تستلم إشارة WebRTC كاملة بنفسها. في الصفحات الأخرى
+        // نعرض دعوة مرئية تقود المستخدم إلى المحادثة، من دون تعليمها مستلمة.
+        const announcedIncomingCalls = new Set();
+
+        function showIncomingCallToast(call) {
+            if (announcedIncomingCalls.has(call.callId)) return;
+            announcedIncomingCalls.add(call.callId);
+
+            const container = document.getElementById('toast-container') || (() => {
+                const element = document.createElement('div');
+                element.id = 'toast-container';
+                element.style.cssText = 'position: fixed; bottom: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;';
+                document.body.appendChild(element);
+                return element;
+            })();
+            const toast = document.createElement('div');
+            toast.className = 'shadow-lg rounded-3 border';
+            toast.style.cssText = 'min-width: 280px; background: var(--fb-card); border-color: var(--fb-border) !important;';
+            const body = document.createElement('div');
+            body.className = 'p-3 d-flex align-items-center gap-2';
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-phone-alt text-success fs-5';
+            const copy = document.createElement('div');
+            copy.className = 'flex-grow-1';
+            const title = document.createElement('div');
+            title.className = 'fw-bold';
+            title.textContent = 'مكالمة واردة عبر ANTER';
+            const detail = document.createElement('small');
+            detail.className = 'text-muted';
+            detail.textContent = `${call.callerName} يتصل بك الآن`;
+            copy.append(title, detail);
+            const open = document.createElement('button');
+            open.type = 'button';
+            open.className = 'btn btn-success btn-sm';
+            open.textContent = 'فتح';
+            open.addEventListener('click', () => { window.location.href = call.chatUrl; });
+            body.append(icon, copy, open);
+            toast.appendChild(body);
+            container.appendChild(toast);
+
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    const notification = new Notification('مكالمة واردة عبر ANTER', {
+                        body: `${call.callerName} يتصل بك الآن`,
+                        tag: `anter-call-${call.callId}`,
+                        renotify: true,
+                        requireInteraction: true,
+                    });
+                    notification.onclick = () => { window.location.href = call.chatUrl; notification.close(); };
+                } catch (_) {}
+            }
+        }
+
+        async function pollIncomingCallsOutsideChat() {
+            try {
+                const response = await fetch('/messages/calls/pending', { credentials: 'same-origin', cache: 'no-store' });
+                if (!response.ok) return;
+                const data = await response.json();
+                (data.signals || []).forEach(showIncomingCallToast);
+            } catch (_) {}
+        }
+
+        pollIncomingCallsOutsideChat();
+        setInterval(pollIncomingCallsOutsideChat, 2500);
+        {% endif %}
         {% endif %}
 
         if ('serviceWorker' in navigator) {

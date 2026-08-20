@@ -654,6 +654,38 @@ def poll_call_signals(user_id):
     return jsonify({'signals': result})
 
 
+@messages_bp.route('/calls/pending')
+@login_required
+def pending_call_invites():
+    """إظهار دعوات المكالمات النشطة في أي صفحة من دون استهلاك إشارة WebRTC.
+
+    لا تُعلَّم الدعوة مستلمة هنا؛ فالانتقال إلى صفحة الدردشة هو الذي يستدعي
+    مسار الاستطلاع ويعرض أزرار القبول والرفض مع وصف WebRTC الأصلي.
+    """
+    signals = CallSignal.query.join(
+        CallLog, CallLog.call_id == CallSignal.call_id,
+    ).filter(
+        CallSignal.receiver_id == current_user.id,
+        CallSignal.signal_type == 'invite',
+        CallSignal.delivered_at.is_(None),
+        CallLog.status == 'ringing',
+    ).order_by(CallSignal.created_at.asc()).limit(10).all()
+
+    result = []
+    for signal in signals:
+        caller = db.session.get(User, signal.sender_id)
+        if caller is None:
+            continue
+        result.append({
+            'callId': signal.call_id,
+            'callerName': caller.name,
+            'callerUsername': caller.username,
+            'chatUrl': url_for('messages.chat', user_id=caller.id),
+            'createdAt': signal.created_at.isoformat() + 'Z',
+        })
+    return jsonify({'signals': result})
+
+
 @messages_bp.route('/unread_count')
 @login_required
 def unread_messages_count():

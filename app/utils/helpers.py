@@ -315,14 +315,22 @@ def get_user_activity_summary(user_id, limit=50):
 # ============================================
 from datetime import datetime, timedelta
 
-def get_user_status(user):
+def get_user_status(user, viewer=None):
     """إرجاع حالة المستخدم (متصل / غير متصل)."""
     from flask import current_app
 
     assistant_username = current_app.config.get('ANTER_ASSISTANT_USERNAME', 'anter_assistant')
     if user and user.username == assistant_username:
         return {'status': 'online', 'last_seen': 'متصل الآن'}
-    if not user or not user.last_seen:
+    if not user:
+        return {'status': 'offline', 'last_seen': 'منذ فترة'}
+    can_view_presence = (
+        getattr(user, 'show_online_status', True)
+        or (viewer and (viewer.id == user.id or getattr(viewer, 'is_admin', False)))
+    )
+    if not can_view_presence:
+        return {'status': 'hidden', 'last_seen': 'الحالة مخفية'}
+    if not user.last_seen:
         return {'status': 'offline', 'last_seen': 'منذ فترة'}
     
     now = datetime.utcnow()
@@ -340,9 +348,9 @@ def get_user_status(user):
         days = int(diff.total_seconds() / 86400)
         return {'status': 'offline', 'last_seen': f'منذ {days} يوم'}
 
-def get_status_icon(user):
+def get_status_icon(user, viewer=None):
     """إرجاع أيقونة الحالة مع اللون (HTML)"""
-    status = get_user_status(user)
+    status = get_user_status(user, viewer)
     if status['status'] == 'online':
         return f'<span class="status-indicator online"><span class="status-dot"></span> 🟢 متصل الآن</span>'
     else:

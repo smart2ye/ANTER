@@ -15,6 +15,14 @@
                 <img src="{{ post_image_url(post) }}" class="img-fluid mt-2" style="max-height: 150px;">
             {% endif %}
         </div>
+        <div class="mb-3">
+            <label for="postVisibility" class="form-label">جمهور المنشور</label>
+            <select id="postVisibility" name="visibility" class="form-select">
+                <option value="public" {% if post.visibility == 'public' %}selected{% endif %}>عام</option>
+                <option value="followers" {% if post.visibility == 'followers' %}selected{% endif %}>المتابعون فقط</option>
+                <option value="only_me" {% if post.visibility == 'only_me' %}selected{% endif %}>أنا فقط</option>
+            </select>
+        </div>
         {{ form.submit(class="btn btn-primary w-100") }}
     </form>
 </div>

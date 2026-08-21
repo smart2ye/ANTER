@@ -660,6 +660,43 @@ class AnterAssistantTests(unittest.TestCase):
             }
         self.assertTrue({'follow', 'post_create', 'post_reaction_add', 'comment_create'}.issubset(actions))
 
+    def test_profile_and_post_privacy_block_non_followers_and_hide_presence(self):
+        with self.app.app_context():
+            owner = User.query.filter_by(username='privacy_owner').first()
+            if owner is None:
+                owner = User(
+                    username='privacy_owner',
+                    email='privacy-owner@example.test',
+                    name='صاحب الخصوصية',
+                    terms_agreed=True,
+                    profile_visibility='followers',
+                    show_online_status=False,
+                )
+                owner.set_password('privacy-owner-password')
+                db.session.add(owner)
+                db.session.flush()
+            owner.profile_visibility = 'followers'
+            owner.show_online_status = False
+            follower_post = Post(content='منشور للمتابعين فقط', author_id=owner.id, visibility='followers')
+            only_me_post = Post(content='منشور خاص بصاحبه', author_id=owner.id, visibility='only_me')
+            db.session.add_all([follower_post, only_me_post])
+            db.session.commit()
+            owner_id = owner.id
+            follower_post_id = follower_post.public_id
+            only_me_post_id = only_me_post.public_id
+            self.assertEqual(get_user_status(owner, User.query.get(self.user_id))['status'], 'hidden')
+
+        self.assertEqual(self.client.get('/users/privacy_owner').status_code, 403)
+        self.assertEqual(self.client.get(f'/p/{follower_post_id}').status_code, 403)
+
+        with self.app.app_context():
+            db.session.add(Follow(follower_id=self.user_id, followed_id=owner_id))
+            db.session.commit()
+
+        self.assertEqual(self.client.get('/users/privacy_owner').status_code, 200)
+        self.assertEqual(self.client.get(f'/p/{follower_post_id}').status_code, 200)
+        self.assertEqual(self.client.get(f'/p/{only_me_post_id}').status_code, 403)
+
     def test_memory_ignores_sensitive_text(self):
         with self.app.app_context():
             user = db.session.get(User, self.user_id)

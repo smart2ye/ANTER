@@ -77,7 +77,7 @@ def inbox():
         .limit(30)
         .all()
     )
-    online_friends = [user for user in followed_users if get_user_status(user)['status'] == 'online']
+    online_friends = [user for user in followed_users if get_user_status(user, current_user)['status'] == 'online']
 
     return render_template(
         'messages/inbox.html',

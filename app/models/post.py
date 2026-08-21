@@ -21,6 +21,7 @@ class Post(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    visibility = db.Column(db.String(20), default='public', nullable=False, index=True)
 
     comments = db.relationship('Comment', backref='post', lazy='dynamic', cascade='all, delete-orphan')
     likes = db.relationship('Like', backref='post', lazy='dynamic', cascade='all, delete-orphan')

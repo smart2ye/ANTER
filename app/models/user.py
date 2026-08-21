@@ -20,7 +20,9 @@ class User(UserMixin, db.Model):
     gender = db.Column(db.String(20), default='')
     birth_date = db.Column(db.Date, nullable=True)
     is_private = db.Column(db.Boolean, default=False)
-    hide_followers = db.Column(db.Boolean, default=False)  # إخفاء قائمة المتابعين
+    profile_visibility = db.Column(db.String(20), default='public', nullable=False)
+    hide_followers = db.Column(db.Boolean, default=False)
+    show_online_status = db.Column(db.Boolean, default=True, nullable=False)
     show_email = db.Column(db.Boolean, default=False)
     message_privacy = db.Column(db.String(20), default='everyone')
     

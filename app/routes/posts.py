@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, jsonify, session, abort
+from flask import abort
 from flask_login import login_required, current_user
 from app import db, csrf
 from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag
@@ -6,6 +7,7 @@ from app.forms.post import PostForm
 from app.utils.helpers import extract_hashtags, allowed_audio_file, extract_link_metadata as extract_safe_link_metadata, log_user_activity
 from app.utils.image_storage import prepare_image_data
 from app.services.anter_user_messages import send_report_receipt
+from app.services.privacy import POST_VISIBILITIES, can_view_post
 
 from datetime import datetime
 import os
@@ -30,6 +32,8 @@ def edit(post_id):
             return redirect(url_for('posts.edit', post_id=post_id))
         
         post.content = content
+        visibility = request.form.get('visibility', post.visibility)
+        post.visibility = visibility if visibility in POST_VISIBILITIES else post.visibility
         post.updated_at = datetime.utcnow()
         post.link_url, post.link_title, post.link_description, post.link_image = extract_safe_link_metadata(content)
 
@@ -81,6 +85,8 @@ def delete(post_id):
 @csrf.exempt
 def like(post_id):
     post = Post.query.get_or_404(post_id)
+    if not can_view_post(current_user, post):
+        abort(403)
     payload = request.get_json(silent=True) or {}
     reaction_type = payload.get('reaction', 'like')
     allowed_reactions = {'like', 'love', 'haha', 'angry', 'sad'}
@@ -137,9 +143,12 @@ def like(post_id):
     })
 
 @posts_bp.route('/post/<int:post_id>')
+@login_required
 def view(post_id):
     """Legacy numeric post URL; keep shared links working while moving to opaque IDs."""
     post = Post.query.get_or_404(post_id)
+    if not can_view_post(current_user, post):
+        abort(403)
     return redirect(url_for('posts.view_post', public_id=post.public_id), code=301)
 
 @posts_bp.route('/comment/<int:post_id>', methods=['POST'])
@@ -147,6 +156,8 @@ def view(post_id):
 @csrf.exempt
 def comment(post_id):
     post = Post.query.get_or_404(post_id)
+    if not can_view_post(current_user, post):
+        abort(403)
     content = request.form.get('content', '').strip()
     parent_id = request.form.get('parent_id', type=int)
     
@@ -232,6 +243,8 @@ def comment(post_id):
 @csrf.exempt
 def like_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
+    if not can_view_post(current_user, comment.post):
+        abort(403)
     like = CommentLike.query.filter_by(user_id=current_user.id, comment_id=comment_id).first()
     
     if like:
@@ -265,6 +278,8 @@ def like_comment(comment_id):
 @csrf.exempt
 def repost(post_id):
     post = Post.query.get_or_404(post_id)
+    if not can_view_post(current_user, post):
+        abort(403)
     repost = Repost.query.filter_by(user_id=current_user.id, post_id=post_id).first()
     
     if repost:
@@ -308,6 +323,8 @@ def report(post_id=None):
     reason = (payload.get('reason') if is_json_request else request.form.get('reason', '')).strip()
     details = (payload.get('details') if is_json_request else request.form.get('details', '')).strip()
     post = Post.query.get_or_404(post_id) if post_id else None
+    if post and not can_view_post(current_user, post):
+        abort(403)
 
     if not post or not reason:
         message = 'يرجى اختيار منشور وسبب واضح للبلاغ.'
@@ -348,6 +365,8 @@ def report(post_id=None):
 @csrf.exempt
 def hide(post_id):
     post = Post.query.get_or_404(post_id)
+    if not can_view_post(current_user, post):
+        abort(403)
     
     hidden = HiddenPost.query.filter_by(user_id=current_user.id, post_id=post_id).first()
     if not hidden:
@@ -383,9 +402,11 @@ def create():
                 flash('تعذر قراءة الصورة. استخدم JPG أو PNG أو GIF أو WEBP بحجم ضمن الحد المسموح.', 'danger')
                 return redirect(url_for('posts.create'))
 
+        visibility = request.form.get('visibility', 'public')
         post = Post(
             content=content,
             author_id=current_user.id,
+            visibility=visibility if visibility in POST_VISIBILITIES else 'public',
             image_data=image_data,
             image_mime=image_mime,
             link_url=link_url,
@@ -430,10 +451,14 @@ def create():
 def comments_fragment(post_id):
     """Return one post's comments only when the reader opens the discussion."""
     post = Post.query.get_or_404(post_id)
+    if not can_view_post(current_user, post):
+        abort(403)
     return render_template('comments.html', post=post)
 
 
 @posts_bp.route('/p/<public_id>')
 def view_post(public_id):
     post = Post.query.filter_by(public_id=public_id).first_or_404()
+    if not can_view_post(current_user, post):
+        abort(403)
     return render_template('post_detail.html', post=post)

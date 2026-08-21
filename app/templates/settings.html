@@ -85,7 +85,22 @@
             </div>
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" name="is_private" id="is_private" {% if current_user.is_private %}checked{% endif %}>
-                <label class="form-check-label" for="is_private">حساب خاص (يجب الموافقة على المتابعين)</label>
+                <label class="form-check-label" for="is_private">حساب خاص (يقتصر الملف والمنشورات المقيدة على المتابعين)</label>
+            </div>
+            <div class="mb-2 mt-3">
+                <label class="form-label">من يمكنه رؤية ملفي ومنشوراتي المقيدة</label>
+                <select name="profile_visibility" class="form-control">
+                    <option value="public" {% if current_user.profile_visibility == 'public' %}selected{% endif %}>الجميع</option>
+                    <option value="followers" {% if current_user.profile_visibility == 'followers' %}selected{% endif %}>المتابعون فقط</option>
+                </select>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="hide_followers" id="hide_followers" {% if current_user.hide_followers %}checked{% endif %}>
+                <label class="form-check-label" for="hide_followers">إخفاء قوائم المتابعين ومن أتابعهم</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="show_online_status" id="show_online_status" {% if current_user.show_online_status %}checked{% endif %}>
+                <label class="form-check-label" for="show_online_status">إظهار حالة اتصالي للأصدقاء</label>
             </div>
             <div class="mb-2">
                 <label class="form-label">من يمكنه إرسال رسائل إليك</label>

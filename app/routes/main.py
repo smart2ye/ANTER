@@ -6,6 +6,7 @@ from app.extensions import db
 from sqlalchemy import func, or_, and_
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
+from app.services.privacy import visible_posts
 import math
 import re
 from collections import Counter
@@ -82,6 +83,9 @@ def build_feed(user):
     all_posts = followed_posts + top_suggested
     if not all_posts:
         all_posts = post_query.order_by(Post.created_at.desc()).limit(candidate_limit).all()
+
+    all_posts = visible_posts(all_posts, user)
+    top_suggested = visible_posts(top_suggested, user)
 
     hidden_ids = {
         post_id for post_id, in db.session.query(HiddenPost.post_id)

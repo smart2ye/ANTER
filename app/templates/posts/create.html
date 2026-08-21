@@ -34,6 +34,15 @@
             </div>
         </div>
 
+        <div class="mb-3">
+            <label for="postVisibility" class="form-label fw-semibold"><i class="fas fa-user-shield text-primary"></i> جمهور المنشور</label>
+            <select id="postVisibility" name="visibility" class="form-select">
+                <option value="public">عام — يظهر لجميع مستخدمي ANTER</option>
+                <option value="followers">المتابعون فقط</option>
+                <option value="only_me">أنا فقط</option>
+            </select>
+        </div>
+
         <div class="d-flex gap-2">
             {{ form.submit(class="btn btn-primary flex-grow-1 py-2 fw-bold rounded-pill", id="submitBtn") }}
             <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary rounded-pill px-4">إلغاء</a>

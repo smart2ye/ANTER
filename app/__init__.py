@@ -89,6 +89,8 @@ def create_app():
             'users': {
                 'avatar_data': binary_type,
                 'avatar_mime': 'VARCHAR(100)',
+                'profile_visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
+                'show_online_status': 'BOOLEAN NOT NULL DEFAULT TRUE',
             },
             'posts': {
                 'image_data': binary_type,
@@ -98,6 +100,7 @@ def create_app():
                 'link_title': 'VARCHAR(255)',
                 'link_description': 'TEXT',
                 'link_image': 'VARCHAR(500)',
+                'visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
             },
             'videos': {
                 'public_id': 'VARCHAR(40)',

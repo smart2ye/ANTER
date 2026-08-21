@@ -2,7 +2,7 @@ from flask import Blueprint, current_app, render_template, request, redirect, ur
 from flask_login import login_required, current_user
 from app.extensions import db, csrf
 from app.models import Video, VideoLike, VideoComment, VideoCommentLike, Notification
-from app.utils.helpers import save_video_file, create_thumbnail
+from app.utils.helpers import save_video_file, create_thumbnail, log_user_activity
 
 videos_bp = Blueprint('videos', __name__, url_prefix='/videos')
 
@@ -65,6 +65,7 @@ def upload():
         )
         db.session.add(video)
         db.session.commit()
+        log_user_activity(current_user.id, 'video_upload', {'video_id': video.id, 'attachment': 'ريلز' if is_reel else 'فيديو'})
 
         flash('تم رفع الفيديو بنجاح!', 'success')
         return redirect(url_for('videos.reels' if is_reel else 'videos.watch', public_id=video.public_id))
@@ -105,6 +106,7 @@ def like(video_id):
             notif = Notification(user_id=video.author_id, actor_id=current_user.id, action='like_video')
             db.session.add(notif)
     db.session.commit()
+    log_user_activity(current_user.id, 'video_reaction_add' if liked else 'video_reaction_remove', {'video_id': video_id})
     return jsonify({'liked': liked, 'count': video.like_count()})
 
 @videos_bp.route('/comment/<int:video_id>', methods=['POST'])
@@ -132,6 +134,7 @@ def comment(video_id):
 
     db.session.add(comment)
     db.session.commit()
+    log_user_activity(current_user.id, 'video_comment_create', {'video_id': video.id, 'comment_id': comment.id})
     flash('تم إضافة التعليق.', 'success')
     return redirect(url_for('videos.watch', public_id=video.public_id))
 
@@ -149,4 +152,5 @@ def like_comment(comment_id):
         db.session.add(like)
         liked = True
     db.session.commit()
+    log_user_activity(current_user.id, 'video_comment_reaction_add' if liked else 'video_comment_reaction_remove', {'comment_id': comment_id, 'video_id': comment.video_id})
     return jsonify({'liked': liked, 'count': comment.like_count()})

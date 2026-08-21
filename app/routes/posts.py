@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app import db, csrf
 from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag
 from app.forms.post import PostForm
-from app.utils.helpers import extract_hashtags, allowed_audio_file, extract_link_metadata as extract_safe_link_metadata
+from app.utils.helpers import extract_hashtags, allowed_audio_file, extract_link_metadata as extract_safe_link_metadata, log_user_activity
 from app.utils.image_storage import prepare_image_data
 from app.services.anter_user_messages import send_report_receipt
 
@@ -55,6 +55,7 @@ def edit(post_id):
             post.hashtags.append(tag)
         
         db.session.commit()
+        log_user_activity(current_user.id, 'post_edit', {'post_id': post.id})
         flash('تم تحديث المنشور بنجاح!', 'success')
         return redirect(url_for('main.index'))
     
@@ -68,8 +69,10 @@ def delete(post_id):
         flash('ليس لديك صلاحية حذف هذا المنشور', 'danger')
         return redirect(url_for('main.index'))
     
+    deleted_post_id = post.id
     db.session.delete(post)
     db.session.commit()
+    log_user_activity(current_user.id, 'post_delete', {'post_id': deleted_post_id})
     flash('تم حذف المنشور بنجاح!', 'success')
     return redirect(url_for('main.index'))
 
@@ -117,6 +120,11 @@ def like(post_id):
             db.session.add(notification)
 
     db.session.commit()
+    log_user_activity(
+        current_user.id,
+        'post_reaction_add' if liked else 'post_reaction_remove',
+        {'post_id': post_id, 'reaction': reaction_type},
+    )
     reaction_counts = {key: 0 for key in allowed_reactions}
     for stored_reaction in post.likes.all():
         reaction_counts[stored_reaction.reaction_type] = reaction_counts.get(stored_reaction.reaction_type, 0) + 1
@@ -213,6 +221,8 @@ def comment(post_id):
     except Exception:
         db.session.rollback()
         raise
+
+    log_user_activity(current_user.id, 'comment_create', {'post_id': post_id, 'comment_id': comment.id})
     
     flash('تم إضافة التعليق بنجاح!', 'success')
     return redirect(url_for('posts.view_post', public_id=post.public_id))
@@ -243,6 +253,11 @@ def like_comment(comment_id):
             db.session.add(notification)
     
     db.session.commit()
+    log_user_activity(
+        current_user.id,
+        'comment_reaction_add' if liked else 'comment_reaction_remove',
+        {'comment_id': comment_id, 'post_id': comment.post_id},
+    )
     return jsonify({'liked': liked, 'count': comment.likes.count()})
 
 @posts_bp.route('/repost/<int:post_id>', methods=['POST'])
@@ -271,6 +286,7 @@ def repost(post_id):
             db.session.add(notification)
     
     db.session.commit()
+    log_user_activity(current_user.id, 'repost_add' if reposted else 'repost_remove', {'post_id': post_id})
     return jsonify({'reposted': reposted, 'count': post.reposts.count()})
 
 @posts_bp.route('/report', methods=['POST'])
@@ -319,6 +335,7 @@ def report(post_id=None):
     db.session.flush()
     send_report_receipt(current_user, report, post)
     db.session.commit()
+    log_user_activity(current_user.id, 'report_create', {'post_id': post.id})
 
     message = 'تم استلام البلاغ وإحالته للمراجعة البشرية.'
     if is_json_request:
@@ -337,6 +354,7 @@ def hide(post_id):
         hidden = HiddenPost(user_id=current_user.id, post_id=post_id)
         db.session.add(hidden)
         db.session.commit()
+        log_user_activity(current_user.id, 'post_hide', {'post_id': post_id})
     
     flash('تم إخفاء المنشور', 'info')
     return redirect(url_for('main.index'))
@@ -401,6 +419,7 @@ def create():
                 db.session.add(notif)
 
         db.session.commit()
+        log_user_activity(current_user.id, 'post_create', {'post_id': post.id, 'attachment': 'صورة' if image_data else 'بدون مرفق'})
         flash('تم نشر المنشور بنجاح!', 'success')
         return redirect(url_for('main.index'))
 

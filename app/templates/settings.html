@@ -52,6 +52,21 @@
                 <label class="form-label">تاريخ الميلاد</label>
                 <input type="date" name="birth_date" class="form-control" value="{{ current_user.birth_date.strftime('%Y-%m-%d') if current_user.birth_date else '' }}">
             </div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label">البريد الإلكتروني</label>
+                    <input type="email" name="email" class="form-control" value="{{ current_user.email }}" autocomplete="email" dir="ltr">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">رقم الجوال</label>
+                    <input type="tel" name="phone" class="form-control" value="{{ current_user.phone or '' }}" autocomplete="tel" dir="ltr">
+                </div>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">كلمة المرور الحالية لتأكيد تغيير البريد أو رقم الجوال</label>
+                <input type="password" name="contact_password" class="form-control" autocomplete="current-password">
+                <small class="text-muted">لا تُحفظ كلمة المرور أو قيم الاتصال في سجل النشاط.</small>
+            </div>
             <div class="mb-2">
                 <label class="form-label">السيرة الذاتية</label>
                 <textarea name="bio" class="form-control" rows="3" maxlength="200">{{ current_user.bio }}</textarea>

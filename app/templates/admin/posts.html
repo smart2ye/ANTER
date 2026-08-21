@@ -22,7 +22,7 @@
                 <td>{{ post.id }}</td>
                 <td>{{ post.content[:80] }}{% if post.content|length > 80 %}...{% endif %}</td>
                 <td>{{ post.author.name }}<br><small class="text-muted">@{{ post.author.username }}</small></td>
-                <td>{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td><time data-local-time="{{ post.created_at.isoformat() }}" data-time-style="datetime">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</time></td>
                 <td>
                     <a href="{{ url_for('admin.view_post', post_id=post.id) }}" class="btn btn-sm btn-outline-info">عرض</a>
                     <button class="btn btn-sm btn-outline-danger delete-post" data-url="{{ url_for('admin.delete_post', post_id=post.id) }}">حذف</button>

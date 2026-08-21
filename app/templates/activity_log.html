@@ -7,13 +7,14 @@
             <i class="fas fa-download"></i> تنزيل بياناتي
         </a>
     </div>
-    <p class="text-muted small">آخر 100 نشاط</p>
+    <p class="text-muted small">آخر 100 نشاط. تُعرض الأوقات وفق ضبط جهازك، ولا يخزّن السجل كلمات المرور أو قيم البريد ورقم الجوال.</p>
     <div class="table-responsive">
         <table class="table table-hover">
             <thead>
                 <tr>
                     <th>#</th>
                     <th>النشاط</th>
+                    <th>التفاصيل</th>
                     <th>المتصفح</th>
                     <th>نظام التشغيل</th>
                     <th>الجهاز</th>
@@ -32,17 +33,18 @@
                             {% if activity.action == 'profile_update' %}bg-info{% endif %}
                             {% if activity.action == 'download_data' %}bg-primary{% endif %}
                         ">
-                            {{ activity.action|replace('_', ' ') }}
+                            {{ activity.action_label }}
                         </span>
                     </td>
+                    <td class="small text-muted">{{ activity.public_details or '—' }}</td>
                     <td>{{ activity.browser or 'غير معروف' }}</td>
                     <td>{{ activity.os or 'غير معروف' }}</td>
                     <td>{{ activity.device_type or 'غير معروف' }}</td>
-                    <td>{{ activity.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td><time data-local-time="{{ activity.created_at.isoformat() }}" data-time-style="datetime">{{ activity.created_at.strftime('%Y-%m-%d %H:%M') }}</time></td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center text-muted">لا يوجد نشاط مسجل بعد.</td>
+                    <td colspan="7" class="text-center text-muted">لا يوجد نشاط مسجل بعد.</td>
                 </tr>
                 {% endfor %}
             </tbody>

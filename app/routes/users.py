@@ -86,6 +86,11 @@ def user_videos(username):
 def edit_profile():
     form = ProfileForm(obj=current_user)
     if form.validate_on_submit():
+        changed_fields = []
+        if form.name.data != current_user.name:
+            changed_fields.append('الاسم')
+        if form.bio.data != current_user.bio:
+            changed_fields.append('النبذة')
         current_user.name = form.name.data
         current_user.bio = form.bio.data
         if form.avatar.data:
@@ -95,10 +100,14 @@ def edit_profile():
                 current_user.avatar_mime = avatar_mime
                 # Keep the legacy path for old clients; avatar_url prefers the DB data.
                 current_user.avatar = 'default.png'
+                changed_fields.append('صورة الملف الشخصي')
             else:
                 flash('تعذر قراءة صورة البروفايل أو أنها أكبر من الحد المسموح.', 'danger')
         db.session.commit()
-        log_user_activity(current_user.id, 'profile_update', {'name': form.name.data, 'bio': form.bio.data})
+        if changed_fields:
+            log_user_activity(current_user.id, 'profile_update', {'fields': changed_fields})
+            if 'صورة الملف الشخصي' in changed_fields:
+                log_user_activity(current_user.id, 'avatar_change')
         flash('تم تحديث الملف الشخصي بنجاح.', 'success')
         return redirect(url_for('users.profile', username=current_user.username))
     return render_template('profile_edit.html', form=form)
@@ -134,6 +143,8 @@ def settings():
         
         # تحديث المعلومات الشخصية
         desired_username = request.form.get('username')
+        desired_email = request.form.get('email')
+        desired_phone = request.form.get('phone')
         gender = request.form.get('gender')
         birth_date_str = request.form.get('birth_date')
         bio = request.form.get('bio')
@@ -141,6 +152,7 @@ def settings():
         is_private = request.form.get('is_private') == 'on'
         message_privacy = request.form.get('message_privacy')
         
+        changed_fields = []
         if desired_username is not None:
             username = desired_username.strip().lstrip('@')
             if is_anter_assistant(current_user):
@@ -154,26 +166,71 @@ def settings():
                 flash('اسم المستخدم هذا مستخدم بالفعل. جرّب اسماً آخر.', 'danger')
                 return redirect(url_for('users.settings'))
             if username != current_user.username:
-                old_username = current_user.username
                 current_user.username = username
-                log_user_activity(current_user.id, 'username_change', {'from': old_username, 'to': username})
+                changed_fields.append('اسم المستخدم')
+
+        if desired_email is not None:
+            email = desired_email.strip().lower()
+            if email and email != current_user.email:
+                if not current_user.check_password(request.form.get('contact_password', '')):
+                    flash('أدخل كلمة المرور الحالية لتغيير البريد الإلكتروني أو رقم الجوال.', 'danger')
+                    return redirect(url_for('users.settings'))
+                existing_email = User.query.filter(User.email.ilike(email)).first()
+                if existing_email and existing_email.id != current_user.id:
+                    flash('هذا البريد الإلكتروني مستخدم بالفعل.', 'danger')
+                    return redirect(url_for('users.settings'))
+                current_user.email = email
+                changed_fields.append('البريد الإلكتروني')
+
+        if desired_phone is not None:
+            phone = desired_phone.strip().replace(' ', '')
+            if phone != (current_user.phone or ''):
+                if not current_user.check_password(request.form.get('contact_password', '')):
+                    flash('أدخل كلمة المرور الحالية لتغيير البريد الإلكتروني أو رقم الجوال.', 'danger')
+                    return redirect(url_for('users.settings'))
+                existing_phone = User.query.filter_by(phone=phone or None).first() if phone else None
+                if existing_phone and existing_phone.id != current_user.id:
+                    flash('رقم الجوال مستخدم بالفعل.', 'danger')
+                    return redirect(url_for('users.settings'))
+                current_user.phone = phone or None
+                current_user.phone_verified = False
+                changed_fields.append('رقم الجوال')
 
         if gender is not None:
+            if gender != (current_user.gender or ''):
+                changed_fields.append('الجنس')
             current_user.gender = gender
         if birth_date_str:
             try:
-                current_user.birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date()
+                birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date()
+                if birth_date != current_user.birth_date:
+                    changed_fields.append('تاريخ الميلاد')
+                current_user.birth_date = birth_date
             except ValueError:
                 flash('تاريخ الميلاد غير صالح.', 'danger')
                 return redirect(url_for('users.settings'))
         if bio is not None:
+            if bio[:200] != (current_user.bio or ''):
+                changed_fields.append('النبذة')
             current_user.bio = bio[:200]
+        if show_email != current_user.show_email:
+            changed_fields.append('خصوصية البريد')
+        if is_private != current_user.is_private:
+            changed_fields.append('خصوصية الحساب')
         current_user.show_email = show_email
         current_user.is_private = is_private
         if message_privacy in ['everyone', 'followers', 'none']:
             current_user.message_privacy = message_privacy
         
         db.session.commit()
+        if changed_fields:
+            log_user_activity(current_user.id, 'settings_update', {'fields': changed_fields})
+            if 'اسم المستخدم' in changed_fields:
+                log_user_activity(current_user.id, 'username_change')
+            if 'البريد الإلكتروني' in changed_fields:
+                log_user_activity(current_user.id, 'email_change')
+            if 'رقم الجوال' in changed_fields:
+                log_user_activity(current_user.id, 'phone_change')
         flash('تم تحديث الإعدادات بنجاح.', 'success')
         return redirect(url_for('users.settings'))
     
@@ -190,6 +247,7 @@ def follow(user_id):
     notif = Notification(user_id=user.id, actor_id=current_user.id, action='follow')
     db.session.add(notif)
     db.session.commit()
+    log_user_activity(current_user.id, 'follow', {'target_username': user.username})
     return jsonify({'success': True, 'following': True})
 
 @users_bp.route('/unfollow/<int:user_id>', methods=['POST'])
@@ -199,6 +257,7 @@ def unfollow(user_id):
     user = User.query.get_or_404(user_id)
     current_user.unfollow(user)
     db.session.commit()
+    log_user_activity(current_user.id, 'unfollow', {'target_username': user.username})
     return jsonify({'success': True, 'following': False})
 
 @users_bp.route('/delete_account', methods=['POST'])

@@ -80,6 +80,7 @@ def register():
         follow_anter_assistant_for_user(user, assistant)
         send_welcome_message(user)
         db.session.commit()
+        log_user_activity(user.id, 'registration')
         flash('✅ تم التسجيل بنجاح، يمكنك الدخول الآن.', 'success')
         return redirect(url_for('auth.login'))
     return render_template('auth/register.html', form=form)

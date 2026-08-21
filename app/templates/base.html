@@ -222,6 +222,38 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/stories.js') }}"></script>
     <script>
+        // يحتفظ الخادم بتوقيت موحد (UTC)، بينما يعرض كل جهاز التاريخ والساعة وفق منطقته الزمنية.
+        window.ANTERFormatDeviceTimes = function() {
+            const parseUtc = (value) => {
+                if (!value) return null;
+                const normalized = value.endsWith('Z') || /[+-]\d\d:\d\d$/.test(value)
+                    ? value : `${value.replace(' ', 'T')}Z`;
+                const date = new Date(normalized);
+                return Number.isNaN(date.getTime()) ? null : date;
+            };
+            const relative = (date) => {
+                const minutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
+                if (minutes < 1) return 'الآن';
+                if (minutes < 60) return `منذ ${minutes} دقيقة`;
+                const hours = Math.floor(minutes / 60);
+                if (hours < 24) return `منذ ${hours} ساعة`;
+                const days = Math.floor(hours / 24);
+                if (days === 1) return `أمس ${date.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'})}`;
+                return date.toLocaleDateString(undefined, {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'});
+            };
+            document.querySelectorAll('[data-local-time]').forEach((element) => {
+                const date = parseUtc(element.dataset.localTime);
+                if (!date) return;
+                const style = element.dataset.timeStyle || 'datetime';
+                if (style === 'relative') element.textContent = relative(date);
+                else if (style === 'time') element.textContent = date.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
+                else element.textContent = date.toLocaleDateString(undefined, {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+                element.title = date.toLocaleString();
+            });
+        };
+        document.addEventListener('DOMContentLoaded', window.ANTERFormatDeviceTimes);
+        setInterval(window.ANTERFormatDeviceTimes, 60000);
+
         // مصدر واحد وخفيف لتحديث عداد الإشعارات.
         let previousNotifCount = null;
 

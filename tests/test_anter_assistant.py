@@ -19,7 +19,7 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 from app import _get_admin_path, create_app
 from app.extensions import db
 from app.forms.auth import ResetPasswordForm
-from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Follow, Message, MobileAccessToken, Notification, Post, Report, TypingState, User
+from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Follow, Message, MobileAccessToken, Notification, Post, Report, TypingState, User, UserActivity
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
@@ -30,7 +30,7 @@ from app.services.anter_assistant import (
     ensure_anter_assistant_followed_by_all_users,
     follow_anter_assistant_for_user,
 )
-from app.utils.helpers import get_user_status
+from app.utils.helpers import get_user_status, log_user_activity
 from app.utils.media_urls import avatar_url
 
 
@@ -601,6 +601,64 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn("مدير قسم المساعدة", role_answer)
         self.assertIn("مدير قسم المساعدة", reminder_answer)
         mocked_post.assert_not_called()
+
+    def test_activity_log_masks_sensitive_details_and_uses_device_time_markup(self):
+        with self.app.test_request_context('/users/settings', headers={'User-Agent': 'ANTERActivityTest/1.0'}):
+            log_user_activity(
+                self.user_id,
+                'settings_update',
+                {
+                    'fields': ['البريد الإلكتروني', 'رقم الجوال'],
+                    'email': 'private@example.test',
+                    'phone': '+967700000000',
+                    'new_password': 'do-not-store',
+                },
+            )
+
+        with self.app.app_context():
+            activity = UserActivity.query.filter_by(user_id=self.user_id, action='settings_update').order_by(UserActivity.id.desc()).first()
+            self.assertIsNotNone(activity)
+            self.assertIn('البريد الإلكتروني', activity.details)
+            self.assertNotIn('private@example.test', activity.details)
+            self.assertNotIn('967700000000', activity.details)
+            self.assertNotIn('do-not-store', activity.details)
+            self.assertEqual(activity.action_label, 'تحديث إعدادات الحساب')
+
+        page = self.client.get('/users/activity').get_data(as_text=True)
+        self.assertIn('data-local-time=', page)
+        self.assertIn('ANTERFormatDeviceTimes', page)
+        self.assertIn('تحديث إعدادات الحساب', page)
+
+    def test_activity_log_records_follow_post_comment_and_reaction(self):
+        with self.app.app_context():
+            target = User.query.filter_by(username='activity_log_target').first()
+            if target is None:
+                target = User(username='activity_log_target', email='activity-log-target@example.test', name='هدف النشاط', terms_agreed=True)
+                target.set_password('activity-target-password')
+                db.session.add(target)
+                db.session.commit()
+            target_id = target.id
+
+        follow_response = self.client.post(f'/users/follow/{target_id}')
+        self.assertEqual(follow_response.status_code, 200)
+        create_response = self.client.post('/create', data={'content': 'منشور اختبار سجل النشاط'}, follow_redirects=False)
+        self.assertEqual(create_response.status_code, 302)
+
+        with self.app.app_context():
+            post = Post.query.filter_by(author_id=self.user_id, content='منشور اختبار سجل النشاط').order_by(Post.id.desc()).first()
+            self.assertIsNotNone(post)
+            post_id = post.id
+
+        reaction_response = self.client.post(f'/like/{post_id}', json={'reaction': 'love'})
+        self.assertEqual(reaction_response.status_code, 200)
+        comment_response = self.client.post(f'/comment/{post_id}', data={'content': 'تعليق اختبار النشاط'}, follow_redirects=False)
+        self.assertEqual(comment_response.status_code, 302)
+
+        with self.app.app_context():
+            actions = {
+                activity.action for activity in UserActivity.query.filter_by(user_id=self.user_id).all()
+            }
+        self.assertTrue({'follow', 'post_create', 'post_reaction_add', 'comment_create'}.issubset(actions))
 
     def test_memory_ignores_sensitive_text(self):
         with self.app.app_context():

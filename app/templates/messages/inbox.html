@@ -47,7 +47,7 @@
                 <div class="flex-grow-1 min-w-0">
                     <div class="d-flex justify-content-between align-items-center gap-2">
                         <strong class="conversation-name text-truncate">{{ user.name or user.username }}</strong>
-                        <small class="text-muted text-nowrap">{{ last_msg.created_at.strftime('%H:%M') }}</small>
+                        <small class="text-muted text-nowrap"><time data-local-time="{{ last_msg.created_at.isoformat() }}" data-time-style="time">{{ last_msg.created_at.strftime('%H:%M') }}</time></small>
                     </div>
                     <p class="conversation-preview text-muted small mb-0 text-truncate">
                         {% if last_msg.sender_id == current_user.id %}<span class="conversation-you">أنت</span>{% endif %}

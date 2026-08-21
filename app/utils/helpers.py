@@ -252,43 +252,39 @@ from flask import request
 from user_agents import parse
 import json
 
-def log_user_activity(user_id, action, details=None):
-    """تسجيل نشاط المستخدم في قاعدة البيانات"""
+_ACTIVITY_SENSITIVE_KEYS = {
+    'password', 'password_hash', 'current_password', 'new_password',
+    'email', 'phone', 'token', 'api_key', 'secret', 'content', 'bio',
+}
+_ACTIVITY_ALLOWED_DETAIL_KEYS = {
+    'fields', 'target_username', 'post_id', 'comment_id', 'video_id',
+    'story_id', 'reaction', 'scope', 'attachment',
+}
+
+
+def _safe_activity_details(details):
+    """يخزن وصفاً تشغيلياً محدوداً من دون كلمات مرور أو قيم الاتصال الشخصية."""
+    if not isinstance(details, dict):
+        return None
+    safe = {}
+    for key, value in details.items():
+        normalized_key = str(key).strip().lower()
+        if normalized_key in _ACTIVITY_SENSITIVE_KEYS or normalized_key not in _ACTIVITY_ALLOWED_DETAIL_KEYS:
+            continue
+        if normalized_key == 'fields':
+            if isinstance(value, (list, tuple)):
+                safe[normalized_key] = [str(item)[:40] for item in value[:12]]
+            continue
+        if isinstance(value, (str, int, float, bool)):
+            safe[normalized_key] = str(value)[:120]
+    return safe or None
+
+
+def log_user_activity(user_id, action, details=None, *, commit=True):
+    """يسجل نشاطاً خاصاً بصاحبه فقط، مع إخفاء القيم الحساسة من التفاصيل."""
     from app.models import UserActivity
     from app.extensions import db
-    
-    user_agent_string = request.headers.get('User-Agent', '')
-    ua = parse(user_agent_string) if user_agent_string else None
-    
-    activity = UserActivity(
-        user_id=user_id,
-        action=action,
-        ip_address=request.remote_addr,
-        user_agent=user_agent_string[:500],
-        browser=f"{ua.browser.family} {ua.browser.version_string}" if ua and ua.browser else '',
-        os=f"{ua.os.family} {ua.os.version_string}" if ua and ua.os else '',
-        device_type=ua.device.family if ua else '',
-        details=json.dumps(details) if details else None
-    )
-    db.session.add(activity)
-    db.session.commit()
-    return activity
 
-def get_user_activity_summary(user_id, limit=50):
-    """استرجاع آخر الأنشطة للمستخدم"""
-    from app.models import UserActivity
-    return UserActivity.query.filter_by(user_id=user_id).order_by(UserActivity.created_at.desc()).limit(limit).all()
-
-# ============================================
-# دوال تسجيل نشاط المستخدم
-# ============================================
-from flask import request
-from user_agents import parse
-import json
-
-def log_user_activity(user_id, action, details=None):
-    from app.models import UserActivity
-    from app.extensions import db
     user_agent_string = request.headers.get('User-Agent', '')
     ua = parse(user_agent_string) if user_agent_string else None
     activity = UserActivity(
@@ -299,13 +295,18 @@ def log_user_activity(user_id, action, details=None):
         browser=f"{ua.browser.family} {ua.browser.version_string}" if ua and ua.browser else '',
         os=f"{ua.os.family} {ua.os.version_string}" if ua and ua.os else '',
         device_type=ua.device.family if ua else '',
-        details=json.dumps(details) if details else None
+        details=json.dumps(_safe_activity_details(details), ensure_ascii=False) if _safe_activity_details(details) else None,
     )
     db.session.add(activity)
-    db.session.commit()
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
     return activity
 
+
 def get_user_activity_summary(user_id, limit=50):
+    """يسترجع أحدث الأنشطة لصاحب الحساب فقط."""
     from app.models import UserActivity
     return UserActivity.query.filter_by(user_id=user_id).order_by(UserActivity.created_at.desc()).limit(limit).all()
 

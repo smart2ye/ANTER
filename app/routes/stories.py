@@ -8,6 +8,7 @@ from app import db, csrf
 from app.models.story import Story, StoryView, StoryReaction
 from app.models.user import User
 from app.utils.media_urls import avatar_url
+from app.utils.helpers import log_user_activity
 
 stories_bp = Blueprint('stories', __name__)
 
@@ -53,6 +54,7 @@ def create_story():
     )
     db.session.add(story)
     db.session.commit()
+    log_user_activity(current_user.id, 'story_create', {'story_id': story.id, 'attachment': media_type})
 
     return jsonify({'message': 'تم نشر القصة بنجاح', 'story': story.to_dict(current_user.id)}), 201
 
@@ -138,6 +140,7 @@ def view_story(story_id):
         view = StoryView(story_id=story_id, viewer_id=current_user.id)
         db.session.add(view)
         db.session.commit()
+        log_user_activity(current_user.id, 'story_view', {'story_id': story_id})
 
     return jsonify({'message': 'تم تسجيل المشاهدة', 'story': story.to_dict(current_user.id)}), 200
 
@@ -172,6 +175,12 @@ def react_story(story_id):
         db.session.add(reaction)
         db.session.commit()
         action = 'added'
+
+    log_user_activity(
+        current_user.id,
+        'story_reaction_remove' if action == 'removed' else 'story_reaction_add',
+        {'story_id': story_id, 'reaction': reaction_type},
+    )
 
     return jsonify({
         'success': True,
@@ -211,6 +220,8 @@ def delete_story(story_id):
     except Exception:
         pass
 
+    deleted_story_id = story.id
     db.session.delete(story)
     db.session.commit()
+    log_user_activity(current_user.id, 'story_delete', {'story_id': deleted_story_id})
     return jsonify({'message': 'تم حذف القصة بنجاح'}), 200

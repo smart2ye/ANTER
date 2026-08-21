@@ -53,9 +53,17 @@
             <div class="modal-body composer-modal-body">
                 <div class="composer-author-row">
                     <img src="{{ avatar_url(current_user) }}" class="composer-author-avatar" alt="{{ current_user.name }}">
-                    <div>
+                    <div class="composer-author-details">
                         <strong>{{ current_user.name }}</strong>
-                        <span>@{{ current_user.username }} <i class="fas fa-globe-asia" title="منشور عام"></i> عام</span>
+                        <label class="composer-audience-picker" for="quickPostVisibility">
+                            <i class="fas fa-globe-asia" aria-hidden="true"></i>
+                            <select id="quickPostVisibility" name="visibility" form="quickPostForm" aria-label="من يمكنه رؤية هذا المنشور">
+                                <option value="public">عام</option>
+                                <option value="followers">المتابعون فقط</option>
+                                <option value="only_me">أنا فقط</option>
+                            </select>
+                            <i class="fas fa-chevron-down composer-audience-chevron" aria-hidden="true"></i>
+                        </label>
                     </div>
                 </div>
                 

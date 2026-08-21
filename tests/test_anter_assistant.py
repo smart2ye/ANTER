@@ -697,6 +697,24 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertEqual(self.client.get(f'/p/{follower_post_id}').status_code, 200)
         self.assertEqual(self.client.get(f'/p/{only_me_post_id}').status_code, 403)
 
+    def test_quick_post_composer_exposes_and_persists_post_audience(self):
+        page = self.client.get('/').get_data(as_text=True)
+        self.assertIn('id="quickPostVisibility"', page)
+        self.assertIn('name="visibility"', page)
+        self.assertIn('المتابعون فقط', page)
+        self.assertIn('أنا فقط', page)
+
+        response = self.client.post(
+            '/create',
+            data={'content': 'منشور خصوصية من نافذة الإنشاء', 'visibility': 'only_me'},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 302)
+        with self.app.app_context():
+            post = Post.query.filter_by(author_id=self.user_id, content='منشور خصوصية من نافذة الإنشاء').order_by(Post.id.desc()).first()
+            self.assertIsNotNone(post)
+            self.assertEqual(post.visibility, 'only_me')
+
     def test_memory_ignores_sensitive_text(self):
         with self.app.app_context():
             user = db.session.get(User, self.user_id)

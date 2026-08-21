@@ -58,13 +58,6 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        # إنشاء حساب مساعد أنتر الخدمي مرة واحدة وإعادة استخدامه في كل تشغيل.
-        from app.services.anter_assistant import (
-            ensure_anter_assistant_followed_by_all_users,
-            ensure_anter_assistant_user,
-        )
-        ensure_anter_assistant_user()
-        ensure_anter_assistant_followed_by_all_users()
         # إنشاء جداول القصص وإشارات وسجل المكالمات صراحةً على قواعد الإنتاج القائمة.
         CallSignal.__table__.create(bind=db.engine, checkfirst=True)
         CallLog.__table__.create(bind=db.engine, checkfirst=True)
@@ -146,6 +139,16 @@ def create_app():
                 while model.query.filter_by(public_id=public_id).first() is not None:
                     public_id = generate_public_id(prefix)
                 entity.public_id = public_id
+        db.session.commit()
+
+        # تسبق ترقية الجداول أي استعلام لـ User، لأن قواعد بيانات Termux القائمة
+        # قد لا تحتوي أعمدة الخصوصية التي يعتمد عليها النموذج الحالي بعد التحديث.
+        from app.services.anter_assistant import (
+            ensure_anter_assistant_followed_by_all_users,
+            ensure_anter_assistant_user,
+        )
+        ensure_anter_assistant_user()
+        ensure_anter_assistant_followed_by_all_users()
         db.session.commit()
 
         # ============================================

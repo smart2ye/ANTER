@@ -3,6 +3,9 @@
 .env.local
 .env.*.local
 *_KEY.txt
+vapid_*.txt
+Pillow-*.tar.gz
+req_no_pillow.txt
 
 # مجلدات التطبيق
 instance/
@@ -72,3 +75,8 @@ vapid_*.pem
 instance/*.db
 backup-like-fix/
 apply-like-fix.sh
+
+# تقارير وأصول محلية لا تدخل في تشغيل التطبيق أو النشر
+diagnostics/
+local_archive/
+/static/

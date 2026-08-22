@@ -172,6 +172,14 @@ class AnterAssistantTests(unittest.TestCase):
         })
         self.assertEqual(reused.status_code, 401)
 
+    def test_messenger_release_endpoint_exposes_the_official_download_metadata(self):
+        response = self.client.get('/api/messenger/release')
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload['version'], self.app.config['ANTER_MESSENGER_VERSION'])
+        self.assertEqual(payload['downloadUrl'], self.app.config['ANTER_MESSENGER_APK_URL'])
+        self.assertEqual(payload['sha256'], self.app.config['ANTER_MESSENGER_APK_SHA256'])
+
     def test_mobile_api_blocks_messages_without_mutual_follow(self):
         with self.app.app_context():
             outsider = User.query.filter_by(username='mobile_api_outsider').first()

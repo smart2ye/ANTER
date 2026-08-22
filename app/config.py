@@ -102,6 +102,10 @@ class Config:
         'ANTER_MESSENGER_APK_SHA256',
         'd98beb388cca065f2a60ae2e2e75d6ff4880e5954a830f0a3be5b31f61fe7f66',
     ).strip().lower()
+    ANTER_MESSENGER_VERSION = os.environ.get('ANTER_MESSENGER_VERSION', '1.1.0').strip() or '1.1.0'
+    ANTER_MESSENGER_RELEASE_NOTES = os.environ.get(
+        'ANTER_MESSENGER_RELEASE_NOTES', 'تحسين تجربة الدخول والواجهة وتحديثات المراسلة.'
+    ).strip()
     # حساب المؤسس الوحيد المسموح له بتبديل الجلسة إلى حساب مساعد أنتر.
     ANTER_ASSISTANT_SWITCH_OWNER_USERNAME = os.environ.get(
         'ANTER_ASSISTANT_SWITCH_OWNER_USERNAME', 'abdulqader.mahdly'

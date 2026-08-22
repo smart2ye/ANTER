@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
-from flask import current_app
+from flask import current_app, jsonify
 from flask_login import login_required, current_user
 from app.models import Post, Video, Like, Comment, Follow, HiddenPost
 from app.extensions import db
@@ -13,6 +13,17 @@ from collections import Counter
 import os
 
 main_bp = Blueprint('main', __name__)
+
+
+@main_bp.route('/api/messenger/release')
+def messenger_release():
+    """معلومة إصدار عامة يقرأها Messenger للتحقق من وجود تحديث موثوق."""
+    return jsonify({
+        'version': current_app.config['ANTER_MESSENGER_VERSION'],
+        'downloadUrl': current_app.config['ANTER_MESSENGER_APK_URL'],
+        'sha256': current_app.config['ANTER_MESSENGER_APK_SHA256'],
+        'notes': current_app.config['ANTER_MESSENGER_RELEASE_NOTES'],
+    })
 
 STOP_WORDS = {'ال', 'و', 'في', 'من', 'على', 'إلى', 'عن', 'مع', 'بين', 'كل', 'بعض', 'هذا', 'هذه', 'ذلك', 'تلك', 'كان', 'كانت', 'يكون', 'تصبح', 'أصبح', 'يصبح', 'ما', 'لا', 'هل', 'أم', 'أو', 'ثم', 'حتى', 'لكن', 'لأن', 'حيث', 'بينما', 'عندما', 'إذا', 'إن', 'أن', 'قد', 'سوف', 'سيكون', 'لم', 'لن', 'ليس', 'ليست'}
 

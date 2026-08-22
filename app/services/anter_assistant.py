@@ -40,6 +40,20 @@ ANTER_STATUS_REPLY = (
 THINKING_BLOCK = re.compile(r"<think>.*?(?:</think>|$)", flags=re.IGNORECASE | re.DOTALL)
 
 
+def _messenger_download_reply() -> str:
+    """إجابة محلية موثقة لتنزيل ANTER Messenger من دون استدعاء نموذج خارجي."""
+    apk_url = current_app.config.get("ANTER_MESSENGER_APK_URL", "").strip()
+    apk_sha256 = current_app.config.get("ANTER_MESSENGER_APK_SHA256", "").strip().lower()
+    if not apk_url:
+        return "رابط تنزيل ANTER Messenger غير متاح مؤقتاً. يمكنك مراجعة صفحة «عن ANTER» لاحقاً."
+    return (
+        "يمكنك تنزيل ANTER Messenger لأجهزة Android 7.0 فما فوق من الرابط التالي: "
+        f"{apk_url}\n\n"
+        "وللتحقق من سلامة الملف بعد التنزيل، بصمة SHA-256 الرسمية هي: "
+        f"{apk_sha256}"
+    )
+
+
 def is_anter_assistant(user: User | None) -> bool:
     """يتحقق من هوية الحساب الآلي من دون الاعتماد على رقمه في قاعدة البيانات."""
     if user is None:
@@ -179,6 +193,11 @@ def _direct_anter_reply(
     )
     if any(marker in normalized for marker in technical_identity_markers):
         return f"{ANTER_MINI_MODEL_REPLY} كيف يمكنني مساعدتك اليوم؟"
+
+    messenger_markers = ("anter messenger", "messenger", "ماسنجر", "تطبيق انتر", "تطبيق أنتر")
+    download_markers = ("تحميل", "تنزيل", "apk", "اندرويد", "android")
+    if any(marker in normalized for marker in messenger_markers) and any(marker in normalized for marker in download_markers):
+        return _messenger_download_reply()
 
     mentions_anter = "anter" in normalized or "انتر" in normalized or "أنتر" in normalized
     if not mentions_anter:

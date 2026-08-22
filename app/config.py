@@ -93,6 +93,15 @@ class Config:
     # كلمة مرور مراجعة بشرية اختيارية؛ لا توضع في Git وتُضبط محلياً أو في بيئة Render فقط.
     ANTER_ASSISTANT_REVIEW_PASSWORD = os.environ.get('ANTER_ASSISTANT_REVIEW_PASSWORD', '')
     ANTER_FOUNDER_NAME = os.environ.get('ANTER_FOUNDER_NAME', 'عبدالقادر مهدلي').strip() or 'عبدالقادر مهدلي'
+    # إصدار Android المنشور من ANTER Messenger؛ يمكن استبداله في بيئة الإنتاج عند إصدار نسخة أحدث.
+    ANTER_MESSENGER_APK_URL = os.environ.get(
+        'ANTER_MESSENGER_APK_URL',
+        'https://files.manuscdn.com/user_upload_by_module/session_file/310519663194595954/QmfrNUoxHrbDBFmg.apk',
+    ).strip()
+    ANTER_MESSENGER_APK_SHA256 = os.environ.get(
+        'ANTER_MESSENGER_APK_SHA256',
+        'd98beb388cca065f2a60ae2e2e75d6ff4880e5954a830f0a3be5b31f61fe7f66',
+    ).strip().lower()
     # حساب المؤسس الوحيد المسموح له بتبديل الجلسة إلى حساب مساعد أنتر.
     ANTER_ASSISTANT_SWITCH_OWNER_USERNAME = os.environ.get(
         'ANTER_ASSISTANT_SWITCH_OWNER_USERNAME', 'abdulqader.mahdly'

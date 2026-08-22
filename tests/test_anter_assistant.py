@@ -400,6 +400,22 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertLess(len(answer), 350)
         self.assertNotIn("مزوّد", answer)
 
+    def test_messenger_download_answer_and_about_page_use_official_local_release_data(self):
+        with self.app.app_context(), patch("app.services.anter_assistant.requests.post") as mocked_post:
+            answer, error = get_assistant_reply("كيف أحمل ANTER Messenger بصيغة APK لأندرويد؟")
+
+        self.assertIsNone(error)
+        self.assertIn(self.app.config["ANTER_MESSENGER_APK_URL"], answer)
+        self.assertIn(self.app.config["ANTER_MESSENGER_APK_SHA256"], answer)
+        self.assertIn("Android 7.0", answer)
+        mocked_post.assert_not_called()
+
+        page = self.client.get("/about")
+        self.assertEqual(page.status_code, 200)
+        page_html = page.get_data(as_text=True)
+        self.assertIn(self.app.config["ANTER_MESSENGER_APK_URL"], page_html)
+        self.assertIn(self.app.config["ANTER_MESSENGER_APK_SHA256"], page_html)
+
     def test_founder_can_switch_to_assistant_and_back(self):
         previous_owner = self.app.config['ANTER_ASSISTANT_SWITCH_OWNER_USERNAME']
         self.app.config['ANTER_ASSISTANT_SWITCH_OWNER_USERNAME'] = 'assistant_test_user'

@@ -1,3 +1,5 @@
+from urllib.parse import urlencode, urlsplit, urlunsplit, parse_qsl
+
 from flask import Blueprint, abort, render_template, redirect, url_for, flash, request, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
@@ -13,8 +15,39 @@ from app.services.anter_account_switching import (
     get_managed_assistant,
 )
 from app.utils.public_ids import generate_public_id
+from app.services.mobile_api_auth import issue_mobile_browser_authorization
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+
+
+def _append_query_parameters(url, **parameters):
+    parsed = urlsplit(url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query.update({key: value for key, value in parameters.items() if value is not None})
+    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment))
+
+
+@auth_bp.route('/messenger/authorize')
+def messenger_authorize():
+    """يعيد جلسة موقع ANTER إلى Messenger برمز تفويض قصير لا بكلمة مرور أو رمز وصول."""
+    redirect_uri = (request.args.get('redirect_uri') or '').strip()
+    state = (request.args.get('state') or '').strip()
+    device_name = (request.args.get('device_name') or 'ANTER Messenger').strip()
+    allowed_redirect_uri = current_app.config['MOBILE_BROWSER_AUTH_REDIRECT_URI']
+    if redirect_uri != allowed_redirect_uri or not state or len(state) > 120:
+        abort(400)
+
+    if not current_user.is_authenticated:
+        next_page = url_for(
+            'auth.messenger_authorize',
+            redirect_uri=redirect_uri,
+            state=state,
+            device_name=device_name,
+        )
+        return redirect(url_for('auth.login', next=next_page))
+
+    code = issue_mobile_browser_authorization(current_user, state, redirect_uri, device_name)
+    return redirect(_append_query_parameters(redirect_uri, code=code, state=state))
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():

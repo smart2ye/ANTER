@@ -116,6 +116,12 @@ class Config:
     ANTER_ASSISTANT_GROQ_TIMEOUT_SECONDS = env_float('ANTER_ASSISTANT_GROQ_TIMEOUT_SECONDS', 40.0, 5.0, 60.0)
     ANTER_ASSISTANT_GROQ_MAX_TOKENS = env_int('ANTER_ASSISTANT_GROQ_MAX_TOKENS', 420, 120)
 
+    # تفويض Messenger عبر متصفح ANTER: لا تصل كلمة المرور إلى التطبيق.
+    MOBILE_BROWSER_AUTH_CODE_TTL_SECONDS = env_int('MOBILE_BROWSER_AUTH_CODE_TTL_SECONDS', 180, 60)
+    MOBILE_BROWSER_AUTH_REDIRECT_URI = os.environ.get(
+        'MOBILE_BROWSER_AUTH_REDIRECT_URI', 'anter-messenger://auth/callback'
+    ).strip()
+
 
 for subfolder in ('avatars', 'posts', 'reels', 'videos', 'thumbnails', 'audio'):
     os.makedirs(os.path.join(UPLOAD_FOLDER, subfolder), exist_ok=True)

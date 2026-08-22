@@ -7,7 +7,12 @@ from app.extensions import csrf, db
 from app.models import Follow, Message, TypingState, User
 from app.services.anter_assistant import get_assistant_reply, is_anter_assistant
 from app.services.anter_memory import clear_memory, remember_assistant_reply, remember_user_message
-from app.services.mobile_api_auth import issue_mobile_token, mobile_api_required, revoke_mobile_token
+from app.services.mobile_api_auth import (
+    exchange_mobile_browser_authorization,
+    issue_mobile_token,
+    mobile_api_required,
+    revoke_mobile_token,
+)
 
 
 mobile_api_bp = Blueprint('mobile_api', __name__, url_prefix='/api/mobile/v1')
@@ -113,6 +118,28 @@ def login():
         return _json_error('بيانات تسجيل الدخول غير صحيحة.', 401)
 
     raw_token, token = issue_mobile_token(user, device_name)
+    return jsonify({
+        'accessToken': raw_token,
+        'tokenType': 'Bearer',
+        'expiresAt': token.expires_at.isoformat() + 'Z',
+        'user': _user_payload(user),
+    }), 201
+
+
+@mobile_api_bp.route('/auth/browser/exchange', methods=['POST'])
+def exchange_browser_authorization():
+    data = request.get_json(silent=True) or {}
+    code = str(data.get('code', '')).strip()
+    state = str(data.get('state', '')).strip()
+    redirect_uri = str(data.get('redirectUri', '')).strip()
+    if redirect_uri != current_app.config['MOBILE_BROWSER_AUTH_REDIRECT_URI']:
+        return _json_error('مسار العودة إلى التطبيق غير صالح.', 400)
+
+    issued = exchange_mobile_browser_authorization(code, state, redirect_uri)
+    if issued is None:
+        return _json_error('رمز الدخول غير صالح أو انتهت صلاحيته. أعد تسجيل الدخول من الموقع.', 401)
+
+    raw_token, token, user = issued
     return jsonify({
         'accessToken': raw_token,
         'tokenType': 'Bearer',

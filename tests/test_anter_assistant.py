@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
+from urllib.parse import parse_qs, urlparse
 
 
 _TEST_DB = os.path.join(tempfile.gettempdir(), "anter_assistant_feature_test.db")
@@ -141,6 +142,35 @@ class AnterAssistantTests(unittest.TestCase):
         with self.app.app_context():
             self.assertTrue(Message.query.get(message_id).is_read)
             self.assertEqual(User.query.get(receiver_id).username, 'mobile_api_receiver')
+
+    def test_browser_authorization_exchanges_one_time_code_without_sending_password_to_messenger(self):
+        redirect_uri = self.app.config['MOBILE_BROWSER_AUTH_REDIRECT_URI']
+        state = 'browser-state-test-123'
+        authorize = self.client.get(
+            '/auth/messenger/authorize',
+            query_string={'redirect_uri': redirect_uri, 'state': state, 'device_name': 'اختبار Android'},
+            follow_redirects=False,
+        )
+        self.assertEqual(authorize.status_code, 302)
+        callback = urlparse(authorize.headers['Location'])
+        callback_query = parse_qs(callback.query)
+        self.assertEqual(f'{callback.scheme}://{callback.netloc}{callback.path}', redirect_uri)
+        self.assertEqual(callback_query['state'][0], state)
+
+        exchange = self.client.post('/api/mobile/v1/auth/browser/exchange', json={
+            'code': callback_query['code'][0],
+            'state': state,
+            'redirectUri': redirect_uri,
+        })
+        self.assertEqual(exchange.status_code, 201)
+        self.assertIn('accessToken', exchange.get_json())
+
+        reused = self.client.post('/api/mobile/v1/auth/browser/exchange', json={
+            'code': callback_query['code'][0],
+            'state': state,
+            'redirectUri': redirect_uri,
+        })
+        self.assertEqual(reused.status_code, 401)
 
     def test_mobile_api_blocks_messages_without_mutual_follow(self):
         with self.app.app_context():

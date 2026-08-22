@@ -96,15 +96,15 @@ class Config:
     # إصدار Android المنشور من ANTER Messenger؛ يمكن استبداله في بيئة الإنتاج عند إصدار نسخة أحدث.
     ANTER_MESSENGER_APK_URL = os.environ.get(
         'ANTER_MESSENGER_APK_URL',
-        'https://files.manuscdn.com/user_upload_by_module/session_file/310519663194595954/QmfrNUoxHrbDBFmg.apk',
+        'https://files.manuscdn.com/user_upload_by_module/session_file/310519663194595954/tUwimvKdwnQPBUdy.apk',
     ).strip()
     ANTER_MESSENGER_APK_SHA256 = os.environ.get(
         'ANTER_MESSENGER_APK_SHA256',
-        'd98beb388cca065f2a60ae2e2e75d6ff4880e5954a830f0a3be5b31f61fe7f66',
+        '67abc0d424e971f0429687e5f495411346ba950c6cf957f2ccafe6558614e071',
     ).strip().lower()
     ANTER_MESSENGER_VERSION = os.environ.get('ANTER_MESSENGER_VERSION', '1.1.0').strip() or '1.1.0'
     ANTER_MESSENGER_RELEASE_NOTES = os.environ.get(
-        'ANTER_MESSENGER_RELEASE_NOTES', 'تحسين تجربة الدخول والواجهة وتحديثات المراسلة.'
+        'ANTER_MESSENGER_RELEASE_NOTES', 'إصدار رسمي: دخول عبر موقع ANTER، واجهة مراسلة موحّدة، وتحسينات في التحديثات.'
     ).strip()
     # حساب المؤسس الوحيد المسموح له بتبديل الجلسة إلى حساب مساعد أنتر.
     ANTER_ASSISTANT_SWITCH_OWNER_USERNAME = os.environ.get(

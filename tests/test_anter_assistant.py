@@ -1600,6 +1600,63 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertIsNotNone(bootstrap)
             self.assertEqual(bootstrap.user_id, owner_id)
 
+    def test_admin_can_toggle_account_verification_and_regular_user_is_blocked(self):
+        with self.app.app_context():
+            admin = User(
+                username='verification_admin',
+                email='verification-admin@example.test',
+                name='مدير التوثيق',
+                is_admin=True,
+                terms_agreed=True,
+            )
+            target = User(
+                username='verification_target',
+                email='verification-target@example.test',
+                name='حساب للتوثيق',
+                is_verified=False,
+                terms_agreed=True,
+            )
+            admin.set_password('verification-admin-password')
+            target.set_password('verification-target-password')
+            db.session.add_all([admin, target])
+            db.session.commit()
+            admin_id = admin.id
+            target_id = target.id
+
+        admin_client = self.app.test_client()
+        with admin_client.session_transaction() as session:
+            session['_user_id'] = str(admin_id)
+            session['_fresh'] = True
+
+        users_response = admin_client.get(f'/{self.app.config["ADMIN_PATH"]}/users')
+        users_page = users_response.get_data(as_text=True)
+        self.assertEqual(users_response.status_code, 200)
+        self.assertIn('غير موثّق', users_page)
+        self.assertIn('toggle-verification', users_page)
+
+        verify_response = admin_client.post(
+            f'/{self.app.config["ADMIN_PATH"]}/users/verify/{target_id}'
+        )
+        self.assertEqual(verify_response.status_code, 200)
+        self.assertTrue(verify_response.get_json()['is_verified'])
+        with self.app.app_context():
+            self.assertTrue(User.query.get(target_id).is_verified)
+
+        remove_response = admin_client.post(
+            f'/{self.app.config["ADMIN_PATH"]}/users/verify/{target_id}'
+        )
+        self.assertEqual(remove_response.status_code, 200)
+        self.assertFalse(remove_response.get_json()['is_verified'])
+
+        regular_client = self.app.test_client()
+        with regular_client.session_transaction() as session:
+            session['_user_id'] = str(target_id)
+            session['_fresh'] = True
+        blocked_response = regular_client.post(
+            f'/{self.app.config["ADMIN_PATH"]}/users/verify/{admin_id}'
+        )
+        self.assertEqual(blocked_response.status_code, 302)
+
 
 class AdminPathSecurityTests(unittest.TestCase):
     def test_explicit_admin_path_is_normalized(self):

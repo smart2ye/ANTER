@@ -14,6 +14,7 @@
                 <th>البريد</th>
                 <th>الحالة</th>
                 <th>مشرف</th>
+                <th>توثيق</th>
                 <th>الإجراءات</th>
             </tr>
         </thead>
@@ -41,6 +42,13 @@
                     {% endif %}
                 </td>
                 <td>
+                    {% if user.is_verified %}
+                        <span class="badge bg-primary"><i class="fas fa-check-circle"></i> موثّق</span>
+                    {% else %}
+                        <span class="badge bg-light text-muted border">غير موثّق</span>
+                    {% endif %}
+                </td>
+                <td>
                     <button class="btn btn-sm btn-outline-{% if user.is_active %}danger{% else %}success{% endif %} toggle-user" 
                             data-url="{{ url_for('admin.toggle_user', user_id=user.id) }}">
                         {% if user.is_active %}حظر{% else %}تفعيل{% endif %}
@@ -48,6 +56,11 @@
                     <button class="btn btn-sm btn-outline-warning make-admin" 
                             data-url="{{ url_for('admin.make_admin', user_id=user.id) }}">
                         {% if user.is_admin %}إزالة صلاحية{% else %}ترقية{% endif %}
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary toggle-verification"
+                            data-url="{{ url_for('admin.toggle_user_verification', user_id=user.id) }}"
+                            data-verified="{{ 'true' if user.is_verified else 'false' }}">
+                        <i class="fas fa-check-circle"></i> {% if user.is_verified %}إزالة التوثيق{% else %}توثيق{% endif %}
                     </button>
                     <button class="btn btn-sm btn-outline-danger delete-user" 
                             data-url="{{ url_for('admin.delete_user', user_id=user.id) }}"
@@ -80,6 +93,22 @@
         btn.addEventListener('click', function() {
             const url = this.dataset.url;
             fetch(url, { 
+                method: 'POST',
+                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) location.reload();
+                });
+        });
+    });
+
+    document.querySelectorAll('.toggle-verification').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const wasVerified = this.dataset.verified === 'true';
+            const action = wasVerified ? 'إزالة التوثيق من' : 'توثيق';
+            if (!confirm(`هل تريد ${action} هذا الحساب؟`)) return;
+            fetch(this.dataset.url, {
                 method: 'POST',
                 headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
             })

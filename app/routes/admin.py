@@ -151,6 +151,15 @@ def make_admin(user_id):
     db.session.commit()
     return jsonify({'success': True, 'is_admin': user.is_admin})
 
+@admin_bp.route('/users/verify/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def toggle_user_verification(user_id):
+    user = User.query.get_or_404(user_id)
+    user.is_verified = not user.is_verified
+    db.session.commit()
+    return jsonify({'success': True, 'is_verified': user.is_verified})
+
 # ============================================
 # إدارة المنشورات (مع CSRF حماية)
 # ============================================

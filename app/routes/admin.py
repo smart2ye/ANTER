@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from app.extensions import db, csrf
-from app.models import User, Post, Comment, Report, Notification
-from datetime import datetime
+from app.models import CommentLike, Follow, Like, Post, Comment, Report, Repost, User, UserActivity
+from datetime import datetime, timedelta
+from sqlalchemy import func
 import os
 
 admin_bp = Blueprint('admin', __name__)
@@ -28,6 +29,69 @@ def dashboard():
     posts_count = Post.query.count()
     comments_count = Comment.query.count()
     reports_count = Report.query.filter_by(status='pending').count()
+    post_reactions_count = Like.query.count()
+    comment_reactions_count = CommentLike.query.count()
+    reposts_count = Repost.query.count()
+    interactions_count = (
+        post_reactions_count
+        + comments_count
+        + comment_reactions_count
+        + reposts_count
+    )
+
+    now = datetime.utcnow()
+    online_cutoff = now - timedelta(minutes=5)
+    online_count = User.query.filter(
+        User.is_active.is_(True),
+        User.last_seen >= online_cutoff,
+    ).count()
+    assistant = User.query.filter_by(
+        username=current_app.config.get('ANTER_ASSISTANT_USERNAME', 'anter_assistant'),
+        is_active=True,
+    ).first()
+    if assistant and (not assistant.last_seen or assistant.last_seen < online_cutoff):
+        online_count += 1
+
+    follower_counts = (
+        db.session.query(
+            Follow.followed_id.label('user_id'),
+            func.count(Follow.id).label('followers_count'),
+        )
+        .group_by(Follow.followed_id)
+        .subquery()
+    )
+    top_followed_users = (
+        db.session.query(
+            User,
+            func.coalesce(follower_counts.c.followers_count, 0).label('followers_count'),
+        )
+        .outerjoin(follower_counts, follower_counts.c.user_id == User.id)
+        .order_by(
+            func.coalesce(follower_counts.c.followers_count, 0).desc(),
+            User.created_at.desc(),
+        )
+        .limit(5)
+        .all()
+    )
+
+    activity_since = now - timedelta(days=30)
+    activity_counts = (
+        db.session.query(
+            UserActivity.user_id.label('user_id'),
+            func.count(UserActivity.id).label('activity_count'),
+        )
+        .filter(UserActivity.created_at >= activity_since)
+        .group_by(UserActivity.user_id)
+        .subquery()
+    )
+    top_active_users = (
+        db.session.query(User, activity_counts.c.activity_count)
+        .join(activity_counts, activity_counts.c.user_id == User.id)
+        .order_by(activity_counts.c.activity_count.desc(), User.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
     recent_posts = Post.query.order_by(Post.created_at.desc()).limit(5).all()
     recent_reports = Report.query.filter_by(status='pending').order_by(Report.created_at.desc()).limit(5).all()
     return render_template('admin/dashboard.html',
@@ -35,6 +99,13 @@ def dashboard():
         posts_count=posts_count,
         comments_count=comments_count,
         reports_count=reports_count,
+        interactions_count=interactions_count,
+        online_count=online_count,
+        post_reactions_count=post_reactions_count,
+        comment_reactions_count=comment_reactions_count,
+        reposts_count=reposts_count,
+        top_followed_users=top_followed_users,
+        top_active_users=top_active_users,
         recent_posts=recent_posts,
         recent_reports=recent_reports
     )

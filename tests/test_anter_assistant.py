@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlparse
@@ -20,7 +21,7 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 from app import _get_admin_path, create_app
 from app.extensions import db
 from app.forms.auth import ResetPasswordForm
-from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Follow, Message, MobileAccessToken, Notification, Post, Report, TypingState, User, UserActivity
+from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Comment, CommentLike, Follow, Like, Message, MobileAccessToken, Notification, Post, Report, Repost, TypingState, User, UserActivity
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
@@ -1467,6 +1468,98 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn("name.textContent = String(user.name || '');", template)
         self.assertIn('list.replaceChildren();', template)
         self.assertNotIn('list.innerHTML = users.map', template)
+
+    def test_admin_dashboard_shows_analytics_and_blocks_regular_users(self):
+        now = datetime.utcnow()
+        with self.app.app_context():
+            admin = User(
+                username='analytics_admin',
+                email='analytics-admin@example.test',
+                name='مدير التحليلات',
+                is_admin=True,
+                last_seen=now,
+                terms_agreed=True,
+            )
+            popular = User(
+                username='analytics_popular',
+                email='analytics-popular@example.test',
+                name='الأكثر متابعة',
+                last_seen=now,
+                terms_agreed=True,
+            )
+            active = User(
+                username='analytics_active',
+                email='analytics-active@example.test',
+                name='الأكثر نشاطاً',
+                last_seen=now,
+                terms_agreed=True,
+            )
+            admin.set_password('analytics-admin-password')
+            popular.set_password('analytics-popular-password')
+            active.set_password('analytics-active-password')
+            db.session.add_all([admin, popular, active])
+            db.session.flush()
+
+            followers = []
+            for index in range(8):
+                follower = User(
+                    username=f'analytics_follower_{index}',
+                    email=f'analytics-follower-{index}@example.test',
+                    name=f'متابع {index}',
+                    terms_agreed=True,
+                )
+                follower.set_password('analytics-follower-password')
+                followers.append(follower)
+            db.session.add_all(followers)
+            db.session.flush()
+            db.session.add_all([
+                Follow(follower_id=follower.id, followed_id=popular.id)
+                for follower in followers
+            ])
+
+            post = Post(content='منشور اختبار تحليلات الإدارة', author_id=active.id)
+            db.session.add(post)
+            db.session.flush()
+            comment = Comment(content='تعليق اختبار', author_id=popular.id, post_id=post.id)
+            db.session.add(comment)
+            db.session.flush()
+            db.session.add_all([
+                Like(user_id=admin.id, post_id=post.id),
+                CommentLike(user_id=admin.id, comment_id=comment.id),
+                Repost(user_id=popular.id, post_id=post.id),
+            ])
+            db.session.add_all([
+                UserActivity(
+                    user_id=active.id,
+                    action='post_create',
+                    created_at=now - timedelta(minutes=index),
+                )
+                for index in range(12)
+            ])
+            db.session.commit()
+            admin_id = admin.id
+            regular_user_id = popular.id
+
+        admin_client = self.app.test_client()
+        with admin_client.session_transaction() as session:
+            session['_user_id'] = str(admin_id)
+            session['_fresh'] = True
+        admin_response = admin_client.get(f'/{self.app.config["ADMIN_PATH"]}/')
+        page = admin_response.get_data(as_text=True)
+        self.assertEqual(admin_response.status_code, 200)
+        self.assertIn('إجمالي التفاعلات', page)
+        self.assertIn('المتصلون الآن', page)
+        self.assertIn('الأكثر متابعة', page)
+        self.assertIn('الأكثر نشاطاً', page)
+        self.assertIn('@analytics_popular', page)
+        self.assertIn('@analytics_active', page)
+
+        regular_client = self.app.test_client()
+        with regular_client.session_transaction() as session:
+            session['_user_id'] = str(regular_user_id)
+            session['_fresh'] = True
+        regular_response = regular_client.get(f'/{self.app.config["ADMIN_PATH"]}/')
+        self.assertEqual(regular_response.status_code, 302)
 
 
 class AdminPathSecurityTests(unittest.TestCase):

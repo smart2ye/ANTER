@@ -14,25 +14,10 @@
         <img src="{{ avatar_url(current_user) }}" class="quick-composer-avatar" alt="{{ current_user.name }}">
         <button class="quick-composer-trigger" type="button" data-bs-toggle="modal" data-bs-target="#quickPostModal">
             <span class="quick-composer-prompt">ما الذي يدور في ذهنك، {{ current_user.name }}؟</span>
-            <span class="quick-composer-subprompt"><i class="fas fa-sparkles"></i> شارك فكرة أو صورة أو رابطاً</span>
+            <span class="quick-composer-subprompt"><i class="fas fa-sparkles"></i> شارك فكرة مع مجتمع ANTER</span>
         </button>
         <button class="quick-composer-add" type="button" data-bs-toggle="modal" data-bs-target="#quickPostModal" title="إنشاء منشور جديد" aria-label="إنشاء منشور جديد">
             <i class="fas fa-plus"></i>
-        </button>
-    </div>
-    <div class="quick-composer-divider"></div>
-    <div class="quick-composer-actions">
-        <button type="button" class="quick-composer-action quick-composer-image-action" data-bs-toggle="modal" data-bs-target="#quickPostModal">
-            <i class="fas fa-image text-success"></i><span>صورة</span>
-        </button>
-        <button type="button" class="quick-composer-action" data-bs-toggle="modal" data-bs-target="#quickPostModal">
-            <i class="fas fa-link text-primary"></i><span>رابط</span>
-        </button>
-        <button type="button" class="quick-composer-action" data-bs-toggle="modal" data-bs-target="#quickPostModal">
-            <i class="fas fa-at text-warning"></i><span>إشارة</span>
-        </button>
-        <button type="button" class="quick-composer-ai-action" data-bs-toggle="modal" data-bs-target="#quickPostModal">
-            <i class="fas fa-wand-magic-sparkles"></i><span>mini-llm Arabic</span>
         </button>
     </div>
 </section>

@@ -132,7 +132,8 @@ def create_app():
                     ))
 
         # ترحيل البيانات القائمة إلى معرّفات عامة لا تكشف الرقم التسلسلي.
-        from app.models import Post, Video
+        from app.models import OwnerAdminBootstrap, Post, Video
+        OwnerAdminBootstrap.__table__.create(bind=db.engine, checkfirst=True)
         from app.utils.public_ids import generate_public_id
         for model, prefix in ((Post, 'p'), (Video, 'r')):
             for entity in model.query.filter(model.public_id.is_(None)).all():
@@ -148,8 +149,10 @@ def create_app():
             ensure_anter_assistant_followed_by_all_users,
             ensure_anter_assistant_user,
         )
+        from app.services.owner_admin import ensure_configured_owner_is_admin
         ensure_anter_assistant_user()
         ensure_anter_assistant_followed_by_all_users()
+        ensure_configured_owner_is_admin()
         db.session.commit()
 
         # ============================================

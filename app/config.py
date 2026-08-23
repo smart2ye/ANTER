@@ -110,6 +110,11 @@ class Config:
     ANTER_ASSISTANT_SWITCH_OWNER_USERNAME = os.environ.get(
         'ANTER_ASSISTANT_SWITCH_OWNER_USERNAME', 'abdulqader.mahdly'
     ).strip().lstrip('@') or 'abdulqader.mahdly'
+    # حساب مالك ANTER المسموح بترقيته إلى مدير عند بدء التشغيل. لا ينشئ هذا
+    # إعداداً مساراً عاماً ولا يتعامل مع كلمات المرور.
+    ANTER_OWNER_ADMIN_USERNAME = os.environ.get(
+        'ANTER_OWNER_ADMIN_USERNAME', 'abdulqader.mahdly'
+    ).strip().lstrip('@')
     ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS', 1200, 100)
     ANTER_ASSISTANT_MAX_REPLY_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_REPLY_CHARACTERS', 1200, 300)
     ANTER_ASSISTANT_GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '').strip()

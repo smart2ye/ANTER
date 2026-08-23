@@ -21,7 +21,7 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 from app import _get_admin_path, create_app
 from app.extensions import db
 from app.forms.auth import ResetPasswordForm
-from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Comment, CommentLike, Follow, Like, Message, MobileAccessToken, Notification, Post, Report, Repost, TypingState, User, UserActivity
+from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Comment, CommentLike, Follow, Like, Message, MobileAccessToken, Notification, OwnerAdminBootstrap, Post, Report, Repost, TypingState, User, UserActivity
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
@@ -1560,6 +1560,45 @@ class AnterAssistantTests(unittest.TestCase):
             session['_fresh'] = True
         regular_response = regular_client.get(f'/{self.app.config["ADMIN_PATH"]}/')
         self.assertEqual(regular_response.status_code, 302)
+
+    def test_startup_owner_admin_promotion_is_limited_to_configured_account(self):
+        from app.services.owner_admin import ensure_configured_owner_is_admin
+
+        with self.app.app_context():
+            owner = User(
+                username='configured_owner_admin',
+                email='configured-owner-admin@example.test',
+                name='مالك محدد',
+                is_admin=False,
+                terms_agreed=True,
+            )
+            other = User(
+                username='unrelated_regular_user',
+                email='unrelated-regular-user@example.test',
+                name='مستخدم آخر',
+                is_admin=False,
+                terms_agreed=True,
+            )
+            owner.set_password('owner-admin-test-password')
+            other.set_password('regular-user-test-password')
+            db.session.add_all([owner, other])
+            db.session.commit()
+            owner_id = owner.id
+            other_id = other.id
+
+            previous_username = self.app.config['ANTER_OWNER_ADMIN_USERNAME']
+            self.app.config['ANTER_OWNER_ADMIN_USERNAME'] = owner.username
+            try:
+                self.assertTrue(ensure_configured_owner_is_admin())
+                self.assertFalse(ensure_configured_owner_is_admin())
+            finally:
+                self.app.config['ANTER_OWNER_ADMIN_USERNAME'] = previous_username
+
+            self.assertTrue(User.query.get(owner_id).is_admin)
+            self.assertFalse(User.query.get(other_id).is_admin)
+            bootstrap = OwnerAdminBootstrap.query.get('primary-owner-admin')
+            self.assertIsNotNone(bootstrap)
+            self.assertEqual(bootstrap.user_id, owner_id)
 
 
 class AdminPathSecurityTests(unittest.TestCase):

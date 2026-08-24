@@ -1,4 +1,5 @@
 import os
+import io
 import subprocess
 import sys
 import tempfile
@@ -7,6 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlparse
+from PIL import Image
 
 
 _TEST_DB = os.path.join(tempfile.gettempdir(), "anter_assistant_feature_test.db")
@@ -145,6 +147,59 @@ class AnterAssistantTests(unittest.TestCase):
         with self.app.app_context():
             self.assertTrue(Message.query.get(message_id).is_read)
             self.assertEqual(User.query.get(receiver_id).username, 'mobile_api_receiver')
+
+    def test_mobile_api_transfers_image_attachment_and_tracks_call_log_between_two_accounts(self):
+        with self.app.app_context():
+            sender = User.query.get(self.user_id)
+            receiver = User.query.filter_by(username='mobile_media_receiver').first()
+            if receiver is None:
+                receiver = User(username='mobile_media_receiver', email='mobile-media@example.test', name='مستلم الوسائط', terms_agreed=True)
+                receiver.set_password('media-receiver-password')
+                db.session.add(receiver)
+                db.session.flush()
+            if not sender.is_following(receiver):
+                db.session.add(Follow(follower_id=sender.id, followed_id=receiver.id))
+            if not receiver.is_following(sender):
+                db.session.add(Follow(follower_id=receiver.id, followed_id=sender.id))
+            db.session.commit()
+
+        sender_login = self.client.post('/api/mobile/v1/auth/login', json={'identifier': 'assistant_test_user', 'password': 'not-used-in-test'})
+        receiver_client = self.app.test_client()
+        receiver_login = receiver_client.post('/api/mobile/v1/auth/login', json={'identifier': 'mobile_media_receiver', 'password': 'media-receiver-password'})
+        self.assertEqual(sender_login.status_code, 201)
+        self.assertEqual(receiver_login.status_code, 201)
+        sender_headers = {'Authorization': f"Bearer {sender_login.get_json()['accessToken']}"}
+        receiver_headers = {'Authorization': f"Bearer {receiver_login.get_json()['accessToken']}"}
+
+        # صورة PNG صغيرة وصحيحة تكفي لفحص مسار التحقق والتخزين والتنزيل.
+        png = io.BytesIO()
+        Image.new('RGB', (1, 1), color='navy').save(png, format='PNG')
+        png.seek(0)
+        sent = self.client.post(
+            '/api/mobile/v1/conversations/mobile_media_receiver/messages',
+            headers=sender_headers,
+            data={'content': 'صورة من التطبيق', 'attachment': (png, 'network.png')},
+            content_type='multipart/form-data',
+        )
+        self.assertEqual(sent.status_code, 201)
+        attachment = sent.get_json()['message']['attachment']
+        self.assertEqual(attachment['kind'], 'image')
+        message_id = sent.get_json()['message']['id']
+        received_file = receiver_client.get(f'/api/mobile/v1/messages/{message_id}/attachment', headers=receiver_headers)
+        self.assertEqual(received_file.status_code, 200)
+        self.assertEqual(received_file.mimetype, 'image/png')
+        self.assertTrue(received_file.data.startswith(b'\x89PNG'))
+
+        call_id = 'mobile-call-log-test-001'
+        invite = self.client.post('/api/mobile/v1/calls/mobile_media_receiver/signal', headers=sender_headers, json={'callId': call_id, 'type': 'invite', 'payload': {'callType': 'voice'}})
+        self.assertEqual(invite.status_code, 200)
+        answered = receiver_client.post('/api/mobile/v1/calls/assistant_test_user/signal', headers=receiver_headers, json={'callId': call_id, 'type': 'answer', 'payload': {}})
+        self.assertEqual(answered.status_code, 200)
+        ended = self.client.post('/api/mobile/v1/calls/mobile_media_receiver/signal', headers=sender_headers, json={'callId': call_id, 'type': 'hangup', 'payload': {}})
+        self.assertEqual(ended.status_code, 200)
+        logs = receiver_client.get('/api/mobile/v1/calls', headers=receiver_headers)
+        self.assertEqual(logs.status_code, 200)
+        self.assertTrue(any(item['callId'] == call_id and item['status'] == 'completed' for item in logs.get_json()['calls']))
 
     def test_browser_authorization_exchanges_one_time_code_without_sending_password_to_messenger(self):
         redirect_uri = self.app.config['MOBILE_BROWSER_AUTH_REDIRECT_URI']

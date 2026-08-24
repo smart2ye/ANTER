@@ -1,13 +1,18 @@
 from datetime import datetime, timedelta
 
-from flask import Blueprint, current_app, g, jsonify, request
+import json
+from datetime import datetime
+
+from flask import Blueprint, Response, current_app, g, jsonify, request
 from sqlalchemy import or_
+from werkzeug.utils import secure_filename
 
 from app.extensions import csrf, db
-from app.models import Follow, Message, MutedConversation, Report, TypingState, User, UserBlock
+from app.models import CallLog, CallSignal, Follow, Message, MutedConversation, Report, TypingState, User, UserBlock
 from app.services.message_safety import block_user, is_blocked_between, unblock_user
 from app.services.anter_assistant import get_assistant_reply, is_anter_assistant
 from app.services.anter_memory import clear_memory, remember_assistant_reply, remember_user_message
+from app.utils.image_storage import prepare_image_data
 from app.services.mobile_api_auth import (
     exchange_mobile_browser_authorization,
     issue_mobile_token,
@@ -66,7 +71,64 @@ def _message_payload(message):
             'content': '' if parent.is_deleted_everyone else (parent.content or ''),
             'isDeletedEveryone': bool(parent.is_deleted_everyone),
         } if parent is not None else None,
+        'attachment': {
+            'name': message.attachment_name or 'مرفق',
+            'mimeType': message.attachment_mime or 'application/octet-stream',
+            'kind': message.attachment_kind or 'file',
+            'downloadPath': f'/messages/{message.id}/attachment',
+        } if message.attachment_data else None,
     }
+
+
+def _prepare_mobile_attachment(uploaded_file):
+    """تحقق من مرفق Mobile API قبل تخزينه في سجل الرسالة نفسه."""
+    if not uploaded_file or not uploaded_file.filename:
+        return None, None, None, None
+    filename = secure_filename(uploaded_file.filename)
+    if not filename or '.' not in filename:
+        return None, None, None, None
+    extension = filename.rsplit('.', 1)[1].lower()
+    if extension in current_app.config['ALLOWED_EXTENSIONS']:
+        data, mime_type = prepare_image_data(uploaded_file)
+        return (data, mime_type, filename, 'image') if data else (None, None, None, None)
+    if extension not in current_app.config['ALLOWED_CHAT_FILE_EXTENSIONS']:
+        return None, None, None, None
+    max_bytes = current_app.config['MAX_CHAT_ATTACHMENT_BYTES']
+    data = uploaded_file.read(max_bytes + 1)
+    if not data or len(data) > max_bytes:
+        return None, None, None, None
+    return data, uploaded_file.mimetype or 'application/octet-stream', filename, 'file'
+
+
+def _update_mobile_call_log(caller, receiver, call_id, signal_type, payload):
+    now = datetime.utcnow()
+    if signal_type == 'invite':
+        existing = CallLog.query.filter_by(call_id=call_id).first()
+        if existing is None:
+            requested = str((payload or {}).get('callType', 'voice')).lower()
+            db.session.add(CallLog(
+                call_id=call_id,
+                caller_id=caller.id,
+                receiver_id=receiver.id,
+                call_type=requested if requested in {'voice', 'video'} else 'voice',
+                status='ringing',
+                started_at=now,
+            ))
+        return
+    call_log = CallLog.query.filter_by(call_id=call_id).first()
+    if call_log is None or {call_log.caller_id, call_log.receiver_id} != {caller.id, receiver.id}:
+        return
+    if signal_type == 'answer' and call_log.status == 'ringing':
+        call_log.status = 'answered'
+        call_log.answered_at = now
+    elif signal_type == 'decline' and call_log.status == 'ringing':
+        call_log.status = 'declined'
+        call_log.ended_at = now
+    elif signal_type == 'hangup' and call_log.ended_at is None:
+        call_log.status = 'completed' if call_log.answered_at else 'missed'
+        call_log.ended_at = now
+        if call_log.answered_at:
+            call_log.duration_seconds = max(0, int((now - call_log.answered_at).total_seconds()))
 
 
 def _target_from_username(username):
@@ -369,13 +431,14 @@ def send_message(username):
         return _json_error('المستخدم غير موجود.', 404)
     if not _is_mutual_follow(user, other):
         return _json_error('يتطلب إرسال الرسالة متابعة متبادلة بين الحسابين.', 403)
-    data = request.get_json(silent=True) or {}
-    content = data.get('content')
+    is_multipart = request.mimetype == 'multipart/form-data'
+    data = request.form if is_multipart else (request.get_json(silent=True) or {})
+    content = data.get('content', '')
     if not isinstance(content, str):
         return _json_error('محتوى الرسالة غير صالح.', 400)
     content = content.strip()
-    if not content or len(content) > current_app.config['MOBILE_API_MAX_MESSAGE_CHARS']:
-        return _json_error('يجب أن تكون الرسالة بين 1 و2000 حرف.', 400)
+    if len(content) > current_app.config['MOBILE_API_MAX_MESSAGE_CHARS']:
+        return _json_error('الرسالة أطول من الحد المسموح.', 400)
     parent_id = data.get('parentId')
     if parent_id is not None and (not isinstance(parent_id, int) or parent_id < 1):
         return _json_error('الرسالة المرجعية غير صالحة.', 400)
@@ -389,14 +452,103 @@ def send_message(username):
         ).first()
         if parent is None:
             return _json_error('لا يمكنك الرد على رسالة خارج هذه المحادثة.', 403)
-    message = Message(sender_id=user.id, receiver_id=other.id, content=content, parent_id=parent_id)
+    attachment_data = attachment_mime = attachment_name = attachment_kind = None
+    if is_multipart and request.files.get('attachment'):
+        attachment_data, attachment_mime, attachment_name, attachment_kind = _prepare_mobile_attachment(request.files.get('attachment'))
+        if not attachment_data:
+            return _json_error('نوع المرفق غير مدعوم أو حجمه أكبر من 8 ميجابايت.', 400)
+    if not content and not attachment_data:
+        return _json_error('اكتب رسالة أو اختر مرفقاً.', 400)
+    message = Message(
+        sender_id=user.id,
+        receiver_id=other.id,
+        content=content or f'مرفق: {attachment_name}',
+        parent_id=parent_id,
+        attachment_data=attachment_data,
+        attachment_mime=attachment_mime,
+        attachment_name=attachment_name,
+        attachment_kind=attachment_kind,
+    )
     db.session.add(message)
     db.session.commit()
-    assistant_message = _create_assistant_reply(user, other, message) if is_anter_assistant(other) else None
+    assistant_message = _create_assistant_reply(user, other, message) if is_anter_assistant(other) and not attachment_data else None
     payload = {'message': _message_payload(message)}
     if assistant_message is not None:
         payload['assistantMessage'] = _message_payload(assistant_message)
     return jsonify(payload), 201
+
+
+@mobile_api_bp.route('/messages/<int:message_id>/attachment', methods=['GET'])
+@mobile_api_required
+def download_message_attachment(message_id):
+    message = Message.query.get(message_id)
+    if message is None or not message.attachment_data:
+        return _json_error('المرفق غير موجود.', 404)
+    if g.mobile_user.id not in {message.sender_id, message.receiver_id}:
+        return _json_error('غير مصرح لك بالوصول إلى هذا المرفق.', 403)
+    filename = secure_filename(message.attachment_name or f'attachment-{message.id}')
+    return Response(
+        message.attachment_data,
+        mimetype=message.attachment_mime or 'application/octet-stream',
+        headers={
+            'Content-Length': str(len(message.attachment_data)),
+            'Content-Disposition': f"attachment; filename*=UTF-8''{filename}",
+            'Cache-Control': 'private, max-age=300',
+        },
+    )
+
+
+@mobile_api_bp.route('/calls', methods=['GET'])
+@mobile_api_required
+def list_mobile_call_logs():
+    user = g.mobile_user
+    rows = CallLog.query.filter(
+        or_(CallLog.caller_id == user.id, CallLog.receiver_id == user.id)
+    ).order_by(CallLog.started_at.desc()).limit(100).all()
+    result = []
+    for row in rows:
+        other_id = row.receiver_id if row.caller_id == user.id else row.caller_id
+        other = db.session.get(User, other_id)
+        if other is None:
+            continue
+        result.append({
+            'id': row.id,
+            'callId': row.call_id,
+            'otherUser': _user_payload(other),
+            'direction': 'outgoing' if row.caller_id == user.id else 'incoming',
+            'callType': row.call_type,
+            'status': row.status,
+            'startedAt': row.started_at.isoformat() + 'Z',
+            'durationSeconds': row.duration_seconds,
+        })
+    return jsonify({'calls': result})
+
+
+@mobile_api_bp.route('/calls/<string:username>/signal', methods=['POST'])
+@mobile_api_required
+def send_mobile_call_signal(username):
+    caller = g.mobile_user
+    receiver = _target_from_username(username)
+    if receiver is None:
+        return _json_error('المستخدم غير موجود.', 404)
+    if not _is_mutual_follow(caller, receiver):
+        return _json_error('يتطلب الاتصال متابعة متبادلة بين الحسابين.', 403)
+    data = request.get_json(silent=True) or {}
+    call_id = str(data.get('callId', '')).strip()
+    signal_type = str(data.get('type', '')).strip().lower()
+    payload = data.get('payload') if isinstance(data.get('payload'), dict) else {}
+    if not call_id or len(call_id) > 64 or signal_type not in {'invite', 'answer', 'decline', 'hangup'}:
+        return _json_error('بيانات المكالمة غير صالحة.', 400)
+    _update_mobile_call_log(caller, receiver, call_id, signal_type, payload)
+    db.session.add(CallSignal(
+        call_id=call_id,
+        signal_type=signal_type,
+        payload=json.dumps(payload, ensure_ascii=False),
+        sender_id=caller.id,
+        receiver_id=receiver.id,
+    ))
+    db.session.commit()
+    return jsonify({'success': True, 'callId': call_id, 'type': signal_type})
 
 
 @mobile_api_bp.route('/messages/<int:message_id>', methods=['DELETE'])

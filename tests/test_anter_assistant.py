@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from datetime import datetime, timedelta
@@ -962,6 +964,45 @@ class AnterAssistantTests(unittest.TestCase):
             )
             self.assertEqual(response.status_code, 200)
             self.assertIn("النقطة بين أجزاء الاسم فقط", response.get_data(as_text=True))
+
+    def test_terminal_username_script_changes_only_the_requested_account(self):
+        with self.app.app_context():
+            user = User.query.filter_by(username="terminal_script_user").first()
+            if user is None:
+                user = User(
+                    username="terminal_script_user",
+                    email="terminal-script-user@example.test",
+                    name="مستخدم سكربت الطرفية",
+                    terms_agreed=True,
+                )
+                user.set_password("not-used-in-test")
+                db.session.add(user)
+                db.session.commit()
+            user_id = user.id
+
+        script = Path(__file__).resolve().parents[1] / "scripts" / "change_username.py"
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(script),
+                "--current",
+                "terminal_script_user",
+                "--new",
+                "terminal.user",
+            ],
+            input="terminal.user\n",
+            text=True,
+            capture_output=True,
+            cwd=str(Path(__file__).resolve().parents[1]),
+            env=os.environ.copy(),
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("تم تغيير اسم المستخدم بنجاح", result.stdout)
+        with self.app.app_context():
+            db.session.expire_all()
+            self.assertEqual(db.session.get(User, user_id).username, "terminal.user")
 
     def test_username_settings_reject_duplicate_name(self):
         with self.app.app_context():

@@ -28,3 +28,5 @@ from .assistant_daily_publication import AssistantDailyPublication
 from .mobile_access_token import MobileAccessToken
 from .mobile_browser_authorization import MobileBrowserAuthorization
 from .owner_admin_bootstrap import OwnerAdminBootstrap
+from .user_block import UserBlock
+from .muted_conversation import MutedConversation

@@ -23,7 +23,7 @@ os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
 from app import _get_admin_path, create_app
 from app.extensions import db
 from app.forms.auth import ResetPasswordForm
-from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Comment, CommentLike, Follow, Like, Message, MobileAccessToken, Notification, OwnerAdminBootstrap, Post, Report, Repost, TypingState, User, UserActivity
+from app.models import AssistantDailyPublication, AssistantMemory, CallLog, Comment, CommentLike, Follow, Like, Message, MobileAccessToken, MutedConversation, Notification, OwnerAdminBootstrap, Post, Report, Repost, TypingState, User, UserActivity, UserBlock
 from app.services.anter_assistant import (
     ensure_anter_assistant_user,
     get_assistant_reply,
@@ -398,6 +398,105 @@ class AnterAssistantTests(unittest.TestCase):
         target_login = target_client.post('/api/mobile/v1/auth/login', json={'identifier': 'mobile_api_forward_target', 'password': 'forward-target-password'})
         rows = target_client.get('/api/mobile/v1/conversations/assistant_test_user/messages', headers={'Authorization': f"Bearer {target_login.get_json()['accessToken']}"}).get_json()['messages']
         self.assertTrue(any(row['id'] == forwarded.get_json()['message']['id'] for row in rows))
+
+    def test_message_safety_block_mute_and_report_routes_enforce_participant_rules(self):
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            other = User.query.filter_by(username='message_safety_other').first()
+            outsider = User.query.filter_by(username='message_safety_outsider').first()
+            if other is None:
+                other = User(username='message_safety_other', email='message-safety-other@example.test', name='طرف المحادثة', terms_agreed=True)
+                other.set_password('message-safety-other-password')
+                db.session.add(other)
+            if outsider is None:
+                outsider = User(username='message_safety_outsider', email='message-safety-outsider@example.test', name='مستخدم خارجي', terms_agreed=True)
+                outsider.set_password('message-safety-outsider-password')
+                db.session.add(outsider)
+            db.session.flush()
+            for follower_id, followed_id in ((user.id, other.id), (other.id, user.id)):
+                if Follow.query.filter_by(follower_id=follower_id, followed_id=followed_id).first() is None:
+                    db.session.add(Follow(follower_id=follower_id, followed_id=followed_id))
+            message = Message(sender_id=other.id, receiver_id=user.id, content='رسالة يمكن الإبلاغ عنها')
+            db.session.add(message)
+            db.session.commit()
+            other_id, outsider_id, message_id = other.id, outsider.id, message.id
+
+        muted = self.client.post(f'/messages/safety/{other_id}/mute', data={'muted': 'true'})
+        self.assertEqual(muted.status_code, 200)
+        self.assertTrue(muted.get_json()['muted'])
+        with self.app.app_context():
+            self.assertIsNotNone(MutedConversation.query.filter_by(user_id=self.user_id, muted_user_id=other_id).first())
+
+        report = self.client.post(f'/messages/report/{message_id}', data={'reason': 'harassment', 'details': 'اختبار بلاغ الرسالة'})
+        self.assertEqual(report.status_code, 201)
+        duplicate_report = self.client.post(f'/messages/report/{message_id}', data={'reason': 'harassment'})
+        self.assertEqual(duplicate_report.status_code, 409)
+        with self.app.app_context():
+            saved_report = Report.query.filter_by(reporter_id=self.user_id, message_id=message_id).first()
+            self.assertIsNotNone(saved_report)
+            self.assertEqual(saved_report.reason, 'harassment')
+
+        outsider_client = self.app.test_client()
+        with outsider_client.session_transaction() as session:
+            session['_user_id'] = str(outsider_id)
+            session['_fresh'] = True
+        forbidden_report = outsider_client.post(f'/messages/report/{message_id}', data={'reason': 'spam'})
+        self.assertEqual(forbidden_report.status_code, 403)
+
+        blocked = self.client.post(f'/messages/safety/{other_id}/block', data={'blocked': 'true'})
+        self.assertEqual(blocked.status_code, 200)
+        self.assertTrue(blocked.get_json()['blocked'])
+        with self.app.app_context():
+            self.assertIsNotNone(UserBlock.query.filter_by(blocker_id=self.user_id, blocked_id=other_id).first())
+            self.assertIsNone(Follow.query.filter_by(follower_id=self.user_id, followed_id=other_id).first())
+            self.assertIsNone(Follow.query.filter_by(follower_id=other_id, followed_id=self.user_id).first())
+
+        blocked_send = self.client.post(f'/messages/send/{other_id}', data={'content': 'لا يجب إرسالها'}, follow_redirects=False)
+        self.assertEqual(blocked_send.status_code, 302)
+        with self.app.app_context():
+            self.assertFalse(Message.query.filter_by(sender_id=self.user_id, receiver_id=other_id, content='لا يجب إرسالها').count())
+
+        unblocked = self.client.post(f'/messages/safety/{other_id}/block', data={'blocked': 'false'})
+        self.assertEqual(unblocked.status_code, 200)
+        self.assertFalse(unblocked.get_json()['blocked'])
+
+    def test_mobile_message_safety_blocks_delivery_exposes_mute_and_accepts_report(self):
+        with self.app.app_context():
+            sender = db.session.get(User, self.user_id)
+            receiver = User.query.filter_by(username='mobile_message_safety_receiver').first()
+            if receiver is None:
+                receiver = User(username='mobile_message_safety_receiver', email='mobile-message-safety@example.test', name='مستلم سلامة', terms_agreed=True)
+                receiver.set_password('mobile-message-safety-password')
+                db.session.add(receiver)
+                db.session.flush()
+            for follower_id, followed_id in ((sender.id, receiver.id), (receiver.id, sender.id)):
+                if Follow.query.filter_by(follower_id=follower_id, followed_id=followed_id).first() is None:
+                    db.session.add(Follow(follower_id=follower_id, followed_id=followed_id))
+            db.session.commit()
+            receiver_id = receiver.id
+
+        login = self.client.post('/api/mobile/v1/auth/login', json={'identifier': 'assistant_test_user', 'password': 'not-used-in-test'})
+        self.assertEqual(login.status_code, 201)
+        headers = {'Authorization': f"Bearer {login.get_json()['accessToken']}"}
+
+        muted = self.client.post('/api/mobile/v1/conversations/mobile_message_safety_receiver/mute', headers=headers, json={'muted': True})
+        self.assertEqual(muted.status_code, 200)
+        self.assertTrue(muted.get_json()['muted'])
+
+        message = self.client.post('/api/mobile/v1/conversations/mobile_message_safety_receiver/messages', headers=headers, json={'content': 'رسالة للإبلاغ من الواجهة المحمولة'})
+        self.assertEqual(message.status_code, 201)
+        message_id = message.get_json()['message']['id']
+        listed = self.client.get('/api/mobile/v1/conversations', headers=headers)
+        row = next(item for item in listed.get_json()['conversations'] if item['user']['id'] == receiver_id)
+        self.assertTrue(row['isMuted'])
+        report = self.client.post(f'/api/mobile/v1/messages/{message_id}/report', headers=headers, json={'reason': 'spam'})
+        self.assertEqual(report.status_code, 201)
+
+        blocked = self.client.post('/api/mobile/v1/conversations/mobile_message_safety_receiver/block', headers=headers, json={'blocked': True})
+        self.assertEqual(blocked.status_code, 200)
+        self.assertTrue(blocked.get_json()['blocked'])
+        denied_send = self.client.post('/api/mobile/v1/conversations/mobile_message_safety_receiver/messages', headers=headers, json={'content': 'يجب رفضها'})
+        self.assertEqual(denied_send.status_code, 403)
 
     def test_service_sends_only_current_question_to_groq_without_exposing_provider(self):
         fake_response = Mock(status_code=200)

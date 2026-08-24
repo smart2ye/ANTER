@@ -38,7 +38,7 @@
     <section aria-labelledby="conversations-title">
         <h6 id="conversations-title" class="fw-bold mb-2">المحادثات</h6>
         {% if conversations %}
-            {% for user, last_msg in conversations %}
+            {% for user, last_msg, is_muted in conversations %}
             <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="conversation-row conversation-card text-decoration-none text-dark">
                 <div class="conversation-avatar-wrap">
                     <img src="{{ avatar_url(user) }}" width="52" height="52" class="rounded-circle" style="object-fit: cover;" alt="صورة {{ user.name or user.username }}">
@@ -47,6 +47,7 @@
                 <div class="flex-grow-1 min-w-0">
                     <div class="d-flex justify-content-between align-items-center gap-2">
                         <strong class="conversation-name text-truncate">{{ user.name or user.username }}</strong>
+                        {% if is_muted %}<span class="text-muted small" title="تم كتم المحادثة"><i class="fas fa-bell-slash"></i></span>{% endif %}
                         <small class="text-muted text-nowrap"><time data-local-time="{{ last_msg.created_at.isoformat() }}" data-time-style="time">{{ last_msg.created_at.strftime('%H:%M') }}</time></small>
                     </div>
                     <p class="conversation-preview text-muted small mb-0 text-truncate">

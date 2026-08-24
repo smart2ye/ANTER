@@ -12,9 +12,10 @@ from werkzeug.utils import secure_filename
 from sqlalchemy import or_
 
 from app.extensions import db, csrf
-from app.models import Message, User, Notification, CallSignal, CallLog, TypingState, Follow
-from app.utils.helpers import get_status_icon, get_user_status, allowed_audio_file
+from app.models import Message, User, Notification, CallSignal, CallLog, TypingState, Follow, MutedConversation, Report, UserBlock
+from app.utils.helpers import get_status_icon, get_user_status, allowed_audio_file, log_user_activity
 from app.utils.image_storage import prepare_image_data
+from app.services.message_safety import block_user, blocked_counterparty_ids, is_blocked_between, unblock_user
 from app.services.anter_assistant import (
     ASSISTANT_TEXT_ONLY_REPLY,
     get_assistant_reply,
@@ -47,6 +48,7 @@ def get_rtc_config():
 @login_required
 def inbox():
     # جلب الرسائل المرتبطة بالمستخدم دفعة واحدة ثم استخراج أحدث رسالة لكل محادثة.
+    blocked_ids = blocked_counterparty_ids(current_user.id)
     messages = Message.query.filter(
         or_(
             Message.sender_id == current_user.id,
@@ -57,12 +59,18 @@ def inbox():
     latest_by_user = {}
     for message in messages:
         other_id = message.receiver_id if message.sender_id == current_user.id else message.sender_id
+        if other_id in blocked_ids:
+            continue
         latest_by_user.setdefault(other_id, message)
 
     users = User.query.filter(User.id.in_(latest_by_user.keys())).all()
     users_by_id = {user.id: user for user in users}
+    muted_ids = {
+        row.muted_user_id
+        for row in MutedConversation.query.filter_by(user_id=current_user.id).all()
+    }
     conversations = [
-        (users_by_id[user_id], latest_by_user[user_id])
+        (users_by_id[user_id], latest_by_user[user_id], user_id in muted_ids)
         for user_id in latest_by_user
         if user_id in users_by_id
     ]
@@ -77,7 +85,10 @@ def inbox():
         .limit(30)
         .all()
     )
-    online_friends = [user for user in followed_users if get_user_status(user, current_user)['status'] == 'online']
+    online_friends = [
+        user for user in followed_users
+        if user.id not in blocked_ids and get_user_status(user, current_user)['status'] == 'online'
+    ]
 
     return render_template(
         'messages/inbox.html',
@@ -92,6 +103,18 @@ def inbox():
 @login_required
 def chat(user_id):
     other = User.query.get_or_404(user_id)
+    current_user_has_blocked = UserBlock.query.filter_by(
+        blocker_id=current_user.id,
+        blocked_id=other.id,
+    ).first() is not None
+    other_has_blocked = UserBlock.query.filter_by(
+        blocker_id=other.id,
+        blocked_id=current_user.id,
+    ).first() is not None
+    is_muted = MutedConversation.query.filter_by(
+        user_id=current_user.id,
+        muted_user_id=other.id,
+    ).first() is not None
     can_message = _can_message_user(other)
     can_call = _can_call_user(other)
     messages = Message.query.filter(
@@ -134,6 +157,9 @@ def chat(user_id):
         is_anter_assistant=is_anter_assistant(other),
         can_message=can_message,
         can_call=can_call,
+        current_user_has_blocked=current_user_has_blocked,
+        other_has_blocked=other_has_blocked,
+        is_muted=is_muted,
     )
 
 
@@ -144,6 +170,9 @@ CHAT_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 def _can_message_user(other):
     """تحدد ما إذا كان المستخدم الحالي يستطيع بدء تواصل خاص مع الحساب المحدد."""
     if other.id == current_user.id:
+        return False
+
+    if is_blocked_between(current_user.id, other.id):
         return False
 
     # سياسة ANTER: لا تبدأ مراسلة جديدة إلا مع حساب يتابعه المرسل بالفعل.
@@ -160,6 +189,99 @@ def _can_message_user(other):
             followed_id=current_user.id,
         ).first() is not None
     return True
+
+
+def _request_value(name, default=''):
+    data = request.get_json(silent=True) or request.form
+    return data.get(name, default)
+
+
+@messages_bp.route('/safety/<int:user_id>/block', methods=['POST'])
+@login_required
+def set_block(user_id):
+    other = User.query.get_or_404(user_id)
+    requested = str(_request_value('blocked', 'true')).strip().lower()
+    should_block = requested not in {'0', 'false', 'off', 'no'}
+    try:
+        changed = block_user(current_user, other) if should_block else unblock_user(current_user, other)
+        db.session.commit()
+    except ValueError as error:
+        return jsonify({'success': False, 'message': str(error)}), 400
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('تعذر تحديث حظر المستخدم')
+        return jsonify({'success': False, 'message': 'تعذر تحديث الحظر حالياً.'}), 500
+
+    log_user_activity(
+        current_user.id,
+        'user_block' if should_block else 'user_unblock',
+        {'target_user_id': other.id, 'changed': changed},
+    )
+    return jsonify({
+        'success': True,
+        'blocked': should_block and (changed or is_blocked_between(current_user.id, other.id)),
+        'changed': changed,
+        'message': 'تم حظر المستخدم وإيقاف التفاعل الخاص.' if should_block else 'تم إلغاء حظر المستخدم.',
+    })
+
+
+@messages_bp.route('/safety/<int:user_id>/mute', methods=['POST'])
+@login_required
+def set_mute(user_id):
+    other = User.query.get_or_404(user_id)
+    if other.id == current_user.id:
+        return jsonify({'success': False, 'message': 'لا يمكن كتم محادثة حسابك نفسه.'}), 400
+    requested = str(_request_value('muted', 'true')).strip().lower()
+    should_mute = requested not in {'0', 'false', 'off', 'no'}
+    row = MutedConversation.query.filter_by(user_id=current_user.id, muted_user_id=other.id).first()
+    changed = False
+    if should_mute and row is None:
+        db.session.add(MutedConversation(user_id=current_user.id, muted_user_id=other.id))
+        changed = True
+    elif not should_mute and row is not None:
+        db.session.delete(row)
+        changed = True
+    db.session.commit()
+    log_user_activity(
+        current_user.id,
+        'conversation_mute' if should_mute else 'conversation_unmute',
+        {'target_user_id': other.id, 'changed': changed},
+    )
+    return jsonify({
+        'success': True,
+        'muted': should_mute,
+        'changed': changed,
+        'message': 'تم كتم هذه المحادثة.' if should_mute else 'تم إلغاء كتم هذه المحادثة.',
+    })
+
+
+@messages_bp.route('/report/<int:message_id>', methods=['POST'])
+@login_required
+def report_message(message_id):
+    message = Message.query.get_or_404(message_id)
+    if current_user.id not in {message.sender_id, message.receiver_id}:
+        return jsonify({'success': False, 'message': 'لا يمكنك الإبلاغ عن رسالة خارج محادثتك.'}), 403
+
+    reason = str(_request_value('reason', '')).strip().lower()
+    details = str(_request_value('details', '')).strip()
+    allowed_reasons = {'spam', 'harassment', 'inappropriate', 'other'}
+    if reason not in allowed_reasons:
+        return jsonify({'success': False, 'message': 'يرجى اختيار سبب صحيح للبلاغ.'}), 400
+    if len(details) > 1000:
+        return jsonify({'success': False, 'message': 'تفاصيل البلاغ طويلة جداً.'}), 400
+    if Report.query.filter_by(reporter_id=current_user.id, message_id=message.id).first() is not None:
+        return jsonify({'success': False, 'message': 'لقد أرسلت بلاغاً عن هذه الرسالة سابقاً.'}), 409
+
+    db.session.add(Report(
+        reporter_id=current_user.id,
+        message_id=message.id,
+        reason=reason,
+        details=details,
+        status='pending',
+    ))
+    db.session.commit()
+    log_user_activity(current_user.id, 'message_report', {'message_id': message.id, 'reason': reason})
+    return jsonify({'success': True, 'message': 'تم إرسال البلاغ للمراجعة.'}), 201
 
 
 def _can_call_user(other):
@@ -650,6 +772,8 @@ def poll_call_signals(user_id):
 
     result = []
     for signal in signals:
+        if is_blocked_between(current_user.id, signal.sender_id):
+            continue
         try:
             payload = json.loads(signal.payload or '{}')
         except (TypeError, ValueError):
@@ -701,5 +825,12 @@ def pending_call_invites():
 @login_required
 def unread_messages_count():
     """إرجاع عدد الرسائل غير المقروءة لتحديث بادج المراسلة في الوقت الفعلي."""
-    count = Message.query.filter_by(receiver_id=current_user.id, is_read=False, deleted_by_receiver=False).count()
+    hidden_sender_ids = blocked_counterparty_ids(current_user.id) | {
+        row.muted_user_id
+        for row in MutedConversation.query.filter_by(user_id=current_user.id).all()
+    }
+    query = Message.query.filter_by(receiver_id=current_user.id, is_read=False, deleted_by_receiver=False)
+    if hidden_sender_ids:
+        query = query.filter(Message.sender_id.notin_(hidden_sender_ids))
+    count = query.count()
     return jsonify({'count': count})

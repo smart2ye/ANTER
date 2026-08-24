@@ -25,6 +25,18 @@
                 <i class="fas fa-video"></i>
             </button>
         {% endif %}
+        {% if not is_anter_assistant %}
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary call-button" type="button" id="conversationSafetyButton" data-bs-toggle="dropdown" aria-expanded="false" aria-label="إعدادات سلامة المحادثة" title="إعدادات سلامة المحادثة">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="conversationSafetyButton">
+                    <li><button class="dropdown-item" type="button" onclick="toggleConversationMute()"><i class="fas fa-{{ 'bell' if is_muted else 'bell-slash' }} me-2"></i>{{ 'إلغاء كتم المحادثة' if is_muted else 'كتم المحادثة' }}</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item {{ 'text-danger' if not current_user_has_blocked else 'text-success' }}" type="button" onclick="toggleConversationBlock()"><i class="fas fa-{{ 'unlock' if current_user_has_blocked else 'ban' }} me-2"></i>{{ 'إلغاء حظر المستخدم' if current_user_has_blocked else 'حظر المستخدم' }}</button></li>
+                </ul>
+            </div>
+        {% endif %}
         <span class="badge text-bg-light border"><i class="fas {{ 'fa-robot' if is_anter_assistant else 'fa-shield-alt' }} me-1"></i>{{ 'محادثة مع مساعد آلي' if is_anter_assistant else 'محادثة خاصة' }}</span>
     </header>
 
@@ -35,6 +47,15 @@
                 <i class="fas fa-eraser me-1"></i>مسح الذاكرة
             </button>
         </div>
+    {% endif %}
+
+    {% if current_user_has_blocked %}
+        <aside class="alert alert-warning d-flex align-items-center justify-content-between gap-2 mb-3" role="status">
+            <span><i class="fas fa-ban me-1"></i>لقد حظرت هذا المستخدم. لا يمكنه مراسلتك أو الاتصال بك.</span>
+            <button class="btn btn-sm btn-outline-dark text-nowrap" type="button" onclick="toggleConversationBlock()">إلغاء الحظر</button>
+        </aside>
+    {% elif other_has_blocked %}
+        <aside class="alert alert-secondary mb-3" role="status"><i class="fas fa-lock me-1"></i>هذه المحادثة غير متاحة حالياً.</aside>
     {% endif %}
 
     <div class="chat-box" id="chatBox" aria-live="polite">
@@ -157,8 +178,15 @@
 
     {% if not can_message %}
         <aside class="alert alert-info d-flex align-items-center justify-content-between gap-2 mt-3 mb-2" role="status">
-            <span>لمراسلة {{ other.name }} أو بدء اتصال معه، تابعه أولاً.</span>
-            <a class="btn btn-sm btn-primary text-nowrap" href="{{ url_for('users.profile', username=other.username) }}">عرض الملف الشخصي</a>
+            {% if current_user_has_blocked %}
+                <span>ألغِ الحظر أولاً إذا أردت استئناف التواصل مع {{ other.name }}.</span>
+                <button class="btn btn-sm btn-outline-dark text-nowrap" type="button" onclick="toggleConversationBlock()">إلغاء الحظر</button>
+            {% elif other_has_blocked %}
+                <span>لا يمكنك مراسلة هذا الحساب أو بدء اتصال معه حالياً.</span>
+            {% else %}
+                <span>لمراسلة {{ other.name }} أو بدء اتصال معه، تابعه أولاً.</span>
+                <a class="btn btn-sm btn-primary text-nowrap" href="{{ url_for('users.profile', username=other.username) }}">عرض الملف الشخصي</a>
+            {% endif %}
         </aside>
     {% endif %}
 
@@ -220,6 +248,7 @@
         <button class="menu-item" onclick="handleReply()"><i class="fas fa-reply"></i> رد</button>
         <button class="menu-item" id="copyBtn" onclick="handleCopy()"><i class="fas fa-copy"></i> نسخ</button>
         <button class="menu-item" onclick="handleForward()"><i class="fas fa-share"></i> إعادة توجيه</button>
+        <button class="menu-item text-danger" id="reportMessageBtn" onclick="handleReport()"><i class="fas fa-flag"></i> الإبلاغ عن رسالة</button>
         <hr class="my-1">
         <button class="menu-item text-danger" onclick="handleDelete('me')"><i class="fas fa-trash-alt"></i> حذف عندي</button>
         <button class="menu-item text-danger d-none" id="deleteEveryoneBtn" onclick="handleDelete('everyone')"><i class="fas fa-users-slash"></i> حذف عند الجميع</button>
@@ -240,6 +269,35 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="reportMessageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" id="messageReportForm" onsubmit="submitMessageReport(event)">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-flag text-danger me-1"></i>الإبلاغ عن رسالة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted">يرسل البلاغ إلى إدارة ANTER للمراجعة. لا يُبلّغ الطرف الآخر باسمك.</p>
+                    <label class="form-label" for="messageReportReason">السبب</label>
+                    <select class="form-select" id="messageReportReason" required>
+                        <option value="">اختر سبباً</option>
+                        <option value="spam">رسائل مزعجة أو احتيال</option>
+                        <option value="harassment">مضايقة أو إساءة</option>
+                        <option value="inappropriate">محتوى غير لائق</option>
+                        <option value="other">سبب آخر</option>
+                    </select>
+                    <label class="form-label mt-3" for="messageReportDetails">تفاصيل إضافية (اختياري)</label>
+                    <textarea class="form-control" id="messageReportDetails" rows="3" maxlength="1000" placeholder="اشرح ما يساعد الإدارة على المراجعة."></textarea>
+                    <p class="small text-danger d-none mt-2 mb-0" id="messageReportError" role="alert"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-danger">إرسال البلاغ</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -507,6 +565,7 @@ function showMsgActions(id, event) {
     
     document.getElementById('deleteEveryoneBtn').classList.toggle('d-none', !isSent);
     document.getElementById('copyBtn').classList.toggle('d-none', !content);
+    document.getElementById('reportMessageBtn').classList.toggle('d-none', isSent);
     
     const rect = event.currentTarget.getBoundingClientRect();
     menu.style.top = `${rect.top + window.scrollY - 40}px`;
@@ -593,6 +652,57 @@ function executeForward(userId) {
     fetch(`/messages/forward/${currentMsgId}`, { method: 'POST', body: formData })
         .then(res => res.json())
         .then(data => { if (data.success) window.location.href = data.redirect; });
+}
+
+function safetyRequest(path, payload) {
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => formData.append(key, String(value)));
+    formData.append('csrf_token', document.getElementById('chatCsrfToken')?.value || '');
+    return fetch(path, { method: 'POST', body: formData }).then(async (response) => {
+        const data = await response.json().catch(() => ({ success: false, message: 'تعذر قراءة استجابة الخادم.' }));
+        if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تنفيذ الإجراء.');
+        return data;
+    });
+}
+
+function toggleConversationMute() {
+    const currentlyMuted = {{ is_muted | tojson }};
+    safetyRequest(`/messages/safety/${otherUserId}/mute`, { muted: !currentlyMuted })
+        .then(() => location.reload())
+        .catch((error) => alert(error.message));
+}
+
+function toggleConversationBlock() {
+    const currentlyBlocked = {{ current_user_has_blocked | tojson }};
+    const prompt = currentlyBlocked
+        ? `هل تريد إلغاء حظر ${otherName}؟`
+        : `حظر ${otherName} سيوقف الرسائل والمكالمات ويلغي المتابعة المتبادلة. هل تريد المتابعة؟`;
+    if (!confirm(prompt)) return;
+    safetyRequest(`/messages/safety/${otherUserId}/block`, { blocked: !currentlyBlocked })
+        .then(() => location.href = '{{ url_for("messages.inbox") }}')
+        .catch((error) => alert(error.message));
+}
+
+function handleReport() {
+    const modal = new bootstrap.Modal(document.getElementById('reportMessageModal'));
+    document.getElementById('messageReportError').classList.add('d-none');
+    modal.show();
+}
+
+function submitMessageReport(event) {
+    event.preventDefault();
+    const reason = document.getElementById('messageReportReason').value;
+    const details = document.getElementById('messageReportDetails').value;
+    const error = document.getElementById('messageReportError');
+    safetyRequest(`/messages/report/${currentMsgId}`, { reason, details })
+        .then((data) => {
+            bootstrap.Modal.getInstance(document.getElementById('reportMessageModal'))?.hide();
+            alert(data.message);
+        })
+        .catch((requestError) => {
+            error.textContent = requestError.message;
+            error.classList.remove('d-none');
+        });
 }
 
 function scrollToMsg(id, event) {

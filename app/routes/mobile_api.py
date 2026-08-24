@@ -4,7 +4,8 @@ from flask import Blueprint, current_app, g, jsonify, request
 from sqlalchemy import or_
 
 from app.extensions import csrf, db
-from app.models import Follow, Message, TypingState, User
+from app.models import Follow, Message, MutedConversation, Report, TypingState, User, UserBlock
+from app.services.message_safety import block_user, is_blocked_between, unblock_user
 from app.services.anter_assistant import get_assistant_reply, is_anter_assistant
 from app.services.anter_memory import clear_memory, remember_assistant_reply, remember_user_message
 from app.services.mobile_api_auth import (
@@ -34,7 +35,19 @@ def _user_payload(user):
 
 
 def _is_mutual_follow(user, other):
-    return user.id != other.id and user.is_following(other) and other.is_following(user)
+    return (
+        user.id != other.id
+        and not is_blocked_between(user.id, other.id)
+        and user.is_following(other)
+        and other.is_following(user)
+    )
+
+
+def _is_muted(user, other):
+    return MutedConversation.query.filter_by(
+        user_id=user.id,
+        muted_user_id=other.id,
+    ).first() is not None
 
 
 def _message_payload(message):
@@ -197,6 +210,7 @@ def conversations():
             'user': _user_payload(other),
             'latestMessage': _message_payload(latest),
             'unreadCount': unread_count,
+            'isMuted': _is_muted(user, other),
         })
     result.sort(key=lambda item: item['latestMessage']['createdAt'], reverse=True)
     return jsonify({'conversations': result})
@@ -241,6 +255,64 @@ def conversation_activity(username):
     if not _is_mutual_follow(user, other):
         return _json_error('تتطلب المحادثة متابعة متبادلة بين الحسابين.', 403)
     return jsonify(_typing_state_payload(other, user))
+
+
+@mobile_api_bp.route('/conversations/<string:username>/safety', methods=['GET'])
+@mobile_api_required
+def conversation_safety(username):
+    user = g.mobile_user
+    other = _target_from_username(username)
+    if other is None:
+        return _json_error('المستخدم غير موجود.', 404)
+    return jsonify({
+        'isMuted': _is_muted(user, other),
+        'hasBlocked': UserBlock.query.filter_by(blocker_id=user.id, blocked_id=other.id).first() is not None,
+        'canMessage': _is_mutual_follow(user, other),
+    })
+
+
+@mobile_api_bp.route('/conversations/<string:username>/block', methods=['POST'])
+@mobile_api_required
+def set_conversation_block(username):
+    user = g.mobile_user
+    other = _target_from_username(username)
+    if other is None:
+        return _json_error('المستخدم غير موجود.', 404)
+    data = request.get_json(silent=True) or {}
+    should_block = data.get('blocked') is not False
+    try:
+        changed = block_user(user, other) if should_block else unblock_user(user, other)
+        db.session.commit()
+    except ValueError as error:
+        return _json_error(str(error), 400)
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('تعذر تحديث الحظر عبر الواجهة المحمولة')
+        return _json_error('تعذر تحديث الحظر حالياً.', 500)
+    return jsonify({'success': True, 'blocked': should_block, 'changed': changed})
+
+
+@mobile_api_bp.route('/conversations/<string:username>/mute', methods=['POST'])
+@mobile_api_required
+def set_conversation_mute(username):
+    user = g.mobile_user
+    other = _target_from_username(username)
+    if other is None:
+        return _json_error('المستخدم غير موجود.', 404)
+    if user.id == other.id:
+        return _json_error('لا يمكن كتم محادثة حسابك نفسه.', 400)
+    data = request.get_json(silent=True) or {}
+    should_mute = data.get('muted') is not False
+    row = MutedConversation.query.filter_by(user_id=user.id, muted_user_id=other.id).first()
+    changed = False
+    if should_mute and row is None:
+        db.session.add(MutedConversation(user_id=user.id, muted_user_id=other.id))
+        changed = True
+    elif not should_mute and row is not None:
+        db.session.delete(row)
+        changed = True
+    db.session.commit()
+    return jsonify({'success': True, 'muted': should_mute, 'changed': changed})
 
 
 @mobile_api_bp.route('/conversations/<string:username>/assistant-memory/clear', methods=['POST'])
@@ -386,3 +458,32 @@ def forward_message(message_id):
     db.session.add(forwarded)
     db.session.commit()
     return jsonify({'success': True, 'message': _message_payload(forwarded)}), 201
+
+
+@mobile_api_bp.route('/messages/<int:message_id>/report', methods=['POST'])
+@mobile_api_required
+def report_message(message_id):
+    user = g.mobile_user
+    message = Message.query.get(message_id)
+    if message is None:
+        return _json_error('الرسالة غير موجودة.', 404)
+    if user.id not in {message.sender_id, message.receiver_id}:
+        return _json_error('لا يمكنك الإبلاغ عن رسالة خارج محادثتك.', 403)
+    data = request.get_json(silent=True) or {}
+    reason = str(data.get('reason', '')).strip().lower()
+    details = str(data.get('details', '')).strip()
+    if reason not in {'spam', 'harassment', 'inappropriate', 'other'}:
+        return _json_error('يرجى اختيار سبب صحيح للبلاغ.', 400)
+    if len(details) > 1000:
+        return _json_error('تفاصيل البلاغ طويلة جداً.', 400)
+    if Report.query.filter_by(reporter_id=user.id, message_id=message.id).first() is not None:
+        return _json_error('لقد أرسلت بلاغاً عن هذه الرسالة سابقاً.', 409)
+    db.session.add(Report(
+        reporter_id=user.id,
+        message_id=message.id,
+        reason=reason,
+        details=details,
+        status='pending',
+    ))
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'تم إرسال البلاغ للمراجعة.'}), 201

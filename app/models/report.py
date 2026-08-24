@@ -8,6 +8,7 @@ class Report(db.Model):
     reporter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=True, index=True)
     comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True, index=True)
+    message_id = db.Column(db.Integer, db.ForeignKey('messages.id'), nullable=True, index=True)
     reason = db.Column(db.String(200), nullable=False)
     details = db.Column(db.Text, default='')
     status = db.Column(db.String(20), default='pending')
@@ -19,6 +20,7 @@ class Report(db.Model):
     resolver = db.relationship('User', foreign_keys=[resolved_by])
     post = db.relationship('Post', backref='reports')
     comment = db.relationship('Comment', backref='reports')
+    message = db.relationship('Message', backref='reports')
 
     def __repr__(self):
         return f'<Report {self.id}>'

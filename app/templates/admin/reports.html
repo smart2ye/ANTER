@@ -11,7 +11,7 @@
             <tr>
                 <th>#</th>
                 <th>المبلغ</th>
-                <th>المنشور</th>
+                <th>المحتوى المبلّغ عنه</th>
                 <th>السبب</th>
                 <th>الحالة</th>
                 <th>الإجراءات</th>
@@ -23,9 +23,16 @@
                 <td>{{ report.id }}</td>
                 <td>{{ report.reporter.name }}</td>
                 <td>
-                    <a href="{{ url_for('admin.view_post', post_id=report.post_id) }}" target="_blank">
-                        منشور #{{ report.post_id }}
-                    </a>
+                    {% if report.message_id and report.message %}
+                        <div class="fw-semibold">رسالة بين @{{ report.message.sender.username }} و@{{ report.message.receiver.username }}</div>
+                        <small class="text-muted d-block text-break">{{ report.message.content[:140] or 'رسالة تحتوي على وسائط' }}</small>
+                    {% elif report.post_id and report.post %}
+                        <a href="{{ url_for('admin.view_post', post_id=report.post_id) }}" target="_blank">منشور #{{ report.post_id }}</a>
+                    {% elif report.comment_id %}
+                        <span>تعليق #{{ report.comment_id }}</span>
+                    {% else %}
+                        <span class="text-muted">محتوى لم يعد متاحاً</span>
+                    {% endif %}
                 </td>
                 <td>{{ report.reason }}</td>
                 <td>

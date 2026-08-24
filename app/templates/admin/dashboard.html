@@ -114,7 +114,14 @@
             <div class="card-body p-2">
                 {% for report in recent_reports %}
                 <div class="border-bottom py-1 small">
-                    من: <strong>{{ report.reporter.name }}</strong> على منشور {{ report.post.author.name }}
+                    من: <strong>{{ report.reporter.name }}</strong>
+                    {% if report.message_id and report.message %}
+                        على رسالة بين @{{ report.message.sender.username }} و@{{ report.message.receiver.username }}
+                    {% elif report.post and report.post.author %}
+                        على منشور {{ report.post.author.name }}
+                    {% else %}
+                        على محتوى لم يعد متاحاً
+                    {% endif %}
                     <span class="badge bg-warning">معلق</span>
                 </div>
                 {% else %}

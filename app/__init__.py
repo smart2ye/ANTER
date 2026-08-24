@@ -2,7 +2,15 @@ from flask import Flask, flash, redirect, request, session, url_for
 from werkzeug.exceptions import RequestEntityTooLarge
 from app.config import Config
 from app.extensions import db, login_manager, csrf
-from app.models import User, CallSignal, CallLog, MobileAccessToken, MobileBrowserAuthorization
+from app.models import (
+    User,
+    CallSignal,
+    CallLog,
+    MobileAccessToken,
+    MobileBrowserAuthorization,
+    MutedConversation,
+    UserBlock,
+)
 from app.routes import register_blueprints
 import hashlib
 import hmac
@@ -63,6 +71,8 @@ def create_app():
         CallLog.__table__.create(bind=db.engine, checkfirst=True)
         MobileAccessToken.__table__.create(bind=db.engine, checkfirst=True)
         MobileBrowserAuthorization.__table__.create(bind=db.engine, checkfirst=True)
+        UserBlock.__table__.create(bind=db.engine, checkfirst=True)
+        MutedConversation.__table__.create(bind=db.engine, checkfirst=True)
         from app.models.story import Story, StoryView
         Story.__table__.create(bind=db.engine, checkfirst=True)
         StoryView.__table__.create(bind=db.engine, checkfirst=True)
@@ -111,6 +121,9 @@ def create_app():
             'call_logs': {
                 'call_type': "VARCHAR(16) NOT NULL DEFAULT 'voice'",
             },
+            'reports': {
+                'message_id': 'INTEGER',
+            },
         }
         with db.engine.begin() as connection:
             for table_name, required_columns in required_columns_by_table.items():
@@ -130,6 +143,10 @@ def create_app():
                     connection.execute(text(
                         f'CREATE UNIQUE INDEX IF NOT EXISTS ix_{table_name}_public_id ON {table_name} (public_id)'
                     ))
+            if 'reports' in inspector.get_table_names():
+                connection.execute(text(
+                    'CREATE INDEX IF NOT EXISTS ix_reports_message_id ON reports (message_id)'
+                ))
 
         # ترحيل البيانات القائمة إلى معرّفات عامة لا تكشف الرقم التسلسلي.
         from app.models import OwnerAdminBootstrap, Post, Video

@@ -141,8 +141,8 @@ http://127.0.0.1:5050
 
 ```text
 SECRET_KEY=قيمة_سرية_قوية
-GROQ_API_KEY=مفتاح_الخدمة_السري
-GROQ_MODEL=qwen/qwen3.6-27b
+MINI_LLM_ARABIC_API_KEY=مفتاح_محرك_mini_llm_Arabic
+MINI_LLM_ARABIC_MODEL=النموذج_المعتمد
 ANTER_ASSISTANT_ENABLED=true
 ```
 

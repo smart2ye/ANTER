@@ -78,6 +78,10 @@ class Config:
 
     # mini-llm Arabic: مسار كتابة ANTER للمحتوى والتحسين. تبقى القيم الفعلية في بيئة الخادم فقط.
     MINI_LLM_ARABIC_ENABLED = os.environ.get('MINI_LLM_ARABIC_ENABLED', 'true').strip().lower() == 'true'
+    MINI_LLM_ARABIC_API_URL = os.environ.get(
+        'MINI_LLM_ARABIC_API_URL',
+        'https://api.groq.com/openai/v1/chat/completions',
+    ).strip()
     MINI_LLM_ARABIC_API_KEY = os.environ.get('MINI_LLM_ARABIC_API_KEY', os.environ.get('GROQ_API_KEY', '')).strip()
     MINI_LLM_ARABIC_MODEL = os.environ.get(
         'MINI_LLM_ARABIC_MODEL', os.environ.get('GROQ_MODEL', 'qwen/qwen3.6-27b')
@@ -117,13 +121,18 @@ class Config:
     ).strip().lstrip('@')
     ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS', 1200, 100)
     ANTER_ASSISTANT_MAX_REPLY_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_REPLY_CHARACTERS', 1200, 300)
-    ANTER_ASSISTANT_GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '').strip()
-    ANTER_ASSISTANT_GROQ_MODEL = os.environ.get(
-        'ANTER_ASSISTANT_GROQ_MODEL',
-        os.environ.get('GROQ_MODEL', 'qwen/qwen3.6-27b'),
-    ).strip() or 'qwen/qwen3.6-27b'
-    ANTER_ASSISTANT_GROQ_TIMEOUT_SECONDS = env_float('ANTER_ASSISTANT_GROQ_TIMEOUT_SECONDS', 40.0, 5.0, 60.0)
-    ANTER_ASSISTANT_GROQ_MAX_TOKENS = env_int('ANTER_ASSISTANT_GROQ_MAX_TOKENS', 420, 120)
+    ANTER_ASSISTANT_MINI_LLM_ARABIC_API_KEY = os.environ.get(
+        'ANTER_ASSISTANT_MINI_LLM_ARABIC_API_KEY', MINI_LLM_ARABIC_API_KEY
+    ).strip()
+    ANTER_ASSISTANT_MINI_LLM_ARABIC_MODEL = os.environ.get(
+        'ANTER_ASSISTANT_MINI_LLM_ARABIC_MODEL', MINI_LLM_ARABIC_MODEL
+    ).strip() or MINI_LLM_ARABIC_MODEL
+    ANTER_ASSISTANT_MINI_LLM_ARABIC_TIMEOUT_SECONDS = env_float(
+        'ANTER_ASSISTANT_MINI_LLM_ARABIC_TIMEOUT_SECONDS', 40.0, 5.0, 60.0
+    )
+    ANTER_ASSISTANT_MINI_LLM_ARABIC_MAX_TOKENS = env_int(
+        'ANTER_ASSISTANT_MINI_LLM_ARABIC_MAX_TOKENS', 420, 120
+    )
 
     # تفويض Messenger عبر متصفح ANTER: لا تصل كلمة المرور إلى التطبيق.
     MOBILE_BROWSER_AUTH_CODE_TTL_SECONDS = env_int('MOBILE_BROWSER_AUTH_CODE_TTL_SECONDS', 180, 60)

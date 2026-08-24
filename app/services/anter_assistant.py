@@ -19,7 +19,6 @@ from app.models import Follow, User
 from app.services.anter_memory import display_name, local_memory_reply
 
 
-GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions"
 ASSISTANT_UNAVAILABLE_REPLY = (
     "أنا مساعد أنتر. أحتاج إلى لحظة قبل أن أتمكن من الرد؛ حاول إرسال رسالتك مجدداً بعد قليل."
 )
@@ -275,19 +274,19 @@ def get_assistant_reply(
     if direct_reply:
         return direct_reply, None
 
-    api_key = current_app.config.get("ANTER_ASSISTANT_GROQ_API_KEY", "").strip()
+    api_key = current_app.config.get("ANTER_ASSISTANT_MINI_LLM_ARABIC_API_KEY", "").strip()
     if not api_key:
-        current_app.logger.warning("مفتاح موفّر مساعد أنتر غير مضبوط.")
+        current_app.logger.warning("مفتاح محرك mini-llm Arabic غير مضبوط.")
         return None, ASSISTANT_UNAVAILABLE_REPLY
 
     payload = {
-        "model": current_app.config["ANTER_ASSISTANT_GROQ_MODEL"],
+        "model": current_app.config["ANTER_ASSISTANT_MINI_LLM_ARABIC_MODEL"],
         "messages": [
             {"role": "system", "content": _assistant_system_prompt()},
             {"role": "user", "content": question},
         ],
         "temperature": 0.45,
-        "max_tokens": current_app.config["ANTER_ASSISTANT_GROQ_MAX_TOKENS"],
+        "max_tokens": current_app.config["ANTER_ASSISTANT_MINI_LLM_ARABIC_MAX_TOKENS"],
         "reasoning_effort": "none",
     }
     headers = {
@@ -296,16 +295,20 @@ def get_assistant_reply(
         "Accept": "application/json",
         "User-Agent": "ANTER-Assistant/1.1",
     }
-    timeout = current_app.config["ANTER_ASSISTANT_GROQ_TIMEOUT_SECONDS"]
+    timeout = current_app.config["ANTER_ASSISTANT_MINI_LLM_ARABIC_TIMEOUT_SECONDS"]
+    api_url = current_app.config.get("MINI_LLM_ARABIC_API_URL", "").strip()
+    if not api_url:
+        current_app.logger.warning("عنوان محرك mini-llm Arabic غير مضبوط.")
+        return None, ASSISTANT_UNAVAILABLE_REPLY
 
     try:
-        response = requests.post(GROQ_CHAT_URL, json=payload, headers=headers, timeout=timeout)
+        response = requests.post(api_url, json=payload, headers=headers, timeout=timeout)
     except requests.RequestException:
-        current_app.logger.warning("تعذر الوصول إلى مزود مساعد أنتر.")
+        current_app.logger.warning("تعذر الوصول إلى محرك مساعد أنتر.")
         return None, _safe_provider_error()
 
     if response.status_code != 200:
-        current_app.logger.warning("تعذر طلب مزود مساعد أنتر: HTTP %s", response.status_code)
+        current_app.logger.warning("تعذر طلب محرك مساعد أنتر: HTTP %s", response.status_code)
         return None, _safe_provider_error(response.status_code)
 
     try:

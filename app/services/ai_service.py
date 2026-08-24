@@ -12,7 +12,6 @@ import requests
 from flask import current_app
 
 
-MINI_LLM_ARABIC_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions"
 _THINKING_BLOCK = re.compile(r"<think>.*?(?:</think>|$)", flags=re.IGNORECASE | re.DOTALL)
 
 
@@ -28,6 +27,7 @@ class AIService:
             current_app.config.get("MINI_LLM_ARABIC_API_KEY", "").strip(),
             current_app.config.get("MINI_LLM_ARABIC_MODEL", "").strip(),
             current_app.config.get("MINI_LLM_ARABIC_TIMEOUT_SECONDS", 30.0),
+            current_app.config.get("MINI_LLM_ARABIC_API_URL", "").strip(),
         )
 
     @staticmethod
@@ -47,8 +47,8 @@ class AIService:
 
     def generate_response(self, prompt, max_tokens=300):
         """ينشئ نصاً واحداً لمسودة المستخدم الحالية فقط عبر mini-llm Arabic."""
-        api_key, model, timeout = self._settings()
-        if not api_key or not model:
+        api_key, model, timeout, api_url = self._settings()
+        if not api_key or not model or not api_url:
             return None, "mini-llm Arabic غير مهيأ حالياً. تحقق من إعدادات الخادم ثم حاول مجدداً."
 
         payload = {
@@ -69,7 +69,7 @@ class AIService:
         }
 
         try:
-            response = requests.post(MINI_LLM_ARABIC_CHAT_URL, json=payload, headers=headers, timeout=timeout)
+            response = requests.post(api_url, json=payload, headers=headers, timeout=timeout)
         except requests.RequestException:
             current_app.logger.warning("تعذر الاتصال بخدمة mini-llm Arabic.")
             return None, "تعذر الاتصال بـ mini-llm Arabic حالياً. حاول مرة أخرى بعد قليل."

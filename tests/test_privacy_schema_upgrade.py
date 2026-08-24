@@ -41,8 +41,8 @@ class PrivacySchemaUpgradeTests(unittest.TestCase):
             environment.update({
                 'DATABASE_URL': f'sqlite:///{database_path}',
                 'ADMIN_PATH': 'legacy-schema-test-admin',
-                'GROQ_API_KEY': 'test-groq-key',
-                'GROQ_MODEL': 'qwen/qwen3.6-27b',
+                'MINI_LLM_ARABIC_API_KEY': 'test-mini-llm-key',
+                'MINI_LLM_ARABIC_MODEL': 'qwen/qwen3.6-27b',
             })
             verification = '''
 from app import create_app

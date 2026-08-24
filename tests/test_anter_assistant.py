@@ -17,8 +17,8 @@ except FileNotFoundError:
 
 os.environ["DATABASE_URL"] = "sqlite:///" + _TEST_DB
 os.environ["ADMIN_PATH"] = "admin-antar-assistant-test"
-os.environ["GROQ_API_KEY"] = "test-groq-key"
-os.environ["GROQ_MODEL"] = "qwen/qwen3.6-27b"
+os.environ["MINI_LLM_ARABIC_API_KEY"] = "test-mini-llm-key"
+os.environ["MINI_LLM_ARABIC_MODEL"] = "qwen/qwen3.6-27b"
 
 from app import _get_admin_path, create_app
 from app.extensions import db
@@ -46,9 +46,9 @@ class AnterAssistantTests(unittest.TestCase):
             TESTING=True,
             WTF_CSRF_ENABLED=False,
             ANTER_ASSISTANT_ENABLED=True,
-            ANTER_ASSISTANT_GROQ_API_KEY="test-groq-key",
-            ANTER_ASSISTANT_GROQ_MODEL="qwen/qwen3.6-27b",
-            ANTER_ASSISTANT_GROQ_MAX_TOKENS=700,
+            ANTER_ASSISTANT_MINI_LLM_ARABIC_API_KEY="test-mini-llm-key",
+            ANTER_ASSISTANT_MINI_LLM_ARABIC_MODEL="qwen/qwen3.6-27b",
+            ANTER_ASSISTANT_MINI_LLM_ARABIC_MAX_TOKENS=700,
         )
         with cls.app.app_context():
             cls.assistant = ensure_anter_assistant_user()
@@ -498,7 +498,7 @@ class AnterAssistantTests(unittest.TestCase):
         denied_send = self.client.post('/api/mobile/v1/conversations/mobile_message_safety_receiver/messages', headers=headers, json={'content': 'يجب رفضها'})
         self.assertEqual(denied_send.status_code, 403)
 
-    def test_service_sends_only_current_question_to_groq_without_exposing_provider(self):
+    def test_service_sends_only_current_question_to_mini_llm_without_exposing_engine(self):
         fake_response = Mock(status_code=200)
         fake_response.json.return_value = {
             "choices": [{"message": {"content": "<think>تفكير داخلي</think> أهلاً بك، كيف يمكنني مساعدتك في ANTER؟"}}],
@@ -517,7 +517,7 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn("أنت مساعد أنتر", kwargs["json"]["messages"][0]["content"])
         self.assertIn("عبدالقادر مهدلي", kwargs["json"]["messages"][0]["content"])
         self.assertEqual(kwargs["json"]["reasoning_effort"], "none")
-        self.assertEqual(kwargs["headers"]["Authorization"], "Bearer test-groq-key")
+        self.assertEqual(kwargs["headers"]["Authorization"], "Bearer test-mini-llm-key")
         self.assertNotIn("history", kwargs["json"])
         self.assertNotIn("Groq", answer)
         self.assertNotIn("qwen", answer.casefold())
@@ -633,7 +633,7 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertIsNotNone(review_inbox)
             self.assertIn(f'بلاغ جديد رقم {report.id}', review_inbox.content)
 
-    def test_provider_error_does_not_expose_groq_or_model(self):
+    def test_provider_error_does_not_expose_engine_or_model(self):
         fake_response = Mock(status_code=429)
         with self.app.app_context(), patch(
             "app.services.anter_assistant.requests.post", return_value=fake_response

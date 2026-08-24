@@ -29,14 +29,20 @@
     <!-- المعلومات الشخصية -->
     <div class="mt-4">
         <h6 class="border-bottom pb-2"><i class="fas fa-user-edit"></i> المعلومات الشخصية</h6>
-        <form method="POST" action="{{ url_for('users.settings') }}">
+        <form method="POST" action="{{ url_for('users.settings') }}" id="profile-info-form">
             <div class="mb-3">
                 <label class="form-label fw-semibold"><i class="fas fa-at text-primary"></i> اسم المستخدم ورابط الملف الشخصي</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light">@</span>
-                    <input type="text" name="username" class="form-control" value="{{ current_user.username }}" minlength="3" maxlength="30" pattern="[A-Za-z0-9_\u0600-\u06FF]+" autocomplete="username" dir="auto" {% if is_anter_assistant(current_user) %}readonly{% endif %}>
+                    <input type="text" name="username" id="username" class="form-control" value="{{ current_user.username }}" minlength="3" maxlength="30" pattern="[A-Za-z0-9_\u0600-\u06FF]+" autocomplete="username" dir="auto" aria-describedby="username-save-status username-profile-url" {% if is_anter_assistant(current_user) %}readonly{% endif %}>
                 </div>
-                <small class="form-text text-muted">اختر اسماً من 3 إلى 30 حرفاً أو رقماً، من دون مسافات. يمكن استخدام الشرطة السفلية _. رابطك سيكون: {{ request.host_url.rstrip('/') }}/users/{{ current_user.username }}</small>
+                <small class="form-text text-muted">اختر اسماً من 3 إلى 30 حرفاً أو رقماً، من دون مسافات. يمكن استخدام الشرطة السفلية _. رابطك سيكون: <span id="username-profile-url">{{ request.host_url.rstrip('/') }}/users/{{ current_user.username }}</span></small>
+                {% if not is_anter_assistant(current_user) %}
+                <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                    <button type="submit" class="btn btn-outline-primary btn-sm" id="save-username-button"><i class="fas fa-check"></i> حفظ اسم المستخدم</button>
+                    <small id="username-save-status" class="text-muted" aria-live="polite">اكتب الاسم الجديد ثم اضغط هذا الزر لحفظه.</small>
+                </div>
+                {% endif %}
                 {% if is_anter_assistant(current_user) %}<small class="d-block text-warning mt-1">اسم مستخدم مساعد أنتر محجوز للحساب الرسمي.</small>{% endif %}
             </div>
             <div class="mb-2">
@@ -116,6 +122,20 @@
 </div>
 {% endblock %}
 <script>
+    const usernameInput = document.getElementById('username');
+    const usernameStatus = document.getElementById('username-save-status');
+    const usernameProfileUrl = document.getElementById('username-profile-url');
+    if (usernameInput && usernameStatus && usernameProfileUrl) {
+        const baseProfileUrl = '{{ request.host_url.rstrip('/') }}/users/';
+        usernameInput.addEventListener('input', function() {
+            const value = this.value.trim().replace(/^@+/, '');
+            usernameProfileUrl.textContent = baseProfileUrl + (value || '{{ current_user.username }}');
+            usernameStatus.textContent = value
+                ? 'اضغط «حفظ اسم المستخدم» لتطبيق التغيير.'
+                : 'أدخل اسماً من 3 إلى 30 حرفاً أو رقماً.';
+        });
+    }
+
     // تبديل الصوت من الإعدادات
     const soundToggle = document.getElementById('soundToggle');
     if (soundToggle) {

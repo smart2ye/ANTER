@@ -931,6 +931,12 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertEqual(username_login_response.status_code, 302)
 
     def test_user_can_change_username_from_settings_and_open_new_profile_link(self):
+        settings_page = self.client.get("/users/settings")
+        settings_html = settings_page.get_data(as_text=True)
+        self.assertEqual(settings_page.status_code, 200)
+        self.assertIn('id="save-username-button"', settings_html)
+        self.assertIn('id="username-save-status"', settings_html)
+
         response = self.client.post(
             "/users/settings",
             data={"username": "abdulqader_anter"},

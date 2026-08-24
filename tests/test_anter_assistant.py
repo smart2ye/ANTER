@@ -936,21 +936,32 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertEqual(settings_page.status_code, 200)
         self.assertIn('id="save-username-button"', settings_html)
         self.assertIn('id="username-save-status"', settings_html)
+        self.assertIn('النقطة بين أجزاء الاسم', settings_html)
 
         response = self.client.post(
             "/users/settings",
-            data={"username": "abdulqader_anter"},
+            data={"username": "abdulqader.mahdly"},
             follow_redirects=False,
         )
         self.assertEqual(response.status_code, 302)
 
         with self.app.app_context():
             user = db.session.get(User, self.user_id)
-            self.assertEqual(user.username, "abdulqader_anter")
+            self.assertEqual(user.username, "abdulqader.mahdly")
 
-        profile_response = self.client.get("/users/abdulqader_anter")
+        profile_response = self.client.get("/users/abdulqader.mahdly")
         self.assertEqual(profile_response.status_code, 200)
-        self.assertIn("abdulqader_anter", profile_response.get_data(as_text=True))
+        self.assertIn("abdulqader.mahdly", profile_response.get_data(as_text=True))
+
+    def test_username_settings_reject_leading_trailing_or_consecutive_dots(self):
+        for invalid_username in (".abdulqader", "abdulqader.", "abdulqader..mahdly"):
+            response = self.client.post(
+                "/users/settings",
+                data={"username": invalid_username},
+                follow_redirects=True,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("النقطة بين أجزاء الاسم فقط", response.get_data(as_text=True))
 
     def test_username_settings_reject_duplicate_name(self):
         with self.app.app_context():

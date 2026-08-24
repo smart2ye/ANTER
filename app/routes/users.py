@@ -12,6 +12,7 @@ from datetime import datetime
 import re
 
 users_bp = Blueprint('users', __name__, url_prefix='/users')
+USERNAME_PATTERN = re.compile(r'[A-Za-z0-9_\u0600-\u06FF](?:[A-Za-z0-9_\u0600-\u06FF]|\.(?=[A-Za-z0-9_\u0600-\u06FF])){2,29}')
 
 @users_bp.route('/api/search', methods=['GET'])
 @login_required
@@ -171,8 +172,8 @@ def settings():
             if is_anter_assistant(current_user):
                 flash('اسم مستخدم مساعد أنتر محجوز ولا يمكن تغييره.', 'danger')
                 return redirect(url_for('users.settings'))
-            if not re.fullmatch(r'[A-Za-z0-9_\u0600-\u06FF]{3,30}', username):
-                flash('اسم المستخدم يجب أن يتكون من 3 إلى 30 حرفاً أو رقماً، من دون مسافات. يمكن استخدام الشرطة السفلية _.', 'danger')
+            if not USERNAME_PATTERN.fullmatch(username):
+                flash('اسم المستخدم يجب أن يتكون من 3 إلى 30 حرفاً أو رقماً، من دون مسافات. يمكن استخدام الشرطة السفلية _ والنقطة بين أجزاء الاسم فقط.', 'danger')
                 return redirect(url_for('users.settings'))
             existing_user = User.query.filter(User.username.ilike(username)).first()
             if existing_user and existing_user.id != current_user.id:

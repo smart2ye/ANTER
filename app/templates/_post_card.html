@@ -9,9 +9,7 @@
             <div class="post-author-meta">
                 <a href="{{ url_for('users.profile', username=post.author.username) }}" class="post-author-name">
                     {{ post.author.name }}
-                    {% if post.author.is_verified %}
-                        <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>
-                    {% endif %}
+                    {{ verified_badge(post.author) }}
                 </a>
                 <div class="post-meta-row">
                     <span class="post-username">@{{ post.author.username }}</span>

@@ -39,7 +39,7 @@
                 <div class="composer-author-row">
                     <img src="{{ avatar_url(current_user) }}" class="composer-author-avatar" alt="{{ current_user.name }}">
                     <div class="composer-author-details">
-                        <strong>{{ current_user.name }}</strong>
+                        <strong>{{ current_user.name }} {{ verified_badge(current_user) }}</strong>
                         <label class="composer-audience-picker" for="quickPostVisibility">
                             <i class="fas fa-globe-asia" aria-hidden="true"></i>
                             <select id="quickPostVisibility" name="visibility" form="quickPostForm" aria-label="من يمكنه رؤية هذا المنشور">

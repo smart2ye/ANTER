@@ -7,7 +7,7 @@
         </a>
         <img src="{{ avatar_url(other) }}" width="44" height="44" class="rounded-circle" style="object-fit: cover;" alt="{{ other.name }}">
         <div class="flex-grow-1">
-            <h1 class="h6 mb-0 fw-bold">{{ other.name }}</h1>
+            <h1 class="h6 mb-0 fw-bold">{{ other.name }} {{ verified_badge(other) }}</h1>
             <span class="text-muted small">@{{ other.username }}</span>
             {% if is_anter_assistant %}
                 <span class="badge text-bg-primary ms-1"><i class="fas fa-robot me-1"></i>مساعد آلي</span>

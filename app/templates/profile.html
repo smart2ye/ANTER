@@ -26,9 +26,7 @@
             <div class="text-center text-sm-start flex-grow-1">
                 <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-2">
                     <h4 class="mb-0 fw-bold">{{ user.name }}</h4>
-                    {% if user.is_verified %}
-                        <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>
-                    {% endif %}
+                    {{ verified_badge(user) }}
                     <span class="text-muted small">@{{ user.username }}</span>
                     {% if is_anter_assistant %}
                         <span class="assistant-profile-status"><span class="assistant-online-dot"></span>متصل الآن</span>

@@ -43,7 +43,7 @@
                 <a href="{{ url_for('users.profile', username=video.author.username) }}" class="reel-author-link">
                     <img src="{{ url_for('static', filename='uploads/' + video.author.avatar) }}" alt="{{ video.author.name }}" class="reel-author-avatar">
                     <span>
-                        <strong>{{ video.author.name }}</strong>
+                        <strong>{{ video.author.name }} {{ verified_badge(video.author) }}</strong>
                         <small>@{{ video.author.username }}</small>
                     </span>
                 </a>
@@ -69,7 +69,7 @@
             <article class="reel-comment-item">
                 <img src="{{ url_for('static', filename='uploads/' + comment.author.avatar) }}" alt="{{ comment.author.name }}" class="comment-avatar">
                 <div class="reel-comment-content">
-                    <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-author">{{ comment.author.name }}</a>
+                    <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-author">{{ comment.author.name }} {{ verified_badge(comment.author) }}</a>
                     <span class="reel-comment-username">@{{ comment.author.username }}</span>
                     <p>{{ comment.content }}</p>
                 </div>

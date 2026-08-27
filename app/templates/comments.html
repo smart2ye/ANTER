@@ -15,9 +15,7 @@
                     <div class="comment-header d-flex justify-content-between align-items-center mb-1">
                         <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-author fw-bold text-dark text-decoration-none">
                             {{ comment.author.name }}
-                            {% if comment.author.is_verified %}
-                                <i class="fas fa-check-circle text-primary verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>
-                            {% endif %}
+                            {{ verified_badge(comment.author) }}
                         </a>
                         <time class="comment-time text-muted small" datetime="{{ comment.created_at.isoformat() }}">
                             {{ comment.created_at.strftime('%H:%M · %d/%m') }}
@@ -67,6 +65,7 @@
                                     <div class="comment-header d-flex justify-content-between align-items-center mb-1">
                                         <a href="{{ url_for('users.profile', username=reply.author.username) }}" class="comment-author fw-bold text-dark text-decoration-none small">
                                             {{ reply.author.name }}
+                                            {{ verified_badge(reply.author) }}
                                         </a>
                                         <time class="comment-time text-muted small" style="font-size: 0.75rem;" datetime="{{ reply.created_at.isoformat() }}">
                                             {{ reply.created_at.strftime('%H:%M · %d/%m') }}

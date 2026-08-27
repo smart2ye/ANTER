@@ -11,9 +11,7 @@
                 <a href="{{ url_for('users.profile', username=user.username) }}" class="text-decoration-none text-dark">
                     {{ user.name }}
                 </a>
-                {% if user.is_verified %}
-                    <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>
-                {% endif %}
+                {{ verified_badge(user) }}
             </h5>
             <small class="text-muted">@{{ user.username }}</small>
         </div>
@@ -47,9 +45,7 @@
             <div class="flex-grow-1">
                 <a href="{{ url_for('users.profile', username=u.username) }}" class="text-decoration-none text-dark">
                     <strong>{{ u.name }}</strong>
-                    {% if u.is_verified %}
-                        <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>
-                    {% endif %}
+                    {{ verified_badge(u) }}
                 </a>
                 <br>
                 <small class="text-muted">@{{ u.username }}</small>

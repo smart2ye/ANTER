@@ -23,7 +23,7 @@
                     <img src="{{ avatar_url(user) }}" alt="صورة {{ user.name or user.username }}" class="online-friend-avatar">
                     <span class="online-presence-dot" title="متصل الآن"></span>
                 </span>
-                <span class="online-friend-name">{{ (user.name or user.username)|truncate(11, True, '') }}</span>
+                <span class="online-friend-name">{{ (user.name or user.username)|truncate(11, True, '') }} {{ verified_badge(user) }}</span>
             </a>
             {% endfor %}
         </div>
@@ -46,7 +46,7 @@
                 </div>
                 <div class="flex-grow-1 min-w-0">
                     <div class="d-flex justify-content-between align-items-center gap-2">
-                        <strong class="conversation-name text-truncate">{{ user.name or user.username }}</strong>
+                        <strong class="conversation-name text-truncate">{{ user.name or user.username }} {{ verified_badge(user) }}</strong>
                         {% if is_muted %}<span class="text-muted small" title="تم كتم المحادثة"><i class="fas fa-bell-slash"></i></span>{% endif %}
                         <small class="text-muted text-nowrap"><time data-local-time="{{ last_msg.created_at.isoformat() }}" data-time-style="time">{{ last_msg.created_at.strftime('%H:%M') }}</time></small>
                     </div>

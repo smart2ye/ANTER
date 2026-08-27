@@ -113,6 +113,15 @@ def create_app():
     from markupsafe import Markup, escape
     import re
 
+    def verified_badge(user):
+        """شارة ثابتة وآمنة تظهر فقط للحسابات الموثقة فعلياً."""
+        if not getattr(user, 'is_verified', False):
+            return Markup('')
+        return Markup(
+            '<i class="fas fa-check-circle verified-badge" '
+            'title="حساب موثق" aria-label="حساب موثق" role="img"></i>'
+        )
+
     def linkify_hashtags(content):
         escaped_content = str(escape(content or ''))
 
@@ -126,6 +135,7 @@ def create_app():
     from app.utils.helpers import parse_mentions
     app.add_template_filter(linkify_hashtags, name='linkify_hashtags')
     app.add_template_filter(parse_mentions, name='parse_mentions')
+    app.add_template_global(verified_badge, name='verified_badge')
 
     # ============================================
     # تحديث آخر ظهور للمستخدم عند كل طلب

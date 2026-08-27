@@ -28,7 +28,7 @@
             <div class="reel-stream-meta">
                 <a href="{{ url_for('users.profile', username=video.author.username) }}" class="reel-stream-author">
                     <img src="{{ url_for('static', filename='uploads/' + video.author.avatar) }}" alt="{{ video.author.name }}">
-                    <span>@{{ video.author.username }}</span>
+                    <span>@{{ video.author.username }} {{ verified_badge(video.author) }}</span>
                 </a>
                 <h2>{{ video.title or 'ريل جديد' }}</h2>
                 {% if video.description and video.description != video.title %}

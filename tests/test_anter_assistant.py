@@ -1989,6 +1989,15 @@ class AnterAssistantTests(unittest.TestCase):
         )
         self.assertEqual(blocked_response.status_code, 302)
 
+    def test_verified_badge_template_global_only_marks_verified_accounts(self):
+        verified_badge = self.app.jinja_env.globals['verified_badge']
+        with self.app.app_context():
+            verified_user = User(username='badge_verified', email='badge-verified@example.test', name='موثّق', is_verified=True, terms_agreed=True)
+            regular_user = User(username='badge_regular', email='badge-regular@example.test', name='عادي', is_verified=False, terms_agreed=True)
+            self.assertIn('verified-badge', str(verified_badge(verified_user)))
+            self.assertIn('aria-label="حساب موثق"', str(verified_badge(verified_user)))
+            self.assertEqual('', str(verified_badge(regular_user)))
+
 
 class AdminPathSecurityTests(unittest.TestCase):
     def test_explicit_admin_path_is_normalized(self):

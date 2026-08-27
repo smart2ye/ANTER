@@ -26,7 +26,7 @@
                 <td>{{ report.reporter.name }}</td>
                 <td>
                     {% if report.message_id and report.message %}
-                        <div class="fw-semibold">رسالة بين @{{ report.message.sender.username }} و@{{ report.message.receiver.username }}</div>
+                        <div class="fw-semibold">رسالة بين @{{ report.message.sender.username }} {{ verified_badge(report.message.sender) }} و@{{ report.message.receiver.username }} {{ verified_badge(report.message.receiver) }}</div>
                         <small class="text-muted d-block text-break">{{ report.message.content[:140] or 'رسالة تحتوي على وسائط' }}</small>
                     {% elif report.post_id and report.post %}
                         <a href="{{ url_for('admin.view_post', post_id=report.post_id, from='reports') }}">منشور #{{ report.post_id }}</a>

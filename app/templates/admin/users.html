@@ -26,7 +26,7 @@
                 <td>{{ user.id }}</td>
                 <td>
                     <img src="{{ avatar_url(user) }}" width="30" height="30" class="rounded-circle me-1">
-                    {{ user.name }}<br><small class="text-muted">@{{ user.username }}</small>
+                    {{ user.name }} {{ verified_badge(user) }}<br><small class="text-muted">@{{ user.username }}</small>
                 </td>
                 <td>{{ user.email }}</td>
                 <td>

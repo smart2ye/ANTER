@@ -30,7 +30,7 @@
                         {% endif %}
                         <div class="flex-grow-1">
                             <div class="fw-bold {% if not notif.is_read %}text-primary{% endif %}">
-                                {% if actor %}{{ actor.name or actor.username }}{% else %}<span class="text-muted">حساب غير متاح</span>{% endif %}
+                                {% if actor %}{{ actor.name or actor.username }} {{ verified_badge(actor) }}{% else %}<span class="text-muted">حساب غير متاح</span>{% endif %}
                                 {% if notif.action == 'like' %}
                                     <span class="text-muted fw-normal">أعجب بمنشورك</span>
                                 {% elif notif.action == 'comment' %}

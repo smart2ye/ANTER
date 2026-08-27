@@ -27,7 +27,7 @@
                     <a href="{{ url_for('users.profile', username=user.username) }}" class="text-decoration-none">
                         <img src="{{ avatar_url(user) }}" class="rounded-circle mx-auto mt-2" width="80" height="80" style="border: 3px solid var(--primary);">
                         <div class="card-body p-1">
-                            <h6 class="card-title mb-0 text-dark">{{ user.name }}</h6>
+                            <h6 class="card-title mb-0 text-dark">{{ user.name }} {{ verified_badge(user) }}</h6>
                             <p class="text-muted small">@{{ user.username }}</p>
                 <div class="post-status mt-1">
                     {{ get_status_icon(user)|safe }}
@@ -100,7 +100,7 @@
                                     <a href="/users/${user.username}" class="text-decoration-none">
                                         <img src="${user.avatar_url || `/static/uploads/${user.avatar}`}" class="rounded-circle mx-auto mt-2" width="80" height="80" style="border: 3px solid var(--primary);">
                                         <div class="card-body p-1">
-                                            <h6 class="card-title mb-0 text-dark">${user.name}</h6>
+                                            <h6 class="card-title mb-0 text-dark">${user.name}${user.is_verified ? ' <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>' : ''}</h6>
                                             <p class="text-muted small">@${user.username}</p>
                                             <p class="small text-primary fw-bold">👥 ${user.followers_count} متابع</p>
                                         </div>

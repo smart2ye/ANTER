@@ -12,7 +12,7 @@
     <div class="d-flex align-items-center mb-2">
         <img src="{{ avatar_url(post.author) }}" width="40" height="40" class="rounded-circle me-2">
         <div>
-            <strong>{{ post.author.name }}</strong>
+            <strong>{{ post.author.name }} {{ verified_badge(post.author) }}</strong>
             <small class="text-muted d-block">@{{ post.author.username }}</small>
         </div>
         <small class="text-muted ms-auto"><time data-local-time="{{ post.created_at.isoformat() }}" data-time-style="datetime">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</time></small>

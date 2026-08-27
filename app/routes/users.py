@@ -6,6 +6,7 @@ from app.models import User, Post, Video, Notification, Follow, Report
 from app.forms.profile import ProfileForm
 from app.utils.helpers import log_user_activity, get_user_activity_summary, get_status_icon
 from app.utils.image_storage import prepare_image_data
+from app.utils.profile_text import BIO_MAX_LENGTH, normalize_bio
 from app.services.anter_assistant import is_anter_assistant
 from app.services.privacy import can_view_profile, can_view_post
 from datetime import datetime
@@ -98,13 +99,14 @@ def user_videos(username):
 def edit_profile():
     form = ProfileForm(obj=current_user)
     if form.validate_on_submit():
+        normalized_bio = normalize_bio(form.bio.data)
         changed_fields = []
         if form.name.data != current_user.name:
             changed_fields.append('الاسم')
-        if form.bio.data != current_user.bio:
-            changed_fields.append('النبذة')
+        if normalized_bio != (current_user.bio or ''):
+            changed_fields.append('السيرة الذاتية')
         current_user.name = form.name.data
-        current_user.bio = form.bio.data
+        current_user.bio = normalized_bio
         if form.avatar.data:
             avatar_data, avatar_mime = prepare_image_data(form.avatar.data)
             if avatar_data:
@@ -159,7 +161,8 @@ def settings():
         desired_phone = request.form.get('phone')
         gender = request.form.get('gender')
         birth_date_str = request.form.get('birth_date')
-        bio = request.form.get('bio')
+        submitted_bio = request.form.get('bio')
+        bio = normalize_bio(submitted_bio) if submitted_bio is not None else None
         show_email = request.form.get('show_email') == 'on'
         is_private = request.form.get('is_private') == 'on'
         profile_visibility = request.form.get('profile_visibility', 'public')
@@ -225,9 +228,12 @@ def settings():
                 flash('تاريخ الميلاد غير صالح.', 'danger')
                 return redirect(url_for('users.settings'))
         if bio is not None:
-            if bio[:200] != (current_user.bio or ''):
-                changed_fields.append('النبذة')
-            current_user.bio = bio[:200]
+            if len(bio) > BIO_MAX_LENGTH:
+                flash(f'السيرة الذاتية يجب ألا تتجاوز {BIO_MAX_LENGTH} حرفاً.', 'danger')
+                return redirect(url_for('users.settings'))
+            if bio != (current_user.bio or ''):
+                changed_fields.append('السيرة الذاتية')
+            current_user.bio = bio
         if show_email != current_user.show_email:
             changed_fields.append('خصوصية البريد')
         if is_private != current_user.is_private:

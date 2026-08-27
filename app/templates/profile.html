@@ -37,7 +37,7 @@
                 {% endif %}
                 
                 {% if user.bio %}
-                    <p class="mt-2 mb-0" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-color);">{{ user.bio }}</p>
+                    <p class="mt-2 mb-0" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-color); white-space: pre-line; overflow-wrap: anywhere;">{{ user.bio }}</p>
                 {% else %}
                     <p class="text-muted small mt-2 mb-0">✨ لا توجد سيرة ذاتية</p>
                 {% endif %}

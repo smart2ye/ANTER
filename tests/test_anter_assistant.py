@@ -1296,6 +1296,56 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn('id="loginPasswordToggle"', login_html)
         self.assertNotIn("text-anchor=\"middle\">A</text>", login_html)
 
+    def test_profile_bio_is_normalized_saved_and_rendered_with_line_breaks(self):
+        response = self.client.post(
+            '/users/edit',
+            data={
+                'name': 'مستخدم اختبار',
+                'bio': '  مؤسس مشروع ANTER  \r\n\r\n\r\n  أبني تجربة تواصل عربية.  ',
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 302)
+
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            self.assertEqual(user.bio, 'مؤسس مشروع ANTER\n\nأبني تجربة تواصل عربية.')
+
+        profile_response = self.client.get('/users/assistant_test_user')
+        profile_html = profile_response.get_data(as_text=True)
+        self.assertEqual(profile_response.status_code, 200)
+        self.assertIn('white-space: pre-line', profile_html)
+        self.assertIn('مؤسس مشروع ANTER', profile_html)
+        self.assertIn('أبني تجربة تواصل عربية.', profile_html)
+
+        settings_response = self.client.post(
+            '/users/settings',
+            data={'bio': '  سيرة محدّثة\r\n  بسطر ثانٍ  '},
+            follow_redirects=False,
+        )
+        self.assertEqual(settings_response.status_code, 302)
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            self.assertEqual(user.bio, 'سيرة محدّثة\nبسطر ثانٍ')
+
+        settings_page = self.client.get('/users/settings').get_data(as_text=True)
+        self.assertIn('id="settings-bio-count"', settings_page)
+        self.assertIn('حتى 200 حرف', settings_page)
+
+    def test_profile_bio_rejects_text_over_the_maximum_length(self):
+        long_bio = 'أ' * 201
+        response = self.client.post(
+            '/users/edit',
+            data={'name': 'مستخدم اختبار', 'bio': long_bio},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('السيرة الذاتية يجب ألا تتجاوز 200 حرفاً.', response.get_data(as_text=True))
+
+        with self.app.app_context():
+            user = db.session.get(User, self.user_id)
+            self.assertNotEqual(user.bio, long_bio)
+
     def test_simple_password_is_accepted_with_ui_warning(self):
         registration_page = self.app.test_client().get("/auth/register")
         registration_html = registration_page.get_data(as_text=True)

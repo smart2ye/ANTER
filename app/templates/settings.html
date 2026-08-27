@@ -74,8 +74,12 @@
                 <small class="text-muted">لا تُحفظ كلمة المرور أو قيم الاتصال في سجل النشاط.</small>
             </div>
             <div class="mb-2">
-                <label class="form-label">السيرة الذاتية</label>
-                <textarea name="bio" class="form-control" rows="3" maxlength="200">{{ current_user.bio }}</textarea>
+                <label class="form-label fw-semibold" for="settings-bio">السيرة الذاتية</label>
+                <textarea name="bio" id="settings-bio" class="form-control" rows="4" maxlength="200" placeholder="اكتب نبذة قصيرة تعرّف بك أو بمشروعك..." aria-describedby="settings-bio-help settings-bio-count">{{ current_user.bio or '' }}</textarea>
+                <div class="d-flex justify-content-between gap-2 mt-1">
+                    <small id="settings-bio-help" class="text-muted">حتى 200 حرف. تُحفظ المسافات والأسطر بصورة مرتبة.</small>
+                    <small id="settings-bio-count" class="text-muted text-nowrap" aria-live="polite">0 / 200</small>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary">حفظ المعلومات</button>
         </form>
@@ -155,6 +159,16 @@
                 ? 'اضغط «حفظ اسم المستخدم» لتطبيق التغيير.'
                 : 'أدخل اسماً من 3 إلى 30 حرفاً أو رقماً.';
         });
+    }
+
+    const settingsBioInput = document.getElementById('settings-bio');
+    const settingsBioCount = document.getElementById('settings-bio-count');
+    if (settingsBioInput && settingsBioCount) {
+        const updateSettingsBioCount = () => {
+            settingsBioCount.textContent = `${settingsBioInput.value.length} / 200`;
+        };
+        settingsBioInput.addEventListener('input', updateSettingsBioCount);
+        updateSettingsBioCount();
     }
 
     // تبديل الصوت من الإعدادات

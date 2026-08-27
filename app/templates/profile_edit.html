@@ -10,8 +10,13 @@
             {% for error in form.name.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
         </div>
         <div class="mb-3">
-            {{ form.bio.label(class="form-label") }}
-            {{ form.bio(class="form-control", rows=3) }}
+            {{ form.bio.label(class="form-label fw-semibold", for="profile-bio") }}
+            {{ form.bio(id="profile-bio", class="form-control" + (" is-invalid" if form.bio.errors else ""), rows=4, maxlength="200", placeholder="اكتب نبذة قصيرة تعرّف بك أو بمشروعك...", aria_describedby="profile-bio-help profile-bio-count") }}
+            <div class="d-flex justify-content-between gap-2 mt-1">
+                <small id="profile-bio-help" class="text-muted">حتى 200 حرف. يمكنك استخدام سطرين أو فقرتين قصيرتين.</small>
+                <small id="profile-bio-count" class="text-muted text-nowrap" aria-live="polite">0 / 200</small>
+            </div>
+            {% for error in form.bio.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
         </div>
         <div class="mb-3">
             {{ form.avatar.label(class="form-label") }}
@@ -24,4 +29,18 @@
     </form>
     <a href="{{ url_for('users.profile', username=current_user.username) }}" class="btn btn-outline-secondary w-100 mt-2">إلغاء</a>
 </div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    const profileBioInput = document.getElementById('profile-bio');
+    const profileBioCount = document.getElementById('profile-bio-count');
+    if (profileBioInput && profileBioCount) {
+        const updateProfileBioCount = () => {
+            profileBioCount.textContent = `${profileBioInput.value.length} / 200`;
+        };
+        profileBioInput.addEventListener('input', updateProfileBioCount);
+        updateProfileBioCount();
+    }
+</script>
 {% endblock %}

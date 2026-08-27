@@ -611,6 +611,21 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn(self.app.config["ANTER_MESSENGER_APK_URL"], page_html)
         self.assertIn(self.app.config["ANTER_MESSENGER_APK_SHA256"], page_html)
 
+    def test_help_center_is_public_and_linked_from_public_footer(self):
+        anonymous_client = self.app.test_client()
+        help_page = anonymous_client.get('/help')
+        help_html = help_page.get_data(as_text=True)
+
+        self.assertEqual(help_page.status_code, 200)
+        self.assertIn('مركز مساعدة ANTER', help_html)
+        self.assertIn('إنشاء حساب جديد', help_html)
+        self.assertIn('استعادة كلمة المرور', help_html)
+        self.assertIn('href="/help"', help_html)
+
+        privacy_page = anonymous_client.get('/privacy')
+        self.assertEqual(privacy_page.status_code, 200)
+        self.assertIn('href="/help"', privacy_page.get_data(as_text=True))
+
     def test_founder_can_switch_to_assistant_and_back(self):
         previous_owner = self.app.config['ANTER_ASSISTANT_SWITCH_OWNER_USERNAME']
         self.app.config['ANTER_ASSISTANT_SWITCH_OWNER_USERNAME'] = 'assistant_test_user'

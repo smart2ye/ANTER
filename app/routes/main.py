@@ -205,6 +205,12 @@ def privacy():
 def terms():
     return render_template('terms.html')
 
+
+@main_bp.route('/help')
+def help_center():
+    return render_template('help.html')
+
+
 @main_bp.route('/about')
 def about():
     return render_template(
@@ -226,6 +232,7 @@ def sitemap():
     pages = [
         {'loc': url_for('main.index', _external=True), 'priority': 1.0, 'changefreq': 'always'},
         {'loc': url_for('main.about', _external=True), 'priority': 0.8, 'changefreq': 'monthly'},
+        {'loc': url_for('main.help_center', _external=True), 'priority': 0.7, 'changefreq': 'monthly'},
         {'loc': url_for('main.privacy', _external=True), 'priority': 0.5, 'changefreq': 'monthly'},
         {'loc': url_for('main.terms', _external=True), 'priority': 0.5, 'changefreq': 'monthly'},
         {'loc': url_for('auth.login', _external=True), 'priority': 0.6, 'changefreq': 'monthly'},

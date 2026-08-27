@@ -1019,6 +1019,11 @@ class AnterAssistantTests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.location, '/')
+        self.assertTrue(any(
+            header.startswith('remember_token=')
+            for header in response.headers.getlist('Set-Cookie')
+        ))
         with self.app.app_context():
             user = User.query.filter_by(phone="+967737254619").first()
             self.assertIsNotNone(user)
@@ -1036,6 +1041,10 @@ class AnterAssistantTests(unittest.TestCase):
             ).order_by(Message.id.desc()).first()
             self.assertIsNotNone(welcome)
             self.assertIn('مرحباً بك في ANTER', welcome.content)
+
+        with anonymous_client.session_transaction() as session:
+            self.assertEqual(session['_user_id'], str(user.id))
+        self.assertEqual(anonymous_client.get('/').status_code, 200)
 
         login_response = anonymous_client.post(
             "/auth/login",
@@ -1063,6 +1072,11 @@ class AnterAssistantTests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.location, '/')
+        self.assertTrue(any(
+            header.startswith('remember_token=')
+            for header in response.headers.getlist('Set-Cookie')
+        ))
         with self.app.app_context():
             user = User.query.filter_by(email="email-login@example.com").first()
             self.assertIsNotNone(user)
@@ -1071,6 +1085,10 @@ class AnterAssistantTests(unittest.TestCase):
             with self.app.test_request_context():
                 self.assertEqual(avatar_url(user), "/static/img/default_avatar_female.png")
             generated_username = user.username
+
+        with anonymous_client.session_transaction() as session:
+            self.assertEqual(session['_user_id'], str(user.id))
+        self.assertEqual(anonymous_client.get('/').status_code, 200)
 
         login_response = anonymous_client.post(
             "/auth/login",

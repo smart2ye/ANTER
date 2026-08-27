@@ -114,8 +114,9 @@ def register():
         send_welcome_message(user)
         db.session.commit()
         log_user_activity(user.id, 'registration')
-        flash('✅ تم التسجيل بنجاح، يمكنك الدخول الآن.', 'success')
-        return redirect(url_for('auth.login'))
+        login_user(user, remember=True)
+        flash('✅ تم إنشاء الحساب وتسجيل دخولك بنجاح.', 'success')
+        return redirect(url_for('main.index'))
     return render_template('auth/register.html', form=form)
 
 @auth_bp.route('/switch-to-assistant', methods=['POST'])

@@ -1319,7 +1319,7 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn('أبني تجربة تواصل عربية.', profile_html)
 
         settings_response = self.client.post(
-            '/users/settings',
+            '/users/settings/bio',
             data={'bio': '  سيرة محدّثة\r\n  بسطر ثانٍ  '},
             follow_redirects=False,
         )
@@ -1329,6 +1329,9 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertEqual(user.bio, 'سيرة محدّثة\nبسطر ثانٍ')
 
         settings_page = self.client.get('/users/settings').get_data(as_text=True)
+        self.assertIn('id="settings-bio-form"', settings_page)
+        self.assertIn('action="/users/settings/bio"', settings_page)
+        self.assertIn('id="save-settings-bio-button"', settings_page)
         self.assertIn('id="settings-bio-count"', settings_page)
         self.assertIn('حتى 200 حرف', settings_page)
 

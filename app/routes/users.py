@@ -161,8 +161,6 @@ def settings():
         desired_phone = request.form.get('phone')
         gender = request.form.get('gender')
         birth_date_str = request.form.get('birth_date')
-        submitted_bio = request.form.get('bio')
-        bio = normalize_bio(submitted_bio) if submitted_bio is not None else None
         show_email = request.form.get('show_email') == 'on'
         is_private = request.form.get('is_private') == 'on'
         profile_visibility = request.form.get('profile_visibility', 'public')
@@ -227,13 +225,6 @@ def settings():
             except ValueError:
                 flash('تاريخ الميلاد غير صالح.', 'danger')
                 return redirect(url_for('users.settings'))
-        if bio is not None:
-            if len(bio) > BIO_MAX_LENGTH:
-                flash(f'السيرة الذاتية يجب ألا تتجاوز {BIO_MAX_LENGTH} حرفاً.', 'danger')
-                return redirect(url_for('users.settings'))
-            if bio != (current_user.bio or ''):
-                changed_fields.append('السيرة الذاتية')
-            current_user.bio = bio
         if show_email != current_user.show_email:
             changed_fields.append('خصوصية البريد')
         if is_private != current_user.is_private:
@@ -277,6 +268,25 @@ def settings():
         is_anter_assistant=is_anter_assistant,
         verification_request=verification_request,
     )
+
+
+@users_bp.route('/settings/bio', methods=['POST'])
+@login_required
+def update_settings_bio():
+    bio = normalize_bio(request.form.get('bio', ''))
+    if len(bio) > BIO_MAX_LENGTH:
+        flash(f'السيرة الذاتية يجب ألا تتجاوز {BIO_MAX_LENGTH} حرفاً.', 'danger')
+        return redirect(url_for('users.settings'))
+
+    if bio == (current_user.bio or ''):
+        flash('السيرة الذاتية محفوظة بالفعل.', 'info')
+        return redirect(url_for('users.settings'))
+
+    current_user.bio = bio
+    db.session.commit()
+    log_user_activity(current_user.id, 'settings_update', {'fields': ['السيرة الذاتية']})
+    flash('تم حفظ السيرة الذاتية بنجاح.', 'success')
+    return redirect(url_for('users.settings'))
 
 
 @users_bp.route('/verification-request', methods=['POST'])

@@ -73,6 +73,10 @@
                 <input type="password" name="contact_password" class="form-control" autocomplete="current-password">
                 <small class="text-muted">لا تُحفظ كلمة المرور أو قيم الاتصال في سجل النشاط.</small>
             </div>
+            <button type="submit" class="btn btn-primary">حفظ المعلومات</button>
+        </form>
+        <form method="POST" action="{{ url_for('users.update_settings_bio') }}" id="settings-bio-form" class="border-top mt-4 pt-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-2">
                 <label class="form-label fw-semibold" for="settings-bio">السيرة الذاتية</label>
                 <textarea name="bio" id="settings-bio" class="form-control" rows="4" maxlength="200" placeholder="اكتب نبذة قصيرة تعرّف بك أو بمشروعك..." aria-describedby="settings-bio-help settings-bio-count">{{ current_user.bio or '' }}</textarea>
@@ -81,7 +85,7 @@
                     <small id="settings-bio-count" class="text-muted text-nowrap" aria-live="polite">0 / 200</small>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary">حفظ المعلومات</button>
+            <button type="submit" class="btn btn-primary" id="save-settings-bio-button"><i class="fas fa-check me-1"></i> حفظ السيرة الذاتية</button>
         </form>
     </div>
 

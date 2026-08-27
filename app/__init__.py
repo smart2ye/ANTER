@@ -12,27 +12,17 @@ from app.models import (
     UserBlock,
 )
 from app.routes import register_blueprints
-import hashlib
-import hmac
 import os
+import secrets
 from datetime import datetime, timedelta
 
 
-_ADMIN_PATH_SALT = b"anter-admin-path-v1"
-
-
 def _get_admin_path(config):
-    """Return an explicit route or a stable, non-logged fallback route."""
+    """Return an explicit route or a fresh random route for this app startup."""
     configured_path = os.environ.get("ADMIN_PATH", "").strip().strip("/")
     if configured_path:
         return configured_path
-
-    secret_key = str(config.get("SECRET_KEY", "")).encode("utf-8")
-    if not secret_key:
-        raise RuntimeError("SECRET_KEY must be configured before creating the application.")
-
-    digest = hmac.new(secret_key, _ADMIN_PATH_SALT, hashlib.sha256).hexdigest()[:24]
-    return f"admin-{digest}"
+    return f"admin-{secrets.token_urlsafe(24)}"
 
 
 def create_app():
@@ -47,8 +37,8 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    # يبقى المسار ثابتاً عبر إعادة التشغيل ولا يُطبع في السجلات.
-    # يمكن تدويره صراحةً عبر متغير البيئة ADMIN_PATH.
+    # يتغير المسار العشوائي عند كل تشغيل ولا يُطبع في السجلات.
+    # يمكن تثبيته صراحةً عبر متغير البيئة ADMIN_PATH عند الحاجة التشغيلية.
     app.config["ADMIN_PATH"] = _get_admin_path(app.config)
 
     register_blueprints(app)

@@ -1766,12 +1766,17 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn('@analytics_popular', page)
         self.assertIn('@analytics_active', page)
 
+        stable_entry_response = admin_client.get('/admin')
+        self.assertEqual(stable_entry_response.status_code, 302)
+        self.assertIn(f'/{self.app.config["ADMIN_PATH"]}/', stable_entry_response.location)
+
         regular_client = self.app.test_client()
         with regular_client.session_transaction() as session:
             session['_user_id'] = str(regular_user_id)
             session['_fresh'] = True
         regular_response = regular_client.get(f'/{self.app.config["ADMIN_PATH"]}/')
         self.assertEqual(regular_response.status_code, 302)
+        self.assertEqual(regular_client.get('/admin').status_code, 404)
 
     def test_startup_owner_admin_promotion_is_limited_to_configured_account(self):
         from app.services.owner_admin import ensure_configured_owner_is_admin
@@ -1878,21 +1883,14 @@ class AdminPathSecurityTests(unittest.TestCase):
                 "admin-fixed-route",
             )
 
-    def test_fallback_path_is_stable_for_same_secret(self):
+    def test_fallback_path_is_random_for_each_app_start(self):
         with patch.dict(os.environ, {"ADMIN_PATH": ""}, clear=False):
-            config = {"SECRET_KEY": "stable-test-secret"}
-            first_path = _get_admin_path(config)
-            second_path = _get_admin_path(config)
+            with patch('app.secrets.token_urlsafe', side_effect=['first-path', 'second-path']):
+                first_path = _get_admin_path({"SECRET_KEY": "unused"})
+                second_path = _get_admin_path({"SECRET_KEY": "unused"})
 
-        self.assertEqual(first_path, second_path)
-        self.assertTrue(first_path.startswith("admin-"))
-        self.assertGreater(len(first_path), len("admin-"))
-
-    def test_fallback_path_changes_when_secret_changes(self):
-        with patch.dict(os.environ, {"ADMIN_PATH": ""}, clear=False):
-            first_path = _get_admin_path({"SECRET_KEY": "first-secret"})
-            second_path = _get_admin_path({"SECRET_KEY": "second-secret"})
-
+        self.assertEqual(first_path, 'admin-first-path')
+        self.assertEqual(second_path, 'admin-second-path')
         self.assertNotEqual(first_path, second_path)
 
 

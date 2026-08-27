@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, abort, render_template, request, jsonify, redirect, url_for
 from flask import current_app, jsonify
 from flask_login import login_required, current_user
 from app.models import Post, Video, Like, Comment, Follow, HiddenPost
@@ -13,6 +13,14 @@ from collections import Counter
 import os
 
 main_bp = Blueprint('main', __name__)
+
+
+@main_bp.route('/admin')
+def admin_entry():
+    """Redirect a signed-in administrator to the current random admin route."""
+    if not current_user.is_authenticated or not current_user.is_admin:
+        abort(404)
+    return redirect(url_for('admin.dashboard'))
 
 
 @main_bp.route('/api/messenger/release')

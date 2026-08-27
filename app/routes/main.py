@@ -1,8 +1,9 @@
-from flask import Blueprint, abort, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, abort, flash, render_template, request, jsonify, redirect, session, url_for
 from flask import current_app, jsonify
 from flask_login import login_required, current_user
-from app.models import Post, Video, Like, Comment, Follow, HiddenPost
+from app.models import Post, Video, Like, Comment, Follow, HiddenPost, Report, User
 from app.extensions import db
+from app.forms.support import SupportRequestForm
 from sqlalchemy import func, or_, and_
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
@@ -206,9 +207,39 @@ def terms():
     return render_template('terms.html')
 
 
-@main_bp.route('/help')
+@main_bp.route('/help', methods=['GET', 'POST'])
 def help_center():
-    return render_template('help.html')
+    form = SupportRequestForm()
+    if form.validate_on_submit():
+        last_submission = session.get('support_request_submitted_at', 0)
+        now_timestamp = int(datetime.utcnow().timestamp())
+        if now_timestamp - last_submission < 300:
+            flash('تم استلام طلبك مؤخراً. انتظر بضع دقائق قبل إرسال طلب جديد.', 'warning')
+            return redirect(url_for('main.help_center'))
+
+        reporter = current_user if current_user.is_authenticated else User.query.filter_by(
+            username=current_app.config['ANTER_ASSISTANT_USERNAME']
+        ).first()
+        if reporter is None:
+            abort(503)
+
+        contact = (form.contact.data or '').strip()
+        report = Report(
+            reporter_id=reporter.id,
+            reason=f'support:{form.topic.data}',
+            details=(
+                '[طلب مساعدة]\n'
+                f'المرسل: {current_user.name if current_user.is_authenticated else "زائر"}\n'
+                f'وسيلة التواصل: {contact or "غير مقدمة"}\n\n'
+                f'{form.message.data.strip()}'
+            ),
+        )
+        db.session.add(report)
+        db.session.commit()
+        session['support_request_submitted_at'] = now_timestamp
+        flash('تم استلام طلب المساعدة. سنراجعه ونرد عبر وسيلة التواصل التي تركتها إن وُجدت.', 'success')
+        return redirect(url_for('main.help_center'))
+    return render_template('help.html', form=form)
 
 
 @main_bp.route('/about')

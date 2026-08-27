@@ -53,5 +53,39 @@
             <a href="{{ url_for('main.terms') }}" class="btn btn-light rounded-pill">الشروط والأحكام</a>
         </div>
     </section>
+
+    <section class="mt-5 rounded-4 p-4 p-md-5 border shadow-sm" id="support-request" style="background: var(--fb-bg);">
+        <div class="d-flex align-items-start gap-3 mb-4">
+            <i class="fas fa-headset fa-xl text-primary mt-1" aria-hidden="true"></i>
+            <div>
+                <h2 class="h5 fw-bold mb-1">طلب مساعدة</h2>
+                <p class="text-muted mb-0">أرسل تفاصيل المشكلة. لا تكتب كلمة المرور أو أي رمز تحقق داخل الطلب.</p>
+            </div>
+        </div>
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    {{ form.topic.label(class="form-label fw-semibold") }}
+                    {{ form.topic(class="form-select" + (" is-invalid" if form.topic.errors else "")) }}
+                    {% for error in form.topic.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    {{ form.contact.label(class="form-label fw-semibold") }}
+                    {{ form.contact(class="form-control", placeholder="بريد إلكتروني أو رقم جوال") }}
+                    <div class="form-text">{{ form.contact.description }}</div>
+                    {% for error in form.contact.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-12">
+                    {{ form.message.label(class="form-label fw-semibold") }}
+                    {{ form.message(class="form-control" + (" is-invalid" if form.message.errors else ""), rows="5", placeholder="اشرح ما حدث، ومتى ظهر، وما الذي جربته.") }}
+                    {% for error in form.message.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-12">
+                    {{ form.submit(class="btn btn-primary rounded-pill px-4") }}
+                </div>
+            </div>
+        </form>
+    </section>
 </div>
 {% endblock %}

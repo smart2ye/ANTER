@@ -196,6 +196,16 @@ def reports():
     reports_list = Report.query.order_by(Report.created_at.desc()).all()
     return render_template('admin/reports.html', reports=reports_list)
 
+
+@admin_bp.route('/support-requests')
+@login_required
+@admin_required
+def support_requests():
+    requests = Report.query.filter(
+        Report.reason.startswith('support:')
+    ).order_by(Report.created_at.desc()).all()
+    return render_template('admin/support_requests.html', requests=requests)
+
 @admin_bp.route('/reports/resolve/<int:report_id>', methods=['POST'])
 @login_required
 @admin_required

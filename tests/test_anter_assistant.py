@@ -626,6 +626,47 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertEqual(privacy_page.status_code, 200)
         self.assertIn('href="/help"', privacy_page.get_data(as_text=True))
 
+    def test_anonymous_visitor_can_submit_support_request_for_admin_review(self):
+        anonymous_client = self.app.test_client()
+        response = anonymous_client.post(
+            '/help',
+            data={
+                'topic': 'login',
+                'contact': 'visitor@example.test',
+                'message': 'لا أستطيع تسجيل الدخول إلى حسابي رغم صحة البيانات.',
+            },
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.location, '/help')
+        with self.app.app_context():
+            request_report = Report.query.filter_by(reason='support:login').order_by(Report.id.desc()).first()
+            self.assertIsNotNone(request_report)
+            self.assertIn('[طلب مساعدة]', request_report.details)
+            self.assertIn('visitor@example.test', request_report.details)
+            self.assertIn('لا أستطيع تسجيل الدخول', request_report.details)
+
+            admin = User(
+                username='support_review_admin',
+                email='support-review-admin@example.test',
+                name='مدير الدعم',
+                is_admin=True,
+                terms_agreed=True,
+            )
+            admin.set_password('support-review-admin-password')
+            db.session.add(admin)
+            db.session.commit()
+            admin_id = admin.id
+
+        admin_client = self.app.test_client()
+        with admin_client.session_transaction() as session:
+            session['_user_id'] = str(admin_id)
+            session['_fresh'] = True
+        admin_response = admin_client.get(f'/{self.app.config["ADMIN_PATH"]}/support-requests')
+        self.assertEqual(admin_response.status_code, 200)
+        self.assertIn('visitor@example.test', admin_response.get_data(as_text=True))
+
     def test_founder_can_switch_to_assistant_and_back(self):
         previous_owner = self.app.config['ANTER_ASSISTANT_SWITCH_OWNER_USERNAME']
         self.app.config['ANTER_ASSISTANT_SWITCH_OWNER_USERNAME'] = 'assistant_test_user'

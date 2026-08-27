@@ -1998,6 +1998,72 @@ class AnterAssistantTests(unittest.TestCase):
             self.assertIn('aria-label="حساب موثق"', str(verified_badge(verified_user)))
             self.assertEqual('', str(verified_badge(regular_user)))
 
+    def test_user_can_request_verification_and_admin_can_approve_or_reject_once(self):
+        with self.app.app_context():
+            admin = User(username='request_admin', email='request-admin@example.test', name='مدير الطلبات', is_admin=True, terms_agreed=True)
+            applicant = User(username='request_applicant', email='request-applicant@example.test', name='صاحب الطلب', terms_agreed=True)
+            rejected_applicant = User(username='request_rejected', email='request-rejected@example.test', name='طلب مرفوض', terms_agreed=True)
+            admin.set_password('request-admin-password')
+            applicant.set_password('request-applicant-password')
+            rejected_applicant.set_password('request-rejected-password')
+            db.session.add_all([admin, applicant, rejected_applicant])
+            db.session.commit()
+            admin_id, applicant_id, rejected_id = admin.id, applicant.id, rejected_applicant.id
+
+        applicant_client = self.app.test_client()
+        with applicant_client.session_transaction() as session:
+            session['_user_id'] = str(applicant_id)
+            session['_fresh'] = True
+        created = applicant_client.post('/users/verification-request', data={
+            'details': 'هذا هو الحساب الرسمي لمشروعي وأحتاج علامة تحقق لحماية المتابعين.',
+        })
+        self.assertEqual(created.status_code, 302)
+        duplicate = applicant_client.post('/users/verification-request', data={
+            'details': 'هذا طلب مكرر ينبغي ألا ينشئ سجلاً معلقاً آخر للحساب نفسه.',
+        })
+        self.assertEqual(duplicate.status_code, 302)
+
+        rejected_client = self.app.test_client()
+        with rejected_client.session_transaction() as session:
+            session['_user_id'] = str(rejected_id)
+            session['_fresh'] = True
+        rejected_client.post('/users/verification-request', data={
+            'details': 'هذا حساب يحتاج إلى مراجعة توثيق مستقلة لاختبار قرار الرفض الإداري.',
+        })
+
+        with self.app.app_context():
+            requests = Report.query.filter_by(reason='verification:account').order_by(Report.id).all()
+            self.assertGreaterEqual(len(requests), 2)
+            first_request = next(item for item in requests if item.reporter_id == applicant_id)
+            rejected_request = next(item for item in requests if item.reporter_id == rejected_id)
+            self.assertEqual(Report.query.filter_by(reporter_id=applicant_id, reason='verification:account', status='pending').count(), 1)
+
+        admin_client = self.app.test_client()
+        with admin_client.session_transaction() as session:
+            session['_user_id'] = str(admin_id)
+            session['_fresh'] = True
+        list_response = admin_client.get(f'/{self.app.config["ADMIN_PATH"]}/verification-requests')
+        self.assertEqual(list_response.status_code, 200)
+        self.assertIn('طلبات توثيق الحسابات', list_response.get_data(as_text=True))
+
+        approved = admin_client.post(f'/{self.app.config["ADMIN_PATH"]}/verification-requests/{first_request.id}/approve')
+        self.assertEqual(approved.status_code, 200)
+        already_reviewed = admin_client.post(f'/{self.app.config["ADMIN_PATH"]}/verification-requests/{first_request.id}/approve')
+        self.assertEqual(already_reviewed.status_code, 409)
+        rejected = admin_client.post(f'/{self.app.config["ADMIN_PATH"]}/verification-requests/{rejected_request.id}/reject')
+        self.assertEqual(rejected.status_code, 200)
+
+        with self.app.app_context():
+            self.assertTrue(User.query.get(applicant_id).is_verified)
+            self.assertFalse(User.query.get(rejected_id).is_verified)
+            self.assertEqual(Report.query.get(first_request.id).status, 'resolved')
+            self.assertEqual(Report.query.get(rejected_request.id).status, 'rejected')
+            self.assertIsNotNone(Notification.query.filter_by(user_id=applicant_id, action='verification_approved').first())
+            self.assertIsNotNone(Notification.query.filter_by(user_id=rejected_id, action='verification_rejected').first())
+
+        blocked = applicant_client.get(f'/{self.app.config["ADMIN_PATH"]}/verification-requests')
+        self.assertEqual(blocked.status_code, 302)
+
 
 class AdminPathSecurityTests(unittest.TestCase):
     def test_explicit_admin_path_is_normalized(self):

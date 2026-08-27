@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask import abort
 from flask_login import login_required, current_user, logout_user
 from app.extensions import db, csrf
-from app.models import User, Post, Video, Notification, Follow
+from app.models import User, Post, Video, Notification, Follow, Report
 from app.forms.profile import ProfileForm
 from app.utils.helpers import log_user_activity, get_user_activity_summary, get_status_icon
 from app.utils.image_storage import prepare_image_data
@@ -13,6 +13,7 @@ import re
 
 users_bp = Blueprint('users', __name__, url_prefix='/users')
 USERNAME_PATTERN = re.compile(r'[A-Za-z0-9_\u0600-\u06FF](?:[A-Za-z0-9_\u0600-\u06FF]|\.(?=[A-Za-z0-9_\u0600-\u06FF])){2,29}')
+VERIFICATION_REQUEST_REASON = 'verification:account'
 
 @users_bp.route('/api/search', methods=['GET'])
 @login_required
@@ -261,7 +262,48 @@ def settings():
         flash('تم تحديث الإعدادات بنجاح.', 'success')
         return redirect(url_for('users.settings'))
     
-    return render_template('settings.html', is_anter_assistant=is_anter_assistant)
+    verification_request = Report.query.filter_by(
+        reporter_id=current_user.id,
+        reason=VERIFICATION_REQUEST_REASON,
+    ).order_by(Report.created_at.desc()).first()
+    return render_template(
+        'settings.html',
+        is_anter_assistant=is_anter_assistant,
+        verification_request=verification_request,
+    )
+
+
+@users_bp.route('/verification-request', methods=['POST'])
+@login_required
+def request_verification():
+    if current_user.is_verified:
+        flash('حسابك موثق بالفعل.', 'info')
+        return redirect(url_for('users.settings'))
+
+    details = request.form.get('details', '').strip()
+    if len(details) < 20 or len(details) > 500:
+        flash('اكتب سبب طلب التوثيق في 20 إلى 500 حرف.', 'danger')
+        return redirect(url_for('users.settings'))
+
+    pending_request = Report.query.filter_by(
+        reporter_id=current_user.id,
+        reason=VERIFICATION_REQUEST_REASON,
+        status='pending',
+    ).first()
+    if pending_request:
+        flash('لديك طلب توثيق قيد المراجعة بالفعل.', 'info')
+        return redirect(url_for('users.settings'))
+
+    db.session.add(Report(
+        reporter_id=current_user.id,
+        reason=VERIFICATION_REQUEST_REASON,
+        details=details,
+        status='pending',
+    ))
+    db.session.commit()
+    log_user_activity(current_user.id, 'verification_request')
+    flash('تم إرسال طلب التوثيق للإدارة لمراجعته.', 'success')
+    return redirect(url_for('users.settings'))
 
 @users_bp.route('/follow/<int:user_id>', methods=['POST'])
 @login_required

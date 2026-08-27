@@ -45,6 +45,10 @@
                                     <span class="text-muted fw-normal">أرسل لك رسالة صوتية</span>
                                 {% elif notif.action == 'voice_call' %}
                                     <span class="text-muted fw-normal">اتصل بك صوتيًا</span>
+                                {% elif notif.action == 'verification_approved' %}
+                                    <span class="text-muted fw-normal">وافق على توثيق حسابك</span>
+                                {% elif notif.action == 'verification_rejected' %}
+                                    <span class="text-muted fw-normal">راجع طلب توثيق حسابك ولم يُقبل</span>
                                 {% else %}
                                     <span class="text-muted fw-normal">لديك إشعار سابق</span>
                                 {% endif %}

@@ -119,6 +119,27 @@
             <button type="submit" class="btn btn-primary">حفظ الخصوصية</button>
         </form>
     </div>
+
+    <!-- طلب التوثيق -->
+    <div class="mt-4">
+        <h6 class="border-bottom pb-2"><i class="fas fa-certificate text-primary"></i> توثيق الحساب</h6>
+        {% if current_user.is_verified %}
+            <div class="alert alert-success mb-0"><i class="fas fa-check-circle"></i> حسابك موثّق وتظهر العلامة الزرقاء بجوار اسمك.</div>
+        {% elif verification_request and verification_request.status == 'pending' %}
+            <div class="alert alert-warning mb-0"><i class="fas fa-clock"></i> طلب التوثيق قيد المراجعة منذ <time data-local-time="{{ verification_request.created_at.isoformat() }}" data-time-style="date">{{ verification_request.created_at.strftime('%Y-%m-%d') }}</time>. سنرسل لك إشعاراً عند صدور القرار.</div>
+        {% else %}
+            {% if verification_request and verification_request.status == 'rejected' %}
+                <div class="alert alert-light border small">لم يُقبل طلبك السابق. يمكنك إرسال طلب جديد بمعلومات أوضح.</div>
+            {% endif %}
+            <p class="text-muted small">أخبر الإدارة باختصار لماذا ينبغي توثيق حسابك. لا ترسل كلمات مرور أو بيانات حساسة.</p>
+            <form method="POST" action="{{ url_for('users.request_verification') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label class="form-label" for="verification-details">سبب طلب التوثيق</label>
+                <textarea id="verification-details" name="details" class="form-control" rows="3" minlength="20" maxlength="500" required placeholder="مثال: هذا حساب الجهة أو المشروع الرسمي، وأرغب في توثيقه لأن..."></textarea>
+                <button type="submit" class="btn btn-outline-primary mt-2"><i class="fas fa-paper-plane"></i> إرسال طلب التوثيق</button>
+            </form>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}
 <script>

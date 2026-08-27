@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% set admin_page_title = 'طلبات التوثيق' %}
+{% include 'admin/_navigation.html' %}
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h1 class="h5 mb-1"><i class="fas fa-certificate text-primary"></i> طلبات توثيق الحسابات</h1>
+                <p class="text-muted small mb-0">راجِع المعلومات قبل إظهار علامة التوثيق للحساب.</p>
+            </div>
+            <span class="badge bg-warning text-dark">{{ requests|selectattr('status', 'equalto', 'pending')|list|length }} معلّق</span>
+        </div>
+
+        {% if requests %}
+            <div class="list-group list-group-flush">
+                {% for verification_request in requests %}
+                <article class="list-group-item px-0 py-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                        <div class="flex-grow-1">
+                            <a class="fw-bold text-decoration-none" href="{{ url_for('users.profile', username=verification_request.reporter.username) }}">
+                                {{ verification_request.reporter.name }} {{ verified_badge(verification_request.reporter) }}
+                            </a>
+                            <span class="text-muted small">@{{ verification_request.reporter.username }}</span>
+                            <div class="small text-muted mt-1"><time data-local-time="{{ verification_request.created_at.isoformat() }}" data-time-style="datetime">{{ verification_request.created_at.strftime('%Y-%m-%d %H:%M') }}</time></div>
+                            <p class="mb-0 mt-2 text-break">{{ verification_request.details }}</p>
+                        </div>
+                        <div class="text-nowrap">
+                            {% if verification_request.status == 'pending' %}
+                                <button class="btn btn-success btn-sm verification-review" data-url="{{ url_for('admin.approve_verification_request', request_id=verification_request.id) }}"><i class="fas fa-check"></i> قبول</button>
+                                <button class="btn btn-outline-danger btn-sm verification-review" data-url="{{ url_for('admin.reject_verification_request', request_id=verification_request.id) }}"><i class="fas fa-times"></i> رفض</button>
+                            {% elif verification_request.status == 'resolved' %}
+                                <span class="badge bg-success">تم القبول</span>
+                            {% else %}
+                                <span class="badge bg-secondary">تم الرفض</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center text-muted py-5"><i class="fas fa-certificate fa-3x mb-3"></i><p class="mb-0">لا توجد طلبات توثيق حتى الآن.</p></div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+document.querySelectorAll('.verification-review').forEach((button) => {
+    button.addEventListener('click', async () => {
+        button.disabled = true;
+        try {
+            const response = await fetch(button.dataset.url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token() }}',
+                },
+            });
+            if (response.ok) location.reload();
+            else button.disabled = false;
+        } catch (_) {
+            button.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

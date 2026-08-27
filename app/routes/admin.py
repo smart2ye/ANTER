@@ -1,12 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from app.extensions import db, csrf
-from app.models import CommentLike, Follow, Like, Post, Comment, Report, Repost, User, UserActivity
+from app.models import CommentLike, Follow, Like, Post, Comment, Report, Repost, User, UserActivity, Notification
 from datetime import datetime, timedelta
 from sqlalchemy import func
 import os
 
 admin_bp = Blueprint('admin', __name__)
+VERIFICATION_REQUEST_REASON = 'verification:account'
 
 def admin_required(f):
     from functools import wraps
@@ -211,6 +212,64 @@ def support_requests():
         Report.reason.startswith('support:')
     ).order_by(Report.created_at.desc()).all()
     return render_template('admin/support_requests.html', requests=requests)
+
+
+@admin_bp.route('/verification-requests')
+@login_required
+@admin_required
+def verification_requests():
+    requests = Report.query.filter_by(
+        reason=VERIFICATION_REQUEST_REASON,
+    ).order_by(Report.created_at.desc()).all()
+    return render_template('admin/verification_requests.html', requests=requests)
+
+
+@admin_bp.route('/verification-requests/<int:request_id>/approve', methods=['POST'])
+@login_required
+@admin_required
+def approve_verification_request(request_id):
+    verification_request = Report.query.filter_by(
+        id=request_id,
+        reason=VERIFICATION_REQUEST_REASON,
+    ).first_or_404()
+    if verification_request.status != 'pending':
+        return jsonify({'success': False, 'message': 'تمت مراجعة هذا الطلب بالفعل.'}), 409
+
+    applicant = verification_request.reporter
+    applicant.is_verified = True
+    verification_request.status = 'resolved'
+    verification_request.resolved_at = datetime.utcnow()
+    verification_request.resolved_by = current_user.id
+    db.session.add(Notification(
+        user_id=applicant.id,
+        actor_id=current_user.id,
+        action='verification_approved',
+    ))
+    db.session.commit()
+    return jsonify({'success': True, 'is_verified': True})
+
+
+@admin_bp.route('/verification-requests/<int:request_id>/reject', methods=['POST'])
+@login_required
+@admin_required
+def reject_verification_request(request_id):
+    verification_request = Report.query.filter_by(
+        id=request_id,
+        reason=VERIFICATION_REQUEST_REASON,
+    ).first_or_404()
+    if verification_request.status != 'pending':
+        return jsonify({'success': False, 'message': 'تمت مراجعة هذا الطلب بالفعل.'}), 409
+
+    verification_request.status = 'rejected'
+    verification_request.resolved_at = datetime.utcnow()
+    verification_request.resolved_by = current_user.id
+    db.session.add(Notification(
+        user_id=verification_request.reporter_id,
+        actor_id=current_user.id,
+        action='verification_rejected',
+    ))
+    db.session.commit()
+    return jsonify({'success': True, 'is_verified': False})
 
 @admin_bp.route('/reports/resolve/<int:report_id>', methods=['POST'])
 @login_required

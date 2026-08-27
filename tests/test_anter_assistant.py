@@ -1872,6 +1872,14 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertIn('الأكثر نشاطاً', page)
         self.assertIn('@analytics_popular', page)
         self.assertIn('@analytics_active', page)
+        self.assertIn('admin-navigation', page)
+        self.assertIn(f'/{self.app.config["ADMIN_PATH"]}/users', page)
+        self.assertIn(f'/{self.app.config["ADMIN_PATH"]}/posts', page)
+        self.assertIn(f'/{self.app.config["ADMIN_PATH"]}/reports', page)
+
+        users_page = admin_client.get(f'/{self.app.config["ADMIN_PATH"]}/users').get_data(as_text=True)
+        self.assertIn('admin-navigation', users_page)
+        self.assertIn('العودة إلى لوحة التحكم', users_page)
 
         stable_entry_response = admin_client.get('/admin')
         self.assertEqual(stable_entry_response.status_code, 302)

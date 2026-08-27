@@ -175,7 +175,13 @@ def posts():
 @admin_required
 def view_post(post_id):
     post = Post.query.get_or_404(post_id)
-    return render_template('admin/post_detail.html', post=post)
+    source = request.args.get('from', '')
+    return_destinations = {
+        'reports': (url_for('admin.reports'), 'العودة إلى البلاغات'),
+        'dashboard': (url_for('admin.dashboard'), 'العودة إلى التحليلات'),
+    }
+    back_url, back_label = return_destinations.get(source, (url_for('admin.posts'), 'العودة إلى المنشورات'))
+    return render_template('admin/post_detail.html', post=post, back_url=back_url, back_label=back_label)
 
 @admin_bp.route('/posts/delete/<int:post_id>', methods=['POST'])
 @login_required

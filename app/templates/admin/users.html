@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
+{% set admin_page_title = 'إدارة المستخدمين' %}
+{% include 'admin/_navigation.html' %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4><i class="fas fa-users"></i> إدارة المستخدمين</h4>
     <span class="badge bg-primary">{{ users|length }}</span>

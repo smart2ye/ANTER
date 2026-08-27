@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
+{% set admin_page_title = 'إدارة المنشورات' %}
+{% include 'admin/_navigation.html' %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4><i class="fas fa-file-alt"></i> إدارة المنشورات</h4>
     <span class="badge bg-primary">{{ posts|length }}</span>
@@ -24,7 +26,7 @@
                 <td>{{ post.author.name }}<br><small class="text-muted">@{{ post.author.username }}</small></td>
                 <td><time data-local-time="{{ post.created_at.isoformat() }}" data-time-style="datetime">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</time></td>
                 <td>
-                    <a href="{{ url_for('admin.view_post', post_id=post.id) }}" class="btn btn-sm btn-outline-info">عرض</a>
+                    <a href="{{ url_for('admin.view_post', post_id=post.id, from='posts') }}" class="btn btn-sm btn-outline-info">عرض</a>
                     <button class="btn btn-sm btn-outline-danger delete-post" data-url="{{ url_for('admin.delete_post', post_id=post.id) }}">حذف</button>
                 </td>
             </tr>

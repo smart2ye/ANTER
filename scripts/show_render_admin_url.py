@@ -12,10 +12,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app import _get_admin_path  # noqa: E402
-from app.config import Config  # noqa: E402
-
-
 DEFAULT_RENDER_URL = 'https://anter-1.onrender.com'
 
 
@@ -30,7 +26,11 @@ def build_admin_url(base_url: str, admin_path: str) -> str:
 
 def main() -> int:
     base_url = os.environ.get('ANTER_PUBLIC_BASE_URL', DEFAULT_RENDER_URL)
-    admin_path = _get_admin_path({'SECRET_KEY': Config.SECRET_KEY})
+    admin_path = os.environ.get('ADMIN_PATH', '').strip().strip('/')
+    if not admin_path:
+        raise ValueError(
+            'لا يمكن التحقق من مسار Render محلياً. اضبط ADMIN_PATH نفسه في Render وبيئتك المحلية.'
+        )
     print(build_admin_url(base_url, admin_path))
     return 0
 

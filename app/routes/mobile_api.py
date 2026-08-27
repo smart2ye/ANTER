@@ -8,7 +8,7 @@ from sqlalchemy import or_
 from werkzeug.utils import secure_filename
 
 from app.extensions import csrf, db
-from app.models import CallLog, CallSignal, Follow, Message, MutedConversation, Report, TypingState, User, UserBlock
+from app.models import CallLog, CallSignal, Follow, Message, MobileAccessToken, MutedConversation, Report, TypingState, User, UserBlock
 from app.services.message_safety import block_user, is_blocked_between, unblock_user
 from app.services.anter_assistant import get_assistant_reply, is_anter_assistant
 from app.services.anter_memory import clear_memory, remember_assistant_reply, remember_user_message
@@ -36,6 +36,17 @@ def _user_payload(user):
         'name': user.name,
         'avatar': user.avatar or '',
         'isOnline': bool(user.last_seen and (datetime.utcnow() - user.last_seen).total_seconds() < 180),
+    }
+
+
+def _mobile_device_payload(token, current_token_id):
+    return {
+        'id': token.id,
+        'deviceName': token.device_name,
+        'createdAt': token.created_at.isoformat() + 'Z',
+        'lastUsedAt': token.last_used_at.isoformat() + 'Z' if token.last_used_at else None,
+        'expiresAt': token.expires_at.isoformat() + 'Z',
+        'isCurrent': token.id == current_token_id,
     }
 
 
@@ -234,6 +245,34 @@ def logout():
 @mobile_api_required
 def me():
     return jsonify({'user': _user_payload(g.mobile_user)})
+
+
+@mobile_api_bp.route('/devices', methods=['GET'])
+@mobile_api_required
+def list_trusted_devices():
+    now = datetime.utcnow()
+    tokens = MobileAccessToken.query.filter(
+        MobileAccessToken.user_id == g.mobile_user.id,
+        MobileAccessToken.revoked_at.is_(None),
+        MobileAccessToken.expires_at > now,
+    ).order_by(MobileAccessToken.last_used_at.desc(), MobileAccessToken.created_at.desc()).all()
+    return jsonify({
+        'devices': [_mobile_device_payload(token, g.mobile_access_token.id) for token in tokens]
+    })
+
+
+@mobile_api_bp.route('/devices/<int:device_id>', methods=['DELETE'])
+@mobile_api_required
+def revoke_trusted_device(device_id):
+    token = MobileAccessToken.query.filter_by(
+        id=device_id,
+        user_id=g.mobile_user.id,
+    ).first()
+    if token is None or token.revoked_at is not None:
+        return _json_error('لم يُعثر على الجهاز المطلوب.', 404)
+    was_current_device = token.id == g.mobile_access_token.id
+    revoke_mobile_token(token)
+    return jsonify({'success': True, 'wasCurrentDevice': was_current_device})
 
 
 @mobile_api_bp.route('/contacts', methods=['GET'])

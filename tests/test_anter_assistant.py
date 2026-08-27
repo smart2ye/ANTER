@@ -201,6 +201,39 @@ class AnterAssistantTests(unittest.TestCase):
         self.assertEqual(logs.status_code, 200)
         self.assertTrue(any(item['callId'] == call_id and item['status'] == 'completed' for item in logs.get_json()['calls']))
 
+    def test_mobile_api_lists_and_revokes_only_own_trusted_devices(self):
+        first_login = self.app.test_client().post('/api/mobile/v1/auth/login', json={
+            'identifier': 'assistant_test_user',
+            'password': 'not-used-in-test',
+            'deviceName': 'ANTER Messenger Android · device-a',
+        })
+        second_login = self.app.test_client().post('/api/mobile/v1/auth/login', json={
+            'identifier': 'assistant_test_user',
+            'password': 'not-used-in-test',
+            'deviceName': 'ANTER Messenger Android · device-b',
+        })
+        self.assertEqual(first_login.status_code, 201)
+        self.assertEqual(second_login.status_code, 201)
+        first_token = first_login.get_json()['accessToken']
+        second_token = second_login.get_json()['accessToken']
+
+        headers = {'Authorization': f'Bearer {first_token}'}
+        listed = self.app.test_client().get('/api/mobile/v1/devices', headers=headers)
+        self.assertEqual(listed.status_code, 200)
+        devices = listed.get_json()['devices']
+        first_device = next(item for item in devices if item['deviceName'].endswith('device-a'))
+        second_device = next(item for item in devices if item['deviceName'].endswith('device-b'))
+        self.assertTrue(first_device['isCurrent'])
+        self.assertFalse(second_device['isCurrent'])
+
+        revoked = self.app.test_client().delete(f"/api/mobile/v1/devices/{second_device['id']}", headers=headers)
+        self.assertEqual(revoked.status_code, 200)
+        self.assertFalse(revoked.get_json()['wasCurrentDevice'])
+        revoked_session = self.app.test_client().get(
+            '/api/mobile/v1/me', headers={'Authorization': f'Bearer {second_token}'}
+        )
+        self.assertEqual(revoked_session.status_code, 401)
+
     def test_browser_authorization_exchanges_one_time_code_without_sending_password_to_messenger(self):
         redirect_uri = self.app.config['MOBILE_BROWSER_AUTH_REDIRECT_URI']
         state = 'browser-state-test-123'

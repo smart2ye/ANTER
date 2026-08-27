@@ -30,6 +30,14 @@ def env_float(name, default, minimum=1.0, maximum=60.0):
     return min(max(value, minimum), maximum)
 
 
+def env_bool(name, default=False):
+    """Read a boolean environment switch with a stable default."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
 if DATABASE_URI.startswith('sqlite'):
     DATABASE_ENGINE_OPTIONS = {
         'connect_args': {'check_same_thread': False, 'timeout': 30},
@@ -72,6 +80,11 @@ class Config:
     MOBILE_API_MAX_MESSAGE_CHARS = env_int('MOBILE_API_MAX_MESSAGE_CHARS', 2000, 100)
     MOBILE_API_TYPING_TTL_SECONDS = env_int('MOBILE_API_TYPING_TTL_SECONDS', 8, 3)
     PERMANENT_SESSION_LIFETIME = 86400
+    # قواعد PostgreSQL القائمة لا تحتاج فحص وترحيل كل جدول مع كل إيقاظ في Render.
+    # تبقى قواعد SQLite المحلية الجديدة قابلة للترقية تلقائياً للتوافق مع الاختبارات.
+    STARTUP_SCHEMA_UPGRADES_ENABLED = env_bool(
+        'STARTUP_SCHEMA_UPGRADES_ENABLED', DATABASE_URI.startswith('sqlite')
+    )
     
     # مفاتيح الذكاء الاصطناعي (Hybrid AI)
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')

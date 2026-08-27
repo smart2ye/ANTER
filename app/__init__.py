@@ -65,110 +65,17 @@ def create_app():
         return 'حجم الطلب أكبر من الحد المسموح.', 413
 
     with app.app_context():
-        db.create_all()
-        # إنشاء جداول القصص وإشارات وسجل المكالمات صراحةً على قواعد الإنتاج القائمة.
-        CallSignal.__table__.create(bind=db.engine, checkfirst=True)
-        CallLog.__table__.create(bind=db.engine, checkfirst=True)
-        MobileAccessToken.__table__.create(bind=db.engine, checkfirst=True)
-        MobileBrowserAuthorization.__table__.create(bind=db.engine, checkfirst=True)
-        UserBlock.__table__.create(bind=db.engine, checkfirst=True)
-        MutedConversation.__table__.create(bind=db.engine, checkfirst=True)
-        from app.models.story import Story, StoryView
-        Story.__table__.create(bind=db.engine, checkfirst=True)
-        StoryView.__table__.create(bind=db.engine, checkfirst=True)
-        # ترحيل خفيف للتوافق مع قواعد البيانات القائمة قبل دعم الرسائل الصوتية.
-        from sqlalchemy import inspect, text
-        inspector = inspect(db.engine)
-        binary_type = 'BYTEA' if db.engine.dialect.name == 'postgresql' else 'BLOB'
-        required_columns_by_table = {
-            'messages': {
-                'audio_path': 'VARCHAR(255)',
-                'audio_data': binary_type,
-                'audio_mime': 'VARCHAR(100)',
-                'attachment_data': binary_type,
-                'attachment_mime': 'VARCHAR(150)',
-                'attachment_name': 'VARCHAR(255)',
-                'attachment_kind': 'VARCHAR(20)',
-            },
-            'users': {
-                'avatar_data': binary_type,
-                'avatar_mime': 'VARCHAR(100)',
-                'profile_visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
-                'show_online_status': 'BOOLEAN NOT NULL DEFAULT TRUE',
-            },
-            'posts': {
-                'image_data': binary_type,
-                'image_mime': 'VARCHAR(100)',
-                'public_id': 'VARCHAR(40)',
-                'link_url': 'VARCHAR(500)',
-                'link_title': 'VARCHAR(255)',
-                'link_description': 'TEXT',
-                'link_image': 'VARCHAR(500)',
-                'visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
-            },
-            'videos': {
-                'public_id': 'VARCHAR(40)',
-            },
-            'comments': {
-                'audio_url': 'VARCHAR(255)',
-            },
-            'messages': {
-                'parent_id': 'INTEGER',
-                'is_deleted_everyone': 'BOOLEAN DEFAULT FALSE',
-                'deleted_by_sender': 'BOOLEAN DEFAULT FALSE',
-                'deleted_by_receiver': 'BOOLEAN DEFAULT FALSE',
-            },
-            'call_logs': {
-                'call_type': "VARCHAR(16) NOT NULL DEFAULT 'voice'",
-            },
-            'reports': {
-                'message_id': 'INTEGER',
-            },
-        }
-        with db.engine.begin() as connection:
-            for table_name, required_columns in required_columns_by_table.items():
-                if table_name not in inspector.get_table_names():
-                    continue
-                columns = {column['name'] for column in inspector.get_columns(table_name)}
-                for name, sql_type in required_columns.items():
-                    if name not in columns:
-                        connection.execute(text(
-                            f'ALTER TABLE {table_name} ADD COLUMN {name} {sql_type}'
-                        ))
-
-            # إضافة فهارس فريدة للروابط العامة في قواعد البيانات القائمة.
-        with db.engine.begin() as connection:
-            for table_name in ('posts', 'videos'):
-                if table_name in inspector.get_table_names():
-                    connection.execute(text(
-                        f'CREATE UNIQUE INDEX IF NOT EXISTS ix_{table_name}_public_id ON {table_name} (public_id)'
-                    ))
-            if 'reports' in inspector.get_table_names():
-                connection.execute(text(
-                    'CREATE INDEX IF NOT EXISTS ix_reports_message_id ON reports (message_id)'
-                ))
-
-        # ترحيل البيانات القائمة إلى معرّفات عامة لا تكشف الرقم التسلسلي.
-        from app.models import OwnerAdminBootstrap, Post, Video
-        OwnerAdminBootstrap.__table__.create(bind=db.engine, checkfirst=True)
-        from app.utils.public_ids import generate_public_id
-        for model, prefix in ((Post, 'p'), (Video, 'r')):
-            for entity in model.query.filter(model.public_id.is_(None)).all():
-                public_id = generate_public_id(prefix)
-                while model.query.filter_by(public_id=public_id).first() is not None:
-                    public_id = generate_public_id(prefix)
-                entity.public_id = public_id
-        db.session.commit()
-
-        # تسبق ترقية الجداول أي استعلام لـ User، لأن قواعد بيانات Termux القائمة
-        # قد لا تحتوي أعمدة الخصوصية التي يعتمد عليها النموذج الحالي بعد التحديث.
+        from app.services.startup_maintenance import run_startup_schema_upgrades
+        schema_was_upgraded = run_startup_schema_upgrades(app)
         from app.services.anter_assistant import (
             ensure_anter_assistant_followed_by_all_users,
             ensure_anter_assistant_user,
         )
         from app.services.owner_admin import ensure_configured_owner_is_admin
         ensure_anter_assistant_user()
-        ensure_anter_assistant_followed_by_all_users()
+        # متابعة الحسابات القائمة للمساعد ترقية لمرة واحدة وليست عملاً لكل إيقاظ.
+        if schema_was_upgraded:
+            ensure_anter_assistant_followed_by_all_users()
         ensure_configured_owner_is_admin()
         db.session.commit()
 

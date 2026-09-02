@@ -7,6 +7,7 @@ from app.models import User
 from app.forms.auth import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from itsdangerous import URLSafeTimedSerializer
 from app.utils.helpers import log_user_activity
+from app.utils.email import send_reset_email
 from app.services.anter_assistant import ensure_anter_assistant_user, follow_anter_assistant_for_user
 from app.services.anter_user_messages import send_welcome_message
 from app.services.anter_account_switching import (
@@ -172,7 +173,7 @@ def reset_password_request():
             # تم إخفاء الرابط تماماً من الشاشة لمنع استغلاله من قبل أي شخص يعرف البريد
             # في الإنتاج يتم إرسال هذا الرابط حصرياً عبر البريد الإلكتروني الحقيقي للمستخدم
             # للتسجيل والاختبار المحلي، يتم تسجيل الرابط في سجلات الخادم الآمنة فقط
-            current_app.logger.info(f"Password reset link generated for user {user.email}: {reset_url}")
+            send_reset_email(user, token)
         
         # دائماً نظهر نفس الرسالة الأمنية بغض النظر عن وجود الحساب لمنع تخمين الإيميلات
         flash('✅ إذا كان البريد الإلكتروني مسجلاً لدينا، فقد تم إرسال تعليمات استعادة كلمة المرور إليه.', 'success')

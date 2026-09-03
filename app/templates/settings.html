@@ -10,6 +10,7 @@
     <div class="mt-4">
         <h6 class="border-bottom pb-2"><i class="fas fa-key"></i> تغيير كلمة المرور</h6>
         <form method="POST" action="{{ url_for('users.settings') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-2">
                 <label class="form-label">كلمة المرور الحالية</label>
                 <input type="password" name="current_password" class="form-control" required>
@@ -23,6 +24,9 @@
                 <input type="password" name="confirm_password" class="form-control" required>
             </div>
             <button type="submit" class="btn btn-primary">تغيير كلمة المرور</button>
+        <div style="margin-top: 10px;">
+            <a href="{{ url_for('auth.reset_password_request') }}" style="color: #6C3CE1;">🔑 نسيت كلمة السر الحالية؟</a>
+        </div>
         </form>
     </div>
 
@@ -93,6 +97,7 @@
     <div class="mt-4">
         <h6 class="border-bottom pb-2"><i class="fas fa-lock"></i> إعدادات الخصوصية</h6>
         <form method="POST" action="{{ url_for('users.settings') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" name="show_email" id="show_email" {% if current_user.show_email %}checked{% endif %}>
                 <label class="form-check-label" for="show_email">إظهار البريد الإلكتروني في الملف الشخصي</label>

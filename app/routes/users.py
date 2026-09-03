@@ -128,7 +128,6 @@ def edit_profile():
 
 @users_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
-@csrf.exempt
 def settings():
     if request.method == 'POST':
         # تغيير كلمة المرور

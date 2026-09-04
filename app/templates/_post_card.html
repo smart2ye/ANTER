@@ -109,14 +109,16 @@
 
     <!-- إحصائيات التفاعل -->
     <div class="post-stats">
-        <div class="reactions-summary" id="reaction-summary-{{ post.id }}">
-            {% set reactions = get_reaction_counts(post.id) %}
-            {% if reactions.like > 0 %}<span class="reaction-item">👍 {{ reactions.like }}</span>{% endif %}
-            {% if reactions.love > 0 %}<span class="reaction-item">🥰 {{ reactions.love }}</span>{% endif %}
-            {% if reactions.haha > 0 %}<span class="reaction-item">🤣 {{ reactions.haha }}</span>{% endif %}
-            {% if reactions.angry > 0 %}<span class="reaction-item">😡 {{ reactions.angry }}</span>{% endif %}
-            {% if reactions.sad > 0 %}<span class="reaction-item">😢 {{ reactions.sad }}</span>{% endif %}
-        </div>
+<div class="reactions-summary" id="reaction-summary-{{ post.id }}">
+    {% set reactions = get_reaction_counts(post.id) %}
+    {% if reactions.like > 0 %}<span class="reaction-item">👍 {{ reactions.like }}</span>{% endif %}
+    {% if reactions.love > 0 %}<span class="reaction-item">🥰 {{ reactions.love }}</span>{% endif %}
+    {% if reactions.haha > 0 %}<span class="reaction-item">🤣 {{ reactions.haha }}</span>{% endif %}
+    {% if reactions.angry > 0 %}<span class="reaction-item">😡 {{ reactions.angry }}</span>{% endif %}
+    {% if reactions.sad > 0 %}<span class="reaction-item">😢 {{ reactions.sad }}</span>{% endif %}
+    {% set total = reactions.like + reactions.love + reactions.haha + reactions.angry + reactions.sad %}
+    {% if total > 0 %}<a href="/post/{{ post.id }}/reactions" class="text-primary fw-bold text-decoration-underline" style="cursor:pointer;">{{ total }}</a>{% endif %}
+</div>
         {% set comment_count = post.comment_count() %}
     </div>
 
@@ -130,7 +132,6 @@
                     <span class="reaction-label" id="reaction-label-{{ post.id }}">إعجاب</span>
                 </span>
                 <span class="reaction-count" id="reaction-count-{{ post.id }}">
-                    {{ reactions.like + reactions.love + reactions.haha + reactions.angry + reactions.sad }}
                 </span>
             </button>
             <div class="reaction-picker" id="reaction-picker-{{ post.id }}">

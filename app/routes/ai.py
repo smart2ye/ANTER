@@ -14,7 +14,7 @@ def _json_error(message, status=400):
     return jsonify({'ok': False, 'error': message}), status
 
 
-@ai_bp.route('/api/ai/complete', methods=['POST'])
+@ai_bp.route('/ai/complete', methods=['POST'])
 @login_required
 def ai_complete():
     """واجهة توافق قديمة لتوليد نص عام؛ لا تستخدم لعرض مفاتيح أو إعدادات."""
@@ -31,7 +31,7 @@ def ai_complete():
     return jsonify({'ok': True, 'response': response, 'engine': AIService.DISPLAY_NAME})
 
 
-@ai_bp.route('/api/ai/summarize/<int:post_id>', methods=['GET'])
+@ai_bp.route('/ai/summarize/<int:post_id>', methods=['GET'])
 @login_required
 def summarize_post(post_id):
     post = Post.query.get_or_404(post_id)
@@ -41,7 +41,7 @@ def summarize_post(post_id):
     return jsonify({'ok': True, 'summary': summary, 'engine': AIService.DISPLAY_NAME})
 
 
-@ai_bp.route('/api/ai/assist', methods=['POST'])
+@ai_bp.route('/ai/assist', methods=['POST'])
 @login_required
 def assist_writing():
     """ينفذ أدوات الكتابة الذكية دون حفظ أي نص نيابة عن المستخدم."""

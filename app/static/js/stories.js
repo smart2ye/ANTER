@@ -244,9 +244,9 @@ function playCurrentStory() {
         mediaContainer.innerHTML = `<video src="${story.media_url}" autoplay playsinline onended="nextStoryItem()"></video>`;
     } else {
         mediaContainer.innerHTML = `<img src="${story.media_url}" alt="Story">`;
+    updateStoryInteractions(story);
     }
 
-    updateStoryInteractions(story);
 
     // تسجيل المشاهدة وتحديث العدد بعد نجاح الطلب
     fetch(`/api/stories/${story.id}/view`, {
@@ -259,7 +259,6 @@ function playCurrentStory() {
     .then(result => {
         if (result.ok && result.data.story) {
             Object.assign(story, result.data.story);
-            updateStoryInteractions(story);
         }
     })
     .catch(() => {});
@@ -369,7 +368,6 @@ function sendStoryReaction(reactionType, e) {
         if (!result.ok) throw new Error(result.data.error || 'تعذر إرسال التفاعل');
         if (result.data.story) {
             Object.assign(story, result.data.story);
-            updateStoryInteractions(story);
         }
     })
     .catch(err => console.error('Story reaction error:', err));

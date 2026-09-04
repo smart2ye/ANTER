@@ -15,7 +15,7 @@ stories_bp = Blueprint('stories', __name__)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm', 'mov'}
 
-@stories_bp.route('/api/stories', methods=['POST'])
+@stories_bp.route('/stories', methods=['POST'])
 @csrf.exempt
 @login_required
 def create_story():
@@ -58,7 +58,7 @@ def create_story():
 
     return jsonify({'message': 'تم نشر القصة بنجاح', 'story': story.to_dict(current_user.id)}), 201
 
-@stories_bp.route('/api/stories/feed', methods=['GET'])
+@stories_bp.route('/stories/feed', methods=['GET'])
 @login_required
 def get_stories_feed():
     now = datetime.utcnow()
@@ -102,7 +102,7 @@ def get_stories_feed():
 
     return jsonify(sorted_users), 200
 
-@stories_bp.route('/api/user-stories/<int:user_id>', methods=['GET'])
+@stories_bp.route('/user-stories/<int:user_id>', methods=['GET'])
 @login_required
 def get_user_stories(user_id):
     now = datetime.utcnow()
@@ -124,7 +124,7 @@ def get_user_stories(user_id):
         'stories': [s.to_dict(current_user.id) for s in stories]
     }), 200
 
-@stories_bp.route('/api/stories/<int:story_id>/view', methods=['POST'])
+@stories_bp.route('/stories/<int:story_id>/view', methods=['POST'])
 @csrf.exempt
 @login_required
 def view_story(story_id):
@@ -145,7 +145,7 @@ def view_story(story_id):
     return jsonify({'message': 'تم تسجيل المشاهدة', 'story': story.to_dict(current_user.id)}), 200
 
 
-@stories_bp.route('/api/stories/<int:story_id>/react', methods=['POST'])
+@stories_bp.route('/stories/<int:story_id>/react', methods=['POST'])
 @csrf.exempt
 @login_required
 def react_story(story_id):
@@ -189,7 +189,7 @@ def react_story(story_id):
     }), 200
 
 
-@stories_bp.route('/api/stories/<int:story_id>/viewers', methods=['GET'])
+@stories_bp.route('/stories/<int:story_id>/viewers', methods=['GET'])
 @login_required
 def get_story_viewers(story_id):
     story = Story.query.get_or_404(story_id)
@@ -203,7 +203,7 @@ def get_story_viewers(story_id):
     }), 200
 
 
-@stories_bp.route('/api/stories/<int:story_id>', methods=['DELETE'])
+@stories_bp.route('/stories/<int:story_id>', methods=['DELETE'])
 @csrf.exempt
 @login_required
 def delete_story(story_id):

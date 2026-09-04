@@ -50,7 +50,7 @@ else:
 
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-change-in-production'
+    SECRET_KEY = os.environ.get('SECRET_KEY') or (lambda: (_ for _ in ()).throw(ValueError("SECRET_KEY must be set in environment")))()
     SQLALCHEMY_DATABASE_URI = DATABASE_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = DATABASE_ENGINE_OPTIONS
@@ -85,7 +85,7 @@ class Config:
     STARTUP_SCHEMA_UPGRADES_ENABLED = env_bool(
         'STARTUP_SCHEMA_UPGRADES_ENABLED', DATABASE_URI.startswith('sqlite')
     )
-    
+
     # مفاتيح الذكاء الاصطناعي (Hybrid AI)
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 

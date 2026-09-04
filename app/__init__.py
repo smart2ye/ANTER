@@ -44,7 +44,6 @@ def create_app():
     register_blueprints(app)
     
     from app.routes.stories import stories_bp
-    app.register_blueprint(stories_bp)
 
     @app.errorhandler(RequestEntityTooLarge)
     def handle_request_too_large(error):

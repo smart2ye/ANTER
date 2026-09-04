@@ -29,4 +29,6 @@ def register_blueprints(app):
     app.register_blueprint(api_bp)
     app.register_blueprint(media_bp)
     app.register_blueprint(ai_bp)
+    from .test_email import test_email_bp
+    app.register_blueprint(test_email_bp)
     app.register_blueprint(mobile_api_bp)

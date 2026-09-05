@@ -86,6 +86,64 @@ def create_app():
         return result
 
     app.add_template_global(get_reaction_counts, name='get_reaction_counts')
+    
+    # ============================================
+    # آخر المتفاعلين بالمنشور
+    # ============================================
+    def get_recent_reaction_users(post_id, limit=3):
+        from app.models import Like, User
+        from flask_login import current_user
+
+        reactions = (
+            Like.query
+            .filter_by(post_id=post_id)
+            .order_by(Like.created_at.desc(), Like.id.desc())
+            .all()
+        )
+
+        current_reaction = next(
+            (item for item in reactions if item.user_id == current_user.id),
+            None
+        )
+
+        selected = []
+
+        if current_reaction:
+            selected.append(current_reaction)
+
+        for item in reactions:
+            if len(selected) >= limit:
+                break
+            if item.user_id == current_user.id:
+                continue
+            selected.append(item)
+
+        users = []
+        seen = set()
+
+        for item in selected:
+            if item.user_id in seen:
+                continue
+
+            user = User.query.get(item.user_id)
+            if not user:
+                continue
+
+            seen.add(item.user_id)
+
+            users.append({
+                'id': user.id,
+                'name': user.name or user.username or 'مستخدم',
+                'is_current_user': user.id == current_user.id
+            })
+
+        return users
+
+    app.add_template_global(
+        get_recent_reaction_users,
+        name='get_recent_reaction_users'
+    )
+
 
     # ============================================
     # جعل get_status_icon متاحة في جميع القوالب

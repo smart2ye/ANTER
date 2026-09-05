@@ -114,9 +114,21 @@
         <div class="reactions-summary" id="reaction-summary-{{ post.id }}">
             {% set reactions = get_reaction_counts(post.id) %}
             {% set total = reactions.like + reactions.love + reactions.haha + reactions.angry + reactions.sad %}
+            {% set recent_users = get_recent_reaction_users(post.id) %}
             {% if total > 0 %}
                 <a href="/post/{{ post.id }}/reactions" class="text-decoration-none">
-                    <span class="reaction-summary-text" id="reaction-summary-text-{{ post.id }}">{{ total }} من الأشخاص</span>
+                    <span class="reaction-summary-text" id="reaction-summary-text-{{ post.id }}">
+                        {% if recent_users %}
+                            {% for user in recent_users %}
+                                {% if not loop.first %} و {% endif %}{{ 'أنت' if user.is_current_user else user.name }}
+                            {% endfor %}
+                            {% if total > recent_users|length %}
+                                و {{ total - recent_users|length }} آخرين
+                            {% endif %}
+                        {% else %}
+                            {{ total }} من الأشخاص
+                        {% endif %}
+                    </span>
                 </a>
             {% else %}
                 <span class="reaction-summary-text" id="reaction-summary-text-{{ post.id }}"></span>

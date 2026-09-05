@@ -1,7 +1,7 @@
 {% if videos %}
 <div class="reels-stream" id="reelsStream" role="feed" aria-label="تدفق ريلز ANTER" tabindex="0">
     {% for video in videos %}
-    <article class="reel-stream-item" data-reel-id="{{ video.id }}" role="article" aria-label="ريل {{ loop.index }} من {{ videos|length }}">
+    <article class="reel-stream-item" data-reel-id="{{ video.id }}" data-public-id="{{ video.public_id }}" role="article" aria-label="ريل {{ loop.index }} من {{ videos|length }}">
         <div class="reel-stream-frame">
             <video class="reel-stream-video"
                    playsinline
@@ -38,14 +38,23 @@
             </div>
 
             <div class="reel-stream-actions" aria-label="تفاعلات الريل">
-                <button type="button" class="reel-stream-action reel-stream-like" data-video-id="{{ video.id }}" aria-label="إعجاب" aria-pressed="false">
-                    <i class="far fa-heart" aria-hidden="true"></i>
-                    <span class="reel-stream-like-count">{{ video.like_count() }}</span>
-                </button>
-                <a class="reel-stream-action" href="{{ url_for('videos.watch', public_id=video.public_id) }}#reel-comments" aria-label="فتح التعليقات">
-                    <i class="far fa-comment" aria-hidden="true"></i>
-                    <span>{{ video.comment_count() }}</span>
-                </a>
+                <button type="button"
+        class="reel-stream-action reel-stream-like {% if video.likes.filter_by(user_id=current_user.id).first() %}is-liked{% endif %}"
+        data-video-id="{{ video.id }}"
+        aria-label="{% if video.likes.filter_by(user_id=current_user.id).first() %}إلغاء الإعجاب{% else %}إعجاب{% endif %}"
+        aria-pressed="{{ 'true' if video.likes.filter_by(user_id=current_user.id).first() else 'false' }}">
+        <i class="{{ 'fas fa-heart' if video.likes.filter_by(user_id=current_user.id).first() else 'far fa-heart' }}"
+           aria-hidden="true"></i>
+        <span class="reel-stream-like-count">{{ video.like_count() }}</span>
+    </button>
+                <button type="button"
+        class="reel-stream-action reel-stream-comments"
+        data-video-id="{{ video.id }}"
+        data-public-id="{{ video.public_id }}"
+        aria-label="فتح التعليقات">
+    <i class="far fa-comment" aria-hidden="true"></i>
+    <span>{{ video.comment_count() }}</span>
+</button>
                 <button type="button" class="reel-stream-action reel-stream-sound" aria-label="تشغيل الصوت">
                     <i class="fas fa-volume-mute" aria-hidden="true"></i>
                 </button>
@@ -74,6 +83,81 @@
 </section>
 {% endif %}
 
+
+<div class="reels-comments-overlay" id="reelsCommentsOverlay" aria-hidden="true">
+    <section class="reels-comments-sheet" id="reelsCommentsSheet"
+             role="dialog" aria-modal="true" aria-labelledby="reelsCommentsTitle">
+
+        <div class="reels-comments-handle" aria-hidden="true"></div>
+
+        <header class="reels-comments-header">
+            <div>
+                <h2 id="reelsCommentsTitle">التعليقات</h2>
+                <span id="reelsCommentsCount">0 تعليق</span>
+            </div>
+
+            <button type="button"
+                    id="reelsCommentsClose"
+                    class="reels-comments-close"
+                    aria-label="إغلاق التعليقات">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </header>
+
+        <div class="reels-comments-list"
+             id="reelsCommentsList"
+             aria-live="polite"></div>
+
+        <div class="reels-comments-loading"
+             id="reelsCommentsLoading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>جاري تحميل التعليقات...</span>
+        </div>
+
+        <div class="reels-comments-empty"
+             id="reelsCommentsEmpty"
+             hidden>
+            <i class="far fa-comment-dots"></i>
+            <strong>لا توجد تعليقات بعد</strong>
+            <span>كن أول من يبدأ النقاش.</span>
+        </div>
+
+        <form class="reels-comments-form" id="reelsCommentsForm">
+            <input type="hidden" id="reelsCommentsVideoId">
+            <input type="hidden" id="reelsCommentsParentId">
+
+            <div class="reels-replying"
+                 id="reelsReplying"
+                 hidden>
+                <span>الرد على تعليق</span>
+
+                <button type="button"
+                        id="reelsCancelReply"
+                        aria-label="إلغاء الرد">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="reels-comments-input-row">
+                <input type="text"
+                       id="reelsCommentsInput"
+                       name="content"
+                       maxlength="1000"
+                       autocomplete="off"
+                       placeholder="أضف تعليقاً..."
+                       aria-label="أضف تعليقاً"
+                       required>
+
+                <button type="submit"
+                        id="reelsCommentsSubmit"
+                        aria-label="إرسال التعليق">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+
 <script>
 (() => {
     const stream = document.getElementById('reelsStream');
@@ -87,13 +171,63 @@
     }
 
     function ensureLoaded(video) {
+        if (!video) return;
         if (video.dataset.loaded === 'true') return;
+
         const source = document.createElement('source');
         source.src = video.dataset.videoSrc;
+        source.type = 'video/mp4';
+
         video.appendChild(source);
         video.dataset.loaded = 'true';
         video.load();
     }
+
+    function preloadItem(item) {
+        if (!item) return;
+
+        const video = getVideo(item);
+        if (!video) return;
+
+        // نرفع أولوية التحميل قبل تهيئة المصدر.
+        video.preload = 'auto';
+        ensureLoaded(video);
+
+        // علامة داخلية لمنع إعادة تهيئة الريل نفسه.
+        item.dataset.preloaded = 'true';
+    }
+
+    function preloadNext(item) {
+        if (!item) return;
+
+        const index = items.indexOf(item);
+        if (index === -1) return;
+
+        const nextItem = items[index + 1];
+
+        if (nextItem && nextItem.dataset.preloaded !== 'true') {
+            preloadItem(nextItem);
+        }
+    }
+
+    function preloadPrevious(item) {
+        if (!item) return;
+
+        const index = items.indexOf(item);
+        if (index <= 0) return;
+
+        const previousItem = items[index - 1];
+
+        if (previousItem && previousItem.dataset.preloaded !== 'true') {
+            preloadItem(previousItem);
+        }
+    }
+
+    function preloadAround(item) {
+        // الأولوية للريل التالي لأنه الأكثر احتمالًا للظهور.
+        preloadNext(item);
+    }
+
 
     function setButtonIcon(item, isPlaying) {
         const icon = item.querySelector('.reel-tap-toggle i');
@@ -109,16 +243,63 @@
 
     async function activateItem(item) {
         if (!item || item === activeItem) return;
+
         items.forEach((other) => {
             if (other !== item) pauseItem(other);
         });
+
         activeItem = item;
+
         const video = getVideo(item);
+
         ensureLoaded(video);
+
+        // تجهيز الريلين المجاورين أثناء تشغيل الريل الحالي.
+        preloadAround(item);
+
         item.classList.add('is-buffering');
+
         try {
             await video.play();
             setButtonIcon(item, true);
+
+            // تسجيل المشاهدة بعد بدء تشغيل الريل فعليًا.
+            if (!item.dataset.viewRegistered) {
+                const publicId = item.dataset.publicId;
+
+                if (publicId) {
+                    try {
+                        const response = await fetch(
+                            `/videos/view/${encodeURIComponent(publicId)}`,
+                            {
+                                method: 'POST',
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            }
+                        );
+
+                        if (response.ok) {
+                            item.dataset.viewRegistered = 'true';
+
+                            const data = await response.json();
+                            const viewsElement =
+                                item.querySelector('.reel-stream-views');
+
+                            if (viewsElement && data.views !== undefined) {
+                                viewsElement.innerHTML =
+                                    `<i class="fas fa-eye" aria-hidden="true"></i> ${data.views} مشاهدة`;
+                            }
+                        }
+                    } catch (viewError) {
+                        console.warn(
+                            'تعذر تسجيل مشاهدة الريل:',
+                            viewError
+                        );
+                    }
+                }
+            }
+
         } catch (error) {
             setButtonIcon(item, false);
         } finally {
@@ -164,6 +345,7 @@
             sound.setAttribute('aria-label', video.muted ? 'تشغيل الصوت' : 'كتم الصوت');
         });
 
+
         like.addEventListener('click', async () => {
             if (like.classList.contains('is-loading')) return;
             like.classList.add('is-loading');
@@ -182,7 +364,384 @@
                 like.classList.remove('is-loading');
             }
         });
+
+        
     });
+
+
+    // ================================
+    // ANTER Reels Comments Bottom Sheet
+    // ================================
+
+    const commentsOverlay = document.getElementById('reelsCommentsOverlay');
+    const commentsSheet = document.getElementById('reelsCommentsSheet');
+    const commentsList = document.getElementById('reelsCommentsList');
+    const commentsLoading = document.getElementById('reelsCommentsLoading');
+    const commentsEmpty = document.getElementById('reelsCommentsEmpty');
+    const commentsCount = document.getElementById('reelsCommentsCount');
+    const commentsClose = document.getElementById('reelsCommentsClose');
+    const commentsForm = document.getElementById('reelsCommentsForm');
+    const commentsInput = document.getElementById('reelsCommentsInput');
+    const commentsVideoId = document.getElementById('reelsCommentsVideoId');
+    const commentsParentId = document.getElementById('reelsCommentsParentId');
+    const commentsSubmit = document.getElementById('reelsCommentsSubmit');
+    const replyingBar = document.getElementById('reelsReplying');
+    const cancelReply = document.getElementById('reelsCancelReply');
+
+    let commentsVideo = null;
+    let commentsPreviousFocus = null;
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function avatarUrl(avatar) {
+        return `/static/uploads/${encodeURIComponent(avatar || 'default_avatar.png')}`;
+    }
+
+    function renderComment(comment, isReply = false) {
+        const author = comment.author || {};
+        const replyClass = isReply ? ' is-reply' : '';
+
+        const replies = (comment.replies || []).map(reply =>
+            renderComment(reply, true)
+        ).join('');
+
+        return `
+            <article class="reels-comment-card${replyClass}"
+                     data-comment-id="${comment.id}">
+
+                <img class="reels-comment-avatar"
+                     src="${avatarUrl(author.avatar)}"
+                     alt="${escapeHtml(author.name || author.username || 'مستخدم')}">
+
+                <div class="reels-comment-body">
+                    <div class="reels-comment-author-row">
+                        <strong>${escapeHtml(author.name || author.username || 'مستخدم')}</strong>
+                        <span>@${escapeHtml(author.username || '')}</span>
+                    </div>
+
+                    <p class="reels-comment-text">${escapeHtml(comment.content)}</p>
+
+                    <div class="reels-comment-tools">
+                        <button type="button"
+                                class="reels-comment-like ${comment.liked ? 'is-liked' : ''}"
+                                data-comment-id="${comment.id}"
+                                aria-pressed="${comment.liked ? 'true' : 'false'}">
+                            <i class="${comment.liked ? 'fas' : 'far'} fa-heart"></i>
+                            <span>${comment.likes || 0}</span>
+                        </button>
+
+                        ${!isReply ? `
+                        <button type="button"
+                                class="reels-comment-reply"
+                                data-comment-id="${comment.id}"
+                                data-author-name="${escapeHtml(author.name || author.username || 'مستخدم')}">
+                            رد
+                        </button>
+                        ` : ''}
+                    </div>
+
+                    ${replies ? `<div class="reels-comment-replies">${replies}</div>` : ''}
+                </div>
+            </article>
+        `;
+    }
+
+    function updateCommentsCount(count) {
+        const value = Number(count) || 0;
+        commentsCount.textContent = `${value} ${value === 1 ? 'تعليق' : 'تعليقات'}`;
+
+        if (commentsVideo) {
+            const button = commentsVideo.querySelector('.reel-stream-comments span');
+            if (button) button.textContent = value;
+        }
+    }
+
+    async function loadComments(videoId) {
+        commentsLoading.hidden = false;
+        commentsEmpty.hidden = true;
+        commentsList.innerHTML = '';
+
+        try {
+            const response = await fetch(`/videos/comments/${videoId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('تعذر تحميل التعليقات');
+            }
+
+            const data = await response.json();
+
+            updateCommentsCount(data.count);
+
+            if (!data.comments || data.comments.length === 0) {
+                commentsEmpty.hidden = false;
+                return;
+            }
+
+            commentsList.innerHTML = data.comments
+                .map(comment => renderComment(comment))
+                .join('');
+
+        } catch (error) {
+            commentsList.innerHTML = `
+                <div class="reels-comments-error">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>تعذر تحميل التعليقات.</span>
+                    <button type="button" id="reelsCommentsRetry">
+                        إعادة المحاولة
+                    </button>
+                </div>
+            `;
+
+            const retry = document.getElementById('reelsCommentsRetry');
+            if (retry) {
+                retry.addEventListener('click', () => loadComments(videoId));
+            }
+        } finally {
+            commentsLoading.hidden = true;
+        }
+    }
+
+    function openComments(item) {
+        if (!commentsOverlay) return;
+
+        commentsPreviousFocus = document.activeElement;
+        commentsVideo = item;
+
+        const videoId = item.dataset.reelId;
+
+        commentsVideoId.value = videoId;
+        commentsParentId.value = '';
+
+        replyingBar.hidden = true;
+        commentsInput.value = '';
+
+        commentsOverlay.classList.add('is-open');
+        commentsOverlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('reels-comments-open');
+
+        loadComments(videoId);
+
+        window.setTimeout(() => commentsInput.focus(), 180);
+    }
+
+    // ANTER: bind reel comments after openComments is defined
+    document.querySelectorAll('.reel-stream-comments').forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const item = button.closest('.reel-stream-item');
+            const videoId = button.dataset.videoId;
+
+            if (!item || !videoId) {
+                console.error('ANTER COMMENTS: missing item/video id');
+                return;
+            }
+
+            item.dataset.reelId = videoId;
+            openComments(item);
+        });
+    });
+
+    function closeComments() {
+        if (!commentsOverlay) return;
+
+        commentsOverlay.classList.remove('is-open');
+        commentsOverlay.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('reels-comments-open');
+
+        commentsVideo = null;
+        commentsInput.value = '';
+        commentsParentId.value = '';
+        replyingBar.hidden = true;
+
+        if (commentsPreviousFocus) {
+            commentsPreviousFocus.focus();
+        }
+    }
+
+
+    stream.addEventListener('click', (event) => {
+        const target = event.target instanceof Element
+            ? event.target
+            : event.target.parentElement;
+
+        const button = target ? target.closest('.reel-stream-comments') : null;
+        if (!button) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const item = button.closest('.reel-stream-item');
+        const videoId = button.dataset.videoId;
+
+        if (!item || !videoId) {
+            console.error('ANTER COMMENTS: missing reel item or video id');
+            return;
+        }
+
+        item.dataset.reelId = videoId;
+        openComments(item);
+    });
+
+    if (commentsClose) {
+        commentsClose.addEventListener('click', closeComments);
+    }
+
+    if (commentsOverlay) {
+        commentsOverlay.addEventListener('click', event => {
+            if (event.target === commentsOverlay) {
+                closeComments();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' &&
+            commentsOverlay &&
+            commentsOverlay.classList.contains('is-open')) {
+            closeComments();
+        }
+    });
+
+    if (cancelReply) {
+        cancelReply.addEventListener('click', () => {
+            commentsParentId.value = '';
+            replyingBar.hidden = true;
+            commentsInput.placeholder = 'أضف تعليقاً...';
+            commentsInput.focus();
+        });
+    }
+
+    commentsList.addEventListener('click', async event => {
+        const replyButton = event.target.closest('.reels-comment-reply');
+
+        if (replyButton) {
+            commentsParentId.value = replyButton.dataset.commentId;
+            replyingBar.hidden = false;
+            commentsInput.placeholder =
+                `الرد على ${replyButton.dataset.authorName}...`;
+            commentsInput.focus();
+            return;
+        }
+
+        const likeButton = event.target.closest('.reels-comment-like');
+
+        if (!likeButton || likeButton.classList.contains('is-loading')) {
+            return;
+        }
+
+        likeButton.classList.add('is-loading');
+
+        try {
+            const response = await fetch(
+                `/videos/like_comment/${likeButton.dataset.commentId}`,
+                { method: 'POST' }
+            );
+
+            if (!response.ok) {
+                throw new Error('comment like failed');
+            }
+
+            const data = await response.json();
+
+            likeButton.classList.toggle('is-liked', data.liked);
+            likeButton.setAttribute('aria-pressed', String(data.liked));
+
+            likeButton.querySelector('i').className =
+                data.liked ? 'fas fa-heart' : 'far fa-heart';
+
+            likeButton.querySelector('span').textContent = data.count;
+
+        } catch (error) {
+            likeButton.classList.add('has-error');
+            window.setTimeout(
+                () => likeButton.classList.remove('has-error'),
+                450
+            );
+        } finally {
+            likeButton.classList.remove('is-loading');
+        }
+    });
+
+    if (commentsForm) {
+        commentsForm.addEventListener('submit', async event => {
+            event.preventDefault();
+
+            const content = commentsInput.value.trim();
+
+            if (!content || !commentsVideoId.value) return;
+
+            if (commentsSubmit.classList.contains('is-loading')) return;
+
+            commentsSubmit.classList.add('is-loading');
+            commentsSubmit.disabled = true;
+
+            const formData = new FormData();
+            formData.append('content', content);
+
+            if (commentsParentId.value) {
+                formData.append('parent_id', commentsParentId.value);
+            }
+
+            try {
+                const response = await fetch(
+                    `/videos/comment/${commentsVideoId.value}`,
+                    {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('comment request failed');
+                }
+
+                const data = await response.json();
+
+                commentsInput.value = '';
+                commentsParentId.value = '';
+                replyingBar.hidden = true;
+                commentsInput.placeholder = 'أضف تعليقاً...';
+
+                updateCommentsCount(data.count);
+
+                // إعادة تحميل القائمة للحصول على الردود والترتيب الصحيح.
+                await loadComments(commentsVideoId.value);
+
+                commentsList.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+
+            } catch (error) {
+                commentsSubmit.classList.add('has-error');
+
+                window.setTimeout(
+                    () => commentsSubmit.classList.remove('has-error'),
+                    500
+                );
+            } finally {
+                commentsSubmit.classList.remove('is-loading');
+                commentsSubmit.disabled = false;
+                commentsInput.focus();
+            }
+        });
+    }
 
     stream.addEventListener('keydown', (event) => {
         if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;

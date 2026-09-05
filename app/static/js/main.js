@@ -177,7 +177,15 @@ window.copyLink = function(url) {
         document.body.removeChild(input);
         alert('✅ تم نسخ الرابط!');
     });
-};
+}
+
+// ربط زر المشاركة
+document.addEventListener("click", function(e) {
+    const btn = e.target.closest(".share-btn");
+    if (!btn) return;
+    const url = btn.dataset.shareUrl;
+    if (url) window.copyLink(url);
+});
 
 // ==============================
 // تفعيل قائمة المشاركة
@@ -243,14 +251,52 @@ function playReactionSelectionAnimation(icon) {
     icon.classList.add('reaction-just-selected');
 }
 
-function renderReactionSummary(summary, reactionCounts, totalCount) {
+function renderReactionSummary(summary, reactionCounts, totalCount, userReaction, recentUsers = []) {
     if (!summary) return;
+
+    const textSpan = summary.querySelector('#reaction-summary-text-' + summary.id.split('-').pop());
+    if (!textSpan) return;
+
+    if (totalCount <= 0) {
+        textSpan.textContent = '';
+        return;
+    }
+
+    const users = Array.isArray(recentUsers) ? recentUsers : [];
+
+    if (users.length > 0) {
+        const names = users.map(user => {
+            return user.is_current_user ? 'أنت' : (user.name || 'مستخدم');
+        });
+
+        let text = names.join(' و ');
+
+        const remaining = totalCount - users.length;
+
+        if (remaining > 0) {
+            text += ` و ${remaining} آخرين`;
+        }
+
+        textSpan.textContent = text;
+        return;
+    }
+
+    // fallback إذا لم تصل بيانات المستخدمين
+    if (userReaction) {
+        const emoji = reactionIcons[userReaction] || '👍';
+        const others = totalCount - 1;
+        textSpan.innerHTML = `${emoji} أنت${others > 0 ? ` و ${others} آخرين` : ''}`;
+        return;
+    }
+
     const orderedTypes = ['like', 'love', 'haha', 'angry', 'sad'];
+
     const content = orderedTypes
         .filter(type => Number(reactionCounts?.[type]) > 0)
-        .map(type => `<span class="reaction-item reaction-summary-${type}">${reactionIcons[type]} ${reactionCounts[type]}</span>`)
-        .join('');
-    summary.innerHTML = content || (totalCount > 0 ? `<span class="reaction-item">👍 ${totalCount}</span>` : '');
+        .map(type => `${reactionIcons[type]} ${reactionCounts[type]}`)
+        .join(' ');
+
+    textSpan.textContent = content || `👍 ${totalCount}`;
 }
 
 function updateReactionUi(postId, reaction, data, elements) {
@@ -273,7 +319,13 @@ function updateReactionUi(postId, reaction, data, elements) {
     elements.wrapper?.querySelectorAll('.reaction-option').forEach(option => {
         option.classList.toggle('is-selected', option.dataset.reaction === activeReaction);
     });
-    renderReactionSummary(elements.summary, data.reaction_counts, data.count ?? 0);
+    renderReactionSummary(
+        elements.summary,
+        data.reaction_counts,
+        data.count ?? 0,
+        activeReaction,
+        data.recent_users || []
+    );
     playReactionSelectionAnimation(elements.icon);
 }
 
@@ -758,3 +810,15 @@ function copyToClipboard(text) {
     document.execCommand('copy');
     document.body.removeChild(el);
 }
+
+/* فتح صفحة المنشور عند الضغط على البطاقة */
+document.addEventListener('click', function(e) {
+    const card = e.target.closest('.post-card');
+    if (!card) return;
+
+    /* لا نفتح المنشور عند الضغط على زر أو رابط داخله */
+    if (e.target.closest('button, a, input, textarea, select, .reaction-picker')) return;
+
+    const url = card.dataset.postUrl;
+    if (url) window.location.href = url;
+});

@@ -135,11 +135,61 @@ def like(post_id):
     for stored_reaction in post.likes.all():
         reaction_counts[stored_reaction.reaction_type] = reaction_counts.get(stored_reaction.reaction_type, 0) + 1
 
+    # آخر المتفاعلين — مع ضمان إدراج المستخدم الحالي إذا كان متفاعلاً
+    all_reactions = list(
+        Like.query
+        .filter_by(post_id=post_id)
+        .order_by(Like.created_at.desc(), Like.id.desc())
+        .all()
+    )
+
+    current_reaction = next(
+        (item for item in all_reactions if item.user_id == current_user.id),
+        None
+    )
+
+    recent_reactions = []
+
+    # المستخدم الحالي أولاً إذا كان لديه تفاعل
+    if current_reaction:
+        recent_reactions.append(current_reaction)
+
+    # إضافة أحدث المتفاعلين الآخرين حتى يصل العدد إلى 3
+    for item in all_reactions:
+        if len(recent_reactions) >= 3:
+            break
+        if item.user_id == current_user.id:
+            continue
+        recent_reactions.append(item)
+
+    recent_users = []
+    seen_users = set()
+
+    for item in recent_reactions:
+        if item.user_id in seen_users:
+            continue
+
+        seen_users.add(item.user_id)
+
+        user = User.query.get(item.user_id)
+        if not user:
+            continue
+
+        # اختيار اسم العرض المتاح في نموذج المستخدم
+        name = user.name or user.username or 'مستخدم'
+
+        recent_users.append({
+            'id': user.id,
+            'name': name,
+            'is_current_user': user.id == current_user.id
+        })
+
     return jsonify({
         'liked': liked,
         'reaction': reaction_type if liked else None,
         'count': post.likes.count(),
-        'reaction_counts': reaction_counts
+        'reaction_counts': reaction_counts,
+        'recent_users': recent_users
     })
 
 @posts_bp.route('/post/<int:post_id>')

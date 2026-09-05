@@ -1,5 +1,5 @@
 {% set post_url = url_for('posts.view_post', public_id=post.public_id, _external=true) %}
-<div class="post-card" data-post-id="{{ post.id }}">
+<div class="post-card" data-post-id="{{ post.id }}" data-post-url="{{ post_url }}" role="link" tabindex="0">
     <!-- رأس المنشور -->
     <div class="post-card-header">
         <div class="post-author-info">
@@ -107,18 +107,21 @@
         <p class="mb-0 text-dark" id="ai-summary-text-{{ post.id }}">جاري التلخيص...</p>
     </div>
 
+    </div>
+
     <!-- إحصائيات التفاعل -->
     <div class="post-stats">
-<div class="reactions-summary" id="reaction-summary-{{ post.id }}">
-    {% set reactions = get_reaction_counts(post.id) %}
-    {% if reactions.like > 0 %}<span class="reaction-item">👍 {{ reactions.like }}</span>{% endif %}
-    {% if reactions.love > 0 %}<span class="reaction-item">🥰 {{ reactions.love }}</span>{% endif %}
-    {% if reactions.haha > 0 %}<span class="reaction-item">🤣 {{ reactions.haha }}</span>{% endif %}
-    {% if reactions.angry > 0 %}<span class="reaction-item">😡 {{ reactions.angry }}</span>{% endif %}
-    {% if reactions.sad > 0 %}<span class="reaction-item">😢 {{ reactions.sad }}</span>{% endif %}
-    {% set total = reactions.like + reactions.love + reactions.haha + reactions.angry + reactions.sad %}
-    {% if total > 0 %}<a href="/post/{{ post.id }}/reactions" class="text-primary fw-bold text-decoration-underline" style="cursor:pointer;">{{ total }}</a>{% endif %}
-</div>
+        <div class="reactions-summary" id="reaction-summary-{{ post.id }}">
+            {% set reactions = get_reaction_counts(post.id) %}
+            {% set total = reactions.like + reactions.love + reactions.haha + reactions.angry + reactions.sad %}
+            {% if total > 0 %}
+                <a href="/post/{{ post.id }}/reactions" class="text-decoration-none">
+                    <span class="reaction-summary-text" id="reaction-summary-text-{{ post.id }}">{{ total }} من الأشخاص</span>
+                </a>
+            {% else %}
+                <span class="reaction-summary-text" id="reaction-summary-text-{{ post.id }}"></span>
+            {% endif %}
+        </div>
         {% set comment_count = post.comment_count() %}
     </div>
 
@@ -152,6 +155,11 @@
         <!-- زر تلخيص mini-llm Arabic -->
         <button class="action-btn ai-summarize-btn text-primary" data-post="{{ post.id }}" title="تلخيص بواسطة mini-llm Arabic">
             <i class="fas fa-robot"></i>
+        </button>
+        <!-- زر المشاركة -->
+        <button type="button" class="action-btn share-btn" data-post="{{ post.id }}" data-share-url="{{ post_url }}" aria-label="مشاركة المنشور" title="مشاركة المنشور">
+            <i class="fas fa-share-alt"></i>
+            <span>مشاركة</span>
         </button>
     </div>
 

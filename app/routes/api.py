@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, url_for
 from flask_login import login_required, current_user
-from app.models import Post, User, Video
+from app.models import Post, User, Video, Moment, MomentPost
 from app.extensions import db
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
@@ -84,3 +84,73 @@ def get_reels():
         }
         for v in videos
     ])
+
+
+@api_bp.route('/moments')
+@login_required
+def get_moments():
+    """جلب آخر الـ Moments النشطة (JSON)"""
+    moments = (
+        Moment.query
+        .filter_by(status='active')
+        .order_by(Moment.updated_at.desc())
+        .limit(20)
+        .all()
+    )
+
+    return jsonify([{
+        'id': m.id,
+        'title': m.title,
+        'description': m.description,
+        'cover_media': m.cover_media,
+        'status': m.status,
+        'created_at': m.created_at.isoformat(),
+        'updated_at': m.updated_at.isoformat(),
+        'expires_at': m.expires_at.isoformat() if m.expires_at else None,
+        'posts_count': m.posts.count()
+    } for m in moments])
+
+
+@api_bp.route('/moments/<int:moment_id>')
+@login_required
+def get_moment(moment_id):
+    """جلب تفاصيل Moment ومنشوراته (JSON)"""
+    moment = Moment.query.filter_by(
+        id=moment_id,
+        status='active'
+    ).first_or_404()
+
+    posts = (
+        moment.posts
+        .join(Post, MomentPost.post_id == Post.id)
+        .order_by(Post.created_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    return jsonify({
+        'id': moment.id,
+        'title': moment.title,
+        'description': moment.description,
+        'cover_media': moment.cover_media,
+        'status': moment.status,
+        'created_at': moment.created_at.isoformat(),
+        'updated_at': moment.updated_at.isoformat(),
+        'expires_at': moment.expires_at.isoformat() if moment.expires_at else None,
+        'posts_count': moment.posts.count(),
+        'posts': [{
+            'id': p.public_id,
+            'url': url_for('posts.view_post', public_id=p.public_id),
+            'content': p.content,
+            'image': p.image,
+            'created_at': p.created_at.isoformat(),
+            'author': {
+                'id': p.author.id,
+                'username': p.author.username,
+                'name': p.author.name,
+                'avatar': p.author.avatar
+            },
+            'likes': p.like_count(),
+            'comments': p.comment_count()
+        } for p in posts]
+    })

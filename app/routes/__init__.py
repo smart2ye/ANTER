@@ -6,6 +6,7 @@ from .posts import posts_bp
 from .admin import admin_bp
 from .messages import messages_bp
 from .mobile_api import mobile_api_bp
+from .api import api_bp
 from .notifications import notifications_bp
 from .videos import videos_bp
 from .explore import explore_bp
@@ -25,6 +26,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(messages_bp, url_prefix='/messages')
     app.register_blueprint(mobile_api_bp, url_prefix='/api/mobile')
+    app.register_blueprint(api_bp)
     app.register_blueprint(notifications_bp, url_prefix='/notifications')
     app.register_blueprint(videos_bp, url_prefix='/videos')
     app.register_blueprint(explore_bp, url_prefix='/explore')

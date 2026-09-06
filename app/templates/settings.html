@@ -34,6 +34,7 @@
     <div class="mt-4">
         <h6 class="border-bottom pb-2"><i class="fas fa-user-edit"></i> المعلومات الشخصية</h6>
         <form method="POST" action="{{ url_for('users.settings') }}" id="profile-info-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
                 <label class="form-label fw-semibold"><i class="fas fa-at text-primary"></i> اسم المستخدم ورابط الملف الشخصي</label>
                 <div class="input-group">

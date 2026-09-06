@@ -9,7 +9,7 @@
             <p>عدد المتفاعلين: {{ users|length }}</p>
             <ul class="list-group">
             {% for user in users %}
-                <li class="list-group-item">{{ user.username }}</li>
+                <li class="list-group-item"><a href="{{ url_for("users.profile", username=user.username) }}" class="text-decoration-none fw-bold">{{ user.username }}</a></li>
             {% endfor %}
             </ul>
         </div>

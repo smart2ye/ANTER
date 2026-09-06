@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import login_required, current_user
 from app.extensions import db, csrf
 from app.models import Video, VideoLike, VideoComment, VideoCommentLike, Notification
@@ -72,6 +72,26 @@ def upload():
 
     return render_template('videos/upload.html')
 
+@videos_bp.route('/view/<public_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def register_view(public_id):
+    """تسجيل مشاهدة الريل مرة واحدة لكل جلسة."""
+    video = Video.query.filter_by(public_id=public_id, is_reel=True).first_or_404()
+
+    viewed_key = f'reel_viewed_{video.id}'
+
+    if not session.get(viewed_key):
+        video.views = (video.views or 0) + 1
+        session[viewed_key] = True
+        db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'views': video.views
+    })
+
+
 @videos_bp.route('/watch/<int:video_id>')
 @login_required
 def watch_legacy(video_id):
@@ -109,6 +129,66 @@ def like(video_id):
     log_user_activity(current_user.id, 'video_reaction_add' if liked else 'video_reaction_remove', {'video_id': video_id})
     return jsonify({'liked': liked, 'count': video.like_count()})
 
+@videos_bp.route('/comments/<int:video_id>', methods=['GET'])
+@login_required
+def get_comments(video_id):
+    """جلب تعليقات الريل وردهوده بصيغة JSON للـReels Bottom Sheet."""
+    video = Video.query.get_or_404(video_id)
+
+    comments = (
+        video.comments
+        .filter_by(parent_id=None)
+        .order_by(VideoComment.created_at.desc())
+        .limit(100)
+        .all()
+    )
+
+    def serialize(comment):
+        replies = (
+            comment.replies
+            .order_by(VideoComment.created_at.asc())
+            .limit(50)
+            .all()
+        )
+
+        return {
+            'id': comment.id,
+            'content': comment.content,
+            'created_at': comment.created_at.isoformat() if comment.created_at else '',
+            'likes': comment.like_count(),
+            'liked': comment.likes.filter_by(user_id=current_user.id).first() is not None,
+            'author': {
+                'id': comment.author.id,
+                'name': comment.author.name,
+                'username': comment.author.username,
+                'avatar': comment.author.avatar
+            },
+            'replies': [
+                {
+                    'id': reply.id,
+                    'content': reply.content,
+                    'created_at': reply.created_at.isoformat() if reply.created_at else '',
+                    'likes': reply.like_count(),
+                    'liked': reply.likes.filter_by(user_id=current_user.id).first() is not None,
+                    'author': {
+                        'id': reply.author.id,
+                        'name': reply.author.name,
+                        'username': reply.author.username,
+                        'avatar': reply.author.avatar
+                    }
+                }
+                for reply in replies
+            ]
+        }
+
+    return jsonify({
+        'success': True,
+        'video_id': video.id,
+        'count': video.comment_count(),
+        'comments': [serialize(comment) for comment in comments]
+    })
+
+
 @videos_bp.route('/comment/<int:video_id>', methods=['POST'])
 @login_required
 @csrf.exempt
@@ -135,6 +215,26 @@ def comment(video_id):
     db.session.add(comment)
     db.session.commit()
     log_user_activity(current_user.id, 'video_comment_create', {'video_id': video.id, 'comment_id': comment.id})
+    # طلبات Reels AJAX تحصل على النتيجة مباشرة دون إعادة تحميل الصفحة.
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+        return jsonify({
+            'success': True,
+            'comment': {
+                'id': comment.id,
+                'content': comment.content,
+                'created_at': comment.created_at.isoformat() if comment.created_at else '',
+                'likes': 0,
+                'liked': False,
+                'author': {
+                    'id': current_user.id,
+                    'name': current_user.name,
+                    'username': current_user.username,
+                    'avatar': current_user.avatar
+                }
+            },
+            'count': video.comment_count()
+        })
+
     flash('تم إضافة التعليق.', 'success')
     return redirect(url_for('videos.watch', public_id=video.public_id))
 

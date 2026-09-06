@@ -53,20 +53,34 @@ def get_user(username):
 @api_bp.route('/videos/reels')
 @login_required
 def get_reels():
-    """جلب الريلزات (JSON)"""
-    videos = Video.query.filter_by(is_reel=True).order_by(Video.created_at.desc()).limit(20).all()
-    return jsonify([{
-        'id': v.public_id,
-        'url': url_for('videos.watch', public_id=v.public_id),
-        'title': v.title,
-        'description': v.description,
-        'thumbnail': v.thumbnail_path,
-        'views': v.views,
-        'likes': v.like_count(),
-        'comments': v.comment_count(),
-        'author': {
-            'id': v.author.id,
-            'username': v.author.username,
-            'name': v.author.name
+    """جلب الريلزات (JSON) مع حالة تفاعل المستخدم الحالي."""
+    videos = (
+        Video.query
+        .filter_by(is_reel=True)
+        .order_by(Video.created_at.desc())
+        .limit(20)
+        .all()
+    )
+
+    return jsonify([
+        {
+            'id': v.public_id,
+            'video_id': v.id,
+            'url': url_for('videos.watch', public_id=v.public_id),
+            'title': v.title,
+            'description': v.description,
+            'thumbnail': v.thumbnail_path,
+            'views': v.views,
+            'likes': v.like_count(),
+            'comments': v.comment_count(),
+            'liked': v.likes.filter_by(user_id=current_user.id).first() is not None,
+            'duration': v.duration or 0,
+            'author': {
+                'id': v.author.id,
+                'username': v.author.username,
+                'name': v.author.name,
+                'avatar': v.author.avatar
+            }
         }
-    } for v in videos])
+        for v in videos
+    ])

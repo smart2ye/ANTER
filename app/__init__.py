@@ -25,9 +25,12 @@ def _get_admin_path(config):
     return f"admin-{secrets.token_urlsafe(24)}"
 
 
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    if test_config:
+        app.config.update(test_config)
 
     db.init_app(app)
     login_manager.init_app(app)

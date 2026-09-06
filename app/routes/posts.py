@@ -8,6 +8,7 @@ from app.utils.helpers import extract_hashtags, allowed_audio_file, extract_link
 from app.utils.image_storage import prepare_image_data
 from app.services.anter_user_messages import send_report_receipt
 from app.services.privacy import POST_VISIBILITIES, can_view_post
+from app.services.moment_detector import detect_for_post
 
 from datetime import datetime
 import os
@@ -475,6 +476,7 @@ def create():
                 db.session.flush()
             post.hashtags.append(tag)
 
+        detect_for_post(post)
         # معالجة الإشارات (@mention) في المنشور
         import re
         usernames = re.findall(r'@([\w.]+)', content)

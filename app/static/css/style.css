@@ -3946,3 +3946,426 @@ body.reels-comments-open {
     border: 1px solid rgba(255,255,255,0.18);
     font-family: inherit;
 }
+
+
+/* ========================================
+   ANTER MOMENTS
+   ======================================== */
+
+.moments-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 18px 0 40px;
+}
+
+.moments-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px;
+    margin-bottom: 28px;
+    overflow: hidden;
+    border-radius: 20px;
+    background:
+        linear-gradient(135deg, #1877f2 0%, #6f42c1 55%, #9b59b6 100%);
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(24, 119, 242, 0.20);
+}
+
+.moments-hero::after {
+    content: "";
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    left: -50px;
+    bottom: -100px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+}
+
+.moments-hero-icon {
+    width: 62px;
+    height: 62px;
+    flex: 0 0 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.25);
+    font-size: 1.6rem;
+    backdrop-filter: blur(10px);
+}
+
+.moments-eyebrow {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    opacity: 0.8;
+}
+
+.moments-hero h1 {
+    margin: 2px 0 3px;
+    font-size: 1.8rem;
+    font-weight: 900;
+}
+
+.moments-hero p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.moments-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 16px;
+}
+
+.moments-section-header h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.moments-section-header p {
+    margin: 4px 0 0;
+    color: var(--fb-text-muted);
+    font-size: 0.82rem;
+}
+
+.moments-count {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #e7f3ff;
+    color: var(--fb-blue);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.moments-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.moment-card {
+    overflow: hidden;
+    background: var(--fb-card);
+    border: 1px solid var(--fb-border);
+    border-radius: 18px;
+    box-shadow: var(--fb-shadow);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.moment-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 26px rgba(0,0,0,0.13);
+}
+
+.moment-cover {
+    position: relative;
+    height: 190px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1877f2, #6f42c1);
+}
+
+.moment-cover img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.moment-cover-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: rgba(255,255,255,0.9);
+}
+
+.moment-cover-placeholder i {
+    font-size: 2.4rem;
+}
+
+.moment-cover-placeholder span {
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+}
+
+.moment-cover-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.05),
+        rgba(0,0,0,0.38)
+    );
+}
+
+.moment-live-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    backdrop-filter: blur(8px);
+}
+
+.moment-live-badge span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #36d399;
+    box-shadow: 0 0 8px rgba(54,211,153,0.8);
+}
+
+.moment-post-count {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    backdrop-filter: blur(8px);
+}
+
+.moment-body {
+    padding: 16px;
+}
+
+.moment-body h3 {
+    margin: 0 0 7px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--fb-text);
+}
+
+.moment-body p {
+    margin: 0 0 13px;
+    color: var(--fb-text-muted);
+    font-size: 0.84rem;
+    line-height: 1.7;
+}
+
+.moment-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 11px;
+    border-top: 1px solid var(--fb-border);
+    color: var(--fb-text-muted);
+    font-size: 0.72rem;
+}
+
+.moment-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.moment-meta i {
+    color: var(--fb-blue);
+}
+
+.moments-empty {
+    margin-top: 25px;
+    padding: 55px 25px;
+    text-align: center;
+    background: var(--fb-card);
+    border: 1px solid var(--fb-border);
+    border-radius: 20px;
+    box-shadow: var(--fb-shadow);
+}
+
+.moments-empty-icon {
+    width: 78px;
+    height: 78px;
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 24px;
+    background: #e7f3ff;
+    color: var(--fb-blue);
+    font-size: 2rem;
+}
+
+.moments-empty h2 {
+    margin-bottom: 8px;
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.moments-empty p {
+    max-width: 500px;
+    margin: 0 auto;
+    color: var(--fb-text-muted);
+    font-size: 0.88rem;
+    line-height: 1.8;
+}
+
+.moments-empty-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    max-width: 180px;
+    margin: 25px auto 10px;
+}
+
+.moments-empty-line span {
+    width: 55px;
+    height: 1px;
+    background: var(--fb-border);
+}
+
+.moments-empty-line i {
+    font-size: 0.4rem;
+    color: var(--fb-blue);
+}
+
+.moments-empty small {
+    color: var(--fb-text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+
+/* Mobile */
+
+@media (max-width: 767.98px) {
+
+    .moments-page {
+        padding: 10px 0 30px;
+    }
+
+    .moments-hero {
+        padding: 19px;
+        border-radius: 17px;
+        margin-bottom: 22px;
+    }
+
+    .moments-hero-icon {
+        width: 52px;
+        height: 52px;
+        flex-basis: 52px;
+        border-radius: 15px;
+    }
+
+    .moments-hero h1 {
+        font-size: 1.45rem;
+    }
+
+    .moments-section-header {
+        align-items: flex-start;
+    }
+
+    .moments-section-header p {
+        font-size: 0.75rem;
+    }
+
+    .moments-count {
+        font-size: 0.7rem;
+        padding: 5px 9px;
+    }
+
+    .moments-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .moment-cover {
+        height: 180px;
+    }
+
+    .moment-body {
+        padding: 14px;
+    }
+
+    .moment-meta {
+        font-size: 0.68rem;
+    }
+
+    .moments-empty {
+        padding: 45px 18px;
+    }
+}
+
+/* ==========================================
+   ANTER TRENDS TABS
+   ========================================== */
+
+.trends-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 24px;
+    padding: 4px;
+    background: var(--fb-bg-secondary, #f0f2f5);
+    border-radius: 14px;
+    width: fit-content;
+}
+
+.trends-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: 11px;
+    color: #65676b;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.trends-tab:hover {
+    color: #1877f2;
+    text-decoration: none;
+}
+
+.trends-tab.active {
+    background: #fff;
+    color: #1877f2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 576px) {
+    .trends-tabs {
+        width: 100%;
+    }
+
+    .trends-tab {
+        flex: 1;
+        padding: 9px 12px;
+    }
+}

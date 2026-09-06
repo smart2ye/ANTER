@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}ANTER Moments{% endblock %}
+
+{% block content %}
+
+<div class="moments-page">
+
+    <!-- Hero -->
+    <section class="moments-hero">
+        <div class="moments-hero-icon">
+            <i class="fas fa-bolt"></i>
+        </div>
+
+        <div>
+            <span class="moments-eyebrow">ANTER</span>
+            <h1>Moments</h1>
+            <p>
+                ما يحدث الآن، في مكان واحد.
+            </p>
+        </div>
+    </section>
+
+    {% if moments %}
+
+        <div class="moments-section-header">
+            <div>
+                <h2>اللحظات الرائجة</h2>
+                <p>مواضيع تجمع منشورات متعددة حول حدث واحد.</p>
+            </div>
+
+            <span class="moments-count">
+                {{ moments|length }} لحظة
+            </span>
+        </div>
+
+        <div class="moments-grid">
+
+            {% for moment in moments %}
+
+                <a href="{{ url_for('moments.detail', moment_id=moment.id) }}" class="moment-card-link">
+    <article class="moment-card">
+
+                    <div class="moment-cover">
+
+                        {% if moment.cover_media %}
+                            <img
+                                src="{{ moment.cover_media }}"
+                                alt="{{ moment.title }}"
+                                loading="lazy"
+                            >
+                        {% else %}
+                            <div class="moment-cover-placeholder">
+                                <i class="fas fa-bolt"></i>
+                                <span>ANTER</span>
+                            </div>
+                        {% endif %}
+
+                        <div class="moment-cover-overlay"></div>
+
+                        <div class="moment-live-badge">
+                            <span></span>
+                            نشطة
+                        </div>
+
+                        <div class="moment-post-count">
+                            <i class="fas fa-layer-group"></i>
+                            {{ moment.posts.count() }}
+                        </div>
+
+                    </div>
+
+                    <div class="moment-body">
+
+                        <h3>{{ moment.title }}</h3>
+
+                        {% if moment.description %}
+                            <p>{{ moment.description }}</p>
+                        {% endif %}
+
+                        <div class="moment-meta">
+                            <span>
+                                <i class="fas fa-clock"></i>
+                                {{ moment.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                            </span>
+
+                            <span>
+                                <i class="fas fa-comments"></i>
+                                {{ moment.posts.count() }} منشور
+                            </span>
+                        </div>
+
+                    </div>
+
+                </article>
+</a>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <!-- Empty State -->
+        <section class="moments-empty">
+
+            <div class="moments-empty-icon">
+                <i class="fas fa-bolt"></i>
+            </div>
+
+            <h2>لا توجد لحظات بعد</h2>
+
+            <p>
+                عندما تتجمع عدة منشورات حول حدث أو موضوع واحد،
+                ستظهر اللحظة هنا تلقائيًا.
+            </p>
+
+            <div class="moments-empty-line">
+                <span></span>
+                <i class="fas fa-circle"></i>
+                <span></span>
+            </div>
+
+            <small>
+                ANTER Moments
+            </small>
+
+        </section>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

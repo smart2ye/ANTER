@@ -220,7 +220,7 @@ def create_thumbnail(video_path, is_reel=False):
 def extract_hashtags(text):
     """استخراج جميع الوسوم (#hashtag) من النص"""
     import re
-    return re.findall(r'#([\w\u0600-\u06FF]+)', text)
+    return re.findall(r'(?<!&)#([\w\u0600-\u06FF]+)', text)
 
 def process_hashtags(post_id, content):
     """معالجة الوسوم في المنشور (إنشاء وربط)"""

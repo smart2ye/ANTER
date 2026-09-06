@@ -9,6 +9,7 @@ from app.utils.image_storage import prepare_image_data
 from app.services.anter_user_messages import send_report_receipt
 from app.services.privacy import POST_VISIBILITIES, can_view_post
 from app.services.moment_detector import detect_for_post
+from app.models.moment import Moment, MomentPost
 
 from datetime import datetime
 import os
@@ -51,7 +52,7 @@ def edit(post_id):
         for existing_tag in post.hashtags.all():
             post.hashtags.remove(existing_tag)
         hashtags = extract_hashtags(content)
-        for tag_name in hashtags:
+        for tag_name in dict.fromkeys(hashtags):
             tag = Hashtag.query.filter_by(name=tag_name).first()
             if not tag:
                 tag = Hashtag(name=tag_name)
@@ -437,6 +438,7 @@ def create():
     form = PostForm()
     if form.validate_on_submit():
         content = form.content.data
+        moment_id = request.args.get('moment_id', type=int)
         if not content:
             flash('المنشور لا يمكن أن يكون فارغاً', 'danger')
             return redirect(url_for('posts.create'))
@@ -468,7 +470,14 @@ def create():
         db.session.add(post)
         db.session.flush()
 
-        for tag_name in hashtags:
+        moment = None
+        if moment_id:
+            moment = Moment.query.filter_by(
+                id=moment_id,
+                status='active'
+            ).first()
+
+        for tag_name in dict.fromkeys(hashtags):
             tag = Hashtag.query.filter_by(name=tag_name).first()
             if not tag:
                 tag = Hashtag(name=tag_name)
@@ -477,6 +486,16 @@ def create():
             post.hashtags.append(tag)
 
         detect_for_post(post)
+
+        if moment:
+            db.session.add(
+                MomentPost(
+                    moment_id=moment.id,
+                    post_id=post.id,
+                )
+            )
+            moment.updated_at = datetime.utcnow()
+
         # معالجة الإشارات (@mention) في المنشور
         import re
         usernames = re.findall(r'@([\w.]+)', content)

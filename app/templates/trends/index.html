@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container-fluid">
+    <div class="trends-tabs">
+        <a href="{{ url_for('trends.index') }}" class="trends-tab active">
+            <i class="fas fa-fire"></i>
+            <span>الترندات</span>
+        </a>
+
+        <a href="{{ url_for('moments.index') }}" class="trends-tab">
+            <i class="fas fa-bolt"></i>
+            <span>اللحظات</span>
+        </a>
+    </div>
+
     <div class="row">
         <!-- قسم المنشورات التريند -->
         <div class="col-md-8">

@@ -15,6 +15,7 @@ from app.routes import register_blueprints
 import os
 import secrets
 from datetime import datetime, timedelta
+from html import unescape
 
 
 def _get_admin_path(config):
@@ -183,7 +184,7 @@ def create_app(test_config=None):
         )
 
     def linkify_hashtags(content):
-        escaped_content = str(escape(content or ''))
+        escaped_content = str(escape(unescape(content or '')))
 
         def replace_tag(match):
             tag = match.group(1)

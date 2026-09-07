@@ -30,8 +30,9 @@
                     {% for error in form.gender.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                 </div>
                 <div class="col-6">
-                    <label class="form-label fw-semibold small">{{ form.birth_date.label.text }} <span class="text-muted fw-normal">(اختياري)</span></label>
-                    {{ form.birth_date(type="date", class="form-control" + (" is-invalid" if form.birth_date.errors else ""), autocomplete="bday") }}
+                    <label class="form-label fw-semibold small">{{ form.birth_date.label.text }} <span class="text-muted fw-normal">(مطلوب)</span></label>
+                    {{ form.birth_date(type="text", class="form-control" + (" is-invalid" if form.birth_date.errors else ""), autocomplete="bday", inputmode="numeric", placeholder="DD/MM/YYYY", maxlength="10", id="birthDateInput") }}
+                    <small class="form-text text-muted">اكتب تاريخ ميلادك بهذا الشكل: 22/05/1999</small>
                     {% for error in form.birth_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                 </div>
             </div>
@@ -81,14 +82,14 @@
                 {% for error in form.confirm_password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
             </div>
 
-            <div class="mb-3 form-check">
-                {{ form.terms_agreed(class="form-check-input" + (" is-invalid" if form.terms_agreed.errors else "")) }}
-                {{ form.terms_agreed.label(class="form-check-label small") }}
-                <small class="d-block text-muted mt-1"><a href="{{ url_for('main.terms') }}" target="_blank">الشروط والأحكام</a> و <a href="{{ url_for('main.privacy') }}" target="_blank">سياسة الخصوصية</a></small>
-                {% for error in form.terms_agreed.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            <div class="mb-3 text-muted small text-center">
+                بالضغط على «موافق وإنشاء الحساب»، فإنك توافق على
+                <a href="{{ url_for('main.terms') }}" target="_blank">الشروط والأحكام</a>
+                و
+                <a href="{{ url_for('main.privacy') }}" target="_blank">سياسة الخصوصية</a>.
             </div>
 
-            {{ form.submit(class="btn btn-primary w-100 py-2 fw-bold rounded-pill") }}
+            {{ form.submit(value="موافق وإنشاء الحساب", class="btn btn-primary w-100 py-2 fw-bold rounded-pill") }}
         </form>
 
         <hr class="my-3">
@@ -112,6 +113,22 @@
 </style>
 
 <script>
+    const birthDateInput = document.getElementById('birthDateInput');
+
+    if (birthDateInput) {
+        birthDateInput.addEventListener('input', () => {
+            let value = birthDateInput.value.replace(/\D/g, '').slice(0, 8);
+
+            if (value.length > 4) {
+                value = value.slice(0, 2) + '/' + value.slice(2, 4) + '/' + value.slice(4);
+            } else if (value.length > 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2);
+            }
+
+            birthDateInput.value = value;
+        });
+    }
+
     const passwordInput = document.getElementById('passwordInput');
     const strengthBadge = document.getElementById('passwordStrength');
     const passwordWarning = document.getElementById('passwordWarning');

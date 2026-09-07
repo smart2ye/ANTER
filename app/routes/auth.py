@@ -105,7 +105,7 @@ def register():
             country_code=form.country_code.data,
             phone=form.country_code.data + phone if phone else None,
             phone_verified=False,
-            terms_agreed=form.terms_agreed.data
+            terms_agreed=True
         )
         user.set_password(form.password.data)
         assistant = ensure_anter_assistant_user()

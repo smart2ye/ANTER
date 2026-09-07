@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from datetime import date
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
 from wtforms.fields import DateField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, Optional
@@ -58,13 +59,29 @@ class LoginForm(FlaskForm):
 class RegistrationForm(FlaskForm):
     name = StringField('الاسم الكامل', validators=[DataRequired(), Length(min=2, max=100)])
     gender = SelectField('الجنس', choices=GENDER_CHOICES, validators=[DataRequired(message='اختر الجنس لتحديد الأيقونة الافتراضية.')])
-    birth_date = DateField('تاريخ الميلاد', format='%Y-%m-%d', validators=[Optional()])
+    birth_date = DateField('تاريخ الميلاد', format='%d/%m/%Y', validators=[DataRequired(message='تاريخ الميلاد مطلوب.')])
+    def validate_birth_date(self, birth_date):
+        if not birth_date.data:
+            return
+
+        today = date.today()
+        birth = birth_date.data
+
+        if birth > today:
+            raise ValidationError('تاريخ الميلاد لا يمكن أن يكون في المستقبل.')
+
+        age = today.year - birth.year - (
+            (today.month, today.day) < (birth.month, birth.day)
+        )
+
+        if age < 13:
+            raise ValidationError('يجب أن يكون عمرك 13 سنة أو أكثر.')
+
     country_code = SelectField('مفتاح الدولة', choices=COUNTRY_CODES, default='+967')
     phone = StringField('رقم الجوال', validators=[Optional(), Length(min=6, max=15, message='رقم الجوال يجب أن يكون بين 6 و15 رقماً.')])
     email = StringField('البريد الإلكتروني', validators=[Optional(), Email(message='اكتب بريداً إلكترونياً صحيحاً.')])
     password = PasswordField('كلمة المرور', validators=[DataRequired(), Length(min=4, message='اكتب كلمة مرور من 4 أحرف أو أرقام على الأقل.')])
     confirm_password = PasswordField('إعادة تأكيد كلمة المرور', validators=[DataRequired(), EqualTo('password', message='كلمتا المرور غير متطابقتين.')])
-    terms_agreed = BooleanField('أوافق على الشروط والأحكام وسياسة الخصوصية', validators=[DataRequired(message='يجب الموافقة على الشروط والأحكام.')])
     submit = SubmitField('إنشاء الحساب')
 
     def validate(self, extra_validators=None):

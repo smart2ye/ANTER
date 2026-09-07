@@ -48,6 +48,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'avatar_mime': 'VARCHAR(100)',
             'profile_visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
             'show_online_status': 'BOOLEAN NOT NULL DEFAULT TRUE',
+            'email_verified': 'BOOLEAN NOT NULL DEFAULT FALSE',
         },
         'posts': {
             'image_data': binary_type,

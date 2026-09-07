@@ -11,10 +11,61 @@ from app.services.anter_assistant import is_anter_assistant
 from app.services.privacy import can_view_profile, can_view_post
 from datetime import datetime
 import re
+from itsdangerous import URLSafeTimedSerializer
+from app.utils.email import send_email_verification
 
 users_bp = Blueprint('users', __name__, url_prefix='/users')
 USERNAME_PATTERN = re.compile(r'[A-Za-z0-9_\u0600-\u06FF](?:[A-Za-z0-9_\u0600-\u06FF]|\.(?=[A-Za-z0-9_\u0600-\u06FF])){2,29}')
 VERIFICATION_REQUEST_REASON = 'verification:account'
+
+EMAIL_VERIFICATION_SALT = 'email-verification'
+EMAIL_VERIFICATION_MAX_AGE = 24 * 60 * 60
+
+
+def create_email_verification_token(user):
+    """إنشاء توكن آمن لتأكيد البريد الإلكتروني."""
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    return serializer.dumps(
+        {
+            'user_id': user.id,
+            'email': user.email,
+        },
+        salt=EMAIL_VERIFICATION_SALT,
+    )
+
+
+def load_email_verification_token(token):
+    """فك توكن تأكيد البريد والتحقق من صلاحيته."""
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+
+    try:
+        data = serializer.loads(
+            token,
+            salt=EMAIL_VERIFICATION_SALT,
+            max_age=EMAIL_VERIFICATION_MAX_AGE,
+        )
+    except Exception:
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    user_id = data.get('user_id')
+    token_email = data.get('email')
+
+    if not user_id or not token_email:
+        return None
+
+    user = User.query.get(user_id)
+
+    if not user:
+        return None
+
+    if (user.email or '').strip().lower() != str(token_email).strip().lower():
+        return None
+
+    return user
+
 
 @users_bp.route('/api/search', methods=['GET'])
 @login_required
@@ -126,6 +177,77 @@ def edit_profile():
         return redirect(url_for('users.profile', username=current_user.username))
     return render_template('profile_edit.html', form=form)
 
+@users_bp.route('/settings/email/verify/send', methods=['POST'])
+@login_required
+def send_email_verification_request():
+    """إرسال رابط تأكيد البريد الإلكتروني للمستخدم الحالي."""
+    email = (current_user.email or '').strip().lower()
+
+    if not email or email.endswith('@phone-only.anter.local'):
+        flash('أضف بريدًا إلكترونيًا حقيقيًا أولاً حتى تتمكن من تأكيده.', 'warning')
+        return redirect(url_for('users.settings'))
+
+    if current_user.email_verified:
+        flash('تم تأكيد بريدك الإلكتروني بالفعل.', 'info')
+        return redirect(url_for('users.settings'))
+
+    # منع إعادة الإرسال المتكرر من نفس الجلسة.
+    now = datetime.utcnow().timestamp()
+    last_sent = session.get('email_verification_last_sent', 0)
+
+    if now - last_sent < 60:
+        remaining = max(1, int(60 - (now - last_sent)))
+        flash(f'انتظر {remaining} ثانية قبل إعادة إرسال رسالة التأكيد.', 'warning')
+        return redirect(url_for('users.settings'))
+
+    token = create_email_verification_token(current_user)
+
+    if not send_email_verification(current_user, token):
+        flash('تعذر إرسال رسالة تأكيد البريد الإلكتروني. حاول مرة أخرى لاحقًا.', 'danger')
+        return redirect(url_for('users.settings'))
+
+    session['email_verification_last_sent'] = now
+
+    flash('تم إرسال رسالة تأكيد البريد الإلكتروني. تحقق من صندوق الوارد.', 'success')
+    return redirect(url_for('users.settings'))
+
+
+@users_bp.route('/settings/email/verify/<token>', methods=['GET', 'POST'])
+def confirm_email(token):
+    """عرض صفحة تأكيد البريد وتنفيذ التأكيد بعد إرسال POST محمي بـ CSRF."""
+    user = load_email_verification_token(token)
+
+    if not user:
+        flash('رابط تأكيد البريد الإلكتروني غير صالح أو انتهت صلاحيته.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    if user.email_verified:
+        flash('تم تأكيد بريدك الإلكتروني بالفعل.', 'info')
+        if current_user.is_authenticated and current_user.id == user.id:
+            return redirect(url_for('users.settings'))
+        return redirect(url_for('auth.login'))
+
+    if request.method == 'GET':
+        return render_template(
+            'auth/confirm_email.html',
+            verification_token=token,
+            verification_email=user.email,
+        )
+
+    user.email_verified = True
+    db.session.commit()
+
+    session.pop('email_verification_last_sent', None)
+    log_user_activity(user.id, 'email_verification')
+
+    if current_user.is_authenticated and current_user.id == user.id:
+        flash('تم تأكيد بريدك الإلكتروني بنجاح.', 'success')
+        return redirect(url_for('users.settings'))
+
+    flash('تم تأكيد بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول إلى حسابك.', 'success')
+    return redirect(url_for('auth.login'))
+
+
 @users_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
@@ -195,6 +317,7 @@ def settings():
                     flash('هذا البريد الإلكتروني مستخدم بالفعل.', 'danger')
                     return redirect(url_for('users.settings'))
                 current_user.email = email
+                current_user.email_verified = False
                 changed_fields.append('البريد الإلكتروني')
 
         if desired_phone is not None:

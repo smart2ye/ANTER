@@ -45,6 +45,59 @@ def send_reset_email(user, token):
     return send_email(user.email, "🔑 إعادة تعيين كلمة السر – ANTER", html)
 
 
+def send_email_verification(user, token):
+    """إرسال رسالة تأكيد البريد الإلكتروني."""
+    if not user.email or user.email.endswith("@phone-only.anter.local"):
+        return False
+
+    verification_link = url_for(
+        'users.confirm_email',
+        token=token,
+        _external=True,
+    )
+
+    first_name = (user.name or user.username or "صديقنا").strip().split()[0]
+
+    subject = "✉️ تأكيد بريدك الإلكتروني – ANTER"
+
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; direction: rtl; color: #222;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #6C3CE1; margin-bottom: 8px;">ANTER</h1>
+            <h2>✉️ تأكيد البريد الإلكتروني</h2>
+        </div>
+
+        <p>مرحباً {first_name}،</p>
+
+        <p>
+            طلبت تأكيد بريدك الإلكتروني المرتبط بحسابك في ANTER.
+            اضغط على الزر التالي لإتمام عملية التأكيد:
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{verification_link}"
+               style="display: inline-block; background: #6C3CE1; color: #fff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: bold;">
+                تأكيد البريد الإلكتروني
+            </a>
+        </div>
+
+        <div style="background: #f7f5ff; border-radius: 10px; padding: 16px; margin: 24px 0;">
+            <strong>🔐 ملاحظة أمنية</strong>
+            <p style="margin-bottom: 0;">
+                هذا الرابط صالح لمدة 24 ساعة فقط.
+                إذا لم تطلب تأكيد بريدك الإلكتروني، يمكنك تجاهل هذه الرسالة.
+            </p>
+        </div>
+
+        <p style="color: #888; font-size: 12px; margin-top: 30px;">
+            فريق ANTER
+        </p>
+    </div>
+    """
+
+    return send_email(user.email, subject, html)
+
+
 def send_welcome_email(user):
     """Send a welcome email after successful registration."""
     if not user.email or user.email.endswith("@phone-only.anter.local"):

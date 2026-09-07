@@ -7,7 +7,7 @@ from app.models import User
 from app.forms.auth import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from itsdangerous import URLSafeTimedSerializer
 from app.utils.helpers import log_user_activity
-from app.utils.email import send_reset_email
+from app.utils.email import send_reset_email, send_welcome_email
 from app.services.anter_assistant import ensure_anter_assistant_user, follow_anter_assistant_for_user
 from app.services.anter_user_messages import send_welcome_message
 from app.services.anter_account_switching import (
@@ -113,6 +113,7 @@ def register():
         db.session.flush()
         follow_anter_assistant_for_user(user, assistant)
         send_welcome_message(user)
+        send_welcome_email(user)
         db.session.commit()
         log_user_activity(user.id, 'registration')
         login_user(user, remember=True)

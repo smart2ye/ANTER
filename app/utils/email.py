@@ -2,6 +2,8 @@ import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from email.utils import formataddr
 from flask import url_for
 
 SMTP_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
@@ -13,8 +15,8 @@ SMTP_FROM = os.environ.get("MAIL_FROM", SMTP_USERNAME)
 def send_email(to, subject, html_content):
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = SMTP_FROM
+        msg["Subject"] = str(Header(subject, "utf-8"))
+        msg["From"] = formataddr(("ANTER", SMTP_FROM))
         msg["To"] = to
         msg.attach(MIMEText(html_content, "html"))
 
@@ -41,6 +43,50 @@ def send_reset_email(user, token):
     </div>
     """
     return send_email(user.email, "🔑 إعادة تعيين كلمة السر – ANTER", html)
+
+
+def send_welcome_email(user):
+    """Send a welcome email after successful registration."""
+    if not user.email or user.email.endswith("@phone-only.anter.local"):
+        return False
+
+    subject = "🎉 مرحباً بك في ANTER"
+    first_name = (user.name or user.username or "صديقنا").strip().split()[0]
+
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; direction: rtl; color: #222;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #6C3CE1; margin-bottom: 8px;">ANTER</h1>
+            <h2>🎉 مرحباً بك يا {first_name}</h2>
+        </div>
+
+        <p>يسعدنا انضمامك إلى ANTER.</p>
+
+        <p>
+            تم إنشاء حسابك بنجاح، ويمكنك الآن الاستمتاع بالمنصة والتواصل
+            ومشاركة أفكارك ومتابعة من يهمك.
+        </p>
+
+        <div style="background: #f7f5ff; border-radius: 10px; padding: 16px; margin: 24px 0;">
+            <strong>🔐 نصيحة لحماية حسابك</strong>
+            <p style="margin-bottom: 0;">
+                بريدك الإلكتروني غير مؤكد حتى الآن.
+                ننصحك بتأكيده من إعدادات الحساب لاحقاً،
+                حتى تتمكن من إثبات ملكية بريدك واستعادة الوصول إلى حسابك بسهولة عند الحاجة.
+            </p>
+        </div>
+
+        <p>
+            نتمنى لك تجربة جميلة وممتعة مع ANTER 💜
+        </p>
+
+        <p style="color: #888; font-size: 12px; margin-top: 30px;">
+            فريق ANTER
+        </p>
+    </div>
+    """
+
+    return send_email(user.email, subject, html)
 
 def send_password_change_confirmation(user):
     subject = "🔐 تم تغيير كلمة السر بنجاح – ANTER"

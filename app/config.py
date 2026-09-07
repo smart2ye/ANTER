@@ -51,6 +51,7 @@ else:
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or (lambda: (_ for _ in ()).throw(ValueError("SECRET_KEY must be set in environment")))()
+    WTF_CSRF_SSL_STRICT = False
     SQLALCHEMY_DATABASE_URI = DATABASE_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = DATABASE_ENGINE_OPTIONS

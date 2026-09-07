@@ -2,13 +2,106 @@
 {% block content %}
 {% set admin_page_title = 'إدارة المستخدمين' %}
 {% include 'admin/_navigation.html' %}
+<style>
+/* إدارة المستخدمين: تحسين عرض الجدول للشاشات الصغيرة */
+.admin-users-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.admin-users-table {
+    min-width: 760px;
+    margin-bottom: 0;
+}
+
+.admin-users-table th,
+.admin-users-table td {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.admin-users-table td:nth-child(2) {
+    white-space: normal;
+    min-width: 170px;
+}
+
+.admin-users-table td:nth-child(3) {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-users-table td:last-child {
+    white-space: normal;
+    min-width: 250px;
+}
+
+.admin-users-table td:last-child .btn {
+    margin: 2px;
+}
+
+@media (max-width: 575.98px) {
+    .admin-users-table-wrap {
+        margin-inline: -0.35rem;
+        width: calc(100% + 0.7rem);
+        border-radius: 0.5rem;
+    }
+
+    .admin-users-table {
+        min-width: 690px;
+        font-size: 0.76rem;
+    }
+
+    .admin-users-table th,
+    .admin-users-table td {
+        padding: 0.38rem 0.45rem;
+    }
+
+    .admin-users-table th:first-child,
+    .admin-users-table td:first-child {
+        width: 34px;
+        padding-inline: 0.3rem;
+    }
+
+    .admin-users-table td:nth-child(2) {
+        min-width: 145px;
+    }
+
+    .admin-users-table td:nth-child(3) {
+        max-width: 150px;
+    }
+
+    .admin-users-table td:last-child {
+        min-width: 225px;
+    }
+
+    .admin-users-table td:last-child .btn {
+        font-size: 0.68rem;
+        padding: 0.25rem 0.42rem;
+        margin: 1px;
+    }
+
+    .admin-users-table td:nth-child(2) img {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    .admin-users-table .badge {
+        font-size: 0.65rem;
+    }
+}
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4><i class="fas fa-users"></i> إدارة المستخدمين</h4>
     <span class="badge bg-primary">{{ users|length }}</span>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
+<div class="table-responsive admin-users-table-wrap">
+    <table class="table table-striped table-hover admin-users-table">
         <thead>
             <tr>
                 <th>#</th>

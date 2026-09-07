@@ -1,13 +1,14 @@
 from flask import Blueprint, abort, flash, render_template, request, jsonify, redirect, session, url_for
 from flask import current_app, jsonify
 from flask_login import login_required, current_user
-from app.models import Post, Video, Like, Comment, Follow, HiddenPost, Report, User
+from app.models import Post, Video, Like, Comment, Follow, HiddenPost, Report, User, Repost
 from app.extensions import db
 from app.forms.support import SupportRequestForm
 from sqlalchemy import func, or_, and_
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
 from app.services.privacy import visible_posts
+from app.services.feed_ranker import rank_post
 import math
 import re
 from collections import Counter
@@ -73,8 +74,38 @@ def calculate_similarity(text, interests):
     matches = sum(1 for k in keywords if k in interests)
     return matches / len(interests) if interests else 0
 
-def get_post_engagement_score(post):
-    return post.like_count() * 2 + post.comment_count() * 3
+def get_post_engagement_counts(post_ids):
+    """Fetch like/comment/repost counts for multiple posts in batched queries."""
+    if not post_ids:
+        return {}
+
+    counts = {
+        post_id: {'likes': 0, 'comments': 0, 'reposts': 0}
+        for post_id in post_ids
+    }
+
+    for post_id, count in db.session.query(
+        Like.post_id, func.count(Like.id)
+    ).filter(
+        Like.post_id.in_(post_ids)
+    ).group_by(Like.post_id).all():
+        counts[post_id]['likes'] = count
+
+    for post_id, count in db.session.query(
+        Comment.post_id, func.count(Comment.id)
+    ).filter(
+        Comment.post_id.in_(post_ids)
+    ).group_by(Comment.post_id).all():
+        counts[post_id]['comments'] = count
+
+    for post_id, count in db.session.query(
+        Repost.post_id, func.count(Repost.id)
+    ).filter(
+        Repost.post_id.in_(post_ids)
+    ).group_by(Repost.post_id).all():
+        counts[post_id]['reposts'] = count
+
+    return counts
 
 
 def build_feed(user):
@@ -83,20 +114,36 @@ def build_feed(user):
     candidate_limit = current_app.config['FEED_CANDIDATE_LIMIT']
     following_ids = [follow.followed_id for follow in user.following] + [user.id]
     interests = get_user_interests(user.id)
-    post_query = Post.query.options(joinedload(Post.author))
+    post_query = Post.query
 
     followed_posts = post_query.filter(Post.author_id.in_(following_ids)) \
-        .order_by(Post.created_at.desc()).limit(candidate_limit).all()
+        .order_by(Post.id.desc()).limit(candidate_limit).all()
     suggested_posts = post_query.filter(
         ~Post.author_id.in_(following_ids),
         Post.created_at > datetime.utcnow() - timedelta(days=7)
-    ).order_by(Post.created_at.desc()).limit(candidate_limit).all()
+    ).order_by(Post.id.desc()).limit(candidate_limit).all()
+
+    suggested_counts = get_post_engagement_counts(
+        [post.id for post in suggested_posts]
+    )
 
     suggested_with_scores = []
     for post in suggested_posts:
         similarity = calculate_similarity(post.content, interests)
-        engagement = get_post_engagement_score(post)
-        suggested_with_scores.append((post, similarity * 3 + (engagement / 10)))
+        engagement = suggested_counts.get(post.id, {})
+
+        score = rank_post(
+            created_at=post.created_at,
+            likes=engagement.get('likes', 0),
+            comments=engagement.get('comments', 0),
+            reposts=engagement.get('reposts', 0),
+            similarity=similarity,
+            is_following=False,
+            is_own_post=False,
+        )
+
+        suggested_with_scores.append((post, score))
+
     suggested_with_scores.sort(key=lambda item: item[1], reverse=True)
     top_suggested = [post for post, _score in suggested_with_scores[:page_size]]
 
@@ -114,11 +161,28 @@ def build_feed(user):
     if hidden_ids:
         all_posts = [post for post in all_posts if post.id not in hidden_ids]
 
-    suggested_ids = {post.id for post in top_suggested}
-    all_posts.sort(
-        key=lambda post: ((1.5 if post.id not in suggested_ids else 1), post.created_at),
-        reverse=True
+    following_set = set(following_ids)
+    engagement_counts = get_post_engagement_counts(
+        [post.id for post in all_posts]
     )
+
+    def feed_score(post):
+        similarity = calculate_similarity(post.content, interests)
+        is_own_post = post.author_id == user.id
+        is_following = post.author_id in following_set and not is_own_post
+        engagement = engagement_counts.get(post.id, {})
+
+        return rank_post(
+            created_at=post.created_at,
+            likes=engagement.get('likes', 0),
+            comments=engagement.get('comments', 0),
+            reposts=engagement.get('reposts', 0),
+            similarity=similarity,
+            is_following=is_following,
+            is_own_post=is_own_post,
+        )
+
+    all_posts.sort(key=feed_score, reverse=True)
     return all_posts, top_suggested
 
 @main_bp.route('/')
@@ -164,8 +228,13 @@ def api_posts():
     end = start + per_page
     paginated_posts = all_posts[start:end]
     has_next = len(all_posts) > end
+    post_counts = get_post_engagement_counts(
+        [post.id for post in paginated_posts]
+    )
+
     data = []
     for post in paginated_posts:
+        engagement = post_counts.get(post.id, {})
         data.append({
             'id': post.public_id,
             'url': url_for('posts.view_post', public_id=post.public_id),
@@ -184,8 +253,8 @@ def api_posts():
                 'username': post.author.username,
                 'avatar': post.author.avatar
             },
-            'like_count': post.like_count(),
-            'comment_count': post.comment_count(),
+            'like_count': engagement.get('likes', 0),
+            'comment_count': engagement.get('comments', 0),
             'is_author': post.author_id == current_user.id,
             'is_suggested': post in top_suggested,
             'html': render_template('_post_card.html', post=post)

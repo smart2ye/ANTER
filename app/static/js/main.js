@@ -1,9 +1,82 @@
 // ==============================
-// تحميل لا نهائي (Infinite Scroll)
+// تحميل لا نهائي + توصيات داخل الخلاصة
 // ==============================
 let page = 2;
 let loading = false;
 let hasMore = true;
+
+let recommendationPool = [];
+let recommendationIndex = 0;
+let postsSinceRecommendation = 0;
+let nextRecommendationAt = 2;
+
+function prepareRecommendationPool() {
+    const template = document.getElementById('feed-recommendations-template');
+    if (!template) return;
+
+    const cards = template.content.querySelectorAll('.post-card');
+    const existingPostIds = new Set(
+        Array.from(document.querySelectorAll('#posts-container .post-card'))
+            .map(card => card.dataset.postId)
+            .filter(Boolean)
+    );
+
+    recommendationPool = Array.from(cards).filter(card => {
+        const id = card.dataset.postId;
+        return id && !existingPostIds.has(id);
+    });
+
+    recommendationPool.sort(() => Math.random() - 0.5);
+}
+
+function getNextRecommendationCarousel() {
+    if (recommendationIndex >= recommendationPool.length) return null;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'feed-recommendations';
+    wrapper.dataset.recommendations = 'true';
+
+    const header = document.createElement('div');
+    header.className = 'feed-recommendations-header';
+    header.innerHTML = '<h3 class="feed-recommendations-title">✨ قد تعجبك</h3>';
+
+    const track = document.createElement('div');
+    track.className = 'feed-recommendations-track';
+
+    const cardsPerCarousel = Math.min(
+        2,
+        recommendationPool.length - recommendationIndex
+    );
+
+    for (let i = 0; i < cardsPerCarousel; i++) {
+        track.appendChild(
+            recommendationPool[recommendationIndex++].cloneNode(true)
+        );
+    }
+
+    wrapper.appendChild(header);
+    wrapper.appendChild(track);
+
+    return wrapper;
+}
+
+function maybeInsertRecommendation(container) {
+    if (!container || recommendationIndex >= recommendationPool.length) {
+        return;
+    }
+
+    if (postsSinceRecommendation < nextRecommendationAt) {
+        return;
+    }
+
+    const carousel = getNextRecommendationCarousel();
+    if (!carousel) return;
+
+    container.appendChild(carousel);
+
+    postsSinceRecommendation = 0;
+    nextRecommendationAt = 2 + Math.floor(Math.random() * 3);
+}
 
 function loadMorePosts() {
     if (loading || !hasMore) return;
@@ -17,15 +90,21 @@ function loadMorePosts() {
         .then(data => {
             if (data.posts && data.posts.length > 0) {
                 const container = document.getElementById('posts-container');
+
                 data.posts.forEach(post => {
                     const postHtml = post.html || createPostHtml(post);
                     container.insertAdjacentHTML('beforeend', postHtml);
+
+                    postsSinceRecommendation++;
+                    maybeInsertRecommendation(container);
                 });
+
                 hasMore = data.has_next;
                 page++;
             } else {
                 hasMore = false;
             }
+
             loading = false;
             if (spinner) spinner.style.display = 'none';
         })
@@ -38,6 +117,31 @@ function loadMorePosts() {
 function createPostHtml(post) {
     return post.html || '';
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    prepareRecommendationPool();
+
+    const container = document.getElementById('posts-container');
+    if (!container || recommendationIndex >= recommendationPool.length) return;
+
+    nextRecommendationAt = 2 + Math.floor(Math.random() * 3);
+
+    const initialPosts = container.querySelectorAll(':scope > .post-card');
+
+    initialPosts.forEach((post, index) => {
+        postsSinceRecommendation++;
+
+        if (postsSinceRecommendation >= nextRecommendationAt) {
+            const carousel = getNextRecommendationCarousel();
+            if (!carousel) return;
+
+            container.insertBefore(carousel, post.nextSibling);
+
+            postsSinceRecommendation = 0;
+            nextRecommendationAt = 2 + Math.floor(Math.random() * 3);
+        }
+    });
+});
 
 window.addEventListener('scroll', function() {
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {

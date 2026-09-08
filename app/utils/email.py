@@ -1,33 +1,34 @@
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.header import Header
-from email.utils import formataddr
+import resend
 from flask import url_for
 
-SMTP_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(os.environ.get("MAIL_PORT", 587))
-SMTP_USERNAME = os.environ.get("MAIL_USERNAME")
-SMTP_PASSWORD = os.environ.get("MAIL_PASSWORD")
-SMTP_FROM = os.environ.get("MAIL_FROM", SMTP_USERNAME)
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+RESEND_FROM = "ANTER <onboarding@resend.dev>"
 
 def send_email(to, subject, html_content):
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = str(Header(subject, "utf-8"))
-        msg["From"] = formataddr(("ANTER", SMTP_FROM))
-        msg["To"] = to
-        msg.attach(MIMEText(html_content, "html"))
+        if not RESEND_API_KEY:
+            print("❌ RESEND_API_KEY غير موجود")
+            return False
 
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=15) as server:
-            server.starttls()
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.sendmail(SMTP_FROM, [to], msg.as_string())
-            print(f"✅ تم إرسال البريد إلى {to}")
-            return True
+        resend.api_key = RESEND_API_KEY
+
+        params = {
+            "from": RESEND_FROM,
+            "to": [to],
+            "subject": str(subject),
+            "html": html_content,
+        }
+
+        response = resend.Emails.send(params)
+
+        print(f"✅ تم إرسال البريد عبر Resend إلى {to}")
+        print(f"📨 Resend response: {response}")
+
+        return True
+
     except Exception as e:
-        print(f"❌ فشل الإرسال: {e}")
+        print(f"❌ فشل الإرسال عبر Resend: {e}")
         return False
 
 def send_reset_email(user, token):

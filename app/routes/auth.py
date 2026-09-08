@@ -130,10 +130,12 @@ def register():
         db.session.flush()
         follow_anter_assistant_for_user(user, assistant)
         send_welcome_message(user)
-        send_welcome_email(user)
         db.session.commit()
         log_user_activity(user.id, 'registration')
         login_user(user, remember=True)
+
+        # البريد خدمة إضافية ولا يجب أن يمنع إنشاء الحساب
+        send_welcome_email(user)
         flash('✅ تم إنشاء الحساب وتسجيل دخولك بنجاح.', 'success')
         return redirect(url_for('main.index'))
     return render_template('auth/register.html', form=form)

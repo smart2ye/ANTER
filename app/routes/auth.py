@@ -77,7 +77,24 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = RegistrationForm()
-    if form.validate_on_submit():
+    submitted = form.validate_on_submit()
+    if request.method == 'POST' and not submitted:
+        current_app.logger.warning(
+            "REGISTER VALIDATION FAILED | errors=%s | data=%s",
+            form.errors,
+            {
+                "name": form.name.data,
+                "gender": form.gender.data,
+                "birth_date": form.birth_date.data,
+                "country_code": form.country_code.data,
+                "phone": form.phone.data,
+                "email": form.email.data,
+                "password_present": bool(form.password.data),
+                "confirm_password_present": bool(form.confirm_password.data),
+            },
+        )
+
+    if submitted:
         # المعرف العام يُنشأ تلقائياً ليكون رابطاً عشوائياً لا يحتاج المستخدم إلى اختياره أو تذكره.
         username = generate_public_id('u')
         while User.query.filter_by(username=username).first() is not None:

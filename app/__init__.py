@@ -191,7 +191,7 @@ def create_app(test_config=None):
             tag_url = url_for('explore.hashtag', tag=tag)
             return f'<a href="{escape(tag_url)}" class="hashtag-link">#{escape(tag)}</a>'
 
-        return Markup(re.sub(r'#([\w\u0600-\u06FF]+)', replace_tag, escaped_content))
+        return Markup(re.sub(r'(?<!&)#([\w\u0600-\u06FF]+)', replace_tag, escaped_content))
 
     from app.utils.helpers import parse_mentions
     app.add_template_filter(linkify_hashtags, name='linkify_hashtags')

@@ -7,103 +7,176 @@
 <div id="storiesFeedContainer"></div>
 
 <!-- ============================== -->
-<!-- بطاقة إنشاء منشور سريع -->
+<!-- ANTER Composer الجديد -->
 <!-- ============================== -->
-<section class="quick-composer-card mb-4" aria-label="إنشاء منشور جديد">
-    <div class="quick-composer-top">
-        <img src="{{ avatar_url(current_user) }}" class="quick-composer-avatar" alt="{{ current_user.name }}">
-        <button class="quick-composer-trigger" type="button" data-bs-toggle="modal" data-bs-target="#quickPostModal">
-            <span class="quick-composer-prompt">ما الذي يدور في ذهنك، {{ current_user.name }}؟</span>
-            <span class="quick-composer-subprompt"><i class="fas fa-sparkles"></i> شارك فكرة مع مجتمع ANTER</span>
-        </button>
-        <button class="quick-composer-add" type="button" data-bs-toggle="modal" data-bs-target="#quickPostModal" title="إنشاء منشور جديد" aria-label="إنشاء منشور جديد">
-            <i class="fas fa-plus"></i>
-        </button>
-    </div>
-</section>
+<section class="anter-composer" id="anterComposer" aria-label="إنشاء منشور جديد">
 
-<!-- ============================== -->
-<!-- نافذة إنشاء المنشور -->
-<!-- ============================== -->
-<div class="modal fade" id="quickPostModal" tabindex="-1" aria-labelledby="quickPostModalTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content composer-modal-content border-0 shadow-lg">
-            <div class="composer-modal-header">
-                <div>
-                    <h5 class="modal-title" id="quickPostModalTitle">إنشاء منشور</h5>
-                    <p>شارك ما يهمك مع مجتمع ANTER</p>
-                </div>
-                <button type="button" class="composer-close-btn" data-bs-dismiss="modal" aria-label="إغلاق"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body composer-modal-body">
-                <div class="composer-author-row">
-                    <img src="{{ avatar_url(current_user) }}" class="composer-author-avatar" alt="{{ current_user.name }}">
-                    <div class="composer-author-details">
-                        <strong>{{ current_user.name }} {{ verified_badge(current_user) }}</strong>
-                        <label class="composer-audience-picker" for="quickPostVisibility">
-                            <i class="fas fa-globe-asia" aria-hidden="true"></i>
-                            <select id="quickPostVisibility" name="visibility" form="quickPostForm" aria-label="من يمكنه رؤية هذا المنشور">
-                                <option value="public">عام</option>
-                                <option value="followers">المتابعون فقط</option>
-                                <option value="only_me">أنا فقط</option>
-                            </select>
-                            <i class="fas fa-chevron-down composer-audience-chevron" aria-hidden="true"></i>
-                        </label>
-                    </div>
-                </div>
-                
-                <form id="quickPostForm" method="POST" action="{{ url_for('posts.create') }}" enctype="multipart/form-data">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
-                    <div class="composer-textarea-wrap">
-                        <textarea name="content" id="quickPostContent" class="composer-textarea" rows="5" maxlength="2000" placeholder="اكتب ما يدور في ذهنك...\nيمكنك استخدام @ للإشارة و # للوسوم وإضافة رابط لمعاينته تلقائياً." required></textarea>
-                        <div class="composer-textarea-footer">
-                            <span class="composer-mention-hint"><i class="fas fa-at"></i> اكتب @ لذكر شخص</span>
-                            <span class="composer-char-count" id="quickCharCount">0 / 2000</span>
-                        </div>
-                    </div>
+    <div class="anter-composer-header">
+        <img
+            src="{{ avatar_url(current_user) }}"
+            class="anter-composer-avatar"
+            alt="{{ current_user.name }}">
 
-                    <div class="composer-link-hint" id="quickLinkHint" hidden>
-                        <i class="fas fa-link"></i>
-                        <span>سيتم إنشاء معاينة للرابط تلقائياً بعد النشر.</span>
-                    </div>
+        <div class="anter-composer-identity">
+            <strong>{{ current_user.name }} {{ verified_badge(current_user) }}</strong>
 
-                    <div class="composer-ai-tools" aria-label="أدوات mini-llm Arabic للكتابة">
-                        <button type="button" class="ai-composer-btn" data-action="suggest_post" data-target="#quickPostContent" data-status="#aiComposerStatus" title="اقتراح منشور عبر mini-llm Arabic">
-                            <i class="fas fa-wand-magic-sparkles"></i> اقترح محتوى
-                        </button>
-                        <button type="button" class="ai-composer-btn" data-action="improve_text" data-target="#quickPostContent" data-status="#aiComposerStatus" title="تحسين المسودة عبر mini-llm Arabic">
-                            <i class="fas fa-pen-nib"></i> حسّن المحتوى
-                        </button>
-                        <span id="aiComposerStatus" class="composer-ai-status" aria-live="polite">اكتب فكرتك أو دع mini-llm Arabic يقترح لك بداية.</span>
-                    </div>
-
-                    <div class="composer-media-area" id="quickImageDropZone">
-                        <label for="quickImageInput" class="composer-media-picker">
-                            <span class="composer-media-icon"><i class="fas fa-image"></i></span>
-                            <span><strong>أضف صورة إلى منشورك</strong><small>اسحب الصورة هنا أو اخترها من جهازك</small></span>
-                        </label>
-                        <input type="file" name="image" id="quickImageInput" class="d-none" accept="image/png,image/jpeg,image/gif,image/webp">
-                    </div>
-                    <div id="quickImagePreview" class="composer-image-preview" hidden>
-                        <img id="quickPreviewImg" src="#" alt="معاينة الصورة المرفقة">
-                        <div class="composer-image-preview-overlay">
-                            <span><i class="fas fa-image"></i> صورة مرفقة</span>
-                            <button type="button" onclick="removeImage()" title="إزالة الصورة" aria-label="إزالة الصورة"><i class="fas fa-times"></i></button>
-                        </div>
-                    </div>
-
-                    <div class="composer-submit-row">
-                        <span class="composer-ready-status"><i class="fas fa-shield-heart"></i> انشر بأمان واحترام</span>
-                        <div class="composer-submit-actions">
-                            <button type="button" class="composer-cancel-btn" data-bs-dismiss="modal">إلغاء</button>
-                            <button type="submit" class="composer-publish-btn" id="quickPostSubmit"><i class="fas fa-paper-plane"></i> نشر المنشور</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
+            <label class="anter-composer-audience" for="anterPostVisibility">
+                <i class="fas fa-globe-asia" aria-hidden="true"></i>
+                <select
+                    id="anterPostVisibility"
+                    name="visibility"
+                    form="anterPostForm"
+                    aria-label="من يمكنه رؤية هذا المنشور">
+                    <option value="public">عام</option>
+                    <option value="followers">المتابعون فقط</option>
+                    <option value="only_me">أنا فقط</option>
+                </select>
+                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </label>
         </div>
     </div>
-</div>
+
+    <form
+        id="anterPostForm"
+        method="POST"
+        action="{{ url_for('posts.create') }}"
+        enctype="multipart/form-data">
+
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() if csrf_token else '' }}">
+
+        <div class="anter-composer-editor">
+            <textarea
+                name="content"
+                id="anterPostContent"
+                maxlength="2000"
+                rows="4"
+                placeholder="ما الذي تريد مشاركته مع مجتمع ANTER؟"
+                aria-label="محتوى المنشور"
+                required></textarea>
+
+            <div class="anter-composer-editor-footer">
+                <span class="anter-composer-hint">
+                    <i class="fas fa-at"></i>
+                    @ للإشارة
+                    <span>·</span>
+                    # للوسوم
+                </span>
+
+                <span id="anterCharCount">0 / 2000</span>
+            </div>
+        </div>
+
+        <div class="anter-composer-tools">
+
+            <div class="anter-composer-tool-group">
+                <label
+                    for="anterMediaInput"
+                    class="anter-composer-tool anter-media-tool"
+                    title="إضافة صورة أو فيديو">
+
+                    <span class="anter-composer-tool-icon">
+                        <i class="fas fa-photo-film"></i>
+                    </span>
+
+                    <span>
+                        <strong>وسائط</strong>
+                        <small>صورة أو فيديو</small>
+                    </span>
+                </label>
+
+                <input
+                    type="file"
+                    name="media"
+                    id="anterMediaInput"
+                    class="d-none"
+                    accept="image/*,video/*">
+            </div>
+
+            <button
+                type="button"
+                class="anter-composer-tool anter-ai-tool"
+                data-action="suggest_post"
+                data-target="#anterPostContent"
+                data-status="#anterAiStatus"
+                title="اقتراح محتوى عبر mini-llm Arabic">
+
+                <span class="anter-composer-tool-icon">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                </span>
+
+                <span>
+                    <strong>AI</strong>
+                    <small>اقتراح فكرة</small>
+                </span>
+            </button>
+
+            <span
+                id="anterAiStatus"
+                class="anter-composer-ai-status"
+                aria-live="polite">
+                اكتب فكرتك أو دع ANTER يساعدك.
+            </span>
+        </div>
+
+        <div
+            id="anterMediaPreview"
+            class="anter-composer-preview"
+            hidden>
+
+            <div class="anter-composer-preview-media">
+                <img
+                    id="anterImagePreview"
+                    src="#"
+                    alt="معاينة الصورة"
+                    hidden>
+
+                <video
+                    id="anterVideoPreview"
+                    controls
+                    playsinline
+                    muted
+                    preload="metadata"
+                    hidden></video>
+            </div>
+
+            <div class="anter-composer-preview-info">
+                <div>
+                    <strong id="anterMediaTitle">وسائط مرفقة</strong>
+                    <span id="anterMediaDescription">
+                        ستظهر الصورة في الفيد، والفيديو سيظهر في الفيد والريلز.
+                    </span>
+                </div>
+
+                <button
+                    type="button"
+                    id="anterRemoveMedia"
+                    class="anter-remove-media"
+                    title="إزالة الوسائط"
+                    aria-label="إزالة الوسائط">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="anter-composer-bottom">
+            <span class="anter-composer-security">
+                <i class="fas fa-shield-heart"></i>
+                شارك بأمان واحترام
+            </span>
+
+            <button
+                type="submit"
+                id="anterPublishButton"
+                class="anter-publish-button">
+                <i class="fas fa-paper-plane"></i>
+                نشر
+            </button>
+        </div>
+    </form>
+</section>
 
 <!-- ============================== -->
 <!-- تبويبات الصفحة الرئيسية -->
@@ -188,89 +261,169 @@
 </div>
 
 <script>
-    // تجربة الكتابة في بطاقة إنشاء المنشور
-    const quickPostContent = document.getElementById('quickPostContent');
-    const quickCharCount = document.getElementById('quickCharCount');
-    const quickLinkHint = document.getElementById('quickLinkHint');
-    const quickImageInput = document.getElementById('quickImageInput');
-    const quickImageDropZone = document.getElementById('quickImageDropZone');
-    const quickImagePreview = document.getElementById('quickImagePreview');
-    const quickPreviewImg = document.getElementById('quickPreviewImg');
-    const quickPostForm = document.getElementById('quickPostForm');
-    const quickPostSubmit = document.getElementById('quickPostSubmit');
+    // ==========================================
+    // ANTER Composer — صورة أو فيديو من زر واحد
+    // ==========================================
+    const anterPostContent = document.getElementById('anterPostContent');
+    const anterCharCount = document.getElementById('anterCharCount');
+    const anterMediaInput = document.getElementById('anterMediaInput');
+    const anterMediaPreview = document.getElementById('anterMediaPreview');
+    const anterImagePreview = document.getElementById('anterImagePreview');
+    const anterVideoPreview = document.getElementById('anterVideoPreview');
+    const anterMediaTitle = document.getElementById('anterMediaTitle');
+    const anterMediaDescription = document.getElementById('anterMediaDescription');
+    const anterRemoveMedia = document.getElementById('anterRemoveMedia');
+    const anterPostForm = document.getElementById('anterPostForm');
+    const anterPublishButton = document.getElementById('anterPublishButton');
 
-    function updateQuickComposer() {
-        const count = quickPostContent.value.length;
-        quickCharCount.textContent = count + ' / 2000';
-        quickCharCount.classList.toggle('is-near-limit', count >= 1800);
-        quickCharCount.classList.toggle('is-at-limit', count >= 2000);
-        quickLinkHint.hidden = !/https?:\/\/\S+|www\.\S+/i.test(quickPostContent.value);
+    function updateAnterComposer() {
+        if (!anterPostContent) return;
 
-        quickPostContent.style.height = 'auto';
-        quickPostContent.style.height = Math.min(Math.max(160, quickPostContent.scrollHeight), 340) + 'px';
+        const count = anterPostContent.value.length;
+
+        if (anterCharCount) {
+            anterCharCount.textContent = count + ' / 2000';
+            anterCharCount.classList.toggle('is-near-limit', count >= 1800);
+            anterCharCount.classList.toggle('is-at-limit', count >= 2000);
+        }
+
+        anterPostContent.style.height = 'auto';
+        anterPostContent.style.height =
+            Math.min(Math.max(120, anterPostContent.scrollHeight), 300) + 'px';
     }
 
-    quickPostContent.addEventListener('input', updateQuickComposer);
+    function clearAnterMedia() {
+        if (anterMediaInput) {
+            anterMediaInput.value = '';
+        }
 
-    // معاينة الصورة والتحقق منها محلياً قبل الإرسال
-    function previewImage(input) {
-        const file = input.files && input.files[0];
-        if (!file) return;
-        if (!file.type.startsWith('image/')) {
-            alert('يرجى اختيار ملف صورة صالح.');
-            removeImage();
+        if (anterImagePreview) {
+            anterImagePreview.hidden = true;
+            anterImagePreview.removeAttribute('src');
+        }
+
+        if (anterVideoPreview) {
+            anterVideoPreview.pause();
+            anterVideoPreview.hidden = true;
+            anterVideoPreview.removeAttribute('src');
+            anterVideoPreview.load();
+        }
+
+        if (anterMediaPreview) {
+            anterMediaPreview.hidden = true;
+        }
+    }
+
+    function previewAnterMedia(file) {
+        if (!file) {
+            clearAnterMedia();
             return;
         }
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            quickPreviewImg.src = event.target.result;
-            quickImagePreview.hidden = false;
-            quickImageDropZone.classList.add('has-image');
-        };
-        reader.readAsDataURL(file);
+
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+
+        if (!isImage && !isVideo) {
+            alert('يرجى اختيار صورة أو فيديو صالح.');
+            clearAnterMedia();
+            return;
+        }
+
+        if (isImage) {
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                if (anterVideoPreview) {
+                    anterVideoPreview.pause();
+                    anterVideoPreview.hidden = true;
+                    anterVideoPreview.removeAttribute('src');
+                    anterVideoPreview.load();
+                }
+
+                if (anterImagePreview) {
+                    anterImagePreview.src = event.target.result;
+                    anterImagePreview.hidden = false;
+                }
+
+                if (anterMediaTitle) {
+                    anterMediaTitle.textContent = 'صورة مرفقة';
+                }
+
+                if (anterMediaDescription) {
+                    anterMediaDescription.textContent =
+                        'ستظهر الصورة مع منشورك في الفيد.';
+                }
+
+                if (anterMediaPreview) {
+                    anterMediaPreview.hidden = false;
+                }
+            };
+
+            reader.readAsDataURL(file);
+            return;
+        }
+
+        if (isVideo) {
+            const objectUrl = URL.createObjectURL(file);
+
+            if (anterImagePreview) {
+                anterImagePreview.hidden = true;
+                anterImagePreview.removeAttribute('src');
+            }
+
+            if (anterVideoPreview) {
+                anterVideoPreview.src = objectUrl;
+                anterVideoPreview.hidden = false;
+                anterVideoPreview.load();
+            }
+
+            if (anterMediaTitle) {
+                anterMediaTitle.textContent = 'فيديو مرفق';
+            }
+
+            if (anterMediaDescription) {
+                anterMediaDescription.textContent =
+                    'سيظهر الفيديو في الفيد تلقائيًا، وسيُضاف أيضًا إلى الريلز.';
+            }
+
+            if (anterMediaPreview) {
+                anterMediaPreview.hidden = false;
+            }
+        }
     }
 
-    quickImageInput.addEventListener('change', function() {
-        previewImage(this);
-    });
-
-    ['dragenter', 'dragover'].forEach(function(eventName) {
-        quickImageDropZone.addEventListener(eventName, function(event) {
-            event.preventDefault();
-            quickImageDropZone.classList.add('is-dragging');
-        });
-    });
-    ['dragleave', 'drop'].forEach(function(eventName) {
-        quickImageDropZone.addEventListener(eventName, function(event) {
-            event.preventDefault();
-            quickImageDropZone.classList.remove('is-dragging');
-        });
-    });
-    quickImageDropZone.addEventListener('drop', function(event) {
-        const file = event.dataTransfer.files && event.dataTransfer.files[0];
-        if (!file) return;
-        const transfer = new DataTransfer();
-        transfer.items.add(file);
-        quickImageInput.files = transfer.files;
-        previewImage(quickImageInput);
-    });
-
-    function removeImage() {
-        quickImageInput.value = '';
-        quickImagePreview.hidden = true;
-        quickPreviewImg.src = '#';
-        quickImageDropZone.classList.remove('has-image', 'is-dragging');
+    if (anterPostContent) {
+        anterPostContent.addEventListener('input', updateAnterComposer);
     }
 
-    document.getElementById('quickPostModal').addEventListener('shown.bs.modal', function() {
-        quickPostContent.focus();
-        updateQuickComposer();
-    });
+    if (anterMediaInput) {
+        anterMediaInput.addEventListener('change', function() {
+            const file = this.files && this.files[0];
 
-    quickPostForm.addEventListener('submit', function() {
-        quickPostSubmit.disabled = true;
-        quickPostSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري النشر...';
-    });
+            if (!file) {
+                clearAnterMedia();
+                return;
+            }
+
+            previewAnterMedia(file);
+        });
+    }
+
+    if (anterRemoveMedia) {
+        anterRemoveMedia.addEventListener('click', clearAnterMedia);
+    }
+
+    if (anterPostForm) {
+        anterPostForm.addEventListener('submit', function() {
+            if (!anterPublishButton) return;
+
+            anterPublishButton.disabled = true;
+            anterPublishButton.innerHTML =
+                '<i class="fas fa-spinner fa-spin"></i> جاري النشر...';
+        });
+    }
+
+    updateAnterComposer();
 
     // نسخ الرابط
     window.copyLink = function(url) {

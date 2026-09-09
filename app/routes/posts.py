@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from app import db, csrf
 from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag, Video
 from app.forms.post import PostForm
-from app.utils.helpers import extract_hashtags, allowed_audio_file, extract_link_metadata as extract_safe_link_metadata, log_user_activity
+from app.utils.helpers import extract_hashtags, allowed_audio_file, extract_link_metadata as extract_safe_link_metadata, log_user_activity, save_video_file, create_thumbnail, allowed_video_file
 from app.utils.image_storage import prepare_image_data
 from app.services.anter_user_messages import send_report_receipt
 from app.services.privacy import POST_VISIBILITIES, can_view_post
@@ -493,24 +493,85 @@ def hide(post_id):
 @login_required
 def create():
     form = PostForm()
-    if form.validate_on_submit():
-        content = form.content.data
-        moment_id = request.args.get('moment_id', type=int)
-        if not content:
-            flash('المنشور لا يمكن أن يكون فارغاً', 'danger')
-            return redirect(url_for('posts.create'))
+
+    if request.method == 'GET':
+        return render_template('posts/create.html', form=form)
+
+    # Composer الجديد يستخدم media، مع إبقاء image القديم متوافقًا مؤقتًا.
+    uploaded_media = request.files.get('media')
+    uploaded_image = request.files.get('image')
+
+    content = request.form.get('content', '').strip()
+    moment_id = request.args.get('moment_id', type=int)
+
+    if not content:
+        flash('المنشور لا يمكن أن يكون فارغاً', 'danger')
+        return redirect(url_for('posts.create'))
+
+    # إذا لم يوجد media، استخدم image القديم للتوافق مع الواجهة القديمة.
+    media_file = uploaded_media if uploaded_media and getattr(uploaded_media, 'filename', '') else uploaded_image
+
+    image_data, image_mime = None, None
+    video = None
+    attachment_type = 'بدون مرفق'
+
+    try:
+        if media_file and getattr(media_file, 'filename', ''):
+            filename = media_file.filename.lower()
+            extension = filename.rsplit('.', 1)[1] if '.' in filename else ''
+
+            # صورة
+            if extension in {'jpg', 'jpeg', 'png', 'gif', 'webp'}:
+                image_data, image_mime = prepare_image_data(media_file)
+                if not image_data:
+                    flash('تعذر قراءة الصورة. استخدم JPG أو PNG أو GIF أو WEBP بحجم ضمن الحد المسموح.', 'danger')
+                    return redirect(url_for('posts.create'))
+                attachment_type = 'صورة'
+
+            # فيديو → Feed + Reel
+            elif allowed_video_file(filename):
+                try:
+                    media_file.stream.seek(0, 2)
+                    video_size = media_file.stream.tell()
+                    media_file.stream.seek(0)
+                except (AttributeError, OSError):
+                    video_size = 0
+
+                max_video_bytes = current_app.config['MAX_VIDEO_UPLOAD_BYTES']
+                if video_size > max_video_bytes:
+                    max_video_mb = max_video_bytes // (1024 * 1024)
+                    flash(
+                        f'حجم الفيديو أكبر من الحد المسموح ({max_video_mb} MB).',
+                        'danger'
+                    )
+                    return redirect(url_for('posts.create'))
+
+                video_path = save_video_file(media_file, is_reel=True)
+                if not video_path:
+                    flash('فشل في حفظ الفيديو. تأكد من الصيغة والحجم.', 'danger')
+                    return redirect(url_for('posts.create'))
+
+                thumbnail_path = create_thumbnail(video_path, is_reel=True)
+
+                video = Video(
+                    title=content[:200] or 'ريل جديد',
+                    description=content,
+                    file_path=video_path,
+                    thumbnail_path=thumbnail_path or 'default_thumb.png',
+                    is_reel=True,
+                    author_id=current_user.id,
+                )
+                db.session.add(video)
+                db.session.flush()
+
+                attachment_type = 'فيديو + ريلز'
+
+            else:
+                flash('نوع الملف غير مدعوم. اختر صورة أو فيديو.', 'danger')
+                return redirect(url_for('posts.create'))
 
         hashtags = extract_hashtags(content)
         link_url, link_title, link_desc, link_img = extract_safe_link_metadata(content)
-
-        # تخزين الصورة داخل قاعدة البيانات الدائمة عند إرفاقها بالمنشور.
-        uploaded_image = form.image.data
-        image_data, image_mime = (None, None)
-        if uploaded_image and getattr(uploaded_image, 'filename', ''):
-            image_data, image_mime = prepare_image_data(uploaded_image)
-            if not image_data:
-                flash('تعذر قراءة الصورة. استخدم JPG أو PNG أو GIF أو WEBP بحجم ضمن الحد المسموح.', 'danger')
-                return redirect(url_for('posts.create'))
 
         visibility = request.form.get('visibility', 'public')
         post = Post(
@@ -519,6 +580,7 @@ def create():
             visibility=visibility if visibility in POST_VISIBILITIES else 'public',
             image_data=image_data,
             image_mime=image_mime,
+            shared_video_id=video.id if video else None,
             link_url=link_url,
             link_title=link_title,
             link_description=link_desc,
@@ -568,11 +630,25 @@ def create():
                 db.session.add(notif)
 
         db.session.commit()
-        log_user_activity(current_user.id, 'post_create', {'post_id': post.id, 'attachment': 'صورة' if image_data else 'بدون مرفق'})
+
+        log_user_activity(
+            current_user.id,
+            'post_create',
+            {
+                'post_id': post.id,
+                'attachment': attachment_type,
+                'video_id': video.id if video else None,
+            }
+        )
+
         flash('تم نشر المنشور بنجاح!', 'success')
         return redirect(url_for('main.index'))
 
-    return render_template('posts/create.html', form=form)
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Failed to create post from composer')
+        flash('حدث خطأ أثناء نشر المنشور. حاول مرة أخرى.', 'danger')
+        return redirect(url_for('posts.create'))
 
 @posts_bp.route('/comments/<int:post_id>/fragment')
 @login_required

@@ -3725,6 +3725,445 @@ body {
     }
 }
 
+
+/* ========================================
+   ANTER Composer v2
+   تصميم جديد مستقل عن الـ Composer القديم
+   ======================================== */
+
+.anter-composer {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    padding: 18px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 22px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.98),
+            rgba(248, 250, 252, 0.96)
+        );
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+}
+
+.anter-composer::before {
+    content: "";
+    position: absolute;
+    top: -70px;
+    left: -70px;
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, 0.09);
+    pointer-events: none;
+}
+
+.anter-composer-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.anter-composer-avatar {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(99, 102, 241, 0.18);
+}
+
+.anter-composer-identity {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.anter-composer-identity strong {
+    color: var(--text-color, #111827);
+    font-size: 0.95rem;
+    line-height: 1.25;
+}
+
+.anter-composer-audience {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+    color: var(--text-muted, #6b7280);
+    font-size: 0.76rem;
+    cursor: pointer;
+}
+
+.anter-composer-audience select {
+    appearance: none;
+    border: 0;
+    outline: 0;
+    padding: 0 1px;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
+    cursor: pointer;
+}
+
+.anter-composer-editor {
+    position: relative;
+    z-index: 1;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 17px;
+    background: rgba(255, 255, 255, 0.72);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.anter-composer-editor:focus-within {
+    border-color: rgba(99, 102, 241, 0.45);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08);
+}
+
+.anter-composer-editor textarea {
+    display: block;
+    width: 100%;
+    min-height: 120px;
+    max-height: 300px;
+    resize: none;
+    border: 0;
+    outline: 0;
+    padding: 16px 17px 8px;
+    background: transparent;
+    color: var(--text-color, #111827);
+    font-size: 1rem;
+    line-height: 1.75;
+    font-family: inherit;
+}
+
+.anter-composer-editor textarea::placeholder {
+    color: var(--text-muted, #9ca3af);
+}
+
+.anter-composer-editor-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 15px 11px;
+    color: var(--text-muted, #9ca3af);
+    font-size: 0.72rem;
+}
+
+.anter-composer-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.anter-composer-hint i {
+    color: var(--fb-blue, #1877f2);
+}
+
+.anter-composer-tools {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 12px;
+    padding: 4px 0;
+}
+
+.anter-composer-tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 48px;
+    padding: 7px 13px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 15px;
+    background: var(--card-bg, #fff);
+    color: var(--text-color, #374151);
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.anter-composer-tool:hover {
+    transform: translateY(-1px);
+    border-color: rgba(99, 102, 241, 0.35);
+    box-shadow: 0 5px 15px rgba(15, 23, 42, 0.07);
+}
+
+.anter-composer-tool-icon {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 34px;
+    border-radius: 11px;
+    background: rgba(99, 102, 241, 0.10);
+    color: #6366f1;
+    font-size: 0.95rem;
+}
+
+.anter-composer-tool strong,
+.anter-composer-tool small {
+    display: block;
+    text-align: start;
+}
+
+.anter-composer-tool strong {
+    font-size: 0.82rem;
+    line-height: 1.1;
+}
+
+.anter-composer-tool small {
+    margin-top: 3px;
+    color: var(--text-muted, #9ca3af);
+    font-size: 0.68rem;
+}
+
+.anter-ai-tool .anter-composer-tool-icon {
+    background: rgba(168, 85, 247, 0.10);
+    color: #a855f7;
+}
+
+.anter-composer-ai-status {
+    min-width: 0;
+    margin-inline-start: auto;
+    color: var(--text-muted, #9ca3af);
+    font-size: 0.72rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.anter-composer-preview {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    margin-top: 12px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 18px;
+    background: #111827;
+}
+
+.anter-composer-preview-media {
+    position: relative;
+    width: 100%;
+    max-height: 430px;
+    overflow: hidden;
+    background: #0b1220;
+    text-align: center;
+}
+
+.anter-composer-preview-media img,
+.anter-composer-preview-media video {
+    display: block;
+    width: 100%;
+    max-height: 430px;
+    margin: 0 auto;
+    object-fit: contain;
+}
+
+.anter-composer-preview-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--card-bg, #fff);
+}
+
+.anter-composer-preview-info > div {
+    min-width: 0;
+}
+
+.anter-composer-preview-info strong,
+.anter-composer-preview-info span {
+    display: block;
+}
+
+.anter-composer-preview-info strong {
+    color: var(--text-color, #111827);
+    font-size: 0.84rem;
+}
+
+.anter-composer-preview-info span {
+    margin-top: 3px;
+    color: var(--text-muted, #6b7280);
+    font-size: 0.72rem;
+}
+
+.anter-remove-media {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.10);
+    color: #ef4444;
+    cursor: pointer;
+}
+
+.anter-composer-bottom {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 13px;
+    border-top: 1px solid var(--border-color, #eef0f3);
+}
+
+.anter-composer-security {
+    color: var(--text-muted, #9ca3af);
+    font-size: 0.72rem;
+}
+
+.anter-composer-security i {
+    margin-inline-end: 4px;
+    color: #10b981;
+}
+
+.anter-publish-button {
+    min-width: 105px;
+    min-height: 42px;
+    padding: 8px 18px;
+    border: 0;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 7px 18px rgba(99, 102, 241, 0.22);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+.anter-publish-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 9px 22px rgba(99, 102, 241, 0.30);
+}
+
+.anter-publish-button:disabled {
+    opacity: 0.65;
+    cursor: wait;
+    transform: none;
+}
+
+/* الوضع الداكن */
+[data-bs-theme="dark"] .anter-composer,
+.dark-mode .anter-composer {
+    border-color: rgba(255, 255, 255, 0.08);
+    background:
+        linear-gradient(
+            145deg,
+            rgba(25, 31, 48, 0.98),
+            rgba(17, 24, 39, 0.98)
+        );
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.20);
+}
+
+[data-bs-theme="dark"] .anter-composer-editor,
+.dark-mode .anter-composer-editor {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.55);
+}
+
+[data-bs-theme="dark"] .anter-composer-tool,
+.dark-mode .anter-composer-tool {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+[data-bs-theme="dark"] .anter-composer-preview-info,
+.dark-mode .anter-composer-preview-info {
+    background: #111827;
+}
+
+[data-bs-theme="dark"] .anter-composer-preview-info strong,
+.dark-mode .anter-composer-preview-info strong {
+    color: #f3f4f6;
+}
+
+@media (max-width: 576px) {
+    .anter-composer {
+        padding: 13px;
+        border-radius: 18px;
+    }
+
+    .anter-composer-header {
+        margin-bottom: 10px;
+    }
+
+    .anter-composer-avatar {
+        width: 43px;
+        height: 43px;
+        flex-basis: 43px;
+    }
+
+    .anter-composer-editor textarea {
+        min-height: 105px;
+        padding: 14px 14px 7px;
+        font-size: 0.95rem;
+    }
+
+    .anter-composer-tools {
+        gap: 7px;
+    }
+
+    .anter-composer-tool {
+        min-height: 44px;
+        padding: 6px 9px;
+        gap: 7px;
+    }
+
+    .anter-composer-tool-icon {
+        width: 30px;
+        height: 30px;
+        flex-basis: 30px;
+        border-radius: 9px;
+    }
+
+    .anter-composer-tool small {
+        display: none;
+    }
+
+    .anter-composer-ai-status {
+        display: none;
+    }
+
+    .anter-composer-preview-media,
+    .anter-composer-preview-media img,
+    .anter-composer-preview-media video {
+        max-height: 330px;
+    }
+
+    .anter-composer-bottom {
+        align-items: stretch;
+    }
+
+    .anter-composer-security {
+        display: none;
+    }
+
+    .anter-publish-button {
+        width: 100%;
+    }
+}
+
+
 /* ========================================
    حركات التفاعل السلسة
    ======================================== */

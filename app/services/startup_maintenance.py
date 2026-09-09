@@ -59,11 +59,15 @@ def run_startup_schema_upgrades(app) -> bool:
             'link_description': 'TEXT',
             'link_image': 'VARCHAR(500)',
             'visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
+            'shared_video_id': 'INTEGER',
         },
-        'videos': {'public_id': 'VARCHAR(40)'},
+        'videos': {'public_id': 'VARCHAR(40)', 'shares': 'INTEGER DEFAULT 0'},
         'comments': {'audio_url': 'VARCHAR(255)'},
         'call_logs': {'call_type': "VARCHAR(16) NOT NULL DEFAULT 'voice'"},
-        'reports': {'message_id': 'INTEGER'},
+        'reports': {
+            'message_id': 'INTEGER',
+            'video_id': 'INTEGER',
+        },
     }
 
     table_names = set(inspector.get_table_names())
@@ -81,8 +85,25 @@ def run_startup_schema_upgrades(app) -> bool:
                 connection.execute(text(
                     f'CREATE UNIQUE INDEX IF NOT EXISTS ix_{table_name}_public_id ON {table_name} (public_id)'
                 ))
+
+        if 'posts' in table_names:
+            connection.execute(text(
+                'CREATE INDEX IF NOT EXISTS ix_posts_shared_video_id ON posts (shared_video_id)'
+            ))
+        if 'messages' in table_names:
+            message_columns = {
+                column['name']
+                for column in inspect(db.engine).get_columns('messages')
+            }
+
+            if 'shared_video_id' in message_columns:
+                connection.execute(text(
+                    'CREATE INDEX IF NOT EXISTS ix_messages_shared_video_id ON messages (shared_video_id)'
+                ))
+
         if 'reports' in table_names:
             connection.execute(text('CREATE INDEX IF NOT EXISTS ix_reports_message_id ON reports (message_id)'))
+            connection.execute(text('CREATE INDEX IF NOT EXISTS ix_reports_video_id ON reports (video_id)'))
 
     # ترحيل المعرفات العامة يُنفذ مرة عند الترقية، لا مع كل طلب إيقاظ.
     for model, prefix in ((Post, 'p'), (Video, 'r')):

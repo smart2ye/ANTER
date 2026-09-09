@@ -261,12 +261,6 @@ def api_posts():
         })
     return jsonify({'posts': data, 'has_next': has_next})
 
-@main_bp.route('/reels')
-@login_required
-def reels_feed():
-    videos = Video.query.filter_by(is_reel=True).order_by(Video.created_at.desc()).all()
-    return render_template('main_reels.html', videos=videos)
-
 @main_bp.route('/privacy')
 def privacy():
     return render_template('privacy.html')

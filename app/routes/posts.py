@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask import abort
 from flask_login import login_required, current_user
 from app import db, csrf
-from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag
+from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag, Video
 from app.forms.post import PostForm
 from app.utils.helpers import extract_hashtags, allowed_audio_file, extract_link_metadata as extract_safe_link_metadata, log_user_activity
 from app.utils.image_storage import prepare_image_data
@@ -324,6 +324,63 @@ def like_comment(comment_id):
         {'comment_id': comment_id, 'post_id': comment.post_id},
     )
     return jsonify({'liked': liked, 'count': comment.likes.count()})
+
+@posts_bp.route('/share-video/<int:video_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def share_video(video_id):
+    video = Video.query.filter_by(
+        id=video_id,
+        is_reel=True
+    ).first_or_404()
+
+    reel_url = url_for(
+        'videos.watch',
+        public_id=video.public_id
+    )
+
+    thumbnail_url = None
+    if video.thumbnail_path:
+        thumbnail_url = url_for(
+            'static',
+            filename='uploads/' + video.thumbnail_path
+        )
+
+    post = Post(
+        content='شاهد هذا الريل على ANTER 🎬',
+        author_id=current_user.id,
+        visibility='public',
+        link_url=reel_url,
+        link_title=video.title or 'ريل جديد',
+        link_description=video.description or '',
+        link_image=thumbnail_url,
+        shared_video_id=video.id,
+    )
+
+    db.session.add(post)
+
+    video.shares = (video.shares or 0) + 1
+
+    db.session.flush()
+
+    detect_for_post(post)
+
+    db.session.commit()
+
+    log_user_activity(
+        current_user.id,
+        'video_share',
+        {'video_id': video.id, 'post_id': post.id}
+    )
+
+    return jsonify({
+        'success': True,
+        'message': 'تمت مشاركة الريل داخل ANTER ✓',
+        'post_id': post.id,
+        'post_public_id': post.public_id,
+        'share_count': video.shares,
+    })
+
 
 @posts_bp.route('/repost/<int:post_id>', methods=['POST'])
 @login_required

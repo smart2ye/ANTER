@@ -1,8 +1,9 @@
 from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import login_required, current_user
 from app.extensions import db, csrf
-from app.models import Video, VideoLike, VideoComment, VideoCommentLike, Notification
+from app.models import Video, VideoLike, VideoComment, VideoCommentLike, Notification, Report, Follow, UserBlock, User
 from app.utils.helpers import save_video_file, create_thumbnail, log_user_activity
+from app.utils.media_urls import avatar_url
 
 videos_bp = Blueprint('videos', __name__, url_prefix='/videos')
 
@@ -10,7 +11,45 @@ videos_bp = Blueprint('videos', __name__, url_prefix='/videos')
 @login_required
 def reels():
     videos = Video.query.filter_by(is_reel=True).order_by(Video.created_at.desc()).all()
-    return render_template('videos/reels.html', videos=videos)
+
+    # قائمة الأشخاص الذين يتابعهم المستخدم لإرسال الريلز إليهم.
+    # لا تعتمد على حالة الاتصال: تشمل Online وOffline.
+    blocked_ids = {
+        row.blocked_id
+        for row in UserBlock.query.filter_by(blocker_id=current_user.id).all()
+    }
+    blocked_ids.update(
+        row.blocker_id
+        for row in UserBlock.query.filter_by(blocked_id=current_user.id).all()
+    )
+
+    followed_users = (
+        Follow.query
+        .filter_by(follower_id=current_user.id)
+        .all()
+    )
+
+    share_users = []
+    followed_ids = {
+        row.followed_id
+        for row in followed_users
+        if row.followed_id != current_user.id
+        and row.followed_id not in blocked_ids
+    }
+
+    if followed_ids:
+        share_users = (
+            User.query
+            .filter(User.id.in_(followed_ids))
+            .order_by(User.name.asc(), User.username.asc())
+            .all()
+        )
+
+    return render_template(
+        'videos/reels.html',
+        videos=videos,
+        share_users=share_users,
+    )
 
 @videos_bp.route('/upload', methods=['GET', 'POST'])
 @login_required
@@ -107,7 +146,7 @@ def watch(public_id):
     video.views += 1
     db.session.commit()
     comments = video.comments.filter_by(parent_id=None).order_by(VideoComment.created_at.asc()).all()
-    return render_template('videos/watch.html', video=video, comments=comments)
+    return render_template('videos/reels.html', videos=[video], comments=comments)
 
 @videos_bp.route('/like/<int:video_id>', methods=['POST'])
 @login_required
@@ -128,6 +167,73 @@ def like(video_id):
     db.session.commit()
     log_user_activity(current_user.id, 'video_reaction_add' if liked else 'video_reaction_remove', {'video_id': video_id})
     return jsonify({'liked': liked, 'count': video.like_count()})
+
+@videos_bp.route('/report/<int:video_id>', methods=['POST'])
+@login_required
+def report_video(video_id):
+    """إنشاء بلاغ عن ريلز مع منع البلاغات المكررة."""
+    video = Video.query.filter_by(id=video_id, is_reel=True).first_or_404()
+
+    if video.author_id == current_user.id:
+        return jsonify({
+            'success': False,
+            'message': 'لا يمكنك الإبلاغ عن ريلزك الخاص.'
+        }), 400
+
+    existing = Report.query.filter_by(
+        reporter_id=current_user.id,
+        video_id=video.id
+    ).first()
+
+    if existing is not None:
+        return jsonify({
+            'success': False,
+            'message': 'لقد أرسلت بلاغاً عن هذا الريل مسبقاً.',
+            'report_id': existing.id
+        }), 409
+
+    data = request.get_json(silent=True) or request.form
+    reason = (data.get('reason') or '').strip()
+    details = (data.get('details') or '').strip()
+
+    allowed_reasons = {
+        'spam': 'محتوى مزعج أو ترويجي',
+        'harassment': 'تنمر أو مضايقة',
+        'violence': 'عنف أو محتوى خطير',
+        'sexual': 'محتوى جنسي',
+        'hate': 'كراهية أو تحريض',
+        'misinformation': 'معلومات مضللة',
+        'copyright': 'انتهاك حقوق النشر',
+        'other': 'سبب آخر',
+    }
+
+    if reason not in allowed_reasons:
+        return jsonify({
+            'success': False,
+            'message': 'سبب البلاغ غير صالح.'
+        }), 400
+
+    report = Report(
+        reporter_id=current_user.id,
+        video_id=video.id,
+        reason=allowed_reasons[reason],
+        details=details[:2000],
+    )
+
+    db.session.add(report)
+    log_user_activity(
+        current_user.id,
+        'video_report',
+        {'video_id': video.id, 'reason': allowed_reasons[reason]}
+    )
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'تم استلام بلاغك وسيتم مراجعته من فريق ANTER.',
+        'report_id': report.id
+    })
+
 
 @videos_bp.route('/comments/<int:video_id>', methods=['GET'])
 @login_required
@@ -161,7 +267,8 @@ def get_comments(video_id):
                 'id': comment.author.id,
                 'name': comment.author.name,
                 'username': comment.author.username,
-                'avatar': comment.author.avatar
+                'avatar': comment.author.avatar,
+                'avatar_url': avatar_url(comment.author)
             },
             'replies': [
                 {
@@ -174,7 +281,8 @@ def get_comments(video_id):
                         'id': reply.author.id,
                         'name': reply.author.name,
                         'username': reply.author.username,
-                        'avatar': reply.author.avatar
+                        'avatar': reply.author.avatar,
+                        'avatar_url': avatar_url(reply.author)
                     }
                 }
                 for reply in replies

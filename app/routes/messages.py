@@ -12,7 +12,7 @@ from werkzeug.utils import secure_filename
 from sqlalchemy import or_
 
 from app.extensions import db, csrf
-from app.models import Message, User, Notification, CallSignal, CallLog, TypingState, Follow, MutedConversation, Report, UserBlock
+from app.models import Message, User, Video, Notification, CallSignal, CallLog, TypingState, Follow, MutedConversation, Report, UserBlock
 from app.utils.helpers import get_status_icon, get_user_status, allowed_audio_file, log_user_activity
 from app.utils.image_storage import prepare_image_data
 from app.services.message_safety import block_user, blocked_counterparty_ids, is_blocked_between, unblock_user
@@ -168,28 +168,25 @@ CHAT_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 
 def _can_message_user(other):
-    """تحدد ما إذا كان المستخدم الحالي يستطيع بدء تواصل خاص مع الحساب المحدد."""
+    """تحدد ما إذا كان المستخدم الحالي يستطيع بدء تواصل خاص مع الحساب المحدد.
+
+    سياسة ANTER الحالية:
+    - يجب أن يتابع المرسل المستلم.
+    - لا يشترط أن تكون المتابعة متبادلة.
+    - الحظر يمنع المراسلة في الاتجاهين.
+    - إعدادات الخصوصية ستضاف لاحقًا.
+    """
     if other.id == current_user.id:
         return False
 
     if is_blocked_between(current_user.id, other.id):
         return False
 
-    # سياسة ANTER: لا تبدأ مراسلة جديدة إلا مع حساب يتابعه المرسل بالفعل.
+    # سياسة ANTER الحالية: يمكن مراسلة أي حساب يتابعه المرسل.
     if not current_user.is_following(other):
         return False
 
-    # تحترم هذه الطبقة أيضاً إعداد خصوصية المستلم، إن فُعّل.
-    privacy = getattr(other, 'message_privacy', 'everyone') or 'everyone'
-    if privacy == 'none':
-        return False
-    if privacy == 'followers':
-        return Follow.query.filter_by(
-            follower_id=other.id,
-            followed_id=current_user.id,
-        ).first() is not None
     return True
-
 
 def _request_value(name, default=''):
     data = request.get_json(silent=True) or request.form
@@ -426,6 +423,30 @@ def send(user_id):
         return redirect(url_for('messages.chat', user_id=user_id))
     content = request.form.get('content', '').strip()
     parent_id = request.form.get('parent_id', type=int)
+
+    # مشاركة ريل داخل المحادثة — لا يتم نسخ ملف الفيديو.
+    shared_video_id = request.form.get('video_id', type=int)
+    shared_video = None
+
+    if shared_video_id:
+        shared_video = Video.query.filter_by(
+            id=shared_video_id,
+            is_reel=True,
+        ).first()
+
+        if shared_video is None:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'success': False,
+                    'message': 'الريل المطلوب غير موجود أو لم يعد متاحًا.',
+                }), 404
+
+            flash('الريل المطلوب غير موجود أو لم يعد متاحًا.', 'danger')
+            return redirect(url_for('messages.chat', user_id=user_id))
+
+        if not content:
+            content = 'شاهد هذا الريل على ANTER 🎬'
+
     uploaded_audio = request.files.get('audio')
     uploaded_attachment = request.files.get('attachment')
     audio_data = None
@@ -464,7 +485,7 @@ def send(user_id):
             flash('نوع المرفق غير مدعوم أو حجمه أكبر من 8 ميجابايت.', 'danger')
             return redirect(url_for('messages.chat', user_id=user_id))
 
-    if content or audio_data or attachment_data:
+    if content or audio_data or attachment_data or shared_video:
         try:
             typing_state = TypingState.query.filter_by(
                 sender_id=current_user.id,
@@ -482,7 +503,8 @@ def send(user_id):
                 attachment_mime=attachment_mime,
                 attachment_name=attachment_name,
                 attachment_kind=attachment_kind,
-                parent_id=parent_id
+                parent_id=parent_id,
+                shared_video_id=shared_video.id if shared_video else None,
             )
             db.session.add(message)
             # تم فصل إشعارات الرسائل عن الإشعارات العامة لتظهر في قسم المراسلة فقط
@@ -493,7 +515,7 @@ def send(user_id):
             current_app.logger.exception('تعذر إرسال الرسالة')
             flash('تعذر إرسال الرسالة حاليًا. حاول مجددًا.', 'danger')
         else:
-            if is_anter_assistant(other):
+            if is_anter_assistant(other) and not shared_video:
                 try:
                     if audio_data or attachment_data:
                         assistant_reply = ASSISTANT_TEXT_ONLY_REPLY
@@ -520,6 +542,14 @@ def send(user_id):
                     # لا يؤثر فشل رد المساعد في الرسالة الأصلية التي تم حفظها بالفعل.
                     db.session.rollback()
                     current_app.logger.exception('تعذر حفظ رد مساعد أنتر')
+
+            if shared_video and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'success': True,
+                    'message': 'تم إرسال الريل إلى الصديق ✓',
+                    'message_id': message.id,
+                    'video_id': shared_video.id,
+                })
 
             flash('تم إرسال الرسالة.', 'success')
     else:

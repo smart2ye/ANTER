@@ -13,6 +13,7 @@ class Video(db.Model):
     thumbnail_path = db.Column(db.String(300), default='default_thumb.png')
     duration = db.Column(db.Integer, default=0)
     views = db.Column(db.Integer, default=0)
+    shares = db.Column(db.Integer, default=0)
     is_reel = db.Column(db.Boolean, default=True)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

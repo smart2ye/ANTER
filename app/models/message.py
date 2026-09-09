@@ -20,6 +20,19 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     
+    # مشاركة ريل داخل المحادثة — يشير إلى الفيديو الأصلي دون نسخ ملف الفيديو
+    shared_video_id = db.Column(
+        db.Integer,
+        db.ForeignKey('videos.id'),
+        nullable=True,
+        index=True,
+    )
+    shared_video = db.relationship(
+        'Video',
+        foreign_keys=[shared_video_id],
+        backref=db.backref('shared_messages', lazy='dynamic'),
+    )
+
     # ميزات متقدمة
     parent_id = db.Column(db.Integer, db.ForeignKey('messages.id'), nullable=True) # للرد على رسالة
     is_deleted_everyone = db.Column(db.Boolean, default=False) # حذف عند الطرفين

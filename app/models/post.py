@@ -23,6 +23,18 @@ class Post(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     visibility = db.Column(db.String(20), default='public', nullable=False, index=True)
 
+    shared_video_id = db.Column(
+        db.Integer,
+        db.ForeignKey('videos.id'),
+        nullable=True,
+        index=True,
+    )
+    shared_video = db.relationship(
+        'Video',
+        foreign_keys=[shared_video_id],
+        backref=db.backref('shared_posts', lazy='dynamic'),
+    )
+
     comments = db.relationship('Comment', backref='post', lazy='dynamic', cascade='all, delete-orphan')
     likes = db.relationship('Like', backref='post', lazy='dynamic', cascade='all, delete-orphan')
     hashtags = db.relationship('Hashtag', secondary='post_hashtags', back_populates='posts', lazy='dynamic')

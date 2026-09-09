@@ -1,16 +1,922 @@
 {% extends "base.html" %}
+
 {% block content %}
-<section class="reels-feed-page" aria-labelledby="reels-page-heading">
-    <header class="reels-feed-header">
-        <div>
-            <p class="reels-eyebrow"><i class="fas fa-play-circle" aria-hidden="true"></i> ANTER Reels</p>
-            <h1 id="reels-page-heading">الريلزات</h1>
-        </div>
-        <a href="{{ url_for('videos.upload') }}" class="btn btn-primary reels-upload-btn" aria-label="رفع فيديو جديد">
-            <i class="fas fa-upload" aria-hidden="true"></i><span>رفع فيديو</span>
+<section class="reels-feed-page reels-feed-page--immersive"
+         aria-labelledby="reels-page-heading">
+
+    <div class="reels-immersive-topbar">
+        <a href="{{ url_for('main.index') }}"
+           class="reels-back-btn"
+           aria-label="العودة إلى الرئيسية">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
         </a>
-    </header>
+
+        <div class="reels-immersive-title">
+            <i class="fas fa-play-circle" aria-hidden="true"></i>
+            <span id="reels-page-heading">ANTER Reels</span>
+        </div>
+
+        <a href="{{ url_for('main.index') }}"
+           class="reels-home-btn"
+           aria-label="الرئيسية">
+            <i class="fas fa-house" aria-hidden="true"></i>
+        </a>
+    </div>
 
     {% include 'videos/_reel_stream.html' %}
+
+    <!-- نافذة تبليغ الريل -->
+
+<!-- نافذة مشاركة الريل داخل ANTER -->
+<div class="anter-share-modal"
+     id="anterReelShareModal"
+     aria-hidden="true"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="anterReelShareTitle">
+
+    <div class="anter-share-backdrop" data-share-close></div>
+
+    <div class="anter-share-dialog">
+
+        <div class="anter-share-header">
+            <div>
+                <span class="anter-share-kicker">
+                    <i class="fas fa-share-nodes" aria-hidden="true"></i>
+                    مشاركة الريل
+                </span>
+                <h2 id="anterReelShareTitle">مشاركة على ANTER</h2>
+            </div>
+
+            <button type="button"
+                    class="anter-share-close"
+                    data-share-close
+                    aria-label="إغلاق">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="anter-share-options">
+
+            <button type="button"
+                    class="anter-share-option anter-share-option-primary"
+                    id="anterInternalShareBtn">
+                <span class="anter-share-option-icon">
+                    <i class="fas fa-retweet" aria-hidden="true"></i>
+                </span>
+
+                <span class="anter-share-option-copy">
+                    <strong>مشاركة داخل ANTER</strong>
+                    <small>انشر الريل كمنشور في الصفحة الرئيسية</small>
+                </span>
+
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+
+            <button type="button"
+                    class="anter-share-option"
+                    id="anterSendFriendBtn">
+                <span class="anter-share-option-icon">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                </span>
+
+                <span class="anter-share-option-copy">
+                    <strong>إرسال إلى صديق</strong>
+                    <small>أرسل الريل داخل رسالة خاصة</small>
+                </span>
+
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+
+            <button type="button"
+                    class="anter-share-option"
+                    id="anterExternalShareBtn">
+                <span class="anter-share-option-icon">
+                    <i class="fas fa-globe" aria-hidden="true"></i>
+                </span>
+
+                <span class="anter-share-option-copy">
+                    <strong>مشاركة خارج ANTER</strong>
+                    <small>واتساب والتطبيقات الأخرى</small>
+                </span>
+
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+
+            <button type="button"
+                    class="anter-share-option"
+                    id="anterCopyReelBtn">
+                <span class="anter-share-option-icon">
+                    <i class="fas fa-link" aria-hidden="true"></i>
+                </span>
+
+                <span class="anter-share-option-copy">
+                    <strong>نسخ الرابط</strong>
+                    <small>نسخ رابط الريل إلى الحافظة</small>
+                </span>
+
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+
+        </div>
+    </div>
+</div>
+
+<!-- اختيار صديق لإرسال الريل -->
+<div class="anter-share-modal"
+     id="anterReelFriendModal"
+     aria-hidden="true"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="anterReelFriendTitle">
+
+    <div class="anter-share-backdrop" data-friend-close></div>
+
+    <div class="anter-share-dialog anter-friend-dialog">
+
+        <div class="anter-share-header">
+            <div>
+                <span class="anter-share-kicker">
+                    <i class="fas fa-user-friends" aria-hidden="true"></i>
+                    رسالة خاصة
+                </span>
+                <h2 id="anterReelFriendTitle">إرسال إلى صديق</h2>
+            </div>
+
+            <button type="button"
+                    class="anter-share-close"
+                    data-friend-close
+                    aria-label="إغلاق">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="anter-friend-search">
+            <i class="fas fa-search" aria-hidden="true"></i>
+
+            <input type="search"
+                   id="anterFriendSearch"
+                   placeholder="ابحث عن شخص تتابعه..."
+                   autocomplete="off">
+        </div>
+
+        <div class="anter-friend-list"
+             id="anterFriendList">
+
+            {% for user in share_users %}
+            <div class="anter-friend-row"
+                 data-user-name="{{ (user.name or '')|lower }}"
+                 data-user-username="{{ user.username|lower }}"
+                 data-user-id="{{ user.id }}">
+
+                <div class="anter-friend-avatar-wrap">
+                    <img src="{{ avatar_url(user) }}"
+                         alt="{{ user.name or user.username }}"
+                         class="anter-friend-avatar">
+
+                    <span class="anter-friend-presence"></span>
+                </div>
+
+                <div class="anter-friend-info">
+                    <strong>
+                        {{ user.name or user.username }}
+                        {{ verified_badge(user) }}
+                    </strong>
+
+                    <span>@{{ user.username }}</span>
+                </div>
+
+                <button type="button"
+                        class="anter-friend-send"
+                        data-user-id="{{ user.id }}">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                    إرسال
+                </button>
+
+            </div>
+
+            {% else %}
+
+            <div class="anter-friend-empty">
+                <i class="fas fa-user-group" aria-hidden="true"></i>
+
+                <strong>لا يوجد أشخاص متاحون للإرسال</strong>
+
+                <span>
+                    تابع حسابات أولًا لتتمكن من إرسال الريلز إليها.
+                </span>
+            </div>
+
+            {% endfor %}
+
+        </div>
+    </div>
+</div>
+
+<div class="anter-report-modal"
+         id="anterReelReportModal"
+         aria-hidden="true"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="anterReelReportTitle">
+
+        <div class="anter-report-backdrop" data-report-close></div>
+
+        <div class="anter-report-dialog">
+            <div class="anter-report-header">
+                <div>
+                    <span class="anter-report-kicker">
+                        <i class="fas fa-flag" aria-hidden="true"></i>
+                        الإبلاغ
+                    </span>
+                    <h2 id="anterReelReportTitle">الإبلاغ عن هذا الريل</h2>
+                </div>
+
+                <button type="button"
+                        class="anter-report-close"
+                        data-report-close
+                        aria-label="إغلاق">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <form id="anterReelReportForm">
+                <input type="hidden" id="anterReportVideoId">
+
+                <label for="anterReportReason">سبب البلاغ</label>
+                <select id="anterReportReason" required>
+                    <option value="">اختر السبب</option>
+                    <option value="spam">محتوى مزعج أو ترويجي</option>
+                    <option value="harassment">تنمر أو مضايقة</option>
+                    <option value="violence">عنف أو محتوى خطير</option>
+                    <option value="sexual">محتوى جنسي</option>
+                    <option value="hate">كراهية أو تحريض</option>
+                    <option value="misinformation">معلومات مضللة</option>
+                    <option value="copyright">انتهاك حقوق النشر</option>
+                    <option value="other">سبب آخر</option>
+                </select>
+
+                <label for="anterReportDetails">تفاصيل إضافية <span>(اختياري)</span></label>
+                <textarea id="anterReportDetails"
+                          maxlength="2000"
+                          rows="4"
+                          placeholder="اكتب أي تفاصيل تساعد فريق ANTER على مراجعة البلاغ..."></textarea>
+
+                <div class="anter-report-feedback"
+                     id="anterReportFeedback"
+                     aria-live="polite"></div>
+
+                <button type="submit"
+                        class="anter-report-submit"
+                        id="anterReportSubmit">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                    إرسال البلاغ
+                </button>
+            </form>
+        </div>
+    </div>
+
 </section>
+
+<script>
+/* ========================================
+   ANTER Reels Immersive Actions
+   ======================================== */
+document.addEventListener('DOMContentLoaded', () => {
+    const csrfToken =
+        document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    const stream = document.getElementById('reelsStream');
+
+    /* ----------------------------------------
+       أدوات مساعدة
+       ---------------------------------------- */
+
+    function setLoading(button, loading) {
+        if (!button) return;
+
+        button.classList.toggle('is-loading', loading);
+        button.disabled = loading;
+    }
+
+    async function postJSON(url, options = {}) {
+        const headers = {
+            'X-CSRFToken': csrfToken,
+            ...(options.headers || {})
+        };
+
+        return fetch(url, {
+            ...options,
+            headers
+        });
+    }
+
+    function showTemporaryMessage(message, type = 'success') {
+        let box = document.getElementById('anterReelsToast');
+
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'anterReelsToast';
+            box.className = 'anter-reels-toast';
+            document.body.appendChild(box);
+        }
+
+        box.textContent = message;
+        box.className = `anter-reels-toast is-visible ${type}`;
+
+        clearTimeout(box._timer);
+        box._timer = setTimeout(() => {
+            box.classList.remove('is-visible');
+        }, 2800);
+    }
+
+    /* ----------------------------------------
+       متابعة / إلغاء متابعة
+       ---------------------------------------- */
+
+    document.querySelectorAll('.reel-follow-btn').forEach(button => {
+        button.addEventListener('click', async event => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const userId = button.dataset.userId;
+            const following = button.dataset.following === 'true';
+
+            if (!userId) return;
+
+            setLoading(button, true);
+
+            const url = following
+                ? `/users/unfollow/${userId}`
+                : `/users/follow/${userId}`;
+
+            try {
+                const response = await postJSON(url, {
+                    method: 'POST'
+                });
+
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (_) {}
+
+                if (!response.ok || data.success === false) {
+                    throw new Error(data.message || 'تعذر تنفيذ العملية');
+                }
+
+                const nowFollowing = !following;
+
+                button.dataset.following = nowFollowing ? 'true' : 'false';
+                button.classList.toggle('is-following', nowFollowing);
+
+                const icon = button.querySelector('i');
+                const label = button.querySelector('span');
+
+                if (icon) {
+                    icon.className = nowFollowing
+                        ? 'fas fa-user-check'
+                        : 'fas fa-user-plus';
+                }
+
+                if (label) {
+                    label.textContent = nowFollowing ? 'متابَع' : 'متابعة';
+                }
+
+                button.setAttribute(
+                    'aria-label',
+                    nowFollowing
+                        ? `إلغاء متابعة @${button.closest('.reel-stream-meta')?.querySelector('.reel-stream-author span')?.textContent?.replace(/^@/, '').trim() || ''}`
+                        : 'متابعة المستخدم'
+                );
+
+                showTemporaryMessage(
+                    nowFollowing ? 'تمت المتابعة ✓' : 'تم إلغاء المتابعة'
+                );
+
+            } catch (error) {
+                console.error('ANTER follow error:', error);
+                showTemporaryMessage(
+                    error.message || 'تعذر تنفيذ العملية',
+                    'error'
+                );
+            } finally {
+                setLoading(button, false);
+            }
+        });
+    });
+
+    /* ----------------------------------------
+       مشاركة الريل
+       ---------------------------------------- */
+
+    const shareModal = document.getElementById('anterReelShareModal');
+    const friendModal = document.getElementById('anterReelFriendModal');
+    const friendSearch = document.getElementById('anterFriendSearch');
+    const friendList = document.getElementById('anterFriendList');
+
+    let activeShareVideoId = null;
+    let activeSharePublicId = null;
+    let activeShareTitle = 'ريل جديد';
+
+    function openShareModal(button) {
+        if (!shareModal) return;
+
+        activeShareVideoId = button.dataset.videoId || null;
+        activeSharePublicId = button.dataset.publicId || null;
+        activeShareTitle = button.dataset.videoTitle || 'ريل جديد';
+
+        if (!activeShareVideoId || !activeSharePublicId) {
+            showTemporaryMessage('تعذر تحديد الريل', 'error');
+            return;
+        }
+
+        shareModal.classList.add('is-open');
+        shareModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeShareModal() {
+        if (!shareModal) return;
+
+        shareModal.classList.remove('is-open');
+        shareModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function openFriendModal() {
+        closeShareModal();
+
+        if (!friendModal) return;
+
+        friendModal.classList.add('is-open');
+        friendModal.setAttribute('aria-hidden', 'false');
+
+        if (friendSearch) {
+            friendSearch.value = '';
+            filterFriends();
+            setTimeout(() => friendSearch.focus(), 100);
+        }
+    }
+
+    function closeFriendModal() {
+        if (!friendModal) return;
+
+        friendModal.classList.remove('is-open');
+        friendModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function getActiveReelUrl() {
+        if (!activeSharePublicId) return '';
+
+        return `${window.location.origin}/videos/r/${encodeURIComponent(activeSharePublicId)}`;
+    }
+
+    async function copyReelLink() {
+        const url = getActiveReelUrl();
+
+        if (!url) return;
+
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(url);
+            } else {
+                const input = document.createElement('input');
+                input.value = url;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                input.remove();
+            }
+
+            showTemporaryMessage('تم نسخ رابط الريل ✓');
+            closeShareModal();
+
+        } catch (error) {
+            console.error('ANTER copy reel error:', error);
+            showTemporaryMessage('تعذر نسخ الرابط', 'error');
+        }
+    }
+
+    async function externalShareReel() {
+        const url = getActiveReelUrl();
+
+        if (!url) return;
+
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: `ANTER — ${activeShareTitle}`,
+                    text: 'شاهد هذا الريل على ANTER',
+                    url
+                });
+
+                closeShareModal();
+                return;
+            }
+
+            await copyReelLink();
+
+        } catch (error) {
+            if (error?.name === 'AbortError') {
+                return;
+            }
+
+            console.error('ANTER external share error:', error);
+            showTemporaryMessage('تعذر مشاركة الريل', 'error');
+        }
+    }
+
+    async function shareReelInsideAnter() {
+        if (!activeShareVideoId) return;
+
+        const button = document.getElementById('anterInternalShareBtn');
+        setLoading(button, true);
+
+        try {
+            const response = await postJSON(
+                `/posts/share-video/${encodeURIComponent(activeShareVideoId)}`,
+                {
+                    method: 'POST'
+                }
+            );
+
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (_) {}
+
+            if (!response.ok || data.success === false) {
+                throw new Error(
+                    data.message || 'تعذر مشاركة الريل داخل ANTER'
+                );
+            }
+
+            showTemporaryMessage(
+                data.message || 'تمت مشاركة الريل داخل ANTER ✓'
+            );
+
+            closeShareModal();
+
+        } catch (error) {
+            console.error('ANTER internal reel share error:', error);
+            showTemporaryMessage(
+                error.message || 'تعذر مشاركة الريل',
+                'error'
+            );
+        } finally {
+            setLoading(button, false);
+        }
+    }
+
+    function filterFriends() {
+        if (!friendList) return;
+
+        const query = (friendSearch?.value || '').trim().toLowerCase();
+
+        friendList.querySelectorAll('.anter-friend-row').forEach(row => {
+            const name = row.dataset.userName || '';
+            const username = row.dataset.userUsername || '';
+
+            row.style.display =
+                !query || name.includes(query) || username.includes(query)
+                    ? ''
+                    : 'none';
+        });
+    }
+
+    async function sendReelToFriend(userId, button) {
+        if (!userId || !activeShareVideoId) return;
+
+        setLoading(button, true);
+
+        try {
+            const formData = new FormData();
+            formData.append(
+                'content',
+                'شاهد هذا الريل على ANTER 🎬'
+            );
+            formData.append(
+                'video_id',
+                activeShareVideoId
+            );
+
+            const response = await postJSON(
+                `/messages/send/${encodeURIComponent(userId)}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                }
+            );
+
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (_) {}
+
+            if (!response.ok || data.success === false) {
+                throw new Error(
+                    data.message || 'تعذر إرسال الريل'
+                );
+            }
+
+            showTemporaryMessage(
+                data.message || 'تم إرسال الريل إلى الصديق ✓'
+            );
+
+            closeFriendModal();
+
+        } catch (error) {
+            console.error('ANTER send reel to friend error:', error);
+
+            showTemporaryMessage(
+                error.message || 'تعذر إرسال الريل',
+                'error'
+            );
+        } finally {
+            setLoading(button, false);
+        }
+    }
+
+
+document.querySelectorAll('.reel-stream-share').forEach(button => {
+        let shareHandled = false;
+
+        const handleShare = event => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (shareHandled) return;
+            shareHandled = true;
+
+            openShareModal(button);
+
+            setTimeout(() => {
+                shareHandled = false;
+            }, 350);
+        };
+
+        button.addEventListener('touchend', handleShare, {
+            passive: false
+        });
+
+        button.addEventListener('pointerup', handleShare, {
+            passive: false
+        });
+
+        button.addEventListener('click', handleShare);
+    });
+
+    document
+        .querySelectorAll('[data-share-close]')
+        .forEach(element => {
+            element.addEventListener('click', event => {
+                event.preventDefault();
+                closeShareModal();
+            });
+        });
+
+    document
+        .querySelectorAll('[data-friend-close]')
+        .forEach(element => {
+            element.addEventListener('click', event => {
+                event.preventDefault();
+                closeFriendModal();
+            });
+        });
+
+    document
+        .getElementById('anterInternalShareBtn')
+        ?.addEventListener('click', shareReelInsideAnter);
+
+    document
+        .getElementById('anterSendFriendBtn')
+        ?.addEventListener('click', openFriendModal);
+
+    document
+        .getElementById('anterExternalShareBtn')
+        ?.addEventListener('click', externalShareReel);
+
+    document
+        .getElementById('anterCopyReelBtn')
+        ?.addEventListener('click', copyReelLink);
+
+    friendSearch?.addEventListener('input', filterFriends);
+
+    friendList?.querySelectorAll('.anter-friend-send')
+        .forEach(button => {
+            button.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                sendReelToFriend(
+                    button.dataset.userId,
+                    button
+                );
+            });
+        });
+
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+
+        if (friendModal?.classList.contains('is-open')) {
+            closeFriendModal();
+        } else if (shareModal?.classList.contains('is-open')) {
+            closeShareModal();
+        }
+    });
+
+    /* ----------------------------------------
+       نافذة التبليغ
+       ---------------------------------------- */
+
+    const reportModal = document.getElementById('anterReelReportModal');
+    const reportForm = document.getElementById('anterReelReportForm');
+    const reportVideoId = document.getElementById('anterReportVideoId');
+    const reportReason = document.getElementById('anterReportReason');
+    const reportDetails = document.getElementById('anterReportDetails');
+    const reportFeedback = document.getElementById('anterReportFeedback');
+    const reportSubmit = document.getElementById('anterReportSubmit');
+
+    function closeReportModal() {
+        if (!reportModal) return;
+
+        reportModal.classList.remove('is-open');
+        reportModal.setAttribute('aria-hidden', 'true');
+
+        if (reportForm) {
+            reportForm.reset();
+        }
+
+        if (reportVideoId) {
+            reportVideoId.value = '';
+        }
+
+        if (reportFeedback) {
+            reportFeedback.textContent = '';
+            reportFeedback.className = 'anter-report-feedback';
+        }
+    }
+
+    function openReportModal(videoId) {
+        if (!reportModal || !reportVideoId) return;
+
+        reportVideoId.value = videoId;
+        reportModal.classList.add('is-open');
+        reportModal.setAttribute('aria-hidden', 'false');
+
+        setTimeout(() => {
+            reportReason?.focus();
+        }, 80);
+    }
+
+    document.querySelectorAll('.reel-stream-report').forEach(button => {
+        let reportHandled = false;
+
+        const handleReport = event => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (reportHandled) return;
+            reportHandled = true;
+
+            const videoId = button.dataset.videoId;
+
+            if (videoId) {
+                openReportModal(videoId);
+            }
+
+            setTimeout(() => {
+                reportHandled = false;
+            }, 350);
+        };
+
+        button.addEventListener('touchend', handleReport, {
+            passive: false
+        });
+
+        button.addEventListener('pointerup', handleReport, {
+            passive: false
+        });
+
+        button.addEventListener('click', handleReport);
+    });
+
+    reportModal?.querySelectorAll('[data-report-close]').forEach(element => {
+        element.addEventListener('click', event => {
+            event.preventDefault();
+            closeReportModal();
+        });
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' &&
+            reportModal?.classList.contains('is-open')) {
+            closeReportModal();
+        }
+    });
+
+    /* ----------------------------------------
+       إرسال البلاغ
+       ---------------------------------------- */
+
+    reportForm?.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const videoId = reportVideoId?.value;
+        const reason = reportReason?.value;
+        const details = reportDetails?.value?.trim() || '';
+
+        if (!videoId || !reason) {
+            if (reportFeedback) {
+                reportFeedback.textContent = 'اختر سبب البلاغ أولًا.';
+                reportFeedback.className =
+                    'anter-report-feedback is-error';
+            }
+            return;
+        }
+
+        setLoading(reportSubmit, true);
+
+        if (reportFeedback) {
+            reportFeedback.textContent = 'جارٍ إرسال البلاغ...';
+            reportFeedback.className = 'anter-report-feedback';
+        }
+
+        try {
+            const response = await postJSON(
+                `/videos/report/${encodeURIComponent(videoId)}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reason,
+                        details
+                    })
+                }
+            );
+
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (_) {}
+
+            if (!response.ok || data.success === false) {
+                throw new Error(
+                    data.message || 'تعذر إرسال البلاغ'
+                );
+            }
+
+            if (reportFeedback) {
+                reportFeedback.textContent =
+                    data.message || 'تم استلام بلاغك ✓';
+                reportFeedback.className =
+                    'anter-report-feedback is-success';
+            }
+
+            showTemporaryMessage('تم إرسال البلاغ ✓');
+
+            setTimeout(closeReportModal, 900);
+
+        } catch (error) {
+            console.error('ANTER report error:', error);
+
+            if (reportFeedback) {
+                reportFeedback.textContent =
+                    error.message || 'تعذر إرسال البلاغ';
+                reportFeedback.className =
+                    'anter-report-feedback is-error';
+            }
+        } finally {
+            setLoading(reportSubmit, false);
+        }
+    });
+
+    /* ----------------------------------------
+       منع أحداث الأزرار من الوصول لمشغل الفيديو
+       ---------------------------------------- */
+
+    document.querySelectorAll(
+        '.reel-follow-btn,
+        .reel-stream-share,
+        .reel-stream-report,
+        .anter-share-option,
+        .anter-share-close,
+        .anter-friend-send'
+    ).forEach(button => {
+        button.addEventListener('pointerdown', event => {
+            event.stopPropagation();
+        }, { passive: true });
+
+        button.addEventListener('touchstart', event => {
+            event.stopPropagation();
+        }, { passive: true });
+    });
+
+    console.log('✅ ANTER Reels immersive actions ready');
+});
+</script>
+
 {% endblock %}

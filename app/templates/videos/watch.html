@@ -1,23 +1,80 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="reel-watch-page" aria-labelledby="reel-title">
-    <a href="{{ url_for('main.reels_feed') }}" class="reel-back-link">
+    <a href="{{ url_for('videos.reels') }}" class="reel-back-link">
         <i class="fas fa-arrow-right" aria-hidden="true"></i> كل الريلز
     </a>
 
     <div class="reel-watch-layout">
         <article class="reel-player-panel">
-            <div class="reel-player-shell">
+            <div class="reel-player-shell" data-anter-player>
                 <video id="reelPlayer"
                        class="reel-player"
-                       controls
                        playsinline
                        preload="metadata"
                        poster="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}"
-                       controlslist="nodownload">
+                       aria-label="{{ video.title or 'فيديو ANTER' }}">
                     <source src="{{ url_for('static', filename='uploads/' + video.file_path) }}">
                     متصفحك لا يدعم تشغيل الفيديو.
                 </video>
+
+                <button type="button"
+                        class="anter-player-center"
+                        data-player-toggle
+                        aria-label="تشغيل الفيديو">
+                    <i class="fas fa-play" aria-hidden="true"></i>
+                </button>
+
+                <div class="anter-player-loading" data-player-loading aria-hidden="true">
+                    <span class="anter-player-spinner"></span>
+                </div>
+                <div class="anter-player-like-burst" data-player-like-burst aria-hidden="true">
+                    <i class="fas fa-heart"></i>
+                </div>
+
+                <div class="anter-player-controls" data-player-controls>
+                    <div class="anter-player-progress-wrap">
+                        <input type="range"
+                               class="anter-player-progress"
+                               data-player-progress
+                               min="0"
+                               max="100"
+                               value="0"
+                               step="0.1"
+                               aria-label="موضع الفيديو">
+                    </div>
+
+                    <div class="anter-player-control-row">
+                        <button type="button"
+                                class="anter-player-control"
+                                data-player-play
+                                aria-label="تشغيل الفيديو">
+                            <i class="fas fa-play" aria-hidden="true"></i>
+                        </button>
+
+                        <button type="button"
+                                class="anter-player-control"
+                                data-player-volume
+                                aria-label="كتم الصوت">
+                            <i class="fas fa-volume-up" aria-hidden="true"></i>
+                        </button>
+
+                        <span class="anter-player-time">
+                            <span data-player-current>0:00</span>
+                            <span aria-hidden="true"> / </span>
+                            <span data-player-duration>0:00</span>
+                        </span>
+
+                        <span class="anter-player-spacer"></span>
+
+                        <button type="button"
+                                class="anter-player-control"
+                                data-player-fullscreen
+                                aria-label="ملء الشاشة">
+                            <i class="fas fa-expand" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="reel-watch-actions" aria-label="تفاعلات الريل">
@@ -89,6 +146,574 @@
 </section>
 
 <script>
+(() => {
+    const player = document.querySelector('[data-anter-player]');
+    if (!player) return;
+
+    const video = player.querySelector('#reelPlayer');
+    const centerToggle = player.querySelector('[data-player-toggle]');
+    const playButton = player.querySelector('[data-player-play]');
+    const volumeButton = player.querySelector('[data-player-volume]');
+    const fullscreenButton = player.querySelector('[data-player-fullscreen]');
+    const progress = player.querySelector('[data-player-progress]');
+    const currentTime = player.querySelector('[data-player-current]');
+    const duration = player.querySelector('[data-player-duration]');
+    const likeBurst = player.querySelector('[data-player-like-burst]');
+
+    if (!video) return;
+
+    let hideTimer = null;
+    let clickTimer = null;
+    let lastTouch = 0;
+    let seeking = false;
+
+    const formatTime = (seconds) => {
+        if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60)
+            .toString()
+            .padStart(2, '0');
+
+        return `${minutes}:${secs}`;
+    };
+
+    const playing = () => !video.paused && !video.ended;
+
+    const showControls = (temporary = true) => {
+        player.classList.remove('is-controls-hidden');
+
+        if (hideTimer) {
+            clearTimeout(hideTimer);
+            hideTimer = null;
+        }
+
+        if (temporary && playing()) {
+            hideTimer = setTimeout(() => {
+                if (!seeking && playing()) {
+                    player.classList.add('is-controls-hidden');
+                }
+            }, 2600);
+        }
+    };
+
+    const updatePlayState = () => {
+        const active = playing();
+
+        if (centerToggle) {
+            const icon = centerToggle.querySelector('i');
+
+            if (icon) {
+                icon.className = video.ended
+                    ? 'fas fa-rotate-right'
+                    : active
+                        ? 'fas fa-pause'
+                        : 'fas fa-play';
+            }
+
+            centerToggle.setAttribute(
+                'aria-label',
+                video.ended
+                    ? 'إعادة تشغيل الفيديو'
+                    : active
+                        ? 'إيقاف الفيديو'
+                        : 'تشغيل الفيديو'
+            );
+        }
+
+        if (playButton) {
+            const icon = playButton.querySelector('i');
+            if (icon) {
+                icon.className = active
+                    ? 'fas fa-pause'
+                    : 'fas fa-play';
+            }
+
+            playButton.setAttribute(
+                'aria-label',
+                active ? 'إيقاف الفيديو' : 'تشغيل الفيديو'
+            );
+        }
+
+        player.classList.toggle('is-playing', active);
+        player.classList.toggle('is-ended', video.ended);
+    };
+
+    const updateProgress = () => {
+        if (!Number.isFinite(video.duration) || video.duration <= 0) {
+            if (progress) {
+                progress.value = 0;
+                progress.style.setProperty('--player-progress', '0%');
+            }
+
+            if (currentTime) currentTime.textContent = '0:00';
+            if (duration) duration.textContent = '0:00';
+
+            return;
+        }
+
+        const percent = Math.min(
+            100,
+            Math.max(0, (video.currentTime / video.duration) * 100)
+        );
+
+        if (!seeking && progress) {
+            progress.value = percent;
+        }
+
+        progress?.style.setProperty(
+            '--player-progress',
+            `${percent}%`
+        );
+
+        if (currentTime) {
+            currentTime.textContent = formatTime(video.currentTime);
+        }
+
+        if (duration) {
+            duration.textContent = formatTime(video.duration);
+        }
+    };
+
+    const updateVolume = () => {
+        const icon = volumeButton?.querySelector('i');
+        if (!icon) return;
+
+        if (video.muted || video.volume === 0) {
+            icon.className = 'fas fa-volume-mute';
+            volumeButton.setAttribute('aria-label', 'تشغيل الصوت');
+        } else if (video.volume < 0.5) {
+            icon.className = 'fas fa-volume-down';
+            volumeButton.setAttribute('aria-label', 'كتم الصوت');
+        } else {
+            icon.className = 'fas fa-volume-up';
+            volumeButton.setAttribute('aria-label', 'كتم الصوت');
+        }
+    };
+
+    const play = async () => {
+        try {
+            if (video.ended) {
+                video.currentTime = 0;
+            }
+
+            await video.play();
+            updatePlayState();
+            showControls(true);
+        } catch (error) {
+            console.warn('تعذر تشغيل الفيديو:', error);
+        }
+    };
+
+    const pause = () => {
+        video.pause();
+        updatePlayState();
+        showControls(false);
+    };
+
+    const togglePlay = () => {
+        if (playing()) {
+            pause();
+        } else {
+            play();
+        }
+    };
+
+    const toggleVolume = () => {
+        if (video.muted || video.volume === 0) {
+            video.muted = false;
+
+            if (video.volume === 0) {
+                video.volume = 0.75;
+            }
+        } else {
+            video.muted = true;
+        }
+
+        updateVolume();
+        showControls(true);
+    };
+
+    const fullscreen = async () => {
+        try {
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+                return;
+            }
+
+            if (player.requestFullscreen) {
+                await player.requestFullscreen();
+                return;
+            }
+
+            if (player.webkitRequestFullscreen) {
+                player.webkitRequestFullscreen();
+                return;
+            }
+
+            if (video.webkitEnterFullscreen) {
+                video.webkitEnterFullscreen();
+            }
+        } catch (error) {
+            console.warn('تعذر تشغيل ملء الشاشة:', error);
+        }
+
+        showControls(true);
+    };
+
+    const updateFullscreen = () => {
+        const icon = fullscreenButton?.querySelector('i');
+        if (!icon) return;
+
+        const active =
+            document.fullscreenElement === player ||
+            document.webkitFullscreenElement === player;
+
+        icon.className = active
+            ? 'fas fa-compress'
+            : 'fas fa-expand';
+    };
+
+    const showHeart = () => {
+        if (!likeBurst) return;
+
+        likeBurst.classList.remove('is-active');
+        void likeBurst.offsetWidth;
+        likeBurst.classList.add('is-active');
+
+        setTimeout(() => {
+            likeBurst.classList.remove('is-active');
+        }, 750);
+    };
+
+    const performLike = async () => {
+        const button = document.querySelector('.reel-like-button');
+
+        if (!button || button.classList.contains('is-loading')) {
+            return;
+        }
+
+        /*
+         * إذا كان الريل معجبًا به بالفعل، لا نقلب الحالة
+         * بسبب double-tap. الهدف هنا هو إعجاب TikTok فقط.
+         */
+        if (button.classList.contains('is-liked')) {
+            showHeart();
+            return;
+        }
+
+        button.classList.add('is-loading');
+
+        try {
+            const response = await fetch(
+                `/videos/like/${button.dataset.videoId}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            const count = button.querySelector('.reel-action-count');
+
+            if (count && typeof data.count !== 'undefined') {
+                count.textContent = data.count;
+            }
+
+            button.classList.toggle('is-liked', Boolean(data.liked));
+            button.setAttribute(
+                'aria-pressed',
+                String(Boolean(data.liked))
+            );
+
+            const icon = button.querySelector('i');
+
+            if (icon) {
+                icon.className = data.liked
+                    ? 'fas fa-heart'
+                    : 'far fa-heart';
+            }
+
+            if (data.liked) {
+                showHeart();
+            }
+        } catch (error) {
+            console.warn('تعذر تسجيل الإعجاب:', error);
+
+            button.classList.add('has-error');
+
+            setTimeout(() => {
+                button.classList.remove('has-error');
+            }, 500);
+        } finally {
+            button.classList.remove('is-loading');
+        }
+    };
+
+    const handleVideoClick = () => {
+        if (clickTimer) {
+            clearTimeout(clickTimer);
+            clickTimer = null;
+            performLike();
+            return;
+        }
+
+        clickTimer = setTimeout(() => {
+            clickTimer = null;
+            togglePlay();
+        }, 260);
+    };
+
+    const handleTouchEnd = (event) => {
+        const now = Date.now();
+
+        if (now - lastTouch < 350) {
+            event.preventDefault();
+
+            if (clickTimer) {
+                clearTimeout(clickTimer);
+                clickTimer = null;
+            }
+
+            performLike();
+            lastTouch = 0;
+            return;
+        }
+
+        lastTouch = now;
+    };
+
+    const seek = (value) => {
+        if (!Number.isFinite(video.duration)) return;
+
+        const percent = Number(value);
+
+        if (!Number.isFinite(percent)) return;
+
+        video.currentTime =
+            (percent / 100) * video.duration;
+
+        if (progress) {
+            progress.value = percent;
+            progress.style.setProperty(
+                '--player-progress',
+                `${percent}%`
+            );
+        }
+
+        updateProgress();
+    };
+
+    // أزرار التحكم
+    centerToggle?.addEventListener('click', (event) => {
+        event.stopPropagation();
+
+        if (video.ended) {
+            video.currentTime = 0;
+            play();
+        } else {
+            togglePlay();
+        }
+    });
+
+    playButton?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        togglePlay();
+    });
+
+    volumeButton?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleVolume();
+    });
+
+    fullscreenButton?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        fullscreen();
+    });
+
+    // الفيديو
+    video.addEventListener('click', handleVideoClick);
+
+    video.addEventListener(
+        'touchend',
+        handleTouchEnd,
+        { passive: false }
+    );
+
+    // Double click للكمبيوتر
+    video.addEventListener('dblclick', (event) => {
+        event.preventDefault();
+
+        if (clickTimer) {
+            clearTimeout(clickTimer);
+            clickTimer = null;
+        }
+
+        performLike();
+    });
+
+    // التحكم التلقائي
+    player.addEventListener('mousemove', () => {
+        showControls(true);
+    });
+
+    player.addEventListener('touchstart', () => {
+        showControls(false);
+    }, { passive: true });
+
+    // شريط التقدم
+    progress?.addEventListener('pointerdown', () => {
+        seeking = true;
+        showControls(false);
+    });
+
+    progress?.addEventListener('input', () => {
+        seeking = true;
+        seek(progress.value);
+    });
+
+    progress?.addEventListener('change', () => {
+        seeking = false;
+        seek(progress.value);
+        showControls(true);
+    });
+
+    progress?.addEventListener('pointerup', () => {
+        seeking = false;
+        seek(progress.value);
+        showControls(true);
+    });
+
+    // أحداث الفيديو
+    video.addEventListener('loadedmetadata', updateProgress);
+    video.addEventListener('durationchange', updateProgress);
+    video.addEventListener('timeupdate', updateProgress);
+
+    video.addEventListener('play', () => {
+        updatePlayState();
+        showControls(true);
+    });
+
+    video.addEventListener('pause', () => {
+        updatePlayState();
+        showControls(false);
+    });
+
+    video.addEventListener('ended', () => {
+        updatePlayState();
+        showControls(false);
+    });
+
+    video.addEventListener('waiting', () => {
+        player.classList.add('is-buffering');
+    });
+
+    video.addEventListener('stalled', () => {
+        if (playing()) {
+            player.classList.add('is-buffering');
+        }
+    });
+
+    video.addEventListener('canplay', () => {
+        player.classList.remove('is-buffering');
+    });
+
+    video.addEventListener('playing', () => {
+        player.classList.remove('is-buffering');
+    });
+
+    video.addEventListener('volumechange', updateVolume);
+
+    // Fullscreen events
+    document.addEventListener('fullscreenchange', updateFullscreen);
+    document.addEventListener('webkitfullscreenchange', updateFullscreen);
+
+    video.addEventListener('webkitbeginfullscreen', updateFullscreen);
+    video.addEventListener('webkitendfullscreen', updateFullscreen);
+
+    // لوحة المفاتيح
+    document.addEventListener('keydown', (event) => {
+        const active = document.activeElement;
+        const tag = active?.tagName;
+
+        if (
+            tag === 'INPUT' ||
+            tag === 'TEXTAREA' ||
+            tag === 'SELECT' ||
+            active?.isContentEditable
+        ) {
+            return;
+        }
+
+        const rect = player.getBoundingClientRect();
+
+        if (
+            rect.bottom <= 0 ||
+            rect.top >= window.innerHeight
+        ) {
+            return;
+        }
+
+        switch (event.key.toLowerCase()) {
+            case ' ':
+            case 'k':
+                event.preventDefault();
+                togglePlay();
+                break;
+
+            case 'm':
+                event.preventDefault();
+                toggleVolume();
+                break;
+
+            case 'f':
+                event.preventDefault();
+                fullscreen();
+                break;
+
+            case 'arrowright':
+                event.preventDefault();
+
+                if (Number.isFinite(video.duration)) {
+                    video.currentTime = Math.min(
+                        video.duration,
+                        video.currentTime + 5
+                    );
+                    updateProgress();
+                    showControls(true);
+                }
+                break;
+
+            case 'arrowleft':
+                event.preventDefault();
+
+                if (Number.isFinite(video.duration)) {
+                    video.currentTime = Math.max(
+                        0,
+                        video.currentTime - 5
+                    );
+                    updateProgress();
+                    showControls(true);
+                }
+                break;
+        }
+    });
+
+    updateProgress();
+    updateVolume();
+    updatePlayState();
+    updateFullscreen();
+    showControls(false);
+})();
+
+
 (() => {
     const likeButton = document.querySelector('.reel-like-button');
     const copyButton = document.querySelector('[data-copy-link]');

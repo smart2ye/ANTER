@@ -87,7 +87,74 @@
                                     </div>
                                 {% endif %}
 
-                                {% if msg.content %}
+                                {% if msg.shared_video %}
+                                    <a class="anter-chat-shared-reel-card"
+                                       href="{{ url_for('videos.watch', public_id=msg.shared_video.public_id) }}"
+                                       onclick="event.stopPropagation();"
+                                       aria-label="مشاهدة الريل: {{ msg.shared_video.title or 'ريل جديد' }}">
+
+                                        <div class="anter-chat-shared-reel-media">
+                                            {% if msg.shared_video.thumbnail_path %}
+                                                <img
+                                                    src="{{ url_for('static', filename='uploads/' + msg.shared_video.thumbnail_path) }}"
+                                                    alt="{{ msg.shared_video.title or 'ريل جديد' }}"
+                                                    loading="lazy">
+                                            {% endif %}
+
+                                            <span class="anter-chat-shared-reel-play" aria-hidden="true">
+                                                <i class="fas fa-play"></i>
+                                            </span>
+
+                                            <span class="anter-chat-shared-reel-badge">
+                                                <i class="fas fa-clapperboard"></i>
+                                                Reel
+                                            </span>
+                                        </div>
+
+                                        <div class="anter-chat-shared-reel-body">
+
+                                            <div class="anter-chat-shared-reel-author">
+                                                <img
+                                                    src="{{ avatar_url(msg.shared_video.author) }}"
+                                                    alt="{{ msg.shared_video.author.name }}">
+
+                                                <span>
+                                                    @{{ msg.shared_video.author.username }}
+                                                    {{ verified_badge(msg.shared_video.author) }}
+                                                </span>
+                                            </div>
+
+                                            <div class="anter-chat-shared-reel-title">
+                                                {{ msg.shared_video.title or 'ريل جديد' }}
+                                            </div>
+
+                                            {% if msg.shared_video.description %}
+                                            <div class="anter-chat-shared-reel-description">
+                                                {{ msg.shared_video.description|truncate(140, True, '…') }}
+                                            </div>
+                                            {% endif %}
+
+                                            <div class="anter-chat-shared-reel-meta">
+                                                <span>
+                                                    <i class="fas fa-eye"></i>
+                                                    {{ msg.shared_video.views or 0 }}
+                                                </span>
+
+                                                <span>
+                                                    <i class="fas fa-share"></i>
+                                                    {{ msg.shared_video.shares or 0 }}
+                                                </span>
+
+                                                <span class="anter-chat-shared-reel-watch">
+                                                    مشاهدة الريل
+                                                    <i class="fas fa-arrow-left"></i>
+                                                </span>
+                                            </div>
+
+                                        </div>
+                                    </a>
+
+                                {% elif msg.content %}
                                     <div class="message-text mb-1{% if is_anter_assistant and msg.sender_id == other.id %} assistant-rich-text{% endif %}" dir="auto">{{ msg.content }}</div>
                                 {% endif %}
                                 

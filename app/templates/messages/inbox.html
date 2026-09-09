@@ -52,7 +52,16 @@
                     </div>
                     <p class="conversation-preview text-muted small mb-0 text-truncate">
                         {% if last_msg.sender_id == current_user.id %}<span class="conversation-you">أنت</span>{% endif %}
-                        {% if last_msg.audio_data or last_msg.audio_path %}<i class="fas fa-microphone"></i> رسالة صوتية{% elif last_msg.attachment_data %}<i class="fas fa-paperclip"></i> {{ last_msg.attachment_name or 'مرفق' }}{% else %}{{ last_msg.content[:70] }}{% endif %}
+                        {% if last_msg.shared_video %}
+                            <i class="fas fa-clapperboard"></i>
+                            ريل: {{ last_msg.shared_video.title or 'ريل جديد' }}
+                        {% elif last_msg.audio_data or last_msg.audio_path %}
+                            <i class="fas fa-microphone"></i> رسالة صوتية
+                        {% elif last_msg.attachment_data %}
+                            <i class="fas fa-paperclip"></i> {{ last_msg.attachment_name or 'مرفق' }}
+                        {% else %}
+                            {{ last_msg.content[:70] }}
+                        {% endif %}
                     </p>
                 </div>
             </a>

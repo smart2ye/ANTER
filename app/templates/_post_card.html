@@ -77,7 +77,70 @@
         <p>{{ post.content | linkify_hashtags | parse_mentions | safe }}</p>
     </div>
 
-    {% if post.link_url %}
+    {% if post.shared_video %}
+    <a class="anter-shared-reel-card"
+       href="{{ url_for('videos.watch', public_id=post.shared_video.public_id) }}"
+       aria-label="مشاهدة الريل: {{ post.shared_video.title or 'ريل جديد' }}">
+
+        <div class="anter-shared-reel-media">
+            {% if post.shared_video.thumbnail_path %}
+            <img
+                src="{{ url_for('static', filename='uploads/' + post.shared_video.thumbnail_path) }}"
+                alt="{{ post.shared_video.title or 'ريل جديد' }}"
+                loading="lazy">
+            {% endif %}
+
+            <span class="anter-shared-reel-play" aria-hidden="true">
+                <i class="fas fa-play"></i>
+            </span>
+
+            <span class="anter-shared-reel-badge">
+                <i class="fas fa-clapperboard"></i>
+                Reel
+            </span>
+        </div>
+
+        <div class="anter-shared-reel-body">
+            <div class="anter-shared-reel-author">
+                <img
+                    src="{{ avatar_url(post.shared_video.author) }}"
+                    alt="{{ post.shared_video.author.name }}">
+                <span>
+                    @{{ post.shared_video.author.username }}
+                    {{ verified_badge(post.shared_video.author) }}
+                </span>
+            </div>
+
+            <div class="anter-shared-reel-title">
+                {{ post.shared_video.title or 'ريل جديد' }}
+            </div>
+
+            {% if post.shared_video.description %}
+            <div class="anter-shared-reel-description">
+                {{ post.shared_video.description|truncate(180, True, '…') }}
+            </div>
+            {% endif %}
+
+            <div class="anter-shared-reel-meta">
+                <span>
+                    <i class="fas fa-eye"></i>
+                    {{ post.shared_video.views or 0 }}
+                </span>
+
+                <span>
+                    <i class="fas fa-share"></i>
+                    {{ post.shared_video.shares or 0 }}
+                </span>
+
+                <span class="anter-shared-reel-watch">
+                    مشاهدة الريل
+                    <i class="fas fa-arrow-left"></i>
+                </span>
+            </div>
+        </div>
+    </a>
+
+    {% elif post.link_url %}
     <a class="link-preview-card" href="{{ post.link_url }}" target="_blank" rel="noopener noreferrer nofollow">
         {% if post.link_image %}
         <div class="link-preview-image-wrapper">

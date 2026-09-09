@@ -5,7 +5,6 @@
         <div class="reel-stream-frame">
             <video class="reel-stream-video"
                    playsinline
-                   muted
                    loop
                    preload="none"
                    poster="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}"
@@ -17,6 +16,35 @@
             <button type="button" class="reel-tap-toggle" aria-label="تشغيل أو إيقاف الفيديو">
                 <i class="fas fa-play" aria-hidden="true"></i>
             </button>
+            <div class="anter-feed-player-ui" aria-label="أدوات تشغيل الفيديو">
+                <button type="button"
+                        class="anter-feed-play"
+                        aria-label="تشغيل أو إيقاف الفيديو">
+                    <i class="fas fa-play" aria-hidden="true"></i>
+                </button>
+
+                <div class="anter-feed-bottom-controls">
+                    <span class="anter-feed-time" dir="ltr">00:00 / 00:00</span>
+
+                    <input type="range"
+                           class="anter-feed-progress"
+                           min="0"
+                           max="100"
+                           value="0"
+                           step="0.1"
+                           aria-label="التقدم في الفيديو">
+
+                    <button type="button"
+                            class="anter-feed-fullscreen"
+                            aria-label="ملء الشاشة">
+                        <i class="fas fa-expand" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="anter-feed-heart-burst" aria-hidden="true">
+                <i class="fas fa-heart"></i>
+            </div>
             <div class="reel-buffer-indicator" aria-hidden="true"><i class="fas fa-spinner fa-spin"></i></div>
             <div class="reel-stream-fade"></div>
 
@@ -25,16 +53,32 @@
                 <span class="reel-position" dir="ltr">{{ loop.index }} / {{ videos|length }}</span>
             </div>
 
-            <div class="reel-stream-meta">
-                <a href="{{ url_for('users.profile', username=video.author.username) }}" class="reel-stream-author">
-                    <img src="{{ url_for('static', filename='uploads/' + video.author.avatar) }}" alt="{{ video.author.name }}">
-                    <span>@{{ video.author.username }} {{ verified_badge(video.author) }}</span>
-                </a>
+                        <div class="reel-stream-meta">
+                <div class="reel-stream-author-row">
+                    <a href="{{ url_for('users.profile', username=video.author.username) }}" class="reel-stream-author">
+                        <img src="{{ avatar_url(video.author) }}" alt="{{ video.author.name }}">
+                        <span>@{{ video.author.username }} {{ verified_badge(video.author) }}</span>
+                    </a>
+
+                    {% if video.author.id != current_user.id %}
+                    <button type="button"
+                            class="reel-follow-btn {% if current_user.is_following(video.author) %}is-following{% endif %}"
+                            data-user-id="{{ video.author.id }}"
+                            data-following="{{ 'true' if current_user.is_following(video.author) else 'false' }}"
+                            aria-label="{{ 'إلغاء متابعة @' + video.author.username if current_user.is_following(video.author) else 'متابعة @' + video.author.username }}">
+                        <i class="{{ 'fas fa-user-check' if current_user.is_following(video.author) else 'fas fa-user-plus' }}" aria-hidden="true"></i>
+                        <span>{{ 'متابَع' if current_user.is_following(video.author) else 'متابعة' }}</span>
+                    </button>
+                    {% endif %}
+                </div>
+
                 <h2>{{ video.title or 'ريل جديد' }}</h2>
                 {% if video.description and video.description != video.title %}
                 <p>{{ video.description }}</p>
                 {% endif %}
-                <span class="reel-stream-views"><i class="fas fa-eye" aria-hidden="true"></i> {{ video.views }} مشاهدة</span>
+                <span class="reel-stream-views">
+                    <i class="fas fa-eye" aria-hidden="true"></i> {{ video.views }} مشاهدة
+                </span>
             </div>
 
             <div class="reel-stream-actions" aria-label="تفاعلات الريل">
@@ -56,9 +100,29 @@
     <span>{{ video.comment_count() }}</span>
 </button>
                 <button type="button" class="reel-stream-action reel-stream-sound" aria-label="تشغيل الصوت">
-                    <i class="fas fa-volume-mute" aria-hidden="true"></i>
+                    <i class="fas fa-volume-up" aria-hidden="true"></i>
                 </button>
-                <a class="reel-stream-action reel-stream-more" href="{{ url_for('videos.watch', public_id=video.public_id) }}" aria-label="فتح صفحة الريل">
+                <button type="button"
+                        class="reel-stream-action reel-stream-share"
+                        data-video-id="{{ video.id }}"
+                        data-public-id="{{ video.public_id }}"
+                        data-video-title="{{ video.title or 'ريل جديد' }}"
+                        aria-label="مشاركة الريل">
+                    <i class="fas fa-share" aria-hidden="true"></i>
+                    <span>مشاركة</span>
+                </button>
+
+                <button type="button"
+                        class="reel-stream-action reel-stream-report"
+                        data-video-id="{{ video.id }}"
+                        aria-label="الإبلاغ عن الريل">
+                    <i class="fas fa-flag" aria-hidden="true"></i>
+                    <span>تبليغ</span>
+                </button>
+
+                <a class="reel-stream-action reel-stream-more"
+                   href="{{ url_for('videos.watch', public_id=video.public_id) }}"
+                   aria-label="فتح صفحة الريل">
                     <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
                 </a>
             </div>
@@ -165,14 +229,15 @@
 
     const items = [...stream.querySelectorAll('.reel-stream-item')];
     let activeItem = null;
+    let controlsTimer = null;
+    let reelsMuted = false;
 
     function getVideo(item) {
-        return item.querySelector('.reel-stream-video');
+        return item?.querySelector('.reel-stream-video');
     }
 
     function ensureLoaded(video) {
-        if (!video) return;
-        if (video.dataset.loaded === 'true') return;
+        if (!video || video.dataset.loaded === 'true') return;
 
         const source = document.createElement('source');
         source.src = video.dataset.videoSrc;
@@ -184,86 +249,243 @@
     }
 
     function preloadItem(item) {
-        if (!item) return;
-
         const video = getVideo(item);
         if (!video) return;
 
-        // نرفع أولوية التحميل قبل تهيئة المصدر.
         video.preload = 'auto';
         ensureLoaded(video);
-
-        // علامة داخلية لمنع إعادة تهيئة الريل نفسه.
         item.dataset.preloaded = 'true';
     }
 
-    function preloadNext(item) {
-        if (!item) return;
-
-        const index = items.indexOf(item);
-        if (index === -1) return;
-
-        const nextItem = items[index + 1];
-
-        if (nextItem && nextItem.dataset.preloaded !== 'true') {
-            preloadItem(nextItem);
-        }
-    }
-
-    function preloadPrevious(item) {
-        if (!item) return;
-
-        const index = items.indexOf(item);
-        if (index <= 0) return;
-
-        const previousItem = items[index - 1];
-
-        if (previousItem && previousItem.dataset.preloaded !== 'true') {
-            preloadItem(previousItem);
-        }
-    }
-
     function preloadAround(item) {
-        // الأولوية للريل التالي لأنه الأكثر احتمالًا للظهور.
-        preloadNext(item);
+        const index = items.indexOf(item);
+
+        if (index > 0) {
+            preloadItem(items[index - 1]);
+        }
+
+        if (index >= 0 && index < items.length - 1) {
+            preloadItem(items[index + 1]);
+        }
     }
 
+    function setButtonIcon(item, playing) {
+        const oldIcon = item.querySelector('.reel-tap-toggle i');
+        const newIcon = item.querySelector('.anter-feed-play i');
 
-    function setButtonIcon(item, isPlaying) {
-        const icon = item.querySelector('.reel-tap-toggle i');
-        if (icon) icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
-        item.classList.toggle('is-playing', isPlaying);
+        if (oldIcon) {
+            oldIcon.className = playing ? 'fas fa-pause' : 'fas fa-play';
+        }
+
+        if (newIcon) {
+            newIcon.className = playing ? 'fas fa-pause' : 'fas fa-play';
+        }
+
+        item.classList.toggle('is-playing', playing);
+    }
+
+    function formatTime(seconds) {
+        if (!Number.isFinite(seconds) || seconds < 0) {
+            return '00:00';
+        }
+
+        const total = Math.floor(seconds);
+        const minutes = Math.floor(total / 60);
+        const secs = total % 60;
+
+        return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function updateProgress(item) {
+        const video = getVideo(item);
+        if (!video) return;
+
+        const progress = item.querySelector('.anter-feed-progress');
+        const time = item.querySelector('.anter-feed-time');
+
+        const current = Number.isFinite(video.currentTime)
+            ? video.currentTime
+            : 0;
+
+        const duration = Number.isFinite(video.duration)
+            ? video.duration
+            : 0;
+
+        if (progress) {
+            const percent = duration > 0
+                ? (current / duration) * 100
+                : 0;
+
+            progress.value = String(percent);
+            progress.style.setProperty('--feed-progress', `${percent}%`);
+        }
+
+        if (time) {
+            time.textContent =
+                `${formatTime(current)} / ${formatTime(duration)}`;
+        }
+    }
+
+    function resetProgress(item) {
+        const progress = item.querySelector('.anter-feed-progress');
+        const time = item.querySelector('.anter-feed-time');
+
+        if (progress) {
+            progress.value = '0';
+            progress.style.setProperty('--feed-progress', '0%');
+        }
+
+        if (time) {
+            time.textContent = '00:00 / 00:00';
+        }
+    }
+
+    function showControls(item) {
+        if (!item) return;
+
+        item.classList.add('player-controls-visible');
+
+        clearTimeout(controlsTimer);
+
+        controlsTimer = window.setTimeout(() => {
+            if (!getVideo(item)?.paused) {
+                item.classList.remove('player-controls-visible');
+            }
+        }, 2200);
+    }
+
+    function hideControls(item) {
+        if (!item) return;
+
+        clearTimeout(controlsTimer);
+
+        if (!getVideo(item)?.paused) {
+            item.classList.remove('player-controls-visible');
+        }
+    }
+
+    function showHeart(item) {
+        const heart = item.querySelector('.anter-feed-heart-burst');
+        if (!heart) return;
+
+        heart.classList.remove('is-visible');
+
+        void heart.offsetWidth;
+
+        heart.classList.add('is-visible');
+
+        window.setTimeout(() => {
+            heart.classList.remove('is-visible');
+        }, 700);
+    }
+
+    async function performLike(item) {
+        const like = item.querySelector('.reel-stream-like');
+        if (!like || like.classList.contains('is-loading')) return;
+
+        like.classList.add('is-loading');
+
+        try {
+            const response = await fetch(
+                `/videos/like/${encodeURIComponent(like.dataset.videoId)}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('like request failed');
+            }
+
+            const data = await response.json();
+
+            const count = like.querySelector('.reel-stream-like-count');
+            const icon = like.querySelector('i');
+
+            if (count && data.count !== undefined) {
+                count.textContent = data.count;
+            }
+
+            like.classList.toggle('is-liked', Boolean(data.liked));
+            like.setAttribute('aria-pressed', String(Boolean(data.liked)));
+
+            if (icon) {
+                icon.className = data.liked
+                    ? 'fas fa-heart'
+                    : 'far fa-heart';
+            }
+
+            showHeart(item);
+
+        } catch (error) {
+            console.warn('تعذر تسجيل إعجاب الريل:', error);
+
+            like.classList.add('has-error');
+
+            window.setTimeout(() => {
+                like.classList.remove('has-error');
+            }, 450);
+
+        } finally {
+            like.classList.remove('is-loading');
+        }
     }
 
     function pauseItem(item) {
         const video = getVideo(item);
+        if (!video) return;
+
         video.pause();
         setButtonIcon(item, false);
+        showControls(item);
     }
 
     async function activateItem(item) {
-        if (!item || item === activeItem) return;
+        if (!item) return;
 
-        items.forEach((other) => {
-            if (other !== item) pauseItem(other);
+        items.forEach(other => {
+            if (other !== item) {
+                pauseItem(other);
+            }
         });
 
         activeItem = item;
 
         const video = getVideo(item);
+        if (!video) return;
 
         ensureLoaded(video);
-
-        // تجهيز الريلين المجاورين أثناء تشغيل الريل الحالي.
         preloadAround(item);
+
+        // الحفاظ على حالة الصوت أثناء التنقل بين الريلز.
+        video.muted = reelsMuted;
+
+        const sound = item.querySelector('.reel-stream-sound');
+        const soundIcon = sound ? sound.querySelector('i') : null;
+
+        if (soundIcon) {
+            soundIcon.className = reelsMuted
+                ? 'fas fa-volume-mute'
+                : 'fas fa-volume-up';
+        }
+
+        if (sound) {
+            sound.setAttribute(
+                'aria-label',
+                reelsMuted ? 'تشغيل الصوت' : 'كتم الصوت'
+            );
+        }
 
         item.classList.add('is-buffering');
 
         try {
             await video.play();
+
             setButtonIcon(item, true);
 
-            // تسجيل المشاهدة بعد بدء تشغيل الريل فعليًا.
             if (!item.dataset.viewRegistered) {
                 const publicId = item.dataset.publicId;
 
@@ -283,10 +505,14 @@
                             item.dataset.viewRegistered = 'true';
 
                             const data = await response.json();
+
                             const viewsElement =
                                 item.querySelector('.reel-stream-views');
 
-                            if (viewsElement && data.views !== undefined) {
+                            if (
+                                viewsElement &&
+                                data.views !== undefined
+                            ) {
                                 viewsElement.innerHTML =
                                     `<i class="fas fa-eye" aria-hidden="true"></i> ${data.views} مشاهدة`;
                             }
@@ -300,73 +526,341 @@
                 }
             }
 
+            hideControls(item);
+
         } catch (error) {
+            console.warn('تعذر تشغيل الفيديو:', error);
             setButtonIcon(item, false);
+            showControls(item);
+
         } finally {
             item.classList.remove('is-buffering');
         }
     }
 
-    const observer = new IntersectionObserver((entries) => {
-        const visible = entries
-            .filter((entry) => entry.isIntersecting)
-            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible && visible.intersectionRatio >= 0.62) activateItem(visible.target);
-    }, { root: stream, threshold: [0.35, 0.62, 0.8] });
+    async function togglePlayback(item) {
+        const video = getVideo(item);
+        if (!video) return;
 
-    items.forEach((item) => {
+        ensureLoaded(video);
+
+        if (video.paused) {
+            await activateItem(item);
+        } else {
+            pauseItem(item);
+        }
+    }
+
+    function toggleMute(item) {
+        const video = getVideo(item);
+        const sound = item.querySelector('.reel-stream-sound');
+
+        if (!video || !sound) return;
+
+        reelsMuted = !video.muted;
+        video.muted = reelsMuted;
+
+        const icon = sound.querySelector('i');
+
+        if (icon) {
+            icon.className = reelsMuted
+                ? 'fas fa-volume-mute'
+                : 'fas fa-volume-up';
+        }
+
+        sound.setAttribute(
+            'aria-label',
+            reelsMuted ? 'تشغيل الصوت' : 'كتم الصوت'
+        );
+
+        showControls(item);
+    }
+
+    async function toggleFullscreen(item) {
+        const frame = item.querySelector('.reel-stream-frame');
+        const video = getVideo(item);
+
+        if (!frame) return;
+
+        try {
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+            } else if (frame.requestFullscreen) {
+                await frame.requestFullscreen();
+            } else if (video?.webkitEnterFullscreen) {
+                video.webkitEnterFullscreen();
+            }
+
+        } catch (error) {
+            console.warn(
+                'تعذر تشغيل ملء الشاشة:',
+                error
+            );
+        }
+
+        showControls(item);
+    }
+
+    function seekFromProgress(item, value) {
+        const video = getVideo(item);
+        if (!video || !Number.isFinite(video.duration)) return;
+
+        const percent = Math.max(
+            0,
+            Math.min(100, Number(value))
+        );
+
+        video.currentTime =
+            (percent / 100) * video.duration;
+
+        updateProgress(item);
+        showControls(item);
+    }
+
+    const tapState = new WeakMap();
+
+    function handleTap(item) {
+        const now = Date.now();
+        const state = tapState.get(item) || {
+            lastTap: 0,
+            timer: null
+        };
+
+        if (now - state.lastTap < 300) {
+            clearTimeout(state.timer);
+            state.lastTap = 0;
+
+            performLike(item);
+            showHeart(item);
+
+            tapState.set(item, state);
+            return;
+        }
+
+        state.lastTap = now;
+
+        state.timer = window.setTimeout(() => {
+            togglePlayback(item);
+            state.lastTap = 0;
+        }, 300);
+
+        tapState.set(item, state);
+    }
+
+    const observer = new IntersectionObserver(
+        entries => {
+            const visible = entries
+                .filter(entry => entry.isIntersecting)
+                .sort(
+                    (a, b) =>
+                        b.intersectionRatio -
+                        a.intersectionRatio
+                )[0];
+
+            if (
+                visible &&
+                visible.intersectionRatio >= 0.62
+            ) {
+                activateItem(visible.target);
+            }
+        },
+        {
+            root: stream,
+            threshold: [0.35, 0.62, 0.8]
+        }
+    );
+
+    items.forEach(item => {
         const video = getVideo(item);
         const toggle = item.querySelector('.reel-tap-toggle');
+        const playButton = item.querySelector('.anter-feed-play');
         const sound = item.querySelector('.reel-stream-sound');
         const like = item.querySelector('.reel-stream-like');
+        const progress = item.querySelector('.anter-feed-progress');
+        const fullscreen =
+            item.querySelector('.anter-feed-fullscreen');
+
+        if (!video) return;
 
         observer.observe(item);
 
-        video.addEventListener('waiting', () => item.classList.add('is-buffering'));
-        video.addEventListener('playing', () => item.classList.remove('is-buffering'));
+        video.addEventListener('loadedmetadata', () => {
+            updateProgress(item);
+        });
+
+        video.addEventListener('durationchange', () => {
+            updateProgress(item);
+        });
+
+        video.addEventListener('timeupdate', () => {
+            updateProgress(item);
+        });
+
+        video.addEventListener('waiting', () => {
+            item.classList.add('is-buffering');
+        });
+
+        video.addEventListener('playing', () => {
+            item.classList.remove('is-buffering');
+            setButtonIcon(item, true);
+        });
+
+        video.addEventListener('pause', () => {
+            setButtonIcon(item, false);
+        });
+
+        video.addEventListener('ended', () => {
+            setButtonIcon(item, false);
+            resetProgress(item);
+            item.classList.add('is-ended');
+            showControls(item);
+        });
+
+        video.addEventListener('play', () => {
+            item.classList.remove('is-ended');
+            setButtonIcon(item, true);
+        });
+
         video.addEventListener('error', () => {
             item.classList.remove('is-buffering');
             item.classList.add('is-unavailable');
         });
 
-        toggle.addEventListener('click', async () => {
-            ensureLoaded(video);
-            if (video.paused) {
-                activeItem = null;
-                await activateItem(item);
-            } else {
-                pauseItem(item);
+        if (toggle) {
+            toggle.addEventListener('click', event => {
+                event.stopPropagation();
+                togglePlayback(item);
+            });
+        }
+
+        if (playButton) {
+            playButton.addEventListener('click', event => {
+                event.stopPropagation();
+                togglePlayback(item);
+            });
+        }
+
+        if (sound) {
+            sound.addEventListener('click', event => {
+                event.stopPropagation();
+                toggleMute(item);
+            });
+        }
+
+        if (fullscreen) {
+            fullscreen.addEventListener('click', event => {
+                event.stopPropagation();
+                toggleFullscreen(item);
+            });
+        }
+
+        if (progress) {
+            progress.addEventListener('input', event => {
+                event.stopPropagation();
+                seekFromProgress(item, event.target.value);
+            });
+
+            progress.addEventListener('click', event => {
+                event.stopPropagation();
+            });
+
+            progress.addEventListener('pointerdown', event => {
+                event.stopPropagation();
+                showControls(item);
+            });
+        }
+
+        if (like) {
+            like.addEventListener('click', event => {
+                event.stopPropagation();
+                performLike(item);
+            });
+        }
+
+        let pointerDownX = 0;
+        let pointerDownY = 0;
+
+        item.addEventListener('pointerdown', event => {
+            pointerDownX = event.clientX;
+            pointerDownY = event.clientY;
+        }, {passive: true});
+
+        item.addEventListener('pointerup', event => {
+            if (
+                event.target.closest(
+                    'button, a, input, .reel-stream-actions, .anter-feed-bottom-controls'
+                )
+            ) {
+                return;
             }
+
+            const moved =
+                Math.abs(event.clientX - pointerDownX) > 12 ||
+                Math.abs(event.clientY - pointerDownY) > 12;
+
+            if (moved) return;
+
+            handleTap(item);
         });
 
-        sound.addEventListener('click', () => {
-            video.muted = !video.muted;
-            sound.querySelector('i').className = video.muted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
-            sound.setAttribute('aria-label', video.muted ? 'تشغيل الصوت' : 'كتم الصوت');
+        item.addEventListener('mousemove', () => {
+            showControls(item);
         });
 
-
-        like.addEventListener('click', async () => {
-            if (like.classList.contains('is-loading')) return;
-            like.classList.add('is-loading');
-            try {
-                const response = await fetch(`/videos/like/${like.dataset.videoId}`, { method: 'POST' });
-                if (!response.ok) throw new Error('like request failed');
-                const data = await response.json();
-                like.querySelector('.reel-stream-like-count').textContent = data.count;
-                like.classList.toggle('is-liked', data.liked);
-                like.setAttribute('aria-pressed', String(data.liked));
-                like.querySelector('i').className = data.liked ? 'fas fa-heart' : 'far fa-heart';
-            } catch (error) {
-                like.classList.add('has-error');
-                window.setTimeout(() => like.classList.remove('has-error'), 450);
-            } finally {
-                like.classList.remove('is-loading');
-            }
+        item.addEventListener('focusin', () => {
+            showControls(item);
         });
-
-        
     });
+
+    stream.addEventListener('keydown', event => {
+        const item =
+            activeItem ||
+            items.find(
+                candidate =>
+                    candidate.classList.contains('is-playing')
+            );
+
+        if (!item) return;
+
+        if (event.key === ' ' || event.key === 'Enter') {
+            event.preventDefault();
+            togglePlayback(item);
+
+        } else if (event.key === 'ArrowRight') {
+            const video = getVideo(item);
+            if (video) {
+                video.currentTime = Math.min(
+                    video.duration || Infinity,
+                    video.currentTime + 5
+                );
+                updateProgress(item);
+            }
+
+        } else if (event.key === 'ArrowLeft') {
+            const video = getVideo(item);
+            if (video) {
+                video.currentTime = Math.max(
+                    0,
+                    video.currentTime - 5
+                );
+                updateProgress(item);
+            }
+
+        } else if (event.key.toLowerCase() === 'm') {
+            toggleMute(item);
+
+        } else if (event.key.toLowerCase() === 'f') {
+            toggleFullscreen(item);
+        }
+    });
+
+    if (items[0]) {
+        preloadItem(items[0]);
+    }
+
+    if (items[1]) {
+        preloadItem(items[1]);
+    }
 
 
     // ================================
@@ -400,8 +894,9 @@
             .replace(/'/g, '&#039;');
     }
 
-    function avatarUrl(avatar) {
-        return `/static/uploads/${encodeURIComponent(avatar || 'default_avatar.png')}`;
+    function avatarUrl(avatar, fallbackUrl = '') {
+        if (avatar) return avatar;
+        return fallbackUrl || '/static/uploads/default.png';
     }
 
     function renderComment(comment, isReply = false) {
@@ -417,7 +912,7 @@
                      data-comment-id="${comment.id}">
 
                 <img class="reels-comment-avatar"
-                     src="${avatarUrl(author.avatar)}"
+                     src="${avatarUrl(author.avatar_url, author.avatar)}"
                      alt="${escapeHtml(author.name || author.username || 'مستخدم')}">
 
                 <div class="reels-comment-body">

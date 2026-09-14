@@ -97,7 +97,7 @@
 
             <button
                 type="button"
-                class="anter-composer-tool anter-ai-tool"
+                class="anter-composer-tool anter-ai-tool ai-composer-btn"
                 data-action="suggest_post"
                 data-target="#anterPostContent"
                 data-status="#anterAiStatus"
@@ -210,6 +210,23 @@
     {% if posts %}
         {% for post in posts %}
             {% include "_post_card.html" %}
+
+            {% if loop.index == 3 and feed_reels %}
+            <section class="feed-reels-block" aria-labelledby="feed-reels-heading">
+                <header class="feed-reels-header">
+                    <h2 id="feed-reels-heading">
+                        <i class="fas fa-play-circle" aria-hidden="true"></i>
+                        ريلز مقترحة
+                    </h2>
+                    <a href="{{ url_for('videos.reels') }}" class="feed-reels-more">
+                        المزيد <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                    </a>
+                </header>
+                {% with videos=feed_reels %}
+                    {% include "videos/_reel_grid.html" %}
+                {% endwith %}
+            </section>
+            {% endif %}
         {% endfor %}
     {% else %}
         <div class="text-center text-muted py-5">
@@ -485,4 +502,381 @@
         }.bind(this));
     });
 </script>
+
+<!-- ============================== -->
+<!-- ANTER: نافذة مشاركة المنشور -->
+<!-- ============================== -->
+<div class="anter-share-modal"
+     id="anterPostShareModal"
+     aria-hidden="true"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="anterPostShareTitle">
+
+    <div class="anter-share-backdrop" data-pshare-close></div>
+
+    <div class="anter-share-dialog">
+        <div class="anter-share-header">
+            <div>
+                <span class="anter-share-kicker">
+                    <i class="fas fa-share-nodes" aria-hidden="true"></i>
+                    مشاركة المنشور
+                </span>
+                <h2 id="anterPostShareTitle">مشاركة على ANTER</h2>
+            </div>
+            <button type="button"
+                    class="anter-share-close"
+                    data-pshare-close
+                    aria-label="إغلاق">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="anter-share-options">
+            <button type="button"
+                    class="anter-share-option anter-share-option-primary"
+                    id="anterPostRepostBtn">
+                <span class="anter-share-option-icon">
+                    <i class="fas fa-retweet" aria-hidden="true"></i>
+                </span>
+                <span class="anter-share-option-copy">
+                    <strong>مشاركة داخل ANTER</strong>
+                    <small>أعد نشر المنشور في خلاصتك</small>
+                </span>
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+
+            <button type="button"
+                    class="anter-share-option"
+                    id="anterPostSendFriendBtn">
+                <span class="anter-share-option-icon">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                </span>
+                <span class="anter-share-option-copy">
+                    <strong>إرسال إلى صديق</strong>
+                    <small>أرسل المنشور في رسالة خاصة</small>
+                </span>
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+
+            <button type="button"
+                    class="anter-share-option"
+                    id="anterPostExternalBtn">
+                <span class="anter-share-option-icon">
+                    <i class="fas fa-globe" aria-hidden="true"></i>
+                </span>
+                <span class="anter-share-option-copy">
+                    <strong>مشاركة خارج ANTER</strong>
+                    <small>واتساب والتطبيقات الأخرى</small>
+                </span>
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+
+            <button type="button"
+                    class="anter-share-option"
+                    id="anterPostCopyBtn">
+                <span class="anter-share-option-icon">
+                    <i class="fas fa-link" aria-hidden="true"></i>
+                </span>
+                <span class="anter-share-option-copy">
+                    <strong>نسخ الرابط</strong>
+                    <small>نسخ رابط المنشور</small>
+                </span>
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="anter-share-modal"
+     id="anterPostFriendModal"
+     aria-hidden="true"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="anterPostFriendTitle">
+
+    <div class="anter-share-backdrop" data-pfriend-close></div>
+
+    <div class="anter-share-dialog anter-friend-dialog">
+        <div class="anter-share-header">
+            <div>
+                <span class="anter-share-kicker">
+                    <i class="fas fa-user-friends" aria-hidden="true"></i>
+                    رسالة خاصة
+                </span>
+                <h2 id="anterPostFriendTitle">إرسال إلى صديق</h2>
+            </div>
+            <button type="button"
+                    class="anter-share-close"
+                    data-pfriend-close
+                    aria-label="إغلاق">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="anter-friend-search">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input type="search"
+                   id="anterPostFriendSearch"
+                   placeholder="ابحث عن شخص تتابعه..."
+                   autocomplete="off">
+        </div>
+
+        <div class="anter-friend-list" id="anterPostFriendList">
+            {% for user in share_users %}
+            <div class="anter-friend-row"
+                 data-user-name="{{ (user.name or '')|lower }}"
+                 data-user-username="{{ user.username|lower }}"
+                 data-user-id="{{ user.id }}">
+                <div class="anter-friend-avatar-wrap">
+                    <img src="{{ avatar_url(user) }}"
+                         alt="{{ user.name or user.username }}"
+                         class="anter-friend-avatar">
+                    <span class="anter-friend-presence"></span>
+                </div>
+                <div class="anter-friend-info">
+                    <strong>
+                        {{ user.name or user.username }}
+                        {{ verified_badge(user) }}
+                    </strong>
+                    <span>@{{ user.username }}</span>
+                </div>
+                <button type="button"
+                        class="anter-friend-send"
+                        data-user-id="{{ user.id }}">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                    إرسال
+                </button>
+            </div>
+            {% else %}
+            <div class="anter-friend-empty">
+                <i class="fas fa-user-group" aria-hidden="true"></i>
+                <strong>لا يوجد أشخاص متاحون للإرسال</strong>
+                <span>تابع حسابات أولًا لتتمكن من إرسال المنشورات إليها.</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+    var shareModal = document.getElementById('anterPostShareModal');
+    var friendModal = document.getElementById('anterPostFriendModal');
+    var friendSearch = document.getElementById('anterPostFriendSearch');
+    var friendList = document.getElementById('anterPostFriendList');
+
+    var activePostId = null;
+    var activeShareUrl = null;
+    var activeShareTitle = 'منشور';
+
+    function openShareModal(btn) {
+        activePostId = btn.dataset.post || null;
+        activeShareUrl = btn.dataset.shareUrl || null;
+        activeShareTitle = btn.dataset.shareTitle || 'منشور';
+        if (!activePostId || !activeShareUrl) return;
+        shareModal.classList.add('is-open');
+        shareModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeShareModal() {
+        shareModal.classList.remove('is-open');
+        shareModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function openFriendModal() {
+        closeShareModal();
+        friendModal.classList.add('is-open');
+        friendModal.setAttribute('aria-hidden', 'false');
+        if (friendSearch) {
+            friendSearch.value = '';
+            filterFriends();
+            setTimeout(function() { friendSearch.focus(); }, 100);
+        }
+    }
+
+    function closeFriendModal() {
+        friendModal.classList.remove('is-open');
+        friendModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function showToast(message, kind) {
+        var box = document.getElementById('anterPostShareToast');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'anterPostShareToast';
+            box.className = 'anter-reels-toast';
+            document.body.appendChild(box);
+        }
+        box.textContent = message;
+        box.className = 'anter-reels-toast is-visible ' + (kind || 'success');
+        clearTimeout(box._t);
+        box._t = setTimeout(function() {
+            box.classList.remove('is-visible');
+        }, 2600);
+    }
+
+    async function copyUrl() {
+        if (!activeShareUrl) return;
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(activeShareUrl);
+            } else {
+                var input = document.createElement('input');
+                input.value = activeShareUrl;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                input.remove();
+            }
+            showToast('تم نسخ الرابط ✓');
+            closeShareModal();
+        } catch (e) {
+            showToast('تعذر نسخ الرابط', 'error');
+        }
+    }
+
+    async function externalShare() {
+        if (!activeShareUrl) return;
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'ANTER',
+                    text: activeShareTitle,
+                    url: activeShareUrl
+                });
+                closeShareModal();
+                return;
+            }
+            await copyUrl();
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            showToast('تعذر مشاركة المنشور', 'error');
+        }
+    }
+
+    async function repostPost() {
+        if (!activePostId) return;
+        var btn = document.getElementById('anterPostRepostBtn');
+        if (btn) { btn.disabled = true; }
+        try {
+            var resp = await fetch('/repost/' + encodeURIComponent(activePostId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+            var data = await resp.json().catch(function() { return {}; });
+            if (!resp.ok) {
+                throw new Error(data.message || 'تعذر إعادة النشر');
+            }
+            showToast(data.reposted ? 'تمت مشاركة المنشور في خلاصتك ✓' : 'تم إلغاء إعادة النشر');
+            closeShareModal();
+        } catch (e) {
+            showToast(e.message || 'تعذر مشاركة المنشور', 'error');
+        } finally {
+            if (btn) { btn.disabled = false; }
+        }
+    }
+
+    function filterFriends() {
+        if (!friendList || !friendSearch) return;
+        var q = (friendSearch.value || '').trim().toLowerCase();
+        friendList.querySelectorAll('.anter-friend-row').forEach(function(row) {
+            var n = row.dataset.userName || '';
+            var u = row.dataset.userUsername || '';
+            row.style.display = (!q || n.indexOf(q) !== -1 || u.indexOf(q) !== -1) ? '' : 'none';
+        });
+    }
+
+    async function sendToFriend(userId, btn) {
+        if (!userId || !activePostId) return;
+        if (btn) { btn.disabled = true; }
+        try {
+            var fd = new FormData();
+            fd.append('content', activeShareUrl || '');
+            var resp = await fetch('/messages/send/' + encodeURIComponent(userId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: fd
+            });
+            var data = await resp.json().catch(function() { return {}; });
+            if (!resp.ok || data.success === false) {
+                throw new Error(data.message || 'تعذر إرسال المنشور');
+            }
+            showToast('تم إرسال المنشور إلى الصديق ✓');
+            closeFriendModal();
+        } catch (e) {
+            showToast(e.message || 'تعذر إرسال المنشور', 'error');
+        } finally {
+            if (btn) { btn.disabled = false; }
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.share-btn');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openShareModal(btn);
+    });
+
+    document.querySelectorAll('[data-pshare-close]').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeShareModal();
+        });
+    });
+
+    document.querySelectorAll('[data-pfriend-close]').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeFriendModal();
+        });
+    });
+
+    var repostBtn = document.getElementById('anterPostRepostBtn');
+    if (repostBtn) repostBtn.addEventListener('click', repostPost);
+
+    var sendBtn = document.getElementById('anterPostSendFriendBtn');
+    if (sendBtn) sendBtn.addEventListener('click', openFriendModal);
+
+    var extBtn = document.getElementById('anterPostExternalBtn');
+    if (extBtn) extBtn.addEventListener('click', externalShare);
+
+    var copyBtn = document.getElementById('anterPostCopyBtn');
+    if (copyBtn) copyBtn.addEventListener('click', copyUrl);
+
+    if (friendSearch) friendSearch.addEventListener('input', filterFriends);
+
+    if (friendList) {
+        friendList.querySelectorAll('.anter-friend-send').forEach(function(b) {
+            b.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                sendToFriend(b.dataset.userId, b);
+            });
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return;
+        if (friendModal.classList.contains('is-open')) {
+            closeFriendModal();
+        } else if (shareModal.classList.contains('is-open')) {
+            closeShareModal();
+        }
+    });
+});
+</script>
+
 {% endblock %}

@@ -6515,3 +6515,461 @@ body:has(.reels-feed-page--immersive) {
     pointer-events: none !important;
 }
 
+
+/* ========================================
+   ANTER: كتلة ريلز مقترحة داخل الـFeed
+   ======================================== */
+.feed-reels-block {
+    margin: 16px 0;
+    padding: 14px 14px 16px;
+    background: var(--card-bg, #ffffff);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.feed-reels-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.feed-reels-header h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-color, #050505);
+}
+
+.feed-reels-header h2 i {
+    color: var(--fb-blue, #1877f2);
+}
+
+.feed-reels-more {
+    font-size: 0.85rem;
+    color: var(--fb-blue, #1877f2);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+}
+
+.feed-reels-more:hover {
+    text-decoration: underline;
+}
+
+.feed-reels-block .reels-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* ========================================
+   ANTER: نمط جديد أخف لصندوق "بمَ تفكر"
+   يطبّق بعد الأصل — لا يلمس HTML أو JS.
+   ======================================== */
+.anter-composer {
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06),
+                0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.anter-composer::before {
+    display: none;
+}
+
+.anter-composer-header {
+    margin-bottom: 12px;
+}
+
+.anter-composer-avatar {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    border: 2px solid rgba(24, 119, 242, 0.15);
+}
+
+.anter-composer-editor {
+    border-radius: 14px;
+    background: var(--fb-bg, #f7f8fa);
+    border-color: transparent;
+}
+
+.anter-composer-editor:focus-within {
+    background: var(--card-bg, #ffffff);
+    border-color: rgba(24, 119, 242, 0.35);
+    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.10);
+}
+
+.anter-composer-editor textarea {
+    min-height: 96px;
+    padding: 14px 15px 4px;
+    font-size: 0.98rem;
+    line-height: 1.65;
+}
+
+.anter-composer-editor-footer {
+    padding: 6px 15px 10px;
+}
+
+/* إخفاء العدّاد بصريًا فقط — يبقى في DOM لأي JS يعتمد عليه */
+#anterCharCount {
+    display: none !important;
+}
+
+.anter-composer-tools {
+    gap: 6px;
+    margin-top: 10px;
+    padding: 0;
+}
+
+.anter-composer-tool {
+    min-height: 38px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    gap: 7px;
+    background: var(--fb-bg, #f7f8fa);
+    border-color: transparent;
+}
+
+.anter-composer-tool:hover {
+    background: var(--card-bg, #ffffff);
+    border-color: rgba(24, 119, 242, 0.25);
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
+}
+
+.anter-composer-tool-icon {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    border-radius: 50%;
+    font-size: 0.8rem;
+}
+
+.anter-composer-tool strong {
+    font-size: 0.8rem;
+}
+
+.anter-composer-tool small {
+    display: none;
+}
+
+.anter-composer-bottom {
+    margin-top: 12px;
+    padding-top: 10px;
+}
+
+.anter-publish-button {
+    min-width: 86px;
+    min-height: 38px;
+    padding: 7px 16px;
+    border-radius: 11px;
+    font-size: 0.85rem;
+    background: linear-gradient(135deg, #1877f2, #4f9bff);
+    box-shadow: 0 5px 14px rgba(24, 119, 242, 0.22);
+}
+
+.anter-publish-button:hover {
+    box-shadow: 0 7px 18px rgba(24, 119, 242, 0.30);
+}
+
+/* الوضع الداكن */
+[data-bs-theme="dark"] .anter-composer,
+.dark-mode .anter-composer {
+    background: var(--card-bg, #1e1f22);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+[data-bs-theme="dark"] .anter-composer-editor,
+.dark-mode .anter-composer-editor {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+[data-bs-theme="dark"] .anter-composer-editor:focus-within,
+.dark-mode .anter-composer-editor:focus-within {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(24, 119, 242, 0.45);
+}
+
+[data-bs-theme="dark"] .anter-composer-tool,
+.dark-mode .anter-composer-tool {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+[data-bs-theme="dark"] .anter-composer-tool:hover,
+.dark-mode .anter-composer-tool:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ========================================
+   ANTER: تصغير صندوق "بمَ تفكر" + إخفاء @ و #
+   ======================================== */
+.anter-composer {
+    padding: 12px 14px;
+    border-radius: 14px;
+}
+
+.anter-composer-header {
+    margin-bottom: 8px;
+    gap: 10px;
+}
+
+.anter-composer-avatar {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-width: 1px;
+}
+
+.anter-composer-identity strong {
+    font-size: 0.9rem;
+}
+
+.anter-composer-editor {
+    border-radius: 12px;
+}
+
+.anter-composer-editor textarea {
+    min-height: 64px;
+    max-height: 220px;
+    padding: 10px 13px 4px;
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+
+/* إخفاء تلميحات @ و # */
+.anter-composer-hint {
+    display: none !important;
+}
+
+/* بما أن التلميح والعدّاد كلاهما مخفيان، نصغّر تذييل المحرر */
+.anter-composer-editor-footer {
+    padding: 0 12px 8px;
+    min-height: 8px;
+}
+
+.anter-composer-tools {
+    margin-top: 8px;
+    gap: 5px;
+}
+
+.anter-composer-tool {
+    min-height: 32px;
+    padding: 4px 10px;
+    gap: 6px;
+}
+
+.anter-composer-tool-icon {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    font-size: 0.72rem;
+}
+
+.anter-composer-tool strong {
+    font-size: 0.76rem;
+}
+
+.anter-ai-status,
+.anter-composer-ai-status {
+    font-size: 0.68rem;
+}
+
+.anter-composer-bottom {
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.anter-publish-button {
+    min-width: 78px;
+    min-height: 34px;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+}
+
+.anter-composer-security {
+    font-size: 0.68rem;
+}
+
+
+/* ========================================
+   ANTER: توحيد حقل التعليق مع تجربة الريل
+   ======================================== */
+.comment-form-wrapper,
+.reply-form-wrapper {
+    --anter-c-h: 42px;
+    --anter-c-r: 22px;
+    --anter-c-bg: #f5f6f7;
+    --anter-c-bd: #dfe2e6;
+    --anter-c-blue: #1877f2;
+}
+
+/* حقل التعليق الرئيسي */
+.comment-form-wrapper .comment-composer-input input.form-control {
+    height: var(--anter-c-h);
+    min-height: var(--anter-c-h);
+    padding: 0 44px 0 14px;
+    border: 1px solid var(--anter-c-bd);
+    border-radius: var(--anter-c-r) !important;
+    background: var(--anter-c-bg);
+    color: #22252a;
+    font-size: 0.82rem;
+    direction: rtl;
+    box-shadow: none;
+}
+
+.comment-form-wrapper .comment-composer-input input.form-control:focus {
+    background: #fff;
+    border-color: var(--anter-c-blue);
+    box-shadow: none;
+}
+
+.comment-form-wrapper .comment-composer-input #mainMicBtn {
+    color: #747b84;
+}
+
+/* أزرار التعليق الرئيسي */
+.comment-form-wrapper .comment-composer-action {
+    width: var(--anter-c-h);
+    height: var(--anter-c-h);
+    min-width: var(--anter-c-h);
+    padding: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 var(--anter-c-h);
+}
+
+.comment-form-wrapper .comment-composer-action.btn-primary {
+    background: var(--anter-c-blue);
+    border-color: var(--anter-c-blue);
+}
+
+.comment-form-wrapper .comment-composer-action.btn-outline-primary {
+    color: var(--anter-c-blue);
+    border-color: var(--anter-c-bd);
+    background: #fff;
+}
+
+.comment-form-wrapper .comment-composer-avatar {
+    width: var(--anter-c-h);
+    height: var(--anter-c-h);
+    flex: 0 0 var(--anter-c-h);
+    object-fit: cover;
+}
+
+/* صف أدوات الحقل الرئيسي */
+.comment-form-wrapper .comment-composer-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* حقل الردود */
+.reply-form-wrapper .input-group > input.form-control {
+    height: var(--anter-c-h);
+    min-height: var(--anter-c-h);
+    padding: 0 14px;
+    border: 1px solid var(--anter-c-bd);
+    border-radius: var(--anter-c-r) !important;
+    background: var(--anter-c-bg);
+    color: #22252a;
+    font-size: 0.82rem;
+    direction: rtl;
+    box-shadow: none;
+}
+
+.reply-form-wrapper .input-group > input.form-control:focus {
+    background: #fff;
+    border-color: var(--anter-c-blue);
+    box-shadow: none;
+}
+
+.reply-form-wrapper .input-group .btn.rounded-circle {
+    width: var(--anter-c-h);
+    height: var(--anter-c-h);
+    min-width: var(--anter-c-h);
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 var(--anter-c-h);
+}
+
+.reply-form-wrapper .input-group .btn.btn-outline-primary.rounded-pill {
+    height: var(--anter-c-h);
+    min-height: var(--anter-c-h);
+    padding: 0 18px;
+    border-radius: var(--anter-c-r) !important;
+    background: var(--anter-c-blue);
+    border-color: var(--anter-c-blue);
+    color: #fff;
+}
+
+/* ========================================
+   ANTER: إصلاح اقتصاص نافذة التفاعل (RTL)
+   ======================================== */
+.reaction-picker {
+    left: auto !important;
+    right: 0 !important;
+    transform: translateX(0) scale(0.9) !important;
+    transform-origin: top right;
+    max-width: min(calc(100vw - 24px), 320px);
+}
+
+.reaction-wrapper:hover .reaction-picker {
+    transform: translateX(0) scale(1) !important;
+}
+
+.reaction-picker.selection-complete {
+    transform: translateX(0) scale(0.92) !important;
+}
+
+@media (max-width: 420px) {
+    .reaction-option {
+        font-size: 1.7rem;
+        padding: 3px 4px;
+    }
+    .reaction-picker {
+        padding: 6px 10px;
+        gap: 2px;
+    }
+}
+
+/* ========================================
+   ANTER: إخفاء نافذة التفاعل فورًا بعد الاختيار
+   ======================================== */
+.reaction-wrapper:hover .reaction-picker.selection-complete,
+.reaction-wrapper .reaction-picker.selection-complete {
+    display: flex;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateX(0) scale(0.9) !important;
+    transition: opacity 0.12s ease, transform 0.12s ease !important;
+}
+
+/* ========================================
+   ANTER: على الأجهزة اللمسية، لا تُفتح نافذة التفاعل بـ:hover.
+   الاعتماد فقط على الصنف .reaction-picker-open (يُدار من JS).
+   ======================================== */
+@media (hover: none) {
+    .reaction-wrapper:hover .reaction-picker {
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    .reaction-wrapper.reaction-picker-open .reaction-picker {
+        display: flex !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+}

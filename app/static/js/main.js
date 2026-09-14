@@ -283,13 +283,14 @@ window.copyLink = function(url) {
     });
 }
 
-// ربط زر المشاركة
-document.addEventListener("click", function(e) {
-    const btn = e.target.closest(".share-btn");
-    if (!btn) return;
-    const url = btn.dataset.shareUrl;
-    if (url) window.copyLink(url);
-});
+// ANTER: زر المشاركة الآن يفتح نافذة موحّدة (index.html).
+// أُبقي هذا المعالج معطّلًا لتجنّب النسخ المزدوج.
+// document.addEventListener("click", function(e) {
+//     const btn = e.target.closest(".share-btn");
+//     if (!btn) return;
+//     const url = btn.dataset.shareUrl;
+//     if (url) window.copyLink(url);
+// });
 
 // ==============================
 // تفعيل قائمة المشاركة

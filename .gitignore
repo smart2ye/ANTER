@@ -81,3 +81,7 @@ diagnostics/
 local_archive/
 /static/
 users_export.csv
+
+# ANTER: نسخ احتياطية محلية (لا تُرفع إلى GitHub)
+*.bak_*
+*.backup_*

@@ -43,9 +43,18 @@ if DATABASE_URI.startswith('sqlite'):
         'connect_args': {'check_same_thread': False, 'timeout': 30},
     }
 else:
+    # ANTER: keepalives تُبقي اتصال Postgres السحابي حيًّا على شبكات الموبايل
+    # وتمنع خطأ "SSL error: unexpected eof while reading" من PgBouncer.
     DATABASE_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
-        'pool_recycle': 280,
+        'pool_recycle': 120,
+        'connect_args': {
+            'connect_timeout': 10,
+            'keepalives': 1,
+            'keepalives_idle': 30,
+            'keepalives_interval': 10,
+            'keepalives_count': 5,
+        },
     }
 
 

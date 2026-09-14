@@ -190,10 +190,50 @@ def build_feed(user):
 def index():
     all_posts, top_suggested = build_feed(current_user)
     page_size = current_app.config['FEED_PAGE_SIZE']
+
+    # ANTER: كتلة ريلز مقترحة داخل الـFeed (مرة واحدة فقط).
+    # نستخدم نفس خوارزمية reels_ranker ولا نلمس feed_ranker.
+    feed_reels = []
+    try:
+        from app.services.reels_ranker import rank_reels
+        feed_reels = rank_reels(current_user, limit=4)
+    except Exception:
+        feed_reels = []
+
+    # ANTER: قائمة الأصدقاء لنافذة مشاركة المنشور (نفس منطق videos.reels).
+    share_users = []
+    try:
+        from app.models import Follow, UserBlock, User as _User
+        blocked_ids = {
+            row.blocked_id
+            for row in UserBlock.query.filter_by(blocker_id=current_user.id).all()
+        }
+        blocked_ids.update(
+            row.blocker_id
+            for row in UserBlock.query.filter_by(blocked_id=current_user.id).all()
+        )
+        followed_ids = {
+            row.followed_id
+            for row in Follow.query.filter_by(follower_id=current_user.id).all()
+            if row.followed_id != current_user.id
+            and row.followed_id not in blocked_ids
+        }
+        if followed_ids:
+            share_users = (
+                _User.query
+                .filter(_User.id.in_(followed_ids))
+                .order_by(_User.name.asc(), _User.username.asc())
+                .all()
+            )
+    except Exception:
+        share_users = []
+
     return render_template(
         'index.html',
         posts=all_posts[:page_size],
-        suggested_posts=top_suggested
+        suggested_posts=top_suggested,
+        feed_reels=feed_reels,
+        share_users=share_users
     )
 
 @main_bp.route('/login')

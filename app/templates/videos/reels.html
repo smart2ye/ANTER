@@ -283,6 +283,7 @@
    ANTER Reels Immersive Actions
    ======================================== */
 document.addEventListener('DOMContentLoaded', () => {
+
     const csrfToken =
         document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
@@ -532,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await postJSON(
-                `/posts/share-video/${encodeURIComponent(activeShareVideoId)}`,
+                `/share-video/${encodeURIComponent(activeShareVideoId)}`,
                 {
                     method: 'POST'
                 }
@@ -899,12 +900,7 @@ document.querySelectorAll('.reel-stream-share').forEach(button => {
        ---------------------------------------- */
 
     document.querySelectorAll(
-        '.reel-follow-btn,
-        .reel-stream-share,
-        .reel-stream-report,
-        .anter-share-option,
-        .anter-share-close,
-        .anter-friend-send'
+        '.reel-follow-btn, .reel-stream-share, .reel-stream-report, .anter-share-option, .anter-share-close, .anter-friend-send'
     ).forEach(button => {
         button.addEventListener('pointerdown', event => {
             event.stopPropagation();

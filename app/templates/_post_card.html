@@ -57,11 +57,6 @@
                         <i class="fas fa-eye-slash me-2"></i> إخفاء المنشور
                     </button>
                 </li>
-                <li>
-                    <button class="dropdown-item py-2 text-dark" onclick="copyToClipboard('{{ post_url }}'); alert('تم نسخ رابط المنشور بنجاح!');">
-                        <i class="fas fa-share-alt me-2"></i> مشاركة المنشور
-                    </button>
-                </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                     <button class="dropdown-item py-2 text-warning fw-semibold" onclick="alert('شكرًا لتنبيهنا. تم إرسال البلاغ للإدارة لمراجعته.');">
@@ -232,7 +227,12 @@
             <i class="fas fa-robot"></i>
         </button>
         <!-- زر المشاركة -->
-        <button type="button" class="action-btn share-btn" data-post="{{ post.id }}" data-share-url="{{ post_url }}" aria-label="مشاركة المنشور" title="مشاركة المنشور">
+        <button type="button" class="action-btn share-btn"
+                data-post="{{ post.id }}"
+                data-share-url="{{ post_url }}"
+                data-public-id="{{ post.public_id }}"
+                data-share-title="{{ (post.content|truncate(60, True, '…')) if post.content else 'منشور' }}"
+                aria-label="مشاركة المنشور" title="مشاركة المنشور">
             <i class="fas fa-share-alt"></i>
             <span>مشاركة</span>
         </button>

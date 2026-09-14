@@ -145,8 +145,22 @@ def watch(public_id):
     video = Video.query.filter_by(public_id=public_id).first_or_404()
     video.views += 1
     db.session.commit()
+
+    # ANTER: بعد الريل المضغوط، نكمل بنفس خوارزمية reels_ranker
+    # حتى تكون تجربة Reels موحّدة بين /videos/reels و /videos/r/<id>.
+    try:
+        from app.services.reels_ranker import rank_reels
+        ranked = rank_reels(
+            current_user,
+            limit=20,
+            exclude_ids=[video.id],
+        )
+        stream_videos = [video] + list(ranked)
+    except Exception:
+        stream_videos = [video]
+
     comments = video.comments.filter_by(parent_id=None).order_by(VideoComment.created_at.asc()).all()
-    return render_template('videos/reels.html', videos=[video], comments=comments)
+    return render_template('videos/reels.html', videos=stream_videos, comments=comments)
 
 @videos_bp.route('/like/<int:video_id>', methods=['POST'])
 @login_required
@@ -170,6 +184,7 @@ def like(video_id):
 
 @videos_bp.route('/report/<int:video_id>', methods=['POST'])
 @login_required
+@csrf.exempt
 def report_video(video_id):
     """إنشاء بلاغ عن ريلز مع منع البلاغات المكررة."""
     video = Video.query.filter_by(id=video_id, is_reel=True).first_or_404()

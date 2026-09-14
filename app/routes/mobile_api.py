@@ -678,3 +678,108 @@ def report_message(message_id):
     ))
     db.session.commit()
     return jsonify({'success': True, 'message': 'تم إرسال البلاغ للمراجعة.'}), 201
+
+
+# ============================================================
+# ANTER: اقتراح متابعة من جهات اتصال الهاتف (Contacts Matching)
+# ------------------------------------------------------------
+# يستقبل قائمة أرقام هواتف (من تطبيق ANTER Messenger) ويعيد
+# المستخدمين المطابقين. لا يُخزّن الأرقام، ولا يكشف غير المسجّلين.
+# ============================================================
+
+import re as _re
+
+_PHONE_CLEAN_RE = _re.compile(r'[^\d+]')
+
+
+def _normalize_phone(raw):
+    """يوحّد صيغة الرقم: +<digits> بدون مسافات/رموز. يعيد '' إذا غير صالح."""
+    if not raw:
+        return ''
+    s = str(raw).strip()
+    # إزالة المسافات والشرطات والأقواس
+    s = _PHONE_CLEAN_RE.sub('', s)
+    # معالجة البدايات المختلفة
+    if s.startswith('00'):
+        s = '+' + s[2:]
+    if not s.startswith('+'):
+        s = '+' + s
+    # يجب أن يكون 8 إلى 15 رقمًا (معيار E.164)
+    digits = s[1:]
+    if not digits.isdigit() or not (8 <= len(digits) <= 15):
+        return ''
+    return s
+
+
+@mobile_api_bp.route('/suggested-follows', methods=['POST'])
+@mobile_api_required
+def suggested_follows_from_contacts():
+    """
+    POST /api/mobile/v1/suggested-follows
+    Body: { "phones": ["+967...", "00967...", "737..."] }
+
+    يعيد: { "suggested": [ { "phone": "...", "user": {...}, "isFollowing": false } ] }
+    """
+    user = g.mobile_user
+    data = request.get_json(silent=True) or {}
+    raw_phones = data.get('phones')
+
+    if not isinstance(raw_phones, list):
+        return _json_error('يجب إرسال قائمة أرقام في الحقل phones.', 400)
+    if len(raw_phones) > 500:
+        return _json_error('عدد الأرقام كبير جدًا (الحد 500).', 400)
+
+    # تطبيع + إزالة المكرر
+    normalized = {}
+    for raw in raw_phones:
+        norm = _normalize_phone(raw)
+        if norm:
+            normalized[norm] = True
+    if not normalized:
+        return jsonify({'suggested': [], 'matched': 0})
+
+    phones = list(normalized.keys())
+
+    # جلب المستخدمين المطابقين
+    candidates = User.query.filter(User.phone.in_(phones)).all()
+
+    # جلب من يتابعهم المستخدم حاليًا لتفادي التكرار
+    already_following = {
+        row.followed_id
+        for row in Follow.query.filter_by(follower_id=user.id).all()
+    }
+
+    # جلب المحظورين (في الاتجاهين)
+    blocked_ids = {
+        row.blocked_id
+        for row in UserBlock.query.filter_by(blocker_id=user.id).all()
+    }
+    blocked_ids.update(
+        row.blocker_id
+        for row in UserBlock.query.filter_by(blocked_id=user.id).all()
+    )
+
+    suggested = []
+    for other in candidates:
+        if other.id == user.id:
+            continue
+        if other.id in blocked_ids:
+            continue
+        # نُرجع حتى المتابَعين — لكن نضع علامة isFollowing
+        suggested.append({
+            'phone': other.phone,
+            'user': _user_payload(other),
+            'isFollowing': other.id in already_following,
+        })
+
+    # الترتيب: غير المتابَعين أولًا، ثم النشطون
+    suggested.sort(key=lambda item: (
+        item['isFollowing'],
+        not item['user'].get('isOnline'),
+    ))
+
+    return jsonify({
+        'suggested': suggested,
+        'matched': len(suggested),
+        'submitted': len(phones),
+    })

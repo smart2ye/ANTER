@@ -1,62 +1,137 @@
-const CACHE_NAME = 'anter-v2';
-const OFFLINE_URL = '/offline.html';
-const urlsToCache = [
-  '/',
-  '/static/css/style.css',
-  '/static/js/main.js',
-  '/static/uploads/default.png',
-  '/static/icons/anter-icon-512.png',
-  OFFLINE_URL
+/* ============================================================
+   ANTER Service Worker — v3
+   - Cache-First للأصول الثابتة (CSS/JS/أيقونات/خطوط).
+   - Network-First لصفحات HTML (يضمن رؤية آخر المنشورات).
+   - يتجاهل تمامًا: /api/, /messages/, /notifications/, /sse/, /calls/, /media/.
+   - يدعم الإشعارات الخارجية (Web Push).
+   ============================================================ */
+
+const CACHE_VERSION = 'anter-v3';
+const OFFLINE_URL = '/static/offline.html';
+
+// مسارات لن تُخزَّن أبدًا (بيانات حيّة أو حساسة).
+const NEVER_CACHE = [
+  '/api/',
+  '/messages/',
+  '/notifications/',
+  '/sse/',
+  '/media/',
+  '/auth/',
+  '/admin/',
+  '/calls/',
 ];
 
-// تثبيت Service Worker
-self.addEventListener('install', event => {
+const PRECACHE = [
+  '/static/css/style.css',
+  '/static/css/stories.css',
+  '/static/js/main.js',
+  '/static/js/stories.js',
+  '/static/icons/icon-192.png',
+  '/static/icons/icon-512.png',
+  OFFLINE_URL,
+];
+
+// ============================================================
+// Install — تخزين مسبق للأصول الأساسية
+// ============================================================
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_VERSION)
+      .then((cache) => Promise.all(
+        PRECACHE.map((url) => cache.add(url).catch(() => null))
+      ))
       .then(() => self.skipWaiting())
   );
 });
 
-// استرجاع الملفات
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request).catch(() => caches.match(OFFLINE_URL)))
-  );
-});
-
-// تفعيل
-self.addEventListener('activate', event => {
+// ============================================================
+// Activate — حذف الكاشات القديمة
+// ============================================================
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.filter(name => name !== CACHE_NAME)
-          .map(name => caches.delete(name))
-      );
-    }).then(() => self.clients.claim())
+    caches.keys()
+      .then((names) => Promise.all(
+        names
+          .filter((name) => name !== CACHE_VERSION)
+          .map((name) => caches.delete(name))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// ==============================
-// الإشعارات الخارجية (Web Push)
-// ==============================
-self.addEventListener('push', event => {
+// ============================================================
+// Fetch — استراتيجيات حسب نوع الطلب
+// ============================================================
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+
+  // نتعامل فقط مع GET
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+
+  // نفس الأصل فقط
+  if (url.origin !== self.location.origin) return;
+
+  // تجاهل المسارات الحيّة/الحساسة
+  for (const prefix of NEVER_CACHE) {
+    if (url.pathname.startsWith(prefix)) return;
+  }
+
+  // صفحات HTML: Network-First (نريد آخر نسخة)
+  const accept = req.headers.get('accept') || '';
+  if (accept.includes('text/html')) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          // نُخزّن نسخة احتياطية إن كان الرد سليمًا
+          const copy = res.clone();
+          caches.open(CACHE_VERSION).then((c) => c.put(req, copy)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req).then((r) => r || caches.match(OFFLINE_URL)))
+    );
+    return;
+  }
+
+  // الأصول الثابتة (CSS/JS/صور/خطوط): Cache-First
+  if (url.pathname.startsWith('/static/')) {
+    event.respondWith(
+      caches.match(req).then((cached) => {
+        if (cached) return cached;
+        return fetch(req).then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE_VERSION).then((c) => c.put(req, copy)).catch(() => {});
+          }
+          return res;
+        }).catch(() => cached);
+      })
+    );
+    return;
+  }
+
+  // أي شيء آخر: نُمرّره بدون تخزين
+});
+
+// ============================================================
+// Web Push — استقبال الإشعارات
+// ============================================================
+self.addEventListener('push', (event) => {
   let data = {};
   try {
-    data = event.data.json();
+    data = event.data ? event.data.json() : {};
   } catch {
     data = { title: 'ANTER', body: 'لديك إشعار جديد' };
   }
 
   const options = {
     body: data.body || 'لديك إشعار جديد',
-    icon: data.icon || '/static/icons/anter-icon-512.png',
-    badge: '/static/uploads/default.png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: data.url || '/'
-    }
+    icon: data.icon || '/static/icons/icon-192.png',
+    badge: '/static/icons/icon-192.png',
+    dir: 'rtl',
+    lang: 'ar',
+    data: { url: data.url || '/' },
   };
 
   event.waitUntil(
@@ -64,20 +139,20 @@ self.addEventListener('push', event => {
   );
 });
 
-// عند النقر على الإشعار
-self.addEventListener('notificationclick', event => {
+// ============================================================
+// notificationclick — فتح التطبيق عند النقر
+// ============================================================
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = event.notification.data?.url || '/';
+
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(windowClients => {
-      for (let client of windowClients) {
-        if (client.url === url && 'focus' in client) {
-          return client.focus();
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((list) => {
+        for (const client of list) {
+          if (client.url.includes(url) && 'focus' in client) return client.focus();
         }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
-    })
+        if (clients.openWindow) return clients.openWindow(url);
+      })
   );
 });

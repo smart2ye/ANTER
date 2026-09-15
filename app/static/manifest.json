@@ -1,39 +1,56 @@
 {
-  "background_color": "#ffffff",
-  "dir": "ltr",
-  "display": "standalone",
-  "name": "ANTER",
-  "orientation": "any",
-  "scope": "/",
-  "short_name": "anter",
-  "start_url": "/",
-  "theme_color": "#1877f2",
-  "description": "A modern Arabic social networking platform",
+  "name": "ANTER — شبكة التواصل العربية",
+  "short_name": "ANTER",
+  "description": "منصة تواصل اجتماعي عربية حديثة: منشورات، ريلز، رسائل، ومكالمات.",
   "id": "anter-app",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "dir": "rtl",
   "lang": "ar",
+  "background_color": "#ffffff",
+  "theme_color": "#1877f2",
+  "categories": ["social", "communication"],
   "icons": [
     {
-      "src": "/static/icons/anter-icon-512.png",
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/static/uploads/posts/9ae407e3-5dc9-4cea-9091-901b90b0e843.jpg",
-      "sizes": "1080x1920",
-      "type": "image/jpeg",
-      "form_factor": "narrow",
-      "label": "شاشة المنشورات"
     },
     {
-      "src": "/static/uploads/default.png",
-      "sizes": "1920x1080",
+      "src": "/static/icons/icon-maskable-192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "form_factor": "wide",
-      "label": "شاشة الترحيب"
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["social", "communication"]
+  "shortcuts": [
+    {
+      "name": "الرسائل",
+      "short_name": "رسائل",
+      "url": "/messages/",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "الريلز",
+      "short_name": "ريلز",
+      "url": "/videos/reels",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }

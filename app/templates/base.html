@@ -412,6 +412,80 @@
         }
     </script>
     {% block scripts %}{% endblock %}
+    <!-- ANTER: زر تثبيت PWA -->
+    <button type="button"
+            id="anterInstallBtn"
+            class="anter-install-btn"
+            aria-label="تثبيت تطبيق ANTER"
+            hidden>
+        <i class="fas fa-download" aria-hidden="true"></i>
+        <span>تثبيت ANTER</span>
+    </button>
+
+    <style>
+        .anter-install-btn {
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1080;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border: 0;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #1877f2, #4f9bff);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.86rem;
+            box-shadow: 0 10px 24px rgba(24, 119, 242, 0.32);
+            cursor: pointer;
+            animation: anterInstallPulse 2.4s ease-in-out infinite;
+        }
+        .anter-install-btn[hidden] { display: none; }
+        .anter-install-btn:active { transform: translateX(-50%) scale(0.96); }
+        @keyframes anterInstallPulse {
+            0%, 100% { box-shadow: 0 10px 24px rgba(24, 119, 242, 0.32); }
+            50% { box-shadow: 0 10px 32px rgba(24, 119, 242, 0.55); }
+        }
+        @media (min-width: 768px) {
+            .anter-install-btn { bottom: 24px; }
+        }
+    </style>
+
+    <script>
+    (function () {
+        var installBtn = document.getElementById('anterInstallBtn');
+        if (!installBtn) return;
+        var deferredPrompt = null;
+
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.hidden = false;
+        });
+
+        installBtn.addEventListener('click', async function () {
+            if (!deferredPrompt) {
+                installBtn.hidden = true;
+                return;
+            }
+            deferredPrompt.prompt();
+            try {
+                await deferredPrompt.userChoice;
+            } catch (_) {}
+            deferredPrompt = null;
+            installBtn.hidden = true;
+        });
+
+        window.addEventListener('appinstalled', function () {
+            deferredPrompt = null;
+            installBtn.hidden = true;
+        });
+    })();
+    </script>
+
     <script>
     // ==============================
     // طلب إذن الإشعارات

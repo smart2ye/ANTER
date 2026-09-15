@@ -2,47 +2,173 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>غير متصل</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1877f2">
+    <title>غير متصل — ANTER</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" href="/static/icons/favicon-32.png" type="image/png">
+    <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
     <style>
+        :root {
+            --anter-blue: #1877f2;
+            --anter-blue-dark: #0b5ed7;
+            --anter-bg: #f0f2f5;
+            --anter-card: #ffffff;
+            --anter-text: #050505;
+            --anter-muted: #65676b;
+            --anter-border: #e5e7eb;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
         body {
-            font-family: 'Cairo', sans-serif;
-            background: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
+            min-height: 100dvh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            font-family: system-ui, -apple-system, "Segoe UI", Tahoma, "Noto Kufi Arabic", sans-serif;
+            background: var(--anter-bg);
+            color: var(--anter-text);
             text-align: center;
-            direction: rtl;
         }
-        .container {
-            background: #fff;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        .card {
+            width: min(420px, 100%);
+            padding: 32px 26px;
+            border-radius: 22px;
+            background: var(--anter-card);
+            border: 1px solid var(--anter-border);
+            box-shadow: 0 10px 32px rgba(15, 23, 42, 0.08);
         }
-        .icon { font-size: 80px; margin-bottom: 20px; }
-        h1 { color: #1877f2; }
-        p { color: #65676b; }
+        .logo {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 20px;
+            border-radius: 24px;
+            background: var(--anter-blue);
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+        }
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .wifi-off {
+            display: inline-grid;
+            place-items: center;
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 14px;
+            border-radius: 50%;
+            background: rgba(24, 119, 242, 0.1);
+            color: var(--anter-blue);
+            font-size: 28px;
+        }
+        h1 {
+            margin: 0 0 8px;
+            font-size: 1.4rem;
+            color: var(--anter-text);
+        }
+        p {
+            margin: 0 0 22px;
+            color: var(--anter-muted);
+            font-size: 0.95rem;
+            line-height: 1.65;
+        }
         .btn {
-            display: inline-block;
-            background: #1877f2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 46px;
+            padding: 10px 26px;
+            border: 0;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--anter-blue), #4f9bff);
             color: #fff;
-            padding: 10px 30px;
-            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
             text-decoration: none;
-            margin-top: 20px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(24, 119, 242, 0.28);
+            transition: transform .16s ease, box-shadow .16s ease;
         }
-        .btn:hover { background: #0d65d9; }
+        .btn:active { transform: scale(0.97); }
+        .btn:hover { box-shadow: 0 10px 24px rgba(24, 119, 242, 0.4); }
+        .status {
+            margin-top: 16px;
+            font-size: 0.82rem;
+            color: var(--anter-muted);
+        }
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            margin-inline-end: 6px;
+            animation: pulse 1.6s ease-in-out infinite;
+        }
+        .dot.online { background: #10b981; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.35; }
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --anter-bg: #18191a;
+                --anter-card: #242526;
+                --anter-text: #e4e6eb;
+                --anter-muted: #b0b3b8;
+                --anter-border: #3a3b3c;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="icon">📡</div>
-        <h1>غير متصل بالإنترنت</h1>
-        <p>يرجى التحقق من اتصالك بالشبكة والمحاولة مرة أخرى.</p>
-        <a href="/" class="btn">المحاولة مجدداً</a>
-    </div>
+    <main class="card" role="main">
+        <div class="logo">
+            <img src="/static/icons/icon-192.png" alt="ANTER">
+        </div>
+        <div class="wifi-off" aria-hidden="true">📡</div>
+        <h1>لا يوجد اتصال بالإنترنت</h1>
+        <p>يبدو أنك غير متصل حاليًا. تحقق من شبكتك وسنعيد المحاولة تلقائيًا عند عودة الاتصال.</p>
+        <a href="/" class="btn" id="retryBtn">
+            <i aria-hidden="true">↻</i>
+            المحاولة الآن
+        </a>
+        <div class="status" aria-live="polite">
+            <span class="dot" id="statusDot"></span>
+            <span id="statusText">غير متصل</span>
+        </div>
+    </main>
+
+    <script>
+        (function () {
+            var dot = document.getElementById('statusDot');
+            var text = document.getElementById('statusText');
+
+            function updateStatus() {
+                var online = navigator.onLine;
+                dot.classList.toggle('online', online);
+                text.textContent = online ? 'عاد الاتصال — جارٍ التحويل…' : 'غير متصل';
+                if (online) {
+                    setTimeout(function () { window.location.href = '/'; }, 900);
+                }
+            }
+
+            window.addEventListener('online', updateStatus);
+            window.addEventListener('offline', updateStatus);
+            updateStatus();
+
+            // محاولة إعادة الاتصال كل 10 ثوانٍ
+            setInterval(function () {
+                if (navigator.onLine) {
+                    window.location.href = '/';
+                }
+            }, 10000);
+        })();
+    </script>
 </body>
 </html>

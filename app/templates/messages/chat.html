@@ -384,6 +384,7 @@
         <div class="call-media-controls d-none" id="callMediaControls">
             <button type="button" class="btn btn-outline-light call-action" id="toggleMicButton"><i class="fas fa-microphone"></i> كتم الصوت</button>
             <button type="button" class="btn btn-outline-light call-action d-none" id="toggleCameraButton"><i class="fas fa-video"></i> إيقاف الكاميرا</button>
+            <button type="button" class="btn btn-outline-light call-action" id="toggleSpeakerButton"><i class="fas fa-volume-high"></i> مكبر الصوت</button>
         </div>
         <div class="call-actions d-none" id="incomingCallActions">
             <button type="button" class="btn btn-success call-action" id="answerCallButton"><i class="fas fa-phone-alt"></i> قبول</button>
@@ -789,6 +790,37 @@ function showHelp(text, isError = false) {
     help.classList.remove('d-none');
 }
 
+/* ANTER: مؤقّت مدة المكالمة */
+let callTimerInterval = null;
+let callStartedAt = null;
+
+function formatCallDuration(totalSeconds) {
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
+}
+
+function startCallTimer() {
+    stopCallTimer();
+    callStartedAt = Date.now();
+    callTimerInterval = window.setInterval(() => {
+        if (!callStartedAt) return;
+        const elapsed = Math.floor((Date.now() - callStartedAt) / 1000);
+        setCallStatus(`المكالمة جارية · ${formatCallDuration(elapsed)}`);
+    }, 1000);
+}
+
+function stopCallTimer() {
+    if (callTimerInterval) {
+        clearInterval(callTimerInterval);
+        callTimerInterval = null;
+    }
+    callStartedAt = null;
+}
+
 function setCallStatus(text) {
     const status = document.getElementById('callStatus');
     if (status) status.textContent = text;
@@ -993,6 +1025,7 @@ function resetCallUi() {
 }
 
 function closeCall() {
+    stopCallTimer();
     clearNoAnswerTimeout();
     closeIncomingCallNotification();
     stopRinging();
@@ -1073,6 +1106,7 @@ async function ensurePeerConnection() {
         if (remoteAudio) {
             remoteAudio.srcObject = remoteStream;
             remoteAudio.play().catch(() => {});
+            applySpeakerPreference();
         }
     };
     connection.onicecandidate = async (event) => {
@@ -1095,6 +1129,7 @@ async function ensurePeerConnection() {
             stopRinging();
             clearNoAnswerTimeout();
             setCallStatus('المكالمة متصلة.');
+            startCallTimer();
         } else if (['failed', 'closed'].includes(connection.connectionState)) {
             closeCall();
         }
@@ -1253,6 +1288,81 @@ function toggleCamera() {
     if (button) button.innerHTML = track.enabled ? '<i class="fas fa-video"></i> إيقاف الكاميرا' : '<i class="fas fa-video-slash"></i> تشغيل الكاميرا';
 }
 
+/* ANTER: تبديل مكبر الصوت / سماعة الأذن */
+let speakerOn = true;
+let preferredSpeakerId = null;
+let preferredEarpieceId = null;
+
+async function detectAudioOutputs() {
+    if (!navigator.mediaDevices?.enumerateDevices) return;
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const outputs = devices.filter((d) => d.kind === 'audiooutput');
+        for (const d of outputs) {
+            const label = (d.label || '').toLowerCase();
+            if (!preferredSpeakerId && (label.includes('speaker') || label.includes('مكبر'))) {
+                preferredSpeakerId = d.deviceId;
+            }
+            if (!preferredEarpieceId && (label.includes('earpiece') || label.includes('earphone') || label.includes('receiver') || label.includes('سماعة'))) {
+                preferredEarpieceId = d.deviceId;
+            }
+        }
+    } catch (_) { /* تجاهل */ }
+}
+
+async function applySpeakerPreference() {
+    const remoteAudio = document.getElementById('remoteAudio');
+    if (!remoteAudio || typeof remoteAudio.setSinkId !== 'function') return false;
+    try {
+        if (speakerOn) {
+            await remoteAudio.setSinkId(preferredSpeakerId || '');
+        } else {
+            if (preferredEarpieceId) {
+                await remoteAudio.setSinkId(preferredEarpieceId);
+            } else {
+                return false;
+            }
+        }
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+function speakerToggleSupported() {
+    return typeof HTMLMediaElement !== 'undefined'
+        && typeof HTMLMediaElement.prototype.setSinkId === 'function';
+}
+
+function hideSpeakerIfUnsupported() {
+    if (speakerToggleSupported()) return;
+    const button = document.getElementById('toggleSpeakerButton');
+    if (button) button.classList.add('d-none');
+}
+
+async function toggleSpeaker() {
+    const button = document.getElementById('toggleSpeakerButton');
+    if (!button) return;
+
+    if (!speakerToggleSupported()) {
+        button.classList.add('d-none');
+        return;
+    }
+
+    speakerOn = !speakerOn;
+    const ok = await applySpeakerPreference();
+
+    if (!ok && !speakerOn) {
+        speakerOn = true;
+        await applySpeakerPreference();
+    }
+
+    button.innerHTML = speakerOn
+        ? '<i class="fas fa-volume-high"></i> مكبر الصوت'
+        : '<i class="fas fa-volume-low"></i> سماعة الأذن';
+    button.classList.toggle('is-active', speakerOn);
+}
+
 async function pollCallSignalsNow() {
     const callRes = await fetch(`/messages/calls/poll/${otherUserId}`);
     if (!callRes.ok) return;
@@ -1318,6 +1428,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (hangupCallButton) hangupCallButton.addEventListener('click', () => endCall(true));
     if (toggleMicButton) toggleMicButton.addEventListener('click', toggleMicrophone);
     if (toggleCameraButton) toggleCameraButton.addEventListener('click', toggleCamera);
+    const toggleSpeakerButton = document.getElementById('toggleSpeakerButton');
+    if (toggleSpeakerButton) toggleSpeakerButton.addEventListener('click', toggleSpeaker);
+    detectAudioOutputs();
+    hideSpeakerIfUnsupported();
 
     if (clearAssistantMemoryButton) {
         clearAssistantMemoryButton.addEventListener('click', async () => {

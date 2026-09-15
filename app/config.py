@@ -83,6 +83,7 @@ class Config:
     ALLOWED_CHAT_FILE_EXTENSIONS = {'pdf', 'txt', 'doc', 'docx', 'xls', 'xlsx', 'zip'}
     WEBRTC_STUN_URL = os.environ.get('WEBRTC_STUN_URL', 'stun:stun.l.google.com:19302')
     WEBRTC_TURN_URL = os.environ.get('WEBRTC_TURN_URL', '')
+    WEBRTC_TURN_URLS = os.environ.get('WEBRTC_TURN_URLS', '')
     WEBRTC_TURN_USERNAME = os.environ.get('WEBRTC_TURN_USERNAME', '')
     WEBRTC_TURN_CREDENTIAL = os.environ.get('WEBRTC_TURN_CREDENTIAL', '')
     # رموز تطبيق ANTER Messenger تخص جهازاً واحداً ولا تُحفظ قيمتها الخام في قاعدة البيانات.

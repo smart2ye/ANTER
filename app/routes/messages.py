@@ -29,11 +29,24 @@ CALL_MEDIA_TYPES = {'voice', 'video'}
 
 
 def get_rtc_config():
-    """تجهيز إعدادات ICE للمتصفح من متغيرات البيئة."""
+    """تجهيز إعدادات ICE للمتصفح من متغيرات البيئة (STUN + TURN متعدد)."""
     ice_servers = [{'urls': current_app.config['WEBRTC_STUN_URL']}]
-    turn_url = current_app.config.get('WEBRTC_TURN_URL')
-    if turn_url:
-        turn_server = {'urls': turn_url}
+
+    # نجمع عناوين TURN من WEBRTC_TURN_URLS (مفصولة بفواصل) أو
+    # من WEBRTC_TURN_URL المفرد كنسخة احتياطية.
+    turn_urls = []
+    multi = current_app.config.get('WEBRTC_TURN_URLS') or ''
+    for chunk in multi.split(','):
+        chunk = chunk.strip()
+        if chunk:
+            turn_urls.append(chunk)
+    if not turn_urls:
+        single = current_app.config.get('WEBRTC_TURN_URL')
+        if single:
+            turn_urls.append(single)
+
+    if turn_urls:
+        turn_server = {'urls': turn_urls if len(turn_urls) > 1 else turn_urls[0]}
         username = current_app.config.get('WEBRTC_TURN_USERNAME')
         credential = current_app.config.get('WEBRTC_TURN_CREDENTIAL')
         if username:
@@ -41,6 +54,7 @@ def get_rtc_config():
         if credential:
             turn_server['credential'] = credential
         ice_servers.append(turn_server)
+
     return {'iceServers': ice_servers}
 
 
@@ -279,6 +293,25 @@ def report_message(message_id):
     db.session.commit()
     log_user_activity(current_user.id, 'message_report', {'message_id': message.id, 'reason': reason})
     return jsonify({'success': True, 'message': 'تم إرسال البلاغ للمراجعة.'}), 201
+
+
+# ANTER: ring timeout
+CALL_RING_TIMEOUT_SECONDS = 30
+
+
+def _expire_stale_ringing_calls():
+    cutoff = datetime.utcnow() - timedelta(seconds=CALL_RING_TIMEOUT_SECONDS)
+    stale = CallLog.query.filter(
+        CallLog.status == 'ringing',
+        CallLog.started_at < cutoff,
+    ).all()
+    if not stale:
+        return
+    now = datetime.utcnow()
+    for call_log in stale:
+        call_log.status = 'missed'
+        call_log.ended_at = now
+    db.session.commit()
 
 
 def _can_call_user(other):
@@ -792,6 +825,7 @@ def send_call_signal(user_id):
 @messages_bp.route('/calls/poll/<int:user_id>')
 @login_required
 def poll_call_signals(user_id):
+    _expire_stale_ringing_calls()
     """إرجاع الإشارات الجديدة من طرف محادثة محدد ثم تعليمها كمستلمة."""
     User.query.get_or_404(user_id)
     signals = CallSignal.query.filter_by(
@@ -821,6 +855,7 @@ def poll_call_signals(user_id):
 @messages_bp.route('/calls/pending')
 @login_required
 def pending_call_invites():
+    _expire_stale_ringing_calls()
     """إظهار دعوات المكالمات النشطة في أي صفحة من دون استهلاك إشارة WebRTC.
 
     لا تُعلَّم الدعوة مستلمة هنا؛ فالانتقال إلى صفحة الدردشة هو الذي يستدعي

@@ -42,17 +42,33 @@
         <p>تجمع المنصة بين المنشورات، التعليقات، القصص، المقاطع القصيرة، والرسائل؛ لتمنح المستخدم حرية اختيار الطريقة الأنسب للتعبير والتواصل. كما توفر أدوات مساعدة ذكية لتلخيص المحتوى وتحسين صياغته واقتراح أفكار أو تعليقات، مع بقاء قرار النشر والتعديل دائماً بيد المستخدم.</p>
     </section>
 
-    <section class="rounded-4 p-4 p-md-5 mb-5 border shadow-sm" style="background: linear-gradient(135deg, rgba(108,60,225,.12), rgba(11,17,98,.08));">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
+    <section class="rounded-4 p-4 p-md-5 mb-5 border shadow-sm" style="background: linear-gradient(135deg, rgba(24,119,242,.12), rgba(11,93,215,.08));">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4 mb-4">
             <div>
                 <span class="badge rounded-pill text-bg-primary mb-2">Android 7.0 فما فوق</span>
-                <h2 class="h4 fw-bold mb-2"><i class="fas fa-comments ms-2"></i> ANTER Messenger</h2>
-                <p class="text-muted mb-2">تطبيق مراسلة ANTER المستقل المرتبط بحسابك الحالي في الشبكة. استخدمه لقراءة محادثاتك والرد عليها من هاتفك.</p>
-                <p class="small text-muted mb-0">بصمة التحقق SHA-256: <code class="user-select-all">{{ messenger_apk_sha256 }}</code></p>
+                <h2 class="h4 fw-bold mb-2"><i class="fas fa-mobile-screen-button ms-2"></i> تطبيق ANTER</h2>
+                <p class="text-muted mb-2">حمّل تطبيق ANTER على هاتفك واستخدم المنصة بكل مزاياها: المنشورات، الريلز، الرسائل، والمكالمات — بواجهة كاملة الشاشة وسرعة أفضل.</p>
+                <p class="small text-muted mb-0">بصمة التحقق SHA-256: <code class="user-select-all">{{ anter_apk_sha256 }}</code></p>
             </div>
-            <a href="{{ messenger_apk_url }}" class="btn btn-primary btn-lg rounded-pill px-4 text-nowrap" target="_blank" rel="noopener noreferrer" aria-label="تحميل ANTER Messenger بصيغة APK">
+            <a href="{{ anter_apk_url }}"
+               class="btn btn-primary btn-lg rounded-pill px-4 text-nowrap"
+               target="_blank" rel="noopener noreferrer"
+               aria-label="تحميل تطبيق ANTER لأندرويد">
                 <i class="fab fa-android ms-1"></i> تحميل APK
             </a>
+        </div>
+
+        <div class="rounded-3 p-3 p-md-4" style="background: rgba(255,255,255,0.6);">
+            <h3 class="h6 fw-bold mb-2">
+                <i class="fab fa-apple ms-2 text-primary"></i>
+                على iPhone / iPad
+            </h3>
+            <ol class="small text-muted mb-0 ps-4 pe-0" style="padding-inline-start: 1.2rem;">
+                <li>افتح المتصفح <strong>Safari</strong> وتوجّه إلى: <a href="https://anter-1.onrender.com/" target="_blank" rel="noopener noreferrer">anter-1.onrender.com</a></li>
+                <li>اضغط زر المشاركة <i class="fas fa-arrow-up-from-bracket"></i> في الأسفل.</li>
+                <li>اختر <strong>"إضافة إلى الشاشة الرئيسية"</strong>.</li>
+                <li>سمّه <strong>ANTER</strong> ثم اضغط <strong>إضافة</strong>.</li>
+            </ol>
         </div>
     </section>
 

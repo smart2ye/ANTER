@@ -82,6 +82,15 @@ class Config:
     ALLOWED_AUDIO_EXTENSIONS = {'webm', 'ogg', 'mp3', 'wav', 'm4a', 'aac'}
     ALLOWED_CHAT_FILE_EXTENSIONS = {'pdf', 'txt', 'doc', 'docx', 'xls', 'xlsx', 'zip'}
     WEBRTC_STUN_URL = os.environ.get('WEBRTC_STUN_URL', 'stun:stun.l.google.com:19302')
+    # ANTER mobile app (WebView APK via GitHub Releases)
+    ANTER_APK_URL = os.environ.get(
+        'ANTER_APK_URL',
+        'https://github.com/smart2ye/anter-webview-apk/releases/download/v1.0.0/ANTER.apk',
+    )
+    ANTER_APK_SHA256 = os.environ.get(
+        'ANTER_APK_SHA256',
+        '2507268fa582194e5a485f96a84424fb34b7078f5e77b95cb0beeb394172bf0c',
+    )
     WEBRTC_TURN_URL = os.environ.get('WEBRTC_TURN_URL', '')
     WEBRTC_TURN_URLS = os.environ.get('WEBRTC_TURN_URLS', '')
     WEBRTC_TURN_USERNAME = os.environ.get('WEBRTC_TURN_USERNAME', '')

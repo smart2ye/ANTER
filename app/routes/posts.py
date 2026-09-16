@@ -604,42 +604,50 @@ def create():
                 db.session.flush()
             post.hashtags.append(tag)
 
-        detect_for_post(post)
+        # ANTER: الميزات المساعدة (Moments + الإشارات) يجب ألّا تُفشل النشر.
+        # نغلّفها بـ try/except منفصل، فحتى لو فشلت بسبب ضغط AI أو timeout،
+        # يبقى المنشور محفوظًا ويُعاد المستخدم للرئيسية بنجاح.
+        try:
+            detect_for_post(post)
 
-        if moment:
-            db.session.add(
-                MomentPost(
-                    moment_id=moment.id,
-                    post_id=post.id,
+            if moment:
+                db.session.add(
+                    MomentPost(
+                        moment_id=moment.id,
+                        post_id=post.id,
+                    )
                 )
-            )
-            moment.updated_at = datetime.utcnow()
+                moment.updated_at = datetime.utcnow()
 
-        # معالجة الإشارات (@mention) في المنشور
-        import re
-        usernames = re.findall(r'@([\w.]+)', content)
-        for username in usernames:
-            mentioned_user = User.query.filter_by(username=username).first()
-            if mentioned_user and mentioned_user.id != current_user.id:
-                notif = Notification(
-                    user_id=mentioned_user.id,
-                    actor_id=current_user.id,
-                    action='mention',
-                    post_id=post.id
-                )
-                db.session.add(notif)
+            import re
+            usernames = re.findall(r'@([\w.]+)', content)
+            for username in usernames:
+                mentioned_user = User.query.filter_by(username=username).first()
+                if mentioned_user and mentioned_user.id != current_user.id:
+                    notif = Notification(
+                        user_id=mentioned_user.id,
+                        actor_id=current_user.id,
+                        action='mention',
+                        post_id=post.id
+                    )
+                    db.session.add(notif)
+        except Exception:
+            current_app.logger.exception('Ancillary post features failed (non-fatal)')
 
         db.session.commit()
 
-        log_user_activity(
-            current_user.id,
-            'post_create',
-            {
-                'post_id': post.id,
-                'attachment': attachment_type,
-                'video_id': video.id if video else None,
-            }
-        )
+        try:
+            log_user_activity(
+                current_user.id,
+                'post_create',
+                {
+                    'post_id': post.id,
+                    'attachment': attachment_type,
+                    'video_id': video.id if video else None,
+                }
+            )
+        except Exception:
+            current_app.logger.exception('log_user_activity failed (non-fatal)')
 
         flash('تم نشر المنشور بنجاح!', 'success')
         return redirect(url_for('main.index'))

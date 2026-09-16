@@ -404,10 +404,22 @@
         {% endif %}
 
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/static/sw.js').catch(function(error) {
+            window.addEventListener('load', async function() {
+                try {
+                    // ANTER: امسح كل كاشات SW القديمة فورًا (v1/v2) لضمان عدم
+                    // تقديم ردود قديمة (503) بدل إرسال طلب حقيقي.
+                    if ('caches' in window) {
+                        var names = await caches.keys();
+                        await Promise.all(names.map(function(n) {
+                            if (n !== 'anter-v3') return caches.delete(n);
+                        }));
+                    }
+                    var reg = await navigator.serviceWorker.register('/static/sw.js', { updateViaCache: 'none' });
+                    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    await reg.update();
+                } catch (error) {
                     console.log('Service Worker registration failed:', error);
-                });
+                }
             });
         }
     </script>

@@ -117,8 +117,8 @@ class Config:
     ).strip()
     MINI_LLM_ARABIC_API_KEY = os.environ.get('MINI_LLM_ARABIC_API_KEY', os.environ.get('GROQ_API_KEY', '')).strip()
     MINI_LLM_ARABIC_MODEL = os.environ.get(
-        'MINI_LLM_ARABIC_MODEL', os.environ.get('GROQ_MODEL', 'qwen/qwen3.6-27b')
-    ).strip() or 'qwen/qwen3.6-27b'
+        'MINI_LLM_ARABIC_MODEL', os.environ.get('GROQ_MODEL', 'qwen/qwen3.8-27b')
+    ).strip() or 'qwen/qwen3.8-27b'
     MINI_LLM_ARABIC_TIMEOUT_SECONDS = env_float('MINI_LLM_ARABIC_TIMEOUT_SECONDS', 30.0, 5.0, 60.0)
 
     # مساعد أنتر داخل الرسائل: الإعدادات سرّية وتأتي من .env أو بيئة Render.

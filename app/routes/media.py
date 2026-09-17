@@ -8,11 +8,18 @@ media_bp = Blueprint('media', __name__, url_prefix='/media')
 def _image_response(data, mime_type):
     if not data:
         return redirect(url_for('static', filename='uploads/default.png'))
+
+    # ETag بسيط من حجم البيانات — يتغير تلقائيًا عند تبديل الصورة.
+    # مع 'no-cache, must-revalidate'، يسأل المتصفح السيرفر في كل مرة،
+    # فيرد 304 بسرعة إن لم تتغير الصورة، أو الصورة الجديدة إن تغيّرت.
+    etag = '"%d-%d"' % (len(data), hash(data[:512]) & 0xffffffff)
+
     return Response(
         data,
         mimetype=mime_type or 'image/png',
         headers={
-            'Cache-Control': 'public, max-age=300',
+            'Cache-Control': 'no-cache, must-revalidate',
+            'ETag': etag,
             'Content-Length': str(len(data)),
         },
     )

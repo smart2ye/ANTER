@@ -151,8 +151,57 @@
     {% endif %}
 
     {% if post.image_data or post.image %}
-    <div class="post-image-wrapper">
-        <img src="{{ post_image_url(post) }}" class="post-image" alt="صورة المنشور">
+    <div class="post-image-wrapper" data-post-id="{{ post.id }}">
+        <img src="{{ post_image_url(post) }}"
+             class="post-image js-lightbox"
+             alt="صورة المنشور"
+             loading="lazy"
+             data-post-author="{{ post.author.username }}"
+             data-is-owner="{{ 'true' if current_user.is_authenticated and current_user.id == post.author_id else 'false' }}"
+             data-fullsrc="{{ post_image_url(post) }}">
+
+        {% if current_user.is_authenticated %}
+        <button type="button"
+                class="anter-img-menu-btn"
+                data-img-menu-toggle
+                aria-label="خيارات الصورة"
+                aria-expanded="false"
+                title="خيارات الصورة">
+            <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
+        </button>
+
+        <div class="anter-img-menu" hidden
+             role="menu"
+             aria-label="خيارات الصورة">
+            <button type="button" class="anter-img-menu__item" data-img-action="download" role="menuitem">
+                <i class="fas fa-download" aria-hidden="true"></i>
+                <span>تنزيل الصورة</span>
+            </button>
+
+            {% if current_user.id == post.author_id %}
+            <button type="button" class="anter-img-menu__item" data-img-action="set-avatar" role="menuitem">
+                <i class="fas fa-user-circle" aria-hidden="true"></i>
+                <span>تعيين كصورة بروفايل</span>
+            </button>
+            {% endif %}
+
+            <button type="button" class="anter-img-menu__item" data-img-action="copy" role="menuitem">
+                <i class="fas fa-link" aria-hidden="true"></i>
+                <span>نسخ رابط المنشور</span>
+            </button>
+
+            {% if current_user.id != post.author_id %}
+            <button type="button"
+                    class="anter-img-menu__item anter-img-menu__item--danger"
+                    data-img-action="report"
+                    data-post="{{ post.id }}"
+                    role="menuitem">
+                <i class="fas fa-flag" aria-hidden="true"></i>
+                <span>الإبلاغ عن الصورة</span>
+            </button>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 

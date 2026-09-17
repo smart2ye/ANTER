@@ -534,3 +534,42 @@ def download_data():
     response = jsonify(user_data)
     response.headers['Content-Disposition'] = f'attachment; filename={filename}'
     return response
+
+# ============================================================
+# ANTER: تعيين صورة المنشور كصورة بروفايل
+# ============================================================
+@users_bp.route('/set-avatar-from-post/<int:post_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def set_avatar_from_post(post_id):
+    """يسمح لصاحب المنشور بتعيين صورة منشوره كصورة ملف شخصي بضغطة واحدة."""
+    from app.models import Post
+    from app.utils.helpers import log_user_activity
+
+    post = Post.query.get_or_404(post_id)
+
+    if post.author_id != current_user.id:
+        return jsonify({
+            'success': False,
+            'message': 'يمكنك تعيين صورة منشوراتك فقط.'
+        }), 403
+
+    if not post.image_data:
+        return jsonify({
+            'success': False,
+            'message': 'هذا المنشور لا يحتوي على صورة قابلة للتعيين.'
+        }), 400
+
+    # نقل البيانات مباشرة (بلا معالجة جديدة، الصورة أصلًا معالَجة عند النشر).
+    current_user.avatar_data = post.image_data
+    current_user.avatar_mime = post.image_mime or 'image/jpeg'
+    current_user.avatar = 'default.png'  # legacy path — avatar_url يفضّل DB data
+    db.session.commit()
+
+    log_user_activity(current_user.id, 'avatar_change', {'source': 'post', 'post_id': post.id})
+
+    return jsonify({
+        'success': True,
+        'message': 'تم تعيين الصورة كصورة بروفايل ✓'
+    })
+

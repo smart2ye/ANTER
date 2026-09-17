@@ -927,3 +927,246 @@ document.addEventListener('click', function(e) {
     const url = card.dataset.postUrl;
     if (url) window.location.href = url;
 });
+
+/* ============================================================
+   ANTER Image Lightbox — عارض الصور العالمي
+   ============================================================ */
+(function _anterLightbox() {
+    let overlay = null;
+    let imgEl = null;
+    let captionEl = null;
+
+    function build() {
+        if (overlay) return;
+        overlay = document.createElement('div');
+        overlay.className = 'anter-lightbox';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.innerHTML = `
+            <button type="button" class="anter-lightbox__close" aria-label="إغلاق">
+                <i class="fas fa-times"></i>
+            </button>
+            <img class="anter-lightbox__img" alt="">
+            <div class="anter-lightbox__caption"></div>
+        `;
+        document.body.appendChild(overlay);
+        imgEl = overlay.querySelector('.anter-lightbox__img');
+        captionEl = overlay.querySelector('.anter-lightbox__caption');
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay || e.target.closest('.anter-lightbox__close')) {
+                close();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && overlay.classList.contains('is-open')) close();
+        });
+    }
+
+    function open(src, caption) {
+        build();
+        imgEl.src = src;
+        captionEl.textContent = caption || '';
+        overlay.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function close() {
+        if (!overlay) return;
+        overlay.classList.remove('is-open');
+        document.body.style.overflow = '';
+        setTimeout(() => {
+            if (imgEl) imgEl.src = '';
+        }, 250);
+    }
+
+    window.anterOpenImage = open;
+
+    // التقاط الضغط على أي صورة تحمل class js-lightbox أو post-image
+    document.addEventListener('click', (e) => {
+        const img = e.target.closest('img.js-lightbox, .post-image, .anter-post-image');
+        if (!img) return;
+        // لا نُفعّل العارض على الأيقونات الصغيرة/الأفاتار (لها معالج مختلف)
+        if (img.classList.contains('post-avatar') || img.closest('.anter-avatar') || img.classList.contains('story-avatar')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const caption = img.alt || '';
+        const src = img.dataset.fullsrc || img.src;
+        open(src, caption);
+    }, true);
+})();
+
+/* ============================================================
+   ANTER Image Menu — قائمة خيارات الصورة
+   ============================================================ */
+(function _anterImageMenu() {
+
+    // توست بسيط
+    function toast(message, kind) {
+        let box = document.getElementById('anterImgToast');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'anterImgToast';
+            box.className = 'anter-img-toast';
+            document.body.appendChild(box);
+        }
+        box.textContent = message;
+        box.className = 'anter-img-toast is-visible ' + (kind || '');
+        clearTimeout(box._timer);
+        box._timer = setTimeout(() => box.classList.remove('is-visible'), 2400);
+    }
+
+    function closeAll() {
+        document.querySelectorAll('.anter-img-menu').forEach(m => m.hidden = true);
+        document.querySelectorAll('[data-img-menu-toggle]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    }
+
+    // فتح/إغلاق القائمة
+    document.addEventListener('click', (e) => {
+        const toggle = e.target.closest('[data-img-menu-toggle]');
+        if (toggle) {
+            e.preventDefault();
+            e.stopPropagation();
+            const wrapper = toggle.closest('.post-image-wrapper');
+            const menu = wrapper?.querySelector('.anter-img-menu');
+            if (!menu) return;
+            const willOpen = menu.hidden;
+            closeAll();
+            if (willOpen) {
+                menu.hidden = false;
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+            return;
+        }
+
+        // إغلاق عند النقر خارج القائمة
+        if (!e.target.closest('.anter-img-menu') && !e.target.closest('[data-img-menu-toggle]')) {
+            closeAll();
+        }
+    }, true);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAll();
+    });
+
+    // تنفيذ الأفعال
+    document.addEventListener('click', async (e) => {
+        const item = e.target.closest('[data-img-action]');
+        if (!item) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const wrapper = item.closest('.post-image-wrapper');
+        const img = wrapper?.querySelector('img.js-lightbox, img.post-image');
+        if (!img) return;
+
+        const action = item.dataset.imgAction;
+        const src = img.dataset.fullsrc || img.src;
+
+        closeAll();
+
+        if (action === 'download') {
+            try {
+                const resp = await fetch(src, { credentials: 'same-origin' });
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'anter-' + Date.now() + '.jpg';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 3000);
+                toast('تم تنزيل الصورة', 'success');
+            } catch (_) {
+                // fallback
+                const a = document.createElement('a');
+                a.href = src;
+                a.download = 'anter-image.jpg';
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
+            return;
+        }
+
+        if (action === 'copy') {
+            const postCard = img.closest('.post-card');
+            const url = postCard?.dataset.postUrl || window.location.href;
+            try {
+                await navigator.clipboard.writeText(url);
+                toast('تم نسخ الرابط', 'success');
+            } catch (_) {
+                const input = document.createElement('input');
+                input.value = url;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                input.remove();
+                toast('تم نسخ الرابط', 'success');
+            }
+            return;
+        }
+
+        if (action === 'set-avatar') {
+            const postId = wrapper?.dataset.postId;
+            if (!postId) return;
+            item.disabled = true;
+            const label = item.querySelector('span');
+            const oldText = label ? label.textContent : '';
+            if (label) label.textContent = 'جارٍ التعيين…';
+            try {
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const resp = await fetch('/users/set-avatar-from-post/' + encodeURIComponent(postId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrf,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || data.success === false) {
+                    throw new Error(data.message || 'تعذر تعيين الصورة.');
+                }
+                toast(data.message || 'تم تعيين الصورة كصورة بروفايل', 'success');
+                setTimeout(() => window.location.reload(), 900);
+            } catch (err) {
+                toast(err.message || 'تعذر تعيين الصورة', 'error');
+                if (label) label.textContent = oldText;
+            } finally {
+                item.disabled = false;
+            }
+            return;
+        }
+
+        if (action === 'report') {
+            const postId = item.dataset.post;
+            if (!postId) return;
+            if (!confirm('هل تريد الإبلاغ عن هذه الصورة؟')) return;
+            try {
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const resp = await fetch('/report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrf,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ post_id: postId, reason: 'inappropriate image' })
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || data.success === false) {
+                    throw new Error(data.message || 'تعذر إرسال البلاغ.');
+                }
+                toast('تم إرسال البلاغ', 'success');
+            } catch (err) {
+                toast(err.message || 'تعذر إرسال البلاغ', 'error');
+            }
+            return;
+        }
+    }, true);
+})();

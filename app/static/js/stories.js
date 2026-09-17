@@ -107,79 +107,295 @@ function renderStoriesBar(users) {
             </div>
         </div>
 
-        <!-- نافذة إضافة قصة -->
-        <div id="createStoryModal" class="modal fade" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content rounded-4 border-0 shadow">
-                    <div class="modal-header border-0 pb-0">
-                        <h5 class="fw-bold">إضافة قصة جديدة</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <!-- ANTER: نافذة إضافة قصة (تصميم جديد) -->
+        <div id="anterStoryComposer" class="anter-story-composer" aria-hidden="true">
+            <div class="anter-story-composer__backdrop" data-close-story-composer></div>
+            <div class="anter-story-composer__dialog" role="dialog" aria-modal="true">
+                <header class="anter-story-composer__header">
+                    <button type="button" class="anter-story-composer__close" data-close-story-composer aria-label="إغلاق">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <h3>قصة جديدة</h3>
+                    <span class="anter-story-composer__spacer"></span>
+                </header>
+
+                <div class="anter-story-composer__stage" id="storyStage">
+                    <!-- منطقة السحب والإفلات (تظهر عند عدم اختيار ملف) -->
+                    <label class="anter-story-dropzone" id="storyDropzone" for="storyMediaInput">
+                        <div class="anter-story-dropzone__ring">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <strong>أضف صورة أو فيديو</strong>
+                        <small>اسحب الملف هنا أو اضغط للاختيار</small>
+                        <span class="anter-story-dropzone__hint">JPG · PNG · MP4 · WEBM — حتى 50MB</span>
+                    </label>
+
+                    <!-- معاينة الملف (تظهر بعد الاختيار) -->
+                    <div class="anter-story-preview" id="storyPreview" hidden>
+                        <img id="storyPreviewImg" alt="معاينة القصة" hidden>
+                        <video id="storyPreviewVideo" playsinline muted loop hidden></video>
+
+                        <button type="button" class="anter-story-preview__remove" data-remove-media aria-label="إزالة الملف">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    <div class="modal-body">
-                        <form id="createStoryForm" onsubmit="submitStory(event)">
-                            <div class="mb-3">
-                                اختر صورة أو فيديو للقصة:
-                                <input type="file" class="form-control mt-2" id="storyMediaInput" accept="image/*,video/*" required>
-                            </div>
-                            <div class="mb-3">
-                                تعليق أو نص اختياري:
-                                <input type="text" class="form-control mt-2" id="storyCaptionInput" placeholder="اكتب تعليقاً..." maxlength="200">
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold">نشر القصة</button>
-                        </form>
+
+                    <input type="file" id="storyMediaInput" accept="image/*,video/*" hidden>
+
+                    <!-- حقل التعليق يطفو فوق المعاينة -->
+                    <div class="anter-story-caption-wrap" id="storyCaptionWrap">
+                        <input type="text" id="storyCaptionInput" placeholder="أضف تعليقاً..." maxlength="200" autocomplete="off">
+                        <span class="anter-story-caption-count" id="storyCaptionCount">0/200</span>
                     </div>
                 </div>
+
+                <footer class="anter-story-composer__footer">
+                    <div class="anter-story-composer__progress" id="storyProgress" hidden>
+                        <div class="anter-story-composer__progress-bar">
+                            <div class="anter-story-composer__progress-fill" id="storyProgressFill"></div>
+                        </div>
+                        <span id="storyProgressLabel">جارٍ النشر…</span>
+                    </div>
+                    <button type="button" class="anter-story-composer__publish" id="storyPublishBtn" disabled>
+                        <i class="fas fa-arrow-up"></i>
+                        <span>نشر القصة</span>
+                    </button>
+                </footer>
             </div>
         </div>
     `;
 
     container.innerHTML = html;
     window._cachedUsersStories = users;
+    if (typeof window._anterBindStoryComposer === 'function') window._anterBindStoryComposer();
+}
+
+/* ============================================================
+   ANTER Story Composer — تصميم جديد
+   ============================================================ */
+let _anterStoryObjectUrl = null;
+
+function _resetStoryComposer() {
+    const composer = document.getElementById('anterStoryComposer');
+    if (!composer) return;
+    const fileInput = document.getElementById('storyMediaInput');
+    const preview = document.getElementById('storyPreview');
+    const previewImg = document.getElementById('storyPreviewImg');
+    const previewVideo = document.getElementById('storyPreviewVideo');
+    const dropzone = document.getElementById('storyDropzone');
+    const caption = document.getElementById('storyCaptionInput');
+    const counter = document.getElementById('storyCaptionCount');
+    const publishBtn = document.getElementById('storyPublishBtn');
+    const progress = document.getElementById('storyProgress');
+    const progressFill = document.getElementById('storyProgressFill');
+    const progressLabel = document.getElementById('storyProgressLabel');
+
+    if (_anterStoryObjectUrl) {
+        URL.revokeObjectURL(_anterStoryObjectUrl);
+        _anterStoryObjectUrl = null;
+    }
+    if (fileInput) fileInput.value = '';
+    if (previewImg) { previewImg.src = ''; previewImg.hidden = true; }
+    if (previewVideo) { previewVideo.pause(); previewVideo.src = ''; previewVideo.hidden = true; }
+    if (preview) preview.hidden = true;
+    if (dropzone) dropzone.hidden = false;
+    if (caption) caption.value = '';
+    if (counter) counter.textContent = '0/200';
+    if (publishBtn) { publishBtn.disabled = true; publishBtn.classList.remove('is-loading'); }
+    if (progress) progress.hidden = true;
+    if (progressFill) progressFill.style.width = '0%';
+    if (progressLabel) progressLabel.textContent = 'جارٍ النشر…';
 }
 
 function openCreateStoryModal() {
-    const modal = new bootstrap.Modal(document.getElementById('createStoryModal'));
-    modal.show();
+    const composer = document.getElementById('anterStoryComposer');
+    if (!composer) return;
+    _resetStoryComposer();
+    composer.classList.add('is-open');
+    composer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+}
+
+function _closeStoryComposer() {
+    const composer = document.getElementById('anterStoryComposer');
+    if (!composer) return;
+    composer.classList.remove('is-open');
+    composer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    _resetStoryComposer();
+}
+
+function _handleStoryFile(file) {
+    if (!file) return;
+    const preview = document.getElementById('storyPreview');
+    const previewImg = document.getElementById('storyPreviewImg');
+    const previewVideo = document.getElementById('storyPreviewVideo');
+    const dropzone = document.getElementById('storyDropzone');
+    const publishBtn = document.getElementById('storyPublishBtn');
+
+    if (_anterStoryObjectUrl) URL.revokeObjectURL(_anterStoryObjectUrl);
+    _anterStoryObjectUrl = URL.createObjectURL(file);
+
+    const isVideo = file.type.startsWith('video/');
+    if (isVideo) {
+        previewImg.hidden = true;
+        previewVideo.src = _anterStoryObjectUrl;
+        previewVideo.hidden = false;
+        previewVideo.play().catch(() => {});
+    } else {
+        previewVideo.pause();
+        previewVideo.hidden = true;
+        previewImg.src = _anterStoryObjectUrl;
+        previewImg.hidden = false;
+    }
+    dropzone.hidden = true;
+    preview.hidden = false;
+    publishBtn.disabled = false;
 }
 
 function submitStory(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
     const fileInput = document.getElementById('storyMediaInput');
     const captionInput = document.getElementById('storyCaptionInput');
+    const publishBtn = document.getElementById('storyPublishBtn');
+    const progress = document.getElementById('storyProgress');
+    const progressFill = document.getElementById('storyProgressFill');
+    const progressLabel = document.getElementById('storyProgressLabel');
 
-    if (!fileInput.files[0]) return;
+    if (!fileInput || !fileInput.files[0]) return;
 
     const formData = new FormData();
     formData.append('media', fileInput.files[0]);
-    formData.append('caption', captionInput.value);
+    formData.append('caption', captionInput ? captionInput.value : '');
 
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'جاري النشر...';
+    if (publishBtn) { publishBtn.disabled = true; publishBtn.classList.add('is-loading'); }
+    if (progress) progress.hidden = false;
+    if (progressFill) progressFill.style.width = '8%';
+    if (progressLabel) progressLabel.textContent = 'جارٍ الرفع…';
 
-    fetch('/api/stories', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-        }
-    })
-    .then(res => res.json().then(data => ({status: res.status, body: data})))
-    .then(res => {
-        if (res.status === 201) {
-            bootstrap.Modal.getInstance(document.getElementById('createStoryModal')).hide();
-            fileInput.value = '';
-            captionInput.value = '';
-            loadStoriesFeed();
+    // محاكاة تقدّم حقيقي عبر XHR (fetch لا يدعم progress)
+    const xhr = new XMLHttpRequest();
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable) return;
+        const percent = Math.min(95, Math.round((event.loaded / event.total) * 100));
+        if (progressFill) progressFill.style.width = percent + '%';
+        if (progressLabel) progressLabel.textContent = 'جارٍ الرفع… ' + percent + '%';
+    };
+
+    xhr.onload = () => {
+        if (progressFill) progressFill.style.width = '100%';
+        let data = {};
+        try { data = JSON.parse(xhr.responseText || '{}'); } catch (_) {}
+
+        if (xhr.status === 201) {
+            if (progressLabel) progressLabel.textContent = 'تم النشر ✓';
+            setTimeout(() => {
+                _closeStoryComposer();
+                loadStoriesFeed();
+            }, 500);
         } else {
-            alert(res.body.error || 'حدث خطأ أثناء نشر القصة');
+            if (progress) progress.hidden = true;
+            if (publishBtn) { publishBtn.disabled = false; publishBtn.classList.remove('is-loading'); }
+            alert(data.error || 'حدث خطأ أثناء نشر القصة');
         }
-    })
-    .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'نشر القصة';
-    });
+    };
+
+    xhr.onerror = () => {
+        if (progress) progress.hidden = true;
+        if (publishBtn) { publishBtn.disabled = false; publishBtn.classList.remove('is-loading'); }
+        alert('تعذر الاتصال بالخادم.');
+    };
+
+    xhr.open('POST', '/api/stories');
+    xhr.setRequestHeader('X-CSRFToken', csrfToken);
+    xhr.send(formData);
 }
+
+/* ربط الأحداث (يُنفَّذ مرة واحدة عند أول تحميل) */
+(function _setupStoryComposer() {
+    const bind = () => {
+        const fileInput = document.getElementById('storyMediaInput');
+        const caption = document.getElementById('storyCaptionInput');
+        const counter = document.getElementById('storyCaptionCount');
+        const publishBtn = document.getElementById('storyPublishBtn');
+        const dropzone = document.getElementById('storyDropzone');
+        const stage = document.getElementById('storyStage');
+
+        if (!fileInput || fileInput.dataset.bound === 'true') return;
+        fileInput.dataset.bound = 'true';
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (file) _handleStoryFile(file);
+        });
+
+        if (publishBtn) {
+            publishBtn.addEventListener('click', submitStory);
+        }
+
+        if (caption && counter) {
+            caption.addEventListener('input', () => {
+                counter.textContent = caption.value.length + '/200';
+            });
+        }
+
+        // سحب وإفلات
+        if (stage) {
+            ['dragenter', 'dragover'].forEach(evt => {
+                stage.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    stage.classList.add('is-dragover');
+                });
+            });
+            ['dragleave', 'drop'].forEach(evt => {
+                stage.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    stage.classList.remove('is-dragover');
+                });
+            });
+            stage.addEventListener('drop', (e) => {
+                const file = e.dataTransfer?.files?.[0];
+                if (!file) return;
+                const isImage = file.type.startsWith('image/');
+                const isVideo = file.type.startsWith('video/');
+                if (!isImage && !isVideo) return;
+                // استخدم DataTransfer لتحديد الملف في input
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                fileInput.files = dt.files;
+                _handleStoryFile(file);
+            });
+        }
+
+        // إزالة الملف
+        document.querySelectorAll('[data-remove-media]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                _resetStoryComposer();
+            });
+        });
+
+        // إغلاق
+        document.querySelectorAll('[data-close-story-composer]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                _closeStoryComposer();
+            });
+        });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bind);
+    } else {
+        bind();
+    }
+    // أعِد الربط بعد كل render للشريط
+    window._anterBindStoryComposer = bind;
+})();
+
+window._closeStoryComposer = _closeStoryComposer;
 
 function openUserStories(uIdx) {
     currentUserIndex = uIdx;

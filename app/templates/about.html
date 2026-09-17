@@ -48,7 +48,13 @@
                 <span class="badge rounded-pill text-bg-primary mb-2">Android 7.0 فما فوق</span>
                 <h2 class="h4 fw-bold mb-2"><i class="fas fa-mobile-screen-button ms-2"></i> تطبيق ANTER</h2>
                 <p class="text-muted mb-2">حمّل تطبيق ANTER على هاتفك واستخدم المنصة بكل مزاياها: المنشورات، الريلز، الرسائل، والمكالمات — بواجهة كاملة الشاشة وسرعة أفضل.</p>
-                <p class="small text-muted mb-0">بصمة التحقق SHA-256: <code class="user-select-all">{{ anter_apk_sha256 }}</code></p>
+                <p class="small text-muted mb-0">
+                    <i class="fas fa-tag ms-1" aria-hidden="true"></i> الإصدار {{ anter_apk_version }}
+                    <span class="mx-1 text-muted">·</span>
+                    <i class="fas fa-file-arrow-down ms-1" aria-hidden="true"></i> {{ anter_apk_size }}
+                    <span class="mx-1 text-muted">·</span>
+                    <i class="fas fa-calendar ms-1" aria-hidden="true"></i> {{ anter_apk_date }}
+                </p>
             </div>
             <a href="{{ anter_apk_url }}"
                class="btn btn-primary btn-lg rounded-pill px-4 text-nowrap"

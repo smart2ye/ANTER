@@ -350,7 +350,9 @@ def about():
     return render_template(
         'about.html',
         anter_apk_url=current_app.config['ANTER_APK_URL'],
-        anter_apk_sha256=current_app.config['ANTER_APK_SHA256'],
+        anter_apk_version=current_app.config['ANTER_APK_VERSION'],
+        anter_apk_size=current_app.config['ANTER_APK_SIZE'],
+        anter_apk_date=current_app.config['ANTER_APK_DATE'],
     )
 
 @main_bp.route('/offline.html')

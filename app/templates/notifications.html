@@ -1,104 +1,209 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="notifications-container">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5><i class="fas fa-bell text-primary"></i> الإشعارات</h5>
-        <span class="badge bg-primary rounded-pill">{{ notifications|selectattr('is_read', 'equalto', False)|list|length }}</span>
+
+<div class="anter-notif-page">
+
+    <!-- رأس الصفحة -->
+    <div class="anter-notif-header">
+        <div class="anter-notif-header__left">
+            <h1 class="anter-notif-title">
+                <i class="fas fa-bell" aria-hidden="true"></i>
+                الإشعارات
+                {% if unread_count > 0 %}
+                <span class="anter-notif-title__badge" id="anterUnreadBadge">{{ unread_count }}</span>
+                {% endif %}
+            </h1>
+        </div>
+        <div class="anter-notif-header__right">
+            <button type="button"
+                    class="anter-notif-action-btn"
+                    id="anterMarkAllReadBtn"
+                    {% if unread_count == 0 %}disabled{% endif %}>
+                <i class="fas fa-check-double" aria-hidden="true"></i>
+                تحديد الكل كمقروء
+            </button>
+        </div>
     </div>
 
-    {% if notifications %}
-        <div class="list-group">
-            {% for notif in notifications %}
-                {% set actor = notif.actor %}
-                {% set link = '#' %}
-                {% if notif.action in ['like', 'comment', 'reply'] and notif.post %}
-                    {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
-                {% elif notif.action == 'follow' and actor %}
-                    {% set link = url_for('users.profile', username=actor.username) %}
-                {% elif notif.action in ['message', 'voice_message', 'voice_call'] and actor %}
-                    {% set link = url_for('messages.chat', user_id=actor.id) %}
-                {% endif %}
+    <!-- فلاتر -->
+    <nav class="anter-notif-filters" role="tablist" aria-label="تصفية الإشعارات">
+        <button type="button" class="anter-notif-filter is-active" data-filter="all" role="tab" aria-selected="true">
+            الكل <span class="anter-notif-filter__count" data-count="all">{{ notifications|length }}</span>
+        </button>
+        <button type="button" class="anter-notif-filter" data-filter="unread" role="tab" aria-selected="false">
+            غير مقروءة <span class="anter-notif-filter__count" data-count="unread">{{ unread_count }}</span>
+        </button>
+        <button type="button" class="anter-notif-filter" data-filter="interactions" role="tab" aria-selected="false">
+            تفاعلات
+        </button>
+        <button type="button" class="anter-notif-filter" data-filter="follows" role="tab" aria-selected="false">
+            متابعات
+        </button>
+    </nav>
 
-                <a href="{{ link }}" class="list-group-item list-group-item-action notification-item {% if not notif.is_read %}unread{% endif %}"
-                   data-id="{{ notif.id }}" onclick="markAsRead({{ notif.id }})">
-                    <div class="d-flex align-items-center gap-3">
+    <!-- قائمة الإشعارات -->
+    {% if notifications %}
+    <div class="anter-notif-list" id="anterNotifList">
+        {% for notif in notifications %}
+            {% set actor = notif.actor %}
+            {% set link = '#' %}
+            {% if notif.action in ['like', 'comment', 'reply'] and notif.post %}
+                {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
+            {% elif notif.action == 'follow' and actor %}
+                {% set link = url_for('users.profile', username=actor.username) %}
+            {% elif notif.action in ['message', 'voice_message', 'voice_call'] and actor %}
+                {% set link = url_for('messages.chat', user_id=actor.id) %}
+            {% endif %}
+
+            {# تحديد الفئة #}
+            {% if notif.action in ['like', 'comment', 'reply'] %}
+                {% set category = 'interactions' %}
+            {% elif notif.action in ['follow'] %}
+                {% set category = 'follows' %}
+            {% else %}
+                {% set category = 'other' %}
+            {% endif %}
+
+            <article class="anter-notif-item {% if not notif.is_read %}is-unread{% endif %}"
+                     data-id="{{ notif.id }}"
+                     data-category="{{ category }}"
+                     data-read="{{ 'true' if notif.is_read else 'false' }}">
+
+                <a href="{{ link }}"
+                   class="anter-notif-item__link"
+                   onclick="anterMarkRead({{ notif.id }}, event)">
+
+                    <div class="anter-notif-item__avatar-wrap">
                         {% if actor %}
-                            <img src="{{ avatar_url(actor) }}" alt="صورة {{ actor.name or actor.username }}"
-                                 class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                            <img src="{{ avatar_url(actor) }}"
+                                 alt="{{ actor.name or actor.username }}"
+                                 class="anter-notif-item__avatar"
+                                 loading="lazy">
                         {% else %}
-                            <div class="notification-missing-avatar" aria-label="حساب غير متاح"><i class="fas fa-user-slash"></i></div>
-                        {% endif %}
-                        <div class="flex-grow-1">
-                            <div class="fw-bold {% if not notif.is_read %}text-primary{% endif %}">
-                                {% if actor %}{{ actor.name or actor.username }} {{ verified_badge(actor) }}{% else %}<span class="text-muted">حساب غير متاح</span>{% endif %}
-                                {% if notif.action == 'like' %}
-                                    <span class="text-muted fw-normal">أعجب بمنشورك</span>
-                                {% elif notif.action == 'comment' %}
-                                    <span class="text-muted fw-normal">علّق على منشورك</span>
-                                {% elif notif.action == 'reply' %}
-                                    <span class="text-muted fw-normal">رد على تعليقك</span>
-                                {% elif notif.action == 'follow' %}
-                                    <span class="text-muted fw-normal">تابعك</span>
-                                {% elif notif.action == 'message' %}
-                                    <span class="text-muted fw-normal">أرسل لك رسالة</span>
-                                {% elif notif.action == 'voice_message' %}
-                                    <span class="text-muted fw-normal">أرسل لك رسالة صوتية</span>
-                                {% elif notif.action == 'voice_call' %}
-                                    <span class="text-muted fw-normal">اتصل بك صوتيًا</span>
-                                {% elif notif.action == 'verification_approved' %}
-                                    <span class="text-muted fw-normal">وافق على توثيق حسابك</span>
-                                {% elif notif.action == 'verification_rejected' %}
-                                    <span class="text-muted fw-normal">راجع طلب توثيق حسابك ولم يُقبل</span>
-                                {% else %}
-                                    <span class="text-muted fw-normal">لديك إشعار سابق</span>
-                                {% endif %}
+                            <div class="anter-notif-item__avatar anter-notif-item__avatar--missing">
+                                <i class="fas fa-user-slash" aria-hidden="true"></i>
                             </div>
-                            <small class="text-muted">{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                        </div>
-                        {% if not notif.is_read %}
-                            <span class="badge bg-danger rounded-pill">جديد</span>
                         {% endif %}
+
+                        <span class="anter-notif-item__action-icon
+                            {% if notif.action == 'like' %}anter-notif-icon--like
+                            {% elif notif.action == 'comment' %}anter-notif-icon--comment
+                            {% elif notif.action == 'reply' %}anter-notif-icon--reply
+                            {% elif notif.action == 'follow' %}anter-notif-icon--follow
+                            {% elif notif.action in ['message', 'voice_message'] %}anter-notif-icon--message
+                            {% elif notif.action == 'voice_call' %}anter-notif-icon--call
+                            {% elif notif.action == 'verification_approved' %}anter-notif-icon--verified
+                            {% else %}anter-notif-icon--default{% endif %}">
+                            <i class="fas
+                                {% if notif.action == 'like' %}fa-heart
+                                {% elif notif.action == 'comment' %}fa-comment
+                                {% elif notif.action == 'reply' %}fa-reply
+                                {% elif notif.action == 'follow' %}fa-user-plus
+                                {% elif notif.action == 'message' %}fa-envelope
+                                {% elif notif.action == 'voice_message' %}fa-microphone
+                                {% elif notif.action == 'voice_call' %}fa-phone
+                                {% elif notif.action == 'verification_approved' %}fa-check
+                                {% elif notif.action == 'verification_rejected' %}fa-times
+                                {% else %}fa-bell{% endif %}"
+                               aria-hidden="true"></i>
+                        </span>
+                    </div>
+
+                    <div class="anter-notif-item__body">
+                        <p class="anter-notif-item__text">
+                            {% if actor %}
+                                <strong class="anter-notif-item__actor">{{ actor.name or actor.username }}{{ verified_badge(actor) }}</strong>
+                            {% else %}
+                                <strong class="anter-notif-item__actor text-muted">حساب غير متاح</strong>
+                            {% endif %}
+
+                            <span class="anter-notif-item__action">
+                                {% if notif.action == 'like' %}أعجب بمنشورك
+                                {% elif notif.action == 'comment' %}علّق على منشورك
+                                {% elif notif.action == 'reply' %}رد على تعليقك
+                                {% elif notif.action == 'follow' %}بدأ متابعتك
+                                {% elif notif.action == 'message' %}أرسل لك رسالة
+                                {% elif notif.action == 'voice_message' %}أرسل لك رسالة صوتية
+                                {% elif notif.action == 'voice_call' %}اتصل بك صوتيًا
+                                {% elif notif.action == 'verification_approved' %}تم توثيق حسابك ✓
+                                {% elif notif.action == 'verification_rejected' %}لم يُقبل طلب التوثيق
+                                {% else %}لديك إشعار{% endif %}
+                            </span>
+                        </p>
+
+                        {% if notif.post and notif.post.content %}
+                        <p class="anter-notif-item__preview">
+                            {{ notif.post.content|truncate(80, True, '…') }}
+                        </p>
+                        {% endif %}
+
+                        <time class="anter-notif-item__time"
+                              datetime="{{ notif.created_at.isoformat() }}"
+                              data-relative-time
+                              data-timestamp="{{ notif.created_at.isoformat() }}Z">
+                            {{ notif.created_at.strftime('%H:%M · %d/%m') }}
+                        </time>
                     </div>
                 </a>
-            {% endfor %}
-        </div>
+
+                {% if not notif.is_read %}
+                <span class="anter-notif-item__dot" aria-label="غير مقروء"></span>
+                {% endif %}
+
+                <!-- قائمة الإجراءات -->
+                <button type="button"
+                        class="anter-notif-item__menu-btn"
+                        data-notif-menu
+                        aria-label="خيارات الإشعار"
+                        aria-expanded="false">
+                    <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
+                </button>
+
+                <div class="anter-notif-item__menu" hidden>
+                    {% if not notif.is_read %}
+                    <button type="button"
+                            class="anter-notif-item__menu-item"
+                            data-notif-action="mark-unread"
+                            data-id="{{ notif.id }}">
+                        <i class="fas fa-envelope" aria-hidden="true"></i>
+                        تحديد كغير مقروء
+                    </button>
+                    {% else %}
+                    <button type="button"
+                            class="anter-notif-item__menu-item"
+                            data-notif-action="mark-read"
+                            data-id="{{ notif.id }}">
+                        <i class="fas fa-envelope-open" aria-hidden="true"></i>
+                        تحديد كمقروء
+                    </button>
+                    {% endif %}
+                    <button type="button"
+                            class="anter-notif-item__menu-item anter-notif-item__menu-item--danger"
+                            data-notif-action="delete"
+                            data-id="{{ notif.id }}">
+                        <i class="fas fa-trash" aria-hidden="true"></i>
+                        حذف الإشعار
+                    </button>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+
+    <div class="anter-notif-empty" id="anterNotifEmpty" hidden>
+        <i class="far fa-bell-slash" aria-hidden="true"></i>
+        <h5>لا نتائج</h5>
+        <p>لا توجد إشعارات بهذا الفلتر.</p>
+    </div>
+
     {% else %}
-        <div class="text-center text-muted py-5">
-            <i class="fas fa-bell-slash fa-4x mb-3"></i>
-            <h5>لا توجد إشعارات</h5>
-            <p>ستظهر الإشعارات هنا عند حدوث تفاعلات جديدة.</p>
-        </div>
+    <div class="anter-notif-empty">
+        <i class="far fa-bell-slash" aria-hidden="true"></i>
+        <h5>لا توجد إشعارات</h5>
+        <p>ستظهر الإشعارات هنا عند حدوث تفاعلات جديدة.</p>
+    </div>
     {% endif %}
 </div>
 
-<style>
-    .notification-missing-avatar { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 50%; display: grid; place-items: center; background: #edf1f7; color: #8795a8; }
-</style>
+<div class="anter-img-toast" id="anterNotifToast"></div>
 
-<script>
-    function markAsRead(notifId) {
-        fetch('/notifications/mark_read/' + notifId, {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                fetch('/notifications/unread_count')
-                    .then(r => r.json())
-                    .then(d => {
-                        const badge = document.querySelector('.badge.bg-primary.rounded-pill');
-                        if (badge) badge.textContent = d.count;
-                        updateBadge();
-                    });
-                const item = document.querySelector(`.notification-item[data-id="${notifId}"]`);
-                if (item) {
-                    item.classList.remove('unread');
-                    item.querySelector('.badge.bg-danger')?.remove();
-                }
-            }
-        })
-        .catch(() => {});
-    }
-</script>
 {% endblock %}

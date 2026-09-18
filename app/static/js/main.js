@@ -1381,3 +1381,269 @@ document.addEventListener('click', function(e) {
         }
     }, true);
 })();
+
+/* ============================================================
+   ANTER Notifications — Filters + Menu + Actions
+   ============================================================ */
+(function _anterNotifications() {
+    'use strict';
+
+    const page = document.querySelector('.anter-notif-page');
+    if (!page) return;
+
+    // ---------- أدوات ----------
+    function showToast(msg, kind) {
+        let box = document.getElementById('anterNotifToast');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'anterNotifToast';
+            box.className = 'anter-img-toast';
+            document.body.appendChild(box);
+        }
+        box.textContent = msg;
+        box.className = 'anter-img-toast is-visible ' + (kind || '');
+        clearTimeout(box._t);
+        box._t = setTimeout(() => box.classList.remove('is-visible'), 2200);
+    }
+
+    function getCsrf() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    }
+
+    function closeAllMenus() {
+        document.querySelectorAll('.anter-notif-item__menu').forEach(m => m.hidden = true);
+        document.querySelectorAll('[data-notif-menu]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    }
+
+    function updateBadgeCount(delta) {
+        const badge = document.getElementById('anterUnreadBadge');
+        if (!badge) return;
+        const current = parseInt(badge.textContent || '0', 10);
+        const next = Math.max(0, current + delta);
+        badge.textContent = next;
+        if (next === 0) badge.style.display = 'none';
+        const filterCount = document.querySelector('[data-count="unread"]');
+        if (filterCount) filterCount.textContent = next;
+        const globalBadge = document.querySelector('.navbar .badge, #notifBadge, [data-notif-badge]');
+        if (globalBadge) globalBadge.textContent = next;
+    }
+
+    // ---------- الوقت النسبي ----------
+    function formatRelative(iso) {
+        if (!iso) return '';
+        const then = new Date(iso).getTime();
+        if (isNaN(then)) return '';
+        const now = Date.now();
+        const seconds = Math.floor((now - then) / 1000);
+
+        if (seconds < 60) return 'الآن';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `منذ ${minutes} د`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `منذ ${hours} س`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `منذ ${days} ي`;
+        const weeks = Math.floor(days / 7);
+        if (weeks < 4) return `منذ ${weeks} أسبوع`;
+        const months = Math.floor(days / 30);
+        if (months < 12) return `منذ ${months} شهر`;
+        return `منذ ${Math.floor(days / 365)} سنة`;
+    }
+
+    document.querySelectorAll('[data-relative-time]').forEach(el => {
+        const iso = el.dataset.timestamp || el.getAttribute('datetime');
+        const rel = formatRelative(iso);
+        if (rel) el.textContent = rel;
+    });
+
+    // ---------- فتح/إغلاق القائمة ----------
+    document.addEventListener('click', (e) => {
+        const toggle = e.target.closest('[data-notif-menu]');
+        if (toggle) {
+            e.preventDefault();
+            e.stopPropagation();
+            const item = toggle.closest('.anter-notif-item');
+            const menu = item?.querySelector('.anter-notif-item__menu');
+            if (!menu) return;
+            const willOpen = menu.hidden;
+            closeAllMenus();
+            if (willOpen) {
+                menu.hidden = false;
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+            return;
+        }
+        if (!e.target.closest('.anter-notif-item__menu')) {
+            closeAllMenus();
+        }
+    }, true);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAllMenus();
+    });
+
+    // ---------- تنفيذ الإجراءات ----------
+    document.addEventListener('click', async (e) => {
+        const item = e.target.closest('[data-notif-action]');
+        if (!item) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const action = item.dataset.notifAction;
+        const id = item.dataset.id;
+        if (!id) return;
+
+        closeAllMenus();
+        const card = document.querySelector(`.anter-notif-item[data-id="${id}"]`);
+        if (!card) return;
+
+        const url = action === 'delete'
+            ? `/notifications/delete/${id}`
+            : action === 'mark-unread'
+                ? `/notifications/mark_unread/${id}`
+                : `/notifications/mark_read/${id}`;
+
+        try {
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrf(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+            const data = await resp.json().catch(() => ({}));
+
+            if (!resp.ok || data.success === false) {
+                throw new Error(data.message || 'تعذر تنفيذ العملية.');
+            }
+
+            if (action === 'delete') {
+                card.classList.add('is-removing');
+                setTimeout(() => {
+                    card.remove();
+                    const list = document.getElementById('anterNotifList');
+                    if (list && list.children.length === 0) {
+                        const empty = document.getElementById('anterNotifEmpty');
+                        if (empty) empty.hidden = false;
+                    }
+                }, 260);
+                showToast('تم حذف الإشعار ✓', 'success');
+                return;
+            }
+
+            if (action === 'mark-unread') {
+                card.classList.add('is-unread');
+                card.dataset.read = 'false';
+                if (!card.querySelector('.anter-notif-item__dot')) {
+                    const dot = document.createElement('span');
+                    dot.className = 'anter-notif-item__dot';
+                    dot.setAttribute('aria-label', 'غير مقروء');
+                    card.appendChild(dot);
+                }
+                updateBadgeCount(+1);
+                showToast('تم تحديده كغير مقروء', 'success');
+                return;
+            }
+
+            if (action === 'mark-read') {
+                card.classList.remove('is-unread');
+                card.dataset.read = 'true';
+                card.querySelector('.anter-notif-item__dot')?.remove();
+                updateBadgeCount(-1);
+                showToast('تم تحديده كمقروء ✓', 'success');
+                return;
+            }
+        } catch (err) {
+            showToast(err.message || 'حدث خطأ.', 'error');
+        }
+    }, true);
+
+    // ---------- الفلاتر ----------
+    const filters = document.querySelectorAll('.anter-notif-filter');
+    filters.forEach(f => {
+        f.addEventListener('click', () => {
+            const target = f.dataset.filter;
+            filters.forEach(x => {
+                const on = x === f;
+                x.classList.toggle('is-active', on);
+                x.setAttribute('aria-selected', String(on));
+            });
+
+            const items = document.querySelectorAll('.anter-notif-item');
+            let visible = 0;
+            items.forEach(it => {
+                const isUnread = it.classList.contains('is-unread');
+                const cat = it.dataset.category || 'other';
+                let show = true;
+                if (target === 'unread') show = isUnread;
+                else if (target === 'interactions') show = (cat === 'interactions');
+                else if (target === 'follows') show = (cat === 'follows');
+                it.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            const empty = document.getElementById('anterNotifEmpty');
+            if (empty) empty.hidden = visible > 0;
+        });
+    });
+
+    // ---------- تحديد الكل كمقروء ----------
+    const markAllBtn = document.getElementById('anterMarkAllReadBtn');
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', async () => {
+            markAllBtn.classList.add('is-loading');
+            markAllBtn.disabled = true;
+            try {
+                const resp = await fetch('/notifications/mark_all_read', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCsrf(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || data.success === false) {
+                    throw new Error(data.message || 'تعذر.');
+                }
+                document.querySelectorAll('.anter-notif-item.is-unread').forEach(card => {
+                    card.classList.remove('is-unread');
+                    card.dataset.read = 'true';
+                    card.querySelector('.anter-notif-item__dot')?.remove();
+                });
+                const badge = document.getElementById('anterUnreadBadge');
+                if (badge) badge.style.display = 'none';
+                const filterCount = document.querySelector('[data-count="unread"]');
+                if (filterCount) filterCount.textContent = '0';
+                showToast('تم تحديد كل الإشعارات كمقروءة ✓', 'success');
+            } catch (err) {
+                showToast(err.message || 'حدث خطأ.', 'error');
+            } finally {
+                markAllBtn.classList.remove('is-loading');
+                markAllBtn.disabled = false;
+            }
+        });
+    }
+
+    // ---------- تحديد إشعار كمقروء عند الضغط عليه ----------
+    window.anterMarkRead = async function (id, ev) {
+        const card = document.querySelector(`.anter-notif-item[data-id="${id}"]`);
+        if (!card || !card.classList.contains('is-unread')) return;
+        // لا نمنع الانتقال
+        try {
+            await fetch(`/notifications/mark_read/${id}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrf(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+            card.classList.remove('is-unread');
+            card.dataset.read = 'true';
+            card.querySelector('.anter-notif-item__dot')?.remove();
+            updateBadgeCount(-1);
+        } catch (_) {}
+    };
+})();

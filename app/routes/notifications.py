@@ -9,16 +9,22 @@ notifications_bp = Blueprint('notifications', __name__, url_prefix='/notificatio
 @notifications_bp.route('/')
 @login_required
 def index():
-    # جلب جميع الإشعارات
-    notifs = current_user.notifications.order_by(Notification.created_at.desc()).all()
-    
-    # تعيين جميع الإشعارات غير المقروءة إلى مقروءة
-    for n in notifs:
-        if not n.is_read:
-            n.is_read = True
-    db.session.commit()
-    
-    return render_template('notifications.html', notifications=notifs)
+    """صفحة الإشعارات — لا تُعلّم الكل مقروء تلقائيًا (ANTER)."""
+    notifs = (
+        current_user.notifications
+        .order_by(Notification.created_at.desc())
+        .limit(200)
+        .all()
+    )
+
+    unread_count = sum(1 for n in notifs if not n.is_read)
+
+    return render_template(
+        'notifications.html',
+        notifications=notifs,
+        unread_count=unread_count,
+    )
+
 
 @notifications_bp.route('/unread_count')
 @login_required
@@ -74,6 +80,44 @@ def unsubscribe():
         PushSubscription.query.filter_by(endpoint=endpoint, user_id=current_user.id).delete()
         db.session.commit()
     return jsonify({'success': True})
+
+@notifications_bp.route('/mark_all_read', methods=['POST'])
+@login_required
+def mark_all_read():
+    """تحديد كل إشعارات المستخدم كمقروءة."""
+    Notification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False,
+    ).update({'is_read': True}, synchronize_session=False)
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@notifications_bp.route('/mark_unread/<int:notification_id>', methods=['POST'])
+@login_required
+def mark_unread(notification_id):
+    """إعادة إشعار إلى "غير مقروء"."""
+    n = Notification.query.get_or_404(notification_id)
+    if n.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'غير مصرح'}), 403
+
+    n.is_read = False
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@notifications_bp.route('/delete/<int:notification_id>', methods=['POST'])
+@login_required
+def delete_notification(notification_id):
+    """حذف إشعار واحد."""
+    n = Notification.query.get_or_404(notification_id)
+    if n.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'غير مصرح'}), 403
+
+    db.session.delete(n)
+    db.session.commit()
+    return jsonify({'success': True})
+
 
 def send_push_notification(user_id, title, body, icon='/static/icons/anter-icon-512.png'):
     """إرسال إشعار push لمستخدم معين"""

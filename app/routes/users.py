@@ -573,3 +573,43 @@ def set_avatar_from_post(post_id):
         'message': 'تم تعيين الصورة كصورة بروفايل ✓'
     })
 
+# ============================================================
+# ANTER: تغيير صورة البروفايل من صفحة المستخدم مباشرة
+# ============================================================
+@users_bp.route('/change-avatar', methods=['POST'])
+@login_required
+@csrf.exempt
+def change_avatar():
+    """يستقبل صورة ويُحدّث avatar_data في القاعدة فورًا."""
+    from app.utils.image_storage import prepare_image_data
+    from app.utils.helpers import log_user_activity
+
+    file = request.files.get('avatar')
+    if not file or not getattr(file, 'filename', ''):
+        return jsonify({'success': False, 'message': 'لم يتم اختيار صورة.'}), 400
+
+    avatar_data, avatar_mime = prepare_image_data(file)
+    if not avatar_data:
+        return jsonify({
+            'success': False,
+            'message': 'تعذر قراءة الصورة. استخدم JPG/PNG/WEBP بحجم مناسب.'
+        }), 400
+
+    current_user.avatar_data = avatar_data
+    current_user.avatar_mime = avatar_mime
+    current_user.avatar = 'default.png'
+    db.session.commit()
+
+    log_user_activity(current_user.id, 'avatar_change', {'source': 'profile'})
+
+    # نبني رابطًا مُحدّثًا يحمل بصمة زمنية لتفادي الكاش
+    from app.utils.media_urls import avatar_url
+    import time
+    fresh_url = avatar_url(current_user) + f'?v={int(time.time())}'
+
+    return jsonify({
+        'success': True,
+        'message': 'تم تحديث صورة البروفايل ✓',
+        'avatar_url': fresh_url,
+    })
+

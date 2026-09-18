@@ -674,3 +674,88 @@ def view_post(public_id):
     if not can_view_post(current_user, post):
         abort(403)
     return render_template('post_detail.html', post=post)
+
+# ============================================================
+# ANTER: تعديل تعليق
+# ============================================================
+@posts_bp.route('/comment/<int:comment_id>/edit', methods=['POST'])
+@login_required
+@csrf.exempt
+def edit_comment(comment_id):
+    """يسمح لصاحب التعليق فقط بتعديله، ويحدّث edited_at."""
+    comment = Comment.query.get_or_404(comment_id)
+
+    if comment.author_id != current_user.id:
+        return jsonify({'success': False, 'message': 'لا يمكنك تعديل تعليق غيرك.'}), 403
+
+    data = request.get_json(silent=True) or request.form
+    content = (data.get('content') or '').strip()
+
+    if not content:
+        return jsonify({'success': False, 'message': 'التعليق لا يمكن أن يكون فارغاً.'}), 400
+    if len(content) > 2000:
+        return jsonify({'success': False, 'message': 'التعليق طويل جداً (الحد 2000 حرف).'}), 400
+
+    # إذا لم يتغير المحتوى → لا نُحدّث edited_at
+    if content == comment.content:
+        return jsonify({
+            'success': True,
+            'message': 'لم يتم أي تغيير.',
+            'content': comment.content,
+            'edited': bool(comment.edited_at),
+        })
+
+    comment.content = content
+    comment.edited_at = datetime.utcnow()
+    db.session.commit()
+
+    log_user_activity(current_user.id, 'comment_edit', {
+        'post_id': comment.post_id,
+        'comment_id': comment.id,
+    })
+
+    return jsonify({
+        'success': True,
+        'message': 'تم تعديل التعليق.',
+        'content': comment.content,
+        'edited': True,
+    })
+
+
+# ============================================================
+# ANTER: حذف تعليق
+# ============================================================
+@posts_bp.route('/comment/<int:comment_id>/delete', methods=['POST'])
+@login_required
+@csrf.exempt
+def delete_comment(comment_id):
+    """يسمح لصاحب التعليق (أو الأدمن أو صاحب المنشور) بحذف التعليق."""
+    comment = Comment.query.get_or_404(comment_id)
+    post = Post.query.get(comment.post_id)
+
+    can_delete = (
+        comment.author_id == current_user.id
+        or (post and post.author_id == current_user.id)
+        or getattr(current_user, 'is_admin', False)
+    )
+
+    if not can_delete:
+        return jsonify({'success': False, 'message': 'لا يمكنك حذف هذا التعليق.'}), 403
+
+    post_id = comment.post_id
+    comment_id_value = comment.id
+    # الردود تُحذف تلقائيًا (cascade) بحسب تعريف العلاقة
+    db.session.delete(comment)
+    db.session.commit()
+
+    log_user_activity(current_user.id, 'comment_delete', {
+        'post_id': post_id,
+        'comment_id': comment_id_value,
+    })
+
+    return jsonify({
+        'success': True,
+        'message': 'تم حذف التعليق.',
+        'comment_id': comment_id_value,
+    })
+

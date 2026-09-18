@@ -10,6 +10,8 @@ class Comment(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False, index=True)
     parent_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True, index=True)  # الرد على تعليق آخر
+    # ANTER: مؤشر "تم التعديل"
+    edited_at = db.Column(db.DateTime, nullable=True)
     audio_url = db.Column(db.String(255), nullable=True)  # رابط التسجيل الصوتي للتعليق
 
     # العلاقات

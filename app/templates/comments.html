@@ -3,7 +3,11 @@
 <div class="comments-list">
     {% for comment in post.comments.filter_by(parent_id=None).order_by('created_at').all() %}
         {% set user_comment_like = comment.likes.filter_by(user_id=current_user.id).first() if current_user.is_authenticated else none %}
-        <article class="comment-card comment-item mb-2" id="comment-{{ comment.id }}" data-comment-id="{{ comment.id }}">
+        <article class="comment-card comment-item mb-2"
+         id="comment-{{ comment.id }}"
+         data-comment-id="{{ comment.id }}"
+         data-author-id="{{ comment.author_id }}"
+         data-edited="{{ 'true' if comment.edited_at else 'false' }}">
             <div class="d-flex align-start gap-2">
                 <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-avatar-link" aria-label="{{ comment.author.name }}">
                     <img src="{{ avatar_url(comment.author) }}"
@@ -17,11 +21,57 @@
                             {{ comment.author.name }}
                             {{ verified_badge(comment.author) }}
                         </a>
-                        <time class="comment-time text-muted small" datetime="{{ comment.created_at.isoformat() }}">
-                            {{ comment.created_at.strftime('%H:%M · %d/%m') }}
-                        </time>
+                        <div class="comment-header__right">
+                            <time class="comment-time text-muted small" datetime="{{ comment.created_at.isoformat() }}">
+                                {{ comment.created_at.strftime('%H:%M · %d/%m') }}
+                            </time>
+                            {% if comment.edited_at %}
+                            <span class="comment-edited" title="تم التعديل">· تم التعديل</span>
+                            {% endif %}
+                            {% if current_user.is_authenticated %}
+                            <button type="button"
+                                    class="comment-menu-btn"
+                                    data-comment-menu
+                                    aria-label="خيارات التعليق"
+                                    aria-expanded="false">
+                                <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
+                            </button>
+                            <div class="comment-menu" hidden>
+                                {% if current_user.id == comment.author_id %}
+                                <button type="button"
+                                        class="comment-menu__item"
+                                        data-comment-action="edit"
+                                        data-comment-id="{{ comment.id }}">
+                                    <i class="fas fa-pen" aria-hidden="true"></i>
+                                    تعديل
+                                </button>
+                                <button type="button"
+                                        class="comment-menu__item comment-menu__item--danger"
+                                        data-comment-action="delete"
+                                        data-comment-id="{{ comment.id }}">
+                                    <i class="fas fa-trash" aria-hidden="true"></i>
+                                    حذف
+                                </button>
+                                {% endif %}
+                                <button type="button"
+                                        class="comment-menu__item"
+                                        data-comment-action="copy"
+                                        data-comment-id="{{ comment.id }}">
+                                    <i class="fas fa-copy" aria-hidden="true"></i>
+                                    نسخ النص
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="comment-text text-break">{{ comment.content | parse_mentions | safe }}</div>
+                    <div class="comment-text text-break" data-comment-text>{{ comment.content | parse_mentions | safe }}</div>
+                    <form class="comment-edit-form" hidden data-comment-id="{{ comment.id }}">
+                        <textarea class="comment-edit-input" maxlength="2000" rows="2">{{ comment.content }}</textarea>
+                        <div class="comment-edit-actions">
+                            <button type="button" class="comment-edit-cancel" data-comment-action="cancel-edit">إلغاء</button>
+                            <button type="button" class="comment-edit-save" data-comment-action="save-edit" data-comment-id="{{ comment.id }}">حفظ</button>
+                        </div>
+                    </form>
                     
                     {% if comment.audio_url %}
                     <div class="comment-audio mt-2">
@@ -53,7 +103,11 @@
                 <div class="replies-list ms-5 mt-2 ps-3 border-start">
                     {% for reply in comment.replies.order_by('created_at').all() %}
                         {% set user_reply_like = reply.likes.filter_by(user_id=current_user.id).first() if current_user.is_authenticated else none %}
-                        <div class="reply-card comment-item mb-2" id="comment-{{ reply.id }}" data-comment-id="{{ reply.id }}">
+                        <div class="reply-card comment-item mb-2"
+                             id="comment-{{ reply.id }}"
+                             data-comment-id="{{ reply.id }}"
+                             data-author-id="{{ reply.author_id }}"
+                             data-edited="{{ 'true' if reply.edited_at else 'false' }}">
                             <div class="d-flex align-start gap-2">
                                 <a href="{{ url_for('users.profile', username=reply.author.username) }}" class="comment-avatar-link">
                                     <img src="{{ avatar_url(reply.author) }}"
@@ -67,11 +121,57 @@
                                             {{ reply.author.name }}
                                             {{ verified_badge(reply.author) }}
                                         </a>
-                                        <time class="comment-time text-muted small" style="font-size: 0.75rem;" datetime="{{ reply.created_at.isoformat() }}">
-                                            {{ reply.created_at.strftime('%H:%M · %d/%m') }}
-                                        </time>
+                                        <div class="comment-header__right">
+                                            <time class="comment-time text-muted small" style="font-size: 0.75rem;" datetime="{{ reply.created_at.isoformat() }}">
+                                                {{ reply.created_at.strftime('%H:%M · %d/%m') }}
+                                            </time>
+                                            {% if reply.edited_at %}
+                                            <span class="comment-edited" title="تم التعديل">· تم التعديل</span>
+                                            {% endif %}
+                                            {% if current_user.is_authenticated %}
+                                            <button type="button"
+                                                    class="comment-menu-btn"
+                                                    data-comment-menu
+                                                    aria-label="خيارات الرد"
+                                                    aria-expanded="false">
+                                                <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
+                                            </button>
+                                            <div class="comment-menu" hidden>
+                                                {% if current_user.id == reply.author_id %}
+                                                <button type="button"
+                                                        class="comment-menu__item"
+                                                        data-comment-action="edit"
+                                                        data-comment-id="{{ reply.id }}">
+                                                    <i class="fas fa-pen" aria-hidden="true"></i>
+                                                    تعديل
+                                                </button>
+                                                <button type="button"
+                                                        class="comment-menu__item comment-menu__item--danger"
+                                                        data-comment-action="delete"
+                                                        data-comment-id="{{ reply.id }}">
+                                                    <i class="fas fa-trash" aria-hidden="true"></i>
+                                                    حذف
+                                                </button>
+                                                {% endif %}
+                                                <button type="button"
+                                                        class="comment-menu__item"
+                                                        data-comment-action="copy"
+                                                        data-comment-id="{{ reply.id }}">
+                                                    <i class="fas fa-copy" aria-hidden="true"></i>
+                                                    نسخ النص
+                                                </button>
+                                            </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                    <div class="comment-text text-break small">{{ reply.content | parse_mentions | safe }}</div>
+                                    <div class="comment-text text-break small" data-comment-text>{{ reply.content | parse_mentions | safe }}</div>
+                                    <form class="comment-edit-form" hidden data-comment-id="{{ reply.id }}">
+                                        <textarea class="comment-edit-input" maxlength="2000" rows="2">{{ reply.content }}</textarea>
+                                        <div class="comment-edit-actions">
+                                            <button type="button" class="comment-edit-cancel" data-comment-action="cancel-edit">إلغاء</button>
+                                            <button type="button" class="comment-edit-save" data-comment-action="save-edit" data-comment-id="{{ reply.id }}">حفظ</button>
+                                        </div>
+                                    </form>
                                     
                                     {% if reply.audio_url %}
                                     <div class="comment-audio mt-2">

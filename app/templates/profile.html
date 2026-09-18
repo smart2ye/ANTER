@@ -2,119 +2,142 @@
 {% block content %}
 
 <!-- ============================== -->
-<!-- بطاقة الملف الشخصي -->
+<!-- بطاقة الملف الشخصي (تصميم جديد) -->
 <!-- ============================== -->
-<div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4" style="background: var(--card-bg);">
-    <!-- غلاف (Cover) -->
-    <div class="position-relative" style="height: 120px; background: linear-gradient(135deg, var(--fb-blue), #0d65d9);"></div>
-    
-    <div class="px-4 pb-4" style="margin-top: -50px;">
-        <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-3">
-            <!-- الصورة -->
-            <div class="position-relative" style="flex-shrink: 0;">
+<div class="anter-profile-card">
+
+    <!-- غلاف -->
+    <div class="anter-profile-cover"></div>
+
+    <div class="anter-profile-body">
+
+        <!-- الصورة + المعلومات -->
+        <div class="anter-profile-header">
+
+            <div class="anter-profile-avatar-wrap">
                 <img src="{{ avatar_url(user) }}"
-                     class="border border-3 border-white shadow-sm" 
-                     style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; background: var(--card-bg);">
+                     alt="{{ user.name }}"
+                     class="anter-profile-avatar js-lightbox"
+                     data-fullsrc="{{ avatar_url(user) }}">
+
                 {% if user.is_verified %}
-                    <span class="profile-verified-badge" title="حساب موثق" aria-label="حساب موثق">
-                        <i class="fas fa-check" aria-hidden="true"></i>
-                    </span>
+                <span class="anter-profile-verified" title="حساب موثق">
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                </span>
                 {% endif %}
-            </div>
-            
-            <!-- المعلومات -->
-            <div class="text-center text-sm-start flex-grow-1">
-                <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-2">
-                    <h4 class="mb-0 fw-bold">{{ user.name }}</h4>
-                    {{ verified_badge(user) }}
-                    <span class="text-muted small">@{{ user.username }}</span>
-                    {% if is_anter_assistant %}
-                        <span class="assistant-profile-status"><span class="assistant-online-dot"></span>متصل الآن</span>
-                    {% endif %}
-                </div>
-                {% if is_anter_assistant %}
-                    <div class="assistant-profile-label"><i class="fas fa-robot me-1"></i>المساعد الرسمي لشبكة ANTER</div>
-                {% endif %}
-                
-                {% if user.bio %}
-                    <p class="mt-2 mb-0" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-color); white-space: pre-line; overflow-wrap: anywhere;">{{ user.bio }}</p>
-                {% else %}
-                    <p class="text-muted small mt-2 mb-0">✨ لا توجد سيرة ذاتية</p>
-                {% endif %}
-                
-                <!-- الإحصائيات -->
-                <div class="d-flex gap-4 mt-2">
-                    <div>
-                        <a href="{{ url_for('users.followers', username=user.username) }}" class="text-decoration-none text-dark">
-                            <span class="fw-bold fs-5">{{ user.follower_count() }}</span>
-                            <span class="text-muted small">متابع</span>
-                        </a>
-                    </div>
-                    <div>
-                        <a href="{{ url_for('users.following', username=user.username) }}" class="text-decoration-none text-dark">
-                            <span class="fw-bold fs-5">{{ user.following_count() }}</span>
-                            <span class="text-muted small">يتبع</span>
-                        </a>
-                    </div>
-                    <div>
-                        <span class="fw-bold fs-5">{{ user.posts.count() }}</span>
-                        <span class="text-muted small">منشور</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- الأزرار -->
-            <div class="d-flex flex-wrap gap-2" style="flex-shrink: 0;">
+
                 {% if current_user.id == user.id %}
-                    <a href="{{ url_for('users.edit_profile') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                        <i class="fas fa-edit me-1"></i> تعديل
-                    </a>
-                    <a href="{{ url_for('posts.create') }}" class="btn btn-primary btn-sm rounded-pill px-3">
-                        <i class="fas fa-plus-circle me-1"></i> جديد
-                    </a>
-                    <button class="btn btn-outline-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
-                        <i class="fas fa-trash-alt me-1"></i>
-                    </button>
-                {% else %}
-                    {% if is_following %}
-                        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 follow-btn" 
-                                data-user="{{ user.id }}" data-following="true">
-                            <i class="fas fa-user-check me-1"></i> متابعة
-                        </button>
-                    {% else %}
-                        <button class="btn btn-primary btn-sm rounded-pill px-3 follow-btn" 
-                                data-user="{{ user.id }}" data-following="false">
-                            <i class="fas fa-user-plus me-1"></i> متابعة
-                        </button>
-                    {% endif %}
-                    {% if is_following %}
-                        <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="btn btn-success btn-sm rounded-pill px-3">
-                            <i class="fas fa-envelope me-1"></i> رسالة
-                        </a>
-                    {% endif %}
+                <button type="button"
+                        class="anter-profile-avatar-edit"
+                        id="anterAvatarEditBtn"
+                        aria-label="تغيير صورة البروفايل"
+                        title="تغيير الصورة">
+                    <i class="fas fa-camera" aria-hidden="true"></i>
+                </button>
+
+                <input type="file"
+                       id="anterAvatarInput"
+                       accept="image/*"
+                       hidden>
                 {% endif %}
             </div>
+
+            <div class="anter-profile-info">
+                <div class="anter-profile-name-row">
+                    <h2 class="anter-profile-name">{{ user.name }}</h2>
+                    {{ verified_badge(user) }}
+                    <span class="anter-profile-username">@{{ user.username }}</span>
+                </div>
+
+                {% if is_anter_assistant %}
+                <div class="anter-profile-assistant-badge">
+                    <span class="anter-profile-assistant-dot"></span>
+                    متصل الآن
+                </div>
+                <div class="anter-profile-assistant-label">
+                    <i class="fas fa-robot me-1"></i> المساعد الرسمي لشبكة ANTER
+                </div>
+                {% endif %}
+
+                {% if user.bio %}
+                <p class="anter-profile-bio">{{ user.bio }}</p>
+                {% else %}
+                <p class="anter-profile-bio is-empty">✨ لا توجد سيرة ذاتية</p>
+                {% endif %}
+
+                <!-- إحصائيات -->
+                <div class="anter-profile-stats">
+                    <a href="{{ url_for('users.followers', username=user.username) }}" class="anter-profile-stat">
+                        <strong>{{ user.follower_count() }}</strong>
+                        <span>متابع</span>
+                    </a>
+                    <a href="{{ url_for('users.following', username=user.username) }}" class="anter-profile-stat">
+                        <strong>{{ user.following_count() }}</strong>
+                        <span>يتابع</span>
+                    </a>
+                    <div class="anter-profile-stat">
+                        <strong>{{ user.posts.count() }}</strong>
+                        <span>منشور</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- أزرار الإجراءات -->
+        <div class="anter-profile-actions">
+            {% if current_user.id == user.id %}
+                <a href="{{ url_for('users.edit_profile') }}" class="anter-profile-btn anter-profile-btn--outline">
+                    <i class="fas fa-edit" aria-hidden="true"></i> تعديل الملف
+                </a>
+                <a href="{{ url_for('posts.create') }}" class="anter-profile-btn anter-profile-btn--primary">
+                    <i class="fas fa-plus-circle" aria-hidden="true"></i> منشور جديد
+                </a>
+                <button type="button"
+                        class="anter-profile-btn anter-profile-btn--danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteAccountModal"
+                        aria-label="حذف الحساب">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                </button>
+            {% else %}
+                {% if is_following %}
+                    <button class="anter-profile-btn anter-profile-btn--outline follow-btn"
+                            data-user="{{ user.id }}"
+                            data-following="true">
+                        <i class="fas fa-user-check" aria-hidden="true"></i>
+                        <span>إلغاء المتابعة</span>
+                    </button>
+                    <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="anter-profile-btn anter-profile-btn--primary">
+                        <i class="fas fa-envelope" aria-hidden="true"></i> رسالة
+                    </a>
+                {% else %}
+                    <button class="anter-profile-btn anter-profile-btn--primary follow-btn"
+                            data-user="{{ user.id }}"
+                            data-following="false">
+                        <i class="fas fa-user-plus" aria-hidden="true"></i>
+                        <span>متابعة</span>
+                    </button>
+                {% endif %}
+            {% endif %}
         </div>
     </div>
 </div>
-
-<style>
-    .assistant-profile-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; background: rgba(25, 135, 84, .10); color: #137a47; font-size: .78rem; font-weight: 700; }
-    .assistant-online-dot { width: 8px; height: 8px; border-radius: 50%; background: #20c778; box-shadow: 0 0 0 3px rgba(32, 199, 120, .16); }
-    .assistant-profile-label { display: inline-block; margin-top: 9px; padding: 5px 10px; border-radius: 999px; background: rgba(24, 119, 242, .09); color: #1769c2; font-size: .82rem; font-weight: 700; }
-</style>
 
 <!-- ============================== -->
 <!-- تبويبات الملف الشخصي -->
 <!-- ============================== -->
 <ul class="nav nav-pills nav-fill mb-4 gap-1" style="background: var(--fb-bg); border-radius: 12px; padding: 4px;">
     <li class="nav-item">
-        <a class="nav-link active rounded-pill fw-semibold" href="{{ url_for('users.profile', username=user.username) }}" style="background: var(--fb-blue); color: #fff;">
+        <a class="nav-link active rounded-pill fw-semibold"
+           href="{{ url_for('users.profile', username=user.username) }}"
+           style="background: var(--fb-blue); color: #fff;">
             <i class="fas fa-file-alt me-1"></i> المنشورات
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link rounded-pill fw-semibold" href="{{ url_for('users.user_videos', username=user.username) }}" style="color: var(--text-muted);">
+        <a class="nav-link rounded-pill fw-semibold"
+           href="{{ url_for('users.user_videos', username=user.username) }}"
+           style="color: var(--text-muted);">
             <i class="fas fa-play-circle me-1"></i> الريلزات
         </a>
     </li>
@@ -134,9 +157,11 @@
         <i class="fas fa-file-alt fa-3x mb-3" style="opacity: 0.3;"></i>
         <h5>لا توجد منشورات</h5>
         <p class="small">أنشئ أول منشور لك!</p>
+        {% if current_user.id == user.id %}
         <a href="{{ url_for('posts.create') }}" class="btn btn-primary btn-sm rounded-pill px-4">
             <i class="fas fa-plus-circle"></i> منشور جديد
         </a>
+        {% endif %}
     </div>
 {% endif %}
 
@@ -147,7 +172,9 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 rounded-4 shadow-lg" style="background: var(--card-bg);">
             <div class="modal-header border-0 pb-0">
-                <h6 class="modal-title text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i> تأكيد الحذف</h6>
+                <h6 class="modal-title text-danger fw-bold">
+                    <i class="fas fa-exclamation-triangle me-1"></i> تأكيد الحذف
+                </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body pt-2">
@@ -155,10 +182,13 @@
                 <p class="text-danger small">سيتم حذف جميع بياناتك نهائياً.</p>
                 <form method="POST" action="{{ url_for('users.delete_account') }}">
                     <div class="mb-2">
-                        <input type="password" name="password" class="form-control form-control-sm rounded-3" 
+                        <input type="password" name="password"
+                               class="form-control form-control-sm rounded-3"
                                placeholder="كلمة المرور" required>
                     </div>
-                    <button type="submit" class="btn btn-danger btn-sm w-100 rounded-pill">تأكيد الحذف</button>
+                    <button type="submit" class="btn btn-danger btn-sm w-100 rounded-pill">
+                        تأكيد الحذف
+                    </button>
                 </form>
             </div>
         </div>
@@ -166,27 +196,94 @@
 </div>
 
 <script>
-    // متابعة / إلغاء متابعة
-    document.querySelectorAll('.follow-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const userId = this.dataset.user;
-            const following = this.dataset.following === 'true';
-            const url = following ? `/users/unfollow/${userId}` : `/users/follow/${userId}`;
-            
-            fetch(url, { method: 'POST' })
-                .then(function(res) { return res.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        this.dataset.following = data.following ? 'true' : 'false';
-                        this.innerHTML = data.following 
-                            ? '<i class="fas fa-user-check me-1"></i> متابعة' 
-                            : '<i class="fas fa-user-plus me-1"></i> متابعة';
-                        this.classList.toggle('btn-primary');
-                        this.classList.toggle('btn-outline-secondary');
-                        location.reload();
+// ============================================================
+// متابعة / إلغاء متابعة
+// ============================================================
+document.querySelectorAll('.follow-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        const userId = this.dataset.user;
+        const following = this.dataset.following === 'true';
+        const url = following
+            ? `/users/unfollow/${userId}`
+            : `/users/follow/${userId}`;
+
+        fetch(url, { method: 'POST', credentials: 'same-origin' })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    this.dataset.following = data.following ? 'true' : 'false';
+                    const span = this.querySelector('span');
+                    if (span) {
+                        span.textContent = data.following ? 'إلغاء المتابعة' : 'متابعة';
                     }
-                }.bind(this));
-        });
+                    const icon = this.querySelector('i');
+                    if (icon) {
+                        icon.className = data.following
+                            ? 'fas fa-user-check'
+                            : 'fas fa-user-plus';
+                    }
+                    this.classList.toggle('anter-profile-btn--primary', !data.following);
+                    this.classList.toggle('anter-profile-btn--outline', data.following);
+                    location.reload();
+                }
+            }.bind(this));
     });
+});
+
+// ============================================================
+// ANTER: تغيير صورة البروفايل (للمستخدم نفسه فقط)
+// ============================================================
+(function _avatarChange() {
+    const editBtn = document.getElementById('anterAvatarEditBtn');
+    const fileInput = document.getElementById('anterAvatarInput');
+    if (!editBtn || !fileInput) return;
+
+    const avatar = document.querySelector('.anter-profile-avatar');
+
+    editBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async function() {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+
+        editBtn.classList.add('is-loading');
+
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        try {
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const resp = await fetch('/users/change-avatar', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrf },
+                credentials: 'same-origin',
+                body: formData,
+            });
+            const data = await resp.json().catch(() => ({}));
+
+            if (!resp.ok || data.success === false) {
+                throw new Error(data.message || 'تعذر تحديث الصورة.');
+            }
+
+            if (avatar && data.avatar_url) {
+                avatar.src = data.avatar_url;
+                avatar.dataset.fullsrc = data.avatar_url;
+            }
+            // تحديث أفاتار الهيدر (إن وُجد)
+            const headerAvatar = document.querySelector('.navbar .rounded-circle, .post-avatar');
+            if (headerAvatar && data.avatar_url) {
+                headerAvatar.src = data.avatar_url;
+            }
+        } catch (err) {
+            alert(err.message || 'تعذر تحديث الصورة.');
+        } finally {
+            editBtn.classList.remove('is-loading');
+            fileInput.value = '';
+        }
+    });
+})();
 </script>
 {% endblock %}

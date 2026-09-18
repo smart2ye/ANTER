@@ -1170,3 +1170,214 @@ document.addEventListener('click', function(e) {
         }
     }, true);
 })();
+
+/* ============================================================
+   ANTER Comment Menu + Edit + Delete
+   ============================================================ */
+(function _anterCommentMenu() {
+    'use strict';
+
+    // ---------- أدوات مساعدة ----------
+    function showToast(msg, kind) {
+        let box = document.getElementById('anterCommentToast');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'anterCommentToast';
+            box.className = 'anter-img-toast';
+            document.body.appendChild(box);
+        }
+        box.textContent = msg;
+        box.className = 'anter-img-toast is-visible ' + (kind || '');
+        clearTimeout(box._t);
+        box._t = setTimeout(() => box.classList.remove('is-visible'), 2200);
+    }
+
+    function closeAllMenus() {
+        document.querySelectorAll('.comment-menu').forEach(m => m.hidden = true);
+        document.querySelectorAll('[data-comment-menu]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    }
+
+    function getCsrf() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    }
+
+    // ---------- فتح/إغلاق القائمة ----------
+    document.addEventListener('click', (e) => {
+        const toggle = e.target.closest('[data-comment-menu]');
+        if (toggle) {
+            e.preventDefault();
+            e.stopPropagation();
+            const wrap = toggle.closest('.comment-header__right');
+            const menu = wrap?.querySelector('.comment-menu');
+            if (!menu) return;
+
+            const willOpen = menu.hidden;
+            closeAllMenus();
+            if (willOpen) {
+                menu.hidden = false;
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+            return;
+        }
+
+        // إغلاق عند النقر خارج القائمة
+        if (!e.target.closest('.comment-menu') && !e.target.closest('[data-comment-menu]')) {
+            closeAllMenus();
+        }
+    }, true);
+
+    // إغلاق عند Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAllMenus();
+    });
+
+    // ---------- تنفيذ الإجراءات ----------
+    document.addEventListener('click', async (e) => {
+        const item = e.target.closest('[data-comment-action]');
+        if (!item) return;
+
+        const action = item.dataset.commentAction;
+        const commentId = item.dataset.commentId;
+
+        // إغلاق القائمة
+        closeAllMenus();
+
+        const commentEl = commentId
+            ? document.getElementById('comment-' + commentId)
+            : null;
+
+        // ---------- نسخ النص ----------
+        if (action === 'copy' && commentEl) {
+            const textEl = commentEl.querySelector('[data-comment-text]');
+            const text = textEl ? textEl.textContent.trim() : '';
+            if (!text) return;
+
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('تم نسخ النص ✓', 'success');
+            } catch (_) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+                showToast('تم نسخ النص ✓', 'success');
+            }
+            return;
+        }
+
+        // ---------- بدء التعديل ----------
+        if (action === 'edit' && commentEl) {
+            const textEl = commentEl.querySelector('[data-comment-text]');
+            const form = commentEl.querySelector('.comment-edit-form');
+            const input = form?.querySelector('.comment-edit-input');
+            if (!textEl || !form || !input) return;
+
+            input.value = textEl.textContent.trim();
+            textEl.hidden = true;
+            form.hidden = false;
+            input.focus();
+            input.setSelectionRange(input.value.length, input.value.length);
+            return;
+        }
+
+        // ---------- إلغاء التعديل ----------
+        if (action === 'cancel-edit' && commentEl) {
+            const textEl = commentEl.querySelector('[data-comment-text]');
+            const form = commentEl.querySelector('.comment-edit-form');
+            if (textEl) textEl.hidden = false;
+            if (form) form.hidden = true;
+            return;
+        }
+
+        // ---------- حفظ التعديل ----------
+        if (action === 'save-edit' && commentEl && commentId) {
+            const form = commentEl.querySelector('.comment-edit-form');
+            const input = form?.querySelector('.comment-edit-input');
+            const saveBtn = item;
+
+            if (!input || !saveBtn) return;
+            const newContent = input.value.trim();
+            if (!newContent) {
+                showToast('التعليق لا يمكن أن يكون فارغاً.', 'error');
+                return;
+            }
+
+            saveBtn.classList.add('is-loading');
+            saveBtn.disabled = true;
+
+            try {
+                const resp = await fetch(`/comment/${commentId}/edit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrf(),
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ content: newContent }),
+                });
+                const data = await resp.json().catch(() => ({}));
+
+                if (!resp.ok || data.success === false) {
+                    throw new Error(data.message || 'تعذر حفظ التعديل.');
+                }
+
+                const textEl = commentEl.querySelector('[data-comment-text]');
+                if (textEl) {
+                    textEl.textContent = data.content;
+                    textEl.hidden = false;
+                }
+                if (form) form.hidden = true;
+
+                // إظهار "تم التعديل"
+                if (data.edited) {
+                    const right = commentEl.querySelector('.comment-header__right');
+                    if (right && !right.querySelector('.comment-edited')) {
+                        const span = document.createElement('span');
+                        span.className = 'comment-edited';
+                        span.title = 'تم التعديل';
+                        span.textContent = '· تم التعديل';
+                        const time = right.querySelector('.comment-time');
+                        if (time) time.after(span);
+                        else right.prepend(span);
+                    }
+                }
+
+                showToast('تم تعديل التعليق ✓', 'success');
+            } catch (err) {
+                showToast(err.message || 'تعذر حفظ التعديل.', 'error');
+            } finally {
+                saveBtn.classList.remove('is-loading');
+                saveBtn.disabled = false;
+            }
+            return;
+        }
+
+        // ---------- حذف التعليق ----------
+        if (action === 'delete' && commentEl && commentId) {
+            if (!confirm('هل تريد حذف هذا التعليق نهائيًا؟')) return;
+
+            try {
+                const resp = await fetch(`/comment/${commentId}/delete`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrf() },
+                    credentials: 'same-origin',
+                });
+                const data = await resp.json().catch(() => ({}));
+
+                if (!resp.ok || data.success === false) {
+                    throw new Error(data.message || 'تعذر حذف التعليق.');
+                }
+
+                commentEl.style.transition = 'opacity .2s ease';
+                commentEl.style.opacity = '0';
+                setTimeout(() => commentEl.remove(), 200);
+                showToast('تم حذف التعليق ✓', 'success');
+            } catch (err) {
+                showToast(err.message || 'تعذر حذف التعليق.', 'error');
+            }
+            return;
+        }
+    }, true);
+})();

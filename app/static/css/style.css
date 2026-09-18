@@ -7674,3 +7674,537 @@ body:has(.reels-feed-page--immersive) {
     font-size: 0.75rem;
     font-weight: 700;
 }
+
+/* ============================================================
+   ANTER Profile Page — تصميم جديد
+   ============================================================ */
+.anter-profile-card {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+.anter-profile-cover {
+    height: 140px;
+    background: linear-gradient(135deg, #1877f2 0%, #6a4cff 100%);
+    position: relative;
+}
+
+.anter-profile-cover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.15), transparent 60%);
+    pointer-events: none;
+}
+
+.anter-profile-body {
+    padding: 0 20px 20px;
+}
+
+.anter-profile-header {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    margin-top: -55px;
+}
+
+/* الصورة */
+.anter-profile-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.anter-profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--card-bg, #fff);
+    background: var(--card-bg, #fff);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    transition: transform .2s ease;
+}
+
+.anter-profile-avatar:hover {
+    transform: scale(1.02);
+}
+
+.anter-profile-verified {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #1877f2;
+    color: #fff;
+    font-size: 0.8rem;
+    border: 3px solid var(--card-bg, #fff);
+}
+
+.anter-profile-avatar-edit {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--card-bg, #fff);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1877f2, #6a4cff);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: transform .15s ease, box-shadow .15s ease;
+    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.35);
+}
+
+.anter-profile-avatar-edit:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 16px rgba(24, 119, 242, 0.5);
+}
+
+.anter-profile-avatar-edit:active {
+    transform: scale(0.95);
+}
+
+.anter-profile-avatar-edit.is-loading {
+    opacity: 0.6;
+    pointer-events: none;
+    animation: anterProfileSpin 1s linear infinite;
+}
+
+@keyframes anterProfileSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* المعلومات */
+.anter-profile-info {
+    flex: 1;
+    min-width: 0;
+    padding-bottom: 4px;
+}
+
+.anter-profile-name-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.anter-profile-name {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-color, #050505);
+}
+
+.anter-profile-username {
+    font-size: 0.85rem;
+    color: var(--text-muted, #65676b);
+}
+
+.anter-profile-assistant-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    margin-bottom: 6px;
+    border-radius: 999px;
+    background: rgba(25, 135, 84, 0.10);
+    color: #137a47;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.anter-profile-assistant-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #20c778;
+    box-shadow: 0 0 0 3px rgba(32, 199, 120, 0.16);
+}
+
+.anter-profile-assistant-label {
+    display: inline-block;
+    padding: 5px 10px;
+    margin-bottom: 8px;
+    border-radius: 999px;
+    background: rgba(24, 119, 242, 0.09);
+    color: #1769c2;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.anter-profile-bio {
+    margin: 10px 0 0;
+    font-size: 0.9rem;
+    line-height: 1.65;
+    color: var(--text-color, #050505);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.anter-profile-bio.is-empty {
+    color: var(--text-muted, #65676b);
+    font-style: italic;
+}
+
+/* الإحصائيات */
+.anter-profile-stats {
+    display: flex;
+    gap: 22px;
+    margin-top: 14px;
+}
+
+.anter-profile-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    padding: 4px 6px;
+    border-radius: 8px;
+    transition: background .15s ease;
+}
+
+a.anter-profile-stat:hover {
+    background: var(--fb-bg, #f0f2f5);
+}
+
+.anter-profile-stat strong {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-color, #050505);
+}
+
+.anter-profile-stat span {
+    font-size: 0.72rem;
+    color: var(--text-muted, #65676b);
+    margin-top: 2px;
+}
+
+/* الأزرار */
+.anter-profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color, #eef0f3);
+}
+
+.anter-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 8px 18px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+}
+
+.anter-profile-btn:active {
+    transform: scale(0.97);
+}
+
+.anter-profile-btn--primary {
+    background: linear-gradient(135deg, #1877f2, #6a4cff);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.28);
+}
+
+.anter-profile-btn--primary:hover {
+    box-shadow: 0 6px 16px rgba(24, 119, 242, 0.4);
+    color: #fff;
+}
+
+.anter-profile-btn--outline {
+    background: transparent;
+    color: var(--fb-blue, #1877f2);
+    border-color: rgba(24, 119, 242, 0.35);
+}
+
+.anter-profile-btn--outline:hover {
+    background: rgba(24, 119, 242, 0.08);
+    color: var(--fb-blue, #1877f2);
+}
+
+.anter-profile-btn--danger {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+    border-color: rgba(239, 68, 68, 0.2);
+    padding: 8px 12px;
+}
+
+.anter-profile-btn--danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+}
+
+/* الهاتف */
+@media (max-width: 576px) {
+    .anter-profile-cover { height: 110px; }
+    .anter-profile-body { padding: 0 14px 16px; }
+    .anter-profile-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 12px;
+        margin-top: -60px;
+    }
+    .anter-profile-avatar { width: 100px; height: 100px; }
+    .anter-profile-name-row { justify-content: center; }
+    .anter-profile-name { font-size: 1.2rem; }
+    .anter-profile-stats { justify-content: center; }
+    .anter-profile-actions { justify-content: center; }
+    .anter-profile-bio { text-align: center; }
+}
+
+/* الوضع الداكن */
+[data-bs-theme="dark"] .anter-profile-avatar,
+.dark-mode .anter-profile-avatar,
+[data-bs-theme="dark"] .anter-profile-verified,
+.dark-mode .anter-profile-verified,
+[data-bs-theme="dark"] .anter-profile-avatar-edit,
+.dark-mode .anter-profile-avatar-edit {
+    border-color: #242526;
+}
+
+/* ============================================================
+   ANTER Comment Card Redesign — قائمة وخيارات التعليق
+   ============================================================ */
+
+/* رأس التعليق: time + ⋯ على اليمين */
+.comment-header__right {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+}
+
+/* مؤشر "تم التعديل" */
+.comment-edited {
+    font-size: 0.7rem;
+    color: var(--text-muted, #9ca3af);
+    font-style: italic;
+}
+
+/* زر القائمة (⋯) */
+.comment-menu-btn {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted, #65676b);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity .15s ease, background .15s ease, color .15s ease;
+    flex-shrink: 0;
+}
+
+.comment-card:hover .comment-menu-btn,
+.reply-card:hover .comment-menu-btn,
+.comment-menu-btn[aria-expanded="true"] {
+    opacity: 1;
+}
+
+.comment-menu-btn:hover,
+.comment-menu-btn[aria-expanded="true"] {
+    background: rgba(24, 119, 242, 0.08);
+    color: var(--fb-blue, #1877f2);
+}
+
+/* على اللمس: أظهر الزر دائمًا */
+@media (hover: none) {
+    .comment-menu-btn {
+        opacity: 1;
+    }
+}
+
+/* القائمة المنسدلة */
+.comment-menu {
+    position: absolute;
+    top: 32px;
+    left: 0;
+    z-index: 50;
+    min-width: 160px;
+    padding: 6px;
+    border-radius: 12px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+    animation: commentMenuIn .15s ease-out;
+    direction: rtl;
+}
+
+.comment-menu[hidden] {
+    display: none;
+}
+
+@keyframes commentMenuIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.comment-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 9px 11px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-color, #050505);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: start;
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+}
+
+.comment-menu__item i {
+    width: 16px;
+    font-size: 0.85rem;
+    color: var(--text-muted, #65676b);
+    transition: color .12s ease;
+}
+
+.comment-menu__item:hover {
+    background: var(--fb-bg, rgba(24, 119, 242, 0.06));
+}
+
+.comment-menu__item:hover i {
+    color: var(--fb-blue, #1877f2);
+}
+
+.comment-menu__item--danger {
+    color: #dc2626;
+}
+
+.comment-menu__item--danger i {
+    color: #dc2626;
+}
+
+.comment-menu__item--danger:hover {
+    background: rgba(220, 38, 38, 0.08);
+}
+
+/* نموذج التعديل المخفي */
+.comment-edit-form {
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: 10px;
+    background: var(--fb-bg, #f7f8fa);
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.comment-edit-form[hidden] {
+    display: none;
+}
+
+.comment-edit-input {
+    display: block;
+    width: 100%;
+    min-height: 60px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color, #dfe2e6);
+    border-radius: 8px;
+    background: var(--card-bg, #fff);
+    color: var(--text-color, #050505);
+    font-family: inherit;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    transition: border-color .15s ease;
+}
+
+.comment-edit-input:focus {
+    border-color: var(--fb-blue, #1877f2);
+}
+
+.comment-edit-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-start;
+    margin-top: 6px;
+}
+
+.comment-edit-cancel,
+.comment-edit-save {
+    padding: 6px 14px;
+    border: 0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .12s ease, background .12s ease;
+}
+
+.comment-edit-cancel {
+    background: transparent;
+    color: var(--text-muted, #65676b);
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.comment-edit-cancel:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.comment-edit-save {
+    background: linear-gradient(135deg, #1877f2, #6a4cff);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(24, 119, 242, 0.25);
+}
+
+.comment-edit-save:active {
+    transform: scale(0.96);
+}
+
+.comment-edit-save.is-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* الوضع الداكن */
+[data-bs-theme="dark"] .comment-menu,
+.dark-mode .comment-menu,
+[data-bs-theme="dark"] .comment-edit-form,
+.dark-mode .comment-edit-form {
+    background: #242526;
+    border-color: #3a3b3c;
+}
+
+[data-bs-theme="dark"] .comment-edit-input,
+.dark-mode .comment-edit-input {
+    background: #3a3b3c;
+    border-color: #3a3b3c;
+    color: #e4e6eb;
+}

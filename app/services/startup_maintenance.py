@@ -73,7 +73,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'thumbnail_data': binary_type,
             'thumbnail_mime': "VARCHAR(100) DEFAULT 'image/jpeg'",
         },
-        'comments': {'audio_url': 'VARCHAR(255)'},
+        'comments': {'audio_url': 'VARCHAR(255)', 'edited_at': 'TIMESTAMP NULL'},
         'call_logs': {'call_type': "VARCHAR(16) NOT NULL DEFAULT 'voice'"},
         'reports': {
             'message_id': 'INTEGER',

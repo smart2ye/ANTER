@@ -1501,9 +1501,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('forwardSearch').oninput = (e) => loadForwardUsers(e.target.value);
 
-    // نخفف استطلاع «يكتب الآن» في الخلفية، لكن إشارات المكالمة تستمر كي يصل تنبيه سطح المكتب.
-    setInterval(async () => {
-        if (pollingInProgress) return;
+    // ============================================================
+    // ANTER: استطلاع تكيّفي — يسرع عند وجود مكالمة، ويبطؤ في الخلفية.
+    // - مكالمة نشطة أو دعوة معلّقة: 800ms (إشارات فورية).
+    // - الصفحة مخفية: 5000ms (توفير).
+    // - هادئ: 2500ms (الافتراضي).
+    // ============================================================
+    let callPollTimer = null;
+
+    function computeCallPollDelay() {
+        if (activeCallId || incomingInvite) return 800;
+        if (document.visibilityState === 'hidden') return 5000;
+        return 2500;
+    }
+
+    async function callPollTick() {
+        clearTimeout(callPollTimer);
+
+        if (pollingInProgress) {
+            callPollTimer = setTimeout(callPollTick, 400);
+            return;
+        }
+
         pollingInProgress = true;
         try {
             if (document.visibilityState !== 'hidden') {
@@ -1513,16 +1532,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('typingIndicator').classList.toggle('d-none', !data.typing);
                 }
             }
-            if (isAnterAssistant) return;
-            await pollCallSignalsNow();
+            if (!isAnterAssistant) {
+                await pollCallSignalsNow();
+            }
         } catch (error) {
             console.warn('تعذر الاستعلام عن حالة الاتصال.', error);
         } finally {
             pollingInProgress = false;
+            callPollTimer = setTimeout(callPollTick, computeCallPollDelay());
         }
-    }, 2500);
+    }
+
+    // عند تغيير حالة الصفحة (ظهور/إخفاء): أعد الجدولة فورًا.
+    document.addEventListener('visibilitychange', () => {
+        if (callPollTimer) {
+            clearTimeout(callPollTimer);
+            callPollTimer = setTimeout(callPollTick, 200);
+        }
+    });
+
     // لا ننتظر دورة الاستطلاع الأولى؛ قد تكون دعوة الاتصال وصلت قبل فتح الدردشة.
     pollCallSignalsNow().catch(() => {});
+    callPollTick();
 });
 </script>
 {% endblock %}

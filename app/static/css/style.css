@@ -7233,3 +7233,444 @@ body:has(.reels-feed-page--immersive) {
 .anter-img-toast.is-success {
     background: #059669;
 }
+
+/* ============================================================
+   ANTER Explore Page — تصميم جديد
+   ============================================================ */
+.anter-explore-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+
+/* شريط البحث */
+.anter-explore-search {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: 12px 0 10px;
+    background: var(--bg, #f0f2f5);
+    margin-bottom: 4px;
+}
+
+.anter-explore-search__box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.anter-explore-search__box:focus-within {
+    border-color: var(--fb-blue, #1877f2);
+    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.10);
+}
+
+.anter-explore-search__box i {
+    color: var(--text-muted, #65676b);
+    font-size: 0.95rem;
+}
+
+.anter-explore-search__box input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-color, #050505);
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+.anter-explore-search__clear {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-muted, #65676b);
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+/* التبويبات */
+.anter-explore-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 14px;
+    border-radius: 12px;
+    background: var(--fb-bg, #f0f2f5);
+}
+
+.anter-explore-tab {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-muted, #65676b);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+
+.anter-explore-tab:hover {
+    background: rgba(24, 119, 242, 0.06);
+    color: var(--fb-blue, #1877f2);
+}
+
+.anter-explore-tab.is-active {
+    background: var(--card-bg, #fff);
+    color: var(--fb-blue, #1877f2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* اللوحات */
+.anter-explore-tab-panel {
+    display: none;
+}
+
+.anter-explore-tab-panel.is-active {
+    display: block;
+    animation: anterExploreFade .2s ease;
+}
+
+@keyframes anterExploreFade {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* شبكة المستخدمين */
+.anter-users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+}
+
+.anter-user-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 16px 12px;
+    border-radius: 14px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    text-align: center;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.anter-user-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.anter-user-card__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+}
+
+.anter-user-card__avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(24, 119, 242, 0.15);
+    margin-bottom: 4px;
+}
+
+.anter-user-card__name {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--text-color, #050505);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anter-user-card__username {
+    font-size: 0.76rem;
+    color: var(--text-muted, #65676b);
+}
+
+.anter-user-card__meta {
+    font-size: 0.74rem;
+    color: var(--fb-blue, #1877f2);
+    font-weight: 600;
+}
+
+.anter-user-card__follow {
+    margin-top: 6px;
+    padding: 7px 18px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--fb-blue, #1877f2);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s ease, transform .15s ease;
+}
+
+.anter-user-card__follow:hover {
+    background: #0b5ed7;
+}
+
+.anter-user-card__follow:active {
+    transform: scale(0.96);
+}
+
+.anter-user-card__follow.is-following {
+    background: transparent;
+    color: var(--text-muted, #65676b);
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+/* بطاقات المنشورات */
+.anter-posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.anter-post-card {
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.anter-post-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.anter-post-card__link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.anter-post-card__author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+    color: var(--text-muted, #65676b);
+}
+
+.anter-post-card__author img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.anter-post-card__content {
+    font-size: 0.92rem;
+    line-height: 1.7;
+    color: var(--text-color, #050505);
+    margin: 0 0 10px;
+}
+
+.anter-post-card__meta {
+    display: flex;
+    gap: 14px;
+    font-size: 0.78rem;
+    color: var(--text-muted, #65676b);
+}
+
+.anter-post-card__meta i {
+    color: #ef4444;
+    margin-inline-end: 3px;
+}
+
+.anter-post-card__meta span:last-child i {
+    color: var(--fb-blue, #1877f2);
+}
+
+/* شبكة الريلز */
+.anter-reels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+}
+
+.anter-reel-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    text-decoration: none;
+    color: inherit;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.anter-reel-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.10);
+}
+
+.anter-reel-card__media {
+    position: relative;
+    aspect-ratio: 9 / 16;
+    background: #000;
+    overflow: hidden;
+}
+
+.anter-reel-card__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.anter-reel-card__placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 2rem;
+    background: linear-gradient(135deg, #1a2235, #0a0e27);
+}
+
+.anter-reel-card__play {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 0.75rem;
+    backdrop-filter: blur(6px);
+}
+
+.anter-reel-card__title {
+    padding: 8px 10px 2px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-color, #050505);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.anter-reel-card__meta {
+    display: flex;
+    gap: 10px;
+    padding: 0 10px 10px;
+    font-size: 0.72rem;
+    color: var(--text-muted, #65676b);
+}
+
+/* الحالة الفارغة */
+.anter-explore-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted, #65676b);
+}
+
+.anter-explore-empty i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    color: var(--fb-blue, #1877f2);
+    opacity: 0.4;
+}
+
+.anter-explore-empty h5 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    color: var(--text-color, #050505);
+}
+
+.anter-explore-empty p {
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* الوضع الداكن */
+[data-bs-theme="dark"] .anter-explore-search,
+.dark-mode .anter-explore-search {
+    background: #18191a;
+}
+
+[data-bs-theme="dark"] .anter-explore-search__box,
+.dark-mode .anter-explore-search__box,
+[data-bs-theme="dark"] .anter-explore-tabs,
+.dark-mode .anter-explore-tabs {
+    background: #242526;
+    border-color: #3a3b3c;
+}
+
+[data-bs-theme="dark"] .anter-explore-tab.is-active,
+.dark-mode .anter-explore-tab.is-active {
+    background: #3a3b3c;
+}
+
+[data-bs-theme="dark"] .anter-user-card,
+.dark-mode .anter-user-card,
+[data-bs-theme="dark"] .anter-post-card,
+.dark-mode .anter-post-card,
+[data-bs-theme="dark"] .anter-reel-card,
+.dark-mode .anter-reel-card {
+    background: #242526;
+    border-color: #3a3b3c;
+}
+
+/* عناوين الأقسام في نتائج البحث */
+.anter-explore-section-title {
+    margin: 20px 0 12px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-color, #050505);
+}
+
+.anter-explore-section-title:first-child {
+    margin-top: 8px;
+}
+
+.anter-search-results {
+    animation: anterExploreFade .2s ease;
+}
+
+.anter-explore-count {
+    display: inline-block;
+    margin-inline-start: 6px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(24, 119, 242, 0.12);
+    color: var(--fb-blue, #1877f2);
+    font-size: 0.75rem;
+    font-weight: 700;
+}

@@ -1,150 +1,391 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="mb-4">
-    <h5 class="mb-3"><i class="fas fa-search text-primary"></i> اكتشاف مستخدمين جدد</h5>
-    
-    <!-- شريط البحث (الوحيد للعثور على أي مستخدم) -->
-    <div class="input-group mb-3">
-        <input type="text" id="searchInput" class="form-control" placeholder="ابحث عن مستخدم..." aria-label="بحث">
-        <button class="btn btn-primary" type="button" id="searchBtn"><i class="fas fa-search"></i></button>
+<div class="anter-explore-page">
+    <!-- شريط البحث -->
+    <div class="anter-explore-search">
+        <div class="anter-explore-search__box">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input type="search"
+                   id="exploreSearchInput"
+                   placeholder="ابحث عن منشورات، ريلز، أو أشخاص..."
+                   autocomplete="off"
+                   aria-label="بحث شامل">
+            <button type="button" id="exploreSearchClear" class="anter-explore-search__clear" hidden aria-label="مسح">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
     </div>
 
-    <!-- رسالة توضيحية للخوارزمية -->
-    <div class="alert alert-light border rounded-3 small mb-3">
-        <i class="fas fa-info-circle text-primary"></i> 
-        نقترح لك مستخدمين بناءً على <strong>الأصدقاء المشتركين</strong> و <strong>النشاط</strong>.
-    </div>
-</div>
+    <!-- التبويبات -->
+    <nav class="anter-explore-tabs" role="tablist" aria-label="أقسام الاستكشاف">
+        <button type="button" class="anter-explore-tab" data-tab="posts" role="tab" aria-selected="false">
+            <i class="fas fa-newspaper" aria-hidden="true"></i> منشورات
+        </button>
+        <button type="button" class="anter-explore-tab" data-tab="reels" role="tab" aria-selected="false">
+            <i class="fas fa-play-circle" aria-hidden="true"></i> ريلز
+        </button>
+        <button type="button" class="anter-explore-tab is-active" data-tab="users" role="tab" aria-selected="true">
+            <i class="fas fa-user-plus" aria-hidden="true"></i> أشخاص
+        </button>
+    </nav>
 
-<!-- شبكة المستخدمين -->
-<div id="usersGrid">
-    {% if users %}
-        <div class="row g-2">
-            {% for user in users %}
-            <div class="col-6">
-                <div class="explore-card card text-center p-3 shadow-sm" style="background: var(--card-bg);">
-                    <a href="{{ url_for('users.profile', username=user.username) }}" class="text-decoration-none">
-                        <img src="{{ avatar_url(user) }}" class="rounded-circle mx-auto mt-2" width="80" height="80" style="border: 3px solid var(--primary);">
-                        <div class="card-body p-1">
-                            <h6 class="card-title mb-0 text-dark">{{ user.name }} {{ verified_badge(user) }}</h6>
-                            <p class="text-muted small">@{{ user.username }}</p>
-                <div class="post-status mt-1">
-                    {{ get_status_icon(user)|safe }}
+    <!-- منطقة النتائج -->
+    <div id="exploreResults">
+        <!-- تبويب المستخدمين (الافتراضي) -->
+        <section class="anter-explore-tab-panel is-active" data-panel="users">
+            {% if users %}
+                <div class="anter-users-grid">
+                    {% for user in users %}
+                    <article class="anter-user-card">
+                        <a href="{{ url_for('users.profile', username=user.username) }}" class="anter-user-card__link">
+                            <img src="{{ avatar_url(user) }}"
+                                 alt="{{ user.name }}"
+                                 class="anter-user-card__avatar"
+                                 loading="lazy">
+                            <div class="anter-user-card__name">
+                                {{ user.name }} {{ verified_badge(user) }}
+                            </div>
+                            <div class="anter-user-card__username">@{{ user.username }}</div>
+                            <div class="anter-user-card__meta">👥 {{ user.follower_count() }} متابع</div>
+                        </a>
+                        <button type="button"
+                                class="anter-user-card__follow follow-btn {% if current_user.is_following(user) %}is-following{% endif %}"
+                                data-user="{{ user.id }}"
+                                data-following="{{ 'true' if current_user.is_following(user) else 'false' }}">
+                            {{ 'إلغاء المتابعة' if current_user.is_following(user) else 'متابعة' }}
+                        </button>
+                    </article>
+                    {% endfor %}
                 </div>
-                            <p class="small text-primary fw-bold">👥 {{ user.follower_count() }} متابع</p>
+            {% else %}
+                <div class="anter-explore-empty">
+                    <i class="fas fa-users" aria-hidden="true"></i>
+                    <h5>لا توجد اقتراحات حالياً</h5>
+                    <p>تابع المزيد من المستخدمين للحصول على اقتراحات أفضل.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- تبويب المنشورات -->
+        <section class="anter-explore-tab-panel" data-panel="posts">
+            {% if posts %}
+                <div class="anter-posts-list">
+                    {% for post in posts %}
+                    <article class="anter-post-card">
+                        <a href="{{ url_for('posts.view_post', public_id=post.public_id) }}" class="anter-post-card__link">
+                            <div class="anter-post-card__author">
+                                <img src="{{ avatar_url(post.author) }}" alt="{{ post.author.name }}" loading="lazy">
+                                <span>@{{ post.author.username }}</span>
+                            </div>
+                            <p class="anter-post-card__content">
+                                {{ (post.content or '')[:200] }}{% if post.content and post.content|length > 200 %}…{% endif %}
+                            </p>
+                            <div class="anter-post-card__meta">
+                                <span><i class="fas fa-heart"></i> {{ post.like_count() }}</span>
+                                <span><i class="far fa-comment"></i> {{ post.comment_count() }}</span>
+                            </div>
+                        </a>
+                    </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="anter-explore-empty">
+                    <i class="fas fa-newspaper" aria-hidden="true"></i>
+                    <h5>لا توجد منشورات رائجة</h5>
+                    <p>عد لاحقاً لاكتشاف المحتوى الجديد.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- تبويب الريلز -->
+        <section class="anter-explore-tab-panel" data-panel="reels">
+            {% if reels %}
+                <div class="anter-reels-grid">
+                    {% for reel in reels %}
+                    <a href="{{ url_for('videos.watch', public_id=reel.public_id) }}" class="anter-reel-card">
+                        <div class="anter-reel-card__media">
+                            {% if reel.thumbnail_path and reel.thumbnail_path != 'default_thumb.png' %}
+                            <img src="{{ url_for('media.video_thumbnail', public_id=reel.public_id) }}"
+                                 alt="{{ reel.title }}"
+                                 loading="lazy">
+                            {% else %}
+                            <div class="anter-reel-card__placeholder"><i class="fas fa-play"></i></div>
+                            {% endif %}
+                            <span class="anter-reel-card__play"><i class="fas fa-play"></i></span>
+                        </div>
+                        <div class="anter-reel-card__title">{{ reel.title or 'ريل جديد' }}</div>
+                        <div class="anter-reel-card__meta">
+                            <span><i class="fas fa-eye"></i> {{ reel.views or 0 }}</span>
+                            <span><i class="fas fa-heart"></i> {{ reel.like_count() }}</span>
                         </div>
                     </a>
-                    <button class="btn btn-sm follow-btn {% if current_user.is_following(user) %}btn-outline-secondary{% else %}btn-primary{% endif %}" 
-                            data-user="{{ user.id }}" data-following="{{ 'true' if current_user.is_following(user) else 'false' }}">
-                        {{ 'غير متابعة' if current_user.is_following(user) else 'متابعة' }}
-                    </button>
+                    {% endfor %}
                 </div>
-            </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="text-center text-muted mt-5">
-            <i class="fas fa-users fa-4x mb-3"></i>
-            <h5>لا توجد اقتراحات</h5>
-            <p>تابع المزيد من المستخدمين لتحصل على اقتراحات أفضل، أو استخدم البحث للعثور على أشخاص جدد.</p>
-        </div>
-    {% endif %}
+            {% else %}
+                <div class="anter-explore-empty">
+                    <i class="fas fa-play-circle" aria-hidden="true"></i>
+                    <h5>لا توجد ريلز رائجة</h5>
+                    <p>كن أول من يشارك مقطعاً مميزاً.</p>
+                </div>
+            {% endif %}
+        </section>
+    </div>
 </div>
 
 <script>
-    // ==============================
-    // متابعة / إلغاء متابعة
-    // ==============================
-    document.querySelectorAll('.follow-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const userId = this.dataset.user;
-            const following = this.dataset.following === 'true';
-            const url = following ? `/users/unfollow/${userId}` : `/users/follow/${userId}`;
-            fetch(url, { method: 'POST' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        this.dataset.following = data.following ? 'true' : 'false';
-                        this.textContent = data.following ? 'غير متابعة' : 'متابعة';
-                        this.classList.toggle('btn-primary');
-                        this.classList.toggle('btn-outline-secondary');
-                    }
-                });
+(function _anterExplore() {
+    'use strict';
+
+    const tabs = document.querySelectorAll('.anter-explore-tab');
+    const panels = document.querySelectorAll('.anter-explore-tab-panel');
+    const searchInput = document.getElementById('exploreSearchInput');
+    const clearBtn = document.getElementById('exploreSearchClear');
+    const results = document.getElementById('exploreResults');
+
+    let activeTab = 'users';
+
+    // ============================================================
+    // تبديل التبويبات
+    // ============================================================
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.tab;
+            if (!target || target === activeTab) return;
+            activeTab = target;
+
+            tabs.forEach(t => {
+                const isActive = t === tab;
+                t.classList.toggle('is-active', isActive);
+                t.setAttribute('aria-selected', String(isActive));
+            });
+
+            panels.forEach(p => {
+                p.classList.toggle('is-active', p.dataset.panel === target);
+            });
         });
     });
 
-    // ==============================
-    // البحث (عند الضغط على زر البحث أو Enter)
-    // ==============================
-    const searchInput = document.getElementById('searchInput');
-    const searchBtn = document.getElementById('searchBtn');
+    // ============================================================
+    // شريط البحث
+    // ============================================================
+    let searchTimer = null;
 
-    function performSearch() {
-        const q = searchInput.value.trim();
-        if (q.length > 0) {
-            fetch(`/explore/search?q=${encodeURIComponent(q)}`)
-                .then(res => res.json())
-                .then(data => {
-                    const grid = document.getElementById('usersGrid');
-                    if (data.length === 0) {
-                        grid.innerHTML = '<div class="col-12 text-center text-muted">لا توجد نتائج</div>';
-                        return;
-                    }
-                    let html = `<div class="row g-2">`;
-                    data.forEach(user => {
-                        html += `
-                            <div class="col-6">
-                                <div class="explore-card card text-center p-3 shadow-sm" style="background: var(--card-bg);">
-                                    <a href="/users/${user.username}" class="text-decoration-none">
-                                        <img src="${user.avatar_url || `/static/uploads/${user.avatar}`}" class="rounded-circle mx-auto mt-2" width="80" height="80" style="border: 3px solid var(--primary);">
-                                        <div class="card-body p-1">
-                                            <h6 class="card-title mb-0 text-dark">${user.name}${user.is_verified ? ' <i class="fas fa-check-circle verified-badge" title="حساب موثق" aria-label="حساب موثق"></i>' : ''}</h6>
-                                            <p class="text-muted small">@${user.username}</p>
-                                            <p class="small text-primary fw-bold">👥 ${user.followers_count} متابع</p>
-                                        </div>
-                                    </a>
-                                    <button class="btn btn-sm follow-btn ${user.is_following ? 'btn-outline-secondary' : 'btn-primary'}" 
-                                            data-user="${user.id}" data-following="${user.is_following}">
-                                        ${user.is_following ? 'غير متابعة' : 'متابعة'}
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    html += `</div>`;
-                    grid.innerHTML = html;
-                    
-                    // إعادة ربط الأحداث لأزرار المتابعة الجديدة
-                    document.querySelectorAll('.follow-btn').forEach(btn => {
-                        btn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            const userId = this.dataset.user;
-                            const following = this.dataset.following === 'true';
-                            const url = following ? `/users/unfollow/${userId}` : `/users/follow/${userId}`;
-                            fetch(url, { method: 'POST' })
-                                .then(res => res.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        this.dataset.following = data.following ? 'true' : 'false';
-                                        this.textContent = data.following ? 'غير متابعة' : 'متابعة';
-                                        this.classList.toggle('btn-primary');
-                                        this.classList.toggle('btn-outline-secondary');
-                                    }
-                                });
-                        });
-                    });
-                });
-        } else {
-            // إذا كان الحقل فارغاً، أعد تحميل الصفحة لعرض الاقتراحات
-            location.reload();
+    function escapeHtml(s) {
+        return String(s ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function renderPostCard(p) {
+        return `
+            <article class="anter-post-card">
+                <a href="${escapeHtml(p.url)}" class="anter-post-card__link">
+                    <div class="anter-post-card__author">
+                        <span>@${escapeHtml(p.author_username)}</span>
+                    </div>
+                    <p class="anter-post-card__content">${escapeHtml(p.content || '')}</p>
+                </a>
+            </article>
+        `;
+    }
+
+    function renderReelCard(r) {
+        return `
+            <a href="${escapeHtml(r.url)}" class="anter-reel-card">
+                <div class="anter-reel-card__media">
+                    <div class="anter-reel-card__placeholder"><i class="fas fa-play"></i></div>
+                    <span class="anter-reel-card__play"><i class="fas fa-play"></i></span>
+                </div>
+                <div class="anter-reel-card__title">${escapeHtml(r.title || 'ريل جديد')}</div>
+            </a>
+        `;
+    }
+
+    function renderUserCard(u) {
+        const followLabel = u.is_following ? 'إلغاء المتابعة' : 'متابعة';
+        const followClass = u.is_following ? 'is-following' : '';
+        return `
+            <article class="anter-user-card">
+                <a href="/users/${escapeHtml(u.username)}" class="anter-user-card__link">
+                    <img src="${escapeHtml(u.avatar_url)}" alt="${escapeHtml(u.name)}" class="anter-user-card__avatar" loading="lazy">
+                    <div class="anter-user-card__name">${escapeHtml(u.name)}</div>
+                    <div class="anter-user-card__username">@${escapeHtml(u.username)}</div>
+                </a>
+                <button type="button"
+                        class="anter-user-card__follow follow-btn ${followClass}"
+                        data-user="${u.id}"
+                        data-following="${u.is_following}">
+                    ${followLabel}
+                </button>
+            </article>
+        `;
+    }
+
+    function renderEmpty(message) {
+        return `
+            <div class="anter-explore-empty">
+                <i class="fas fa-search" aria-hidden="true"></i>
+                <h5>لا نتائج</h5>
+                <p>${escapeHtml(message || 'جرب كلمة أخرى.')}</p>
+            </div>
+        `;
+    }
+
+    function setTabsVisible(visible) {
+        const tabsNav = document.querySelector('.anter-explore-tabs');
+        if (tabsNav) tabsNav.style.display = visible ? '' : 'none';
+    }
+
+    function renderSearchResults(data) {
+        const hasAny = (data.posts && data.posts.length) ||
+                       (data.reels && data.reels.length) ||
+                       (data.users && data.users.length);
+        if (!hasAny) {
+            setTabsVisible(false);
+            results.innerHTML = renderEmpty('لم نجد شيئاً بهذا البحث.');
+            return;
+        }
+
+        setTabsVisible(false);
+
+        const sections = [];
+
+        if (data.posts && data.posts.length) {
+            sections.push(`
+                <section class="anter-explore-tab-panel is-active" data-panel="search-posts">
+                    <h6 class="anter-explore-section-title">
+                        📝 منشورات
+                        <span class="anter-explore-count">${data.posts.length}</span>
+                    </h6>
+                    <div class="anter-posts-list">
+                        ${data.posts.map(renderPostCard).join('')}
+                    </div>
+                </section>
+            `);
+        }
+
+        if (data.reels && data.reels.length) {
+            sections.push(`
+                <section class="anter-explore-tab-panel is-active" data-panel="search-reels">
+                    <h6 class="anter-explore-section-title">
+                        🎬 ريلز
+                        <span class="anter-explore-count">${data.reels.length}</span>
+                    </h6>
+                    <div class="anter-reels-grid">
+                        ${data.reels.map(renderReelCard).join('')}
+                    </div>
+                </section>
+            `);
+        }
+
+        if (data.users && data.users.length) {
+            sections.push(`
+                <section class="anter-explore-tab-panel is-active" data-panel="search-users">
+                    <h6 class="anter-explore-section-title">
+                        👥 أشخاص
+                        <span class="anter-explore-count">${data.users.length}</span>
+                    </h6>
+                    <div class="anter-users-grid">
+                        ${data.users.map(renderUserCard).join('')}
+                    </div>
+                </section>
+            `);
+        }
+
+        results.innerHTML = `<div class="anter-search-results">${sections.join('')}</div>`;
+        bindFollowButtons();
+    }
+
+    function restoreOriginalView() {
+        setTabsVisible(true);
+        window.location.reload();
+    }
+
+    async function performSearch(query) {
+        if (!query) return;
+        try {
+            const r = await fetch('/explore/search-all?q=' + encodeURIComponent(query), {
+                credentials: 'same-origin',
+            });
+            if (!r.ok) throw new Error('search failed');
+            const data = await r.json();
+            renderSearchResults(data);
+        } catch (e) {
+            results.innerHTML = renderEmpty('تعذر إجراء البحث.');
         }
     }
 
-    searchBtn.addEventListener('click', performSearch);
-    searchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') performSearch();
-    });
+    function bindFollowButtons() {
+        document.querySelectorAll('.follow-btn').forEach(btn => {
+            if (btn.dataset.bound === 'true') return;
+            btn.dataset.bound = 'true';
+
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const userId = btn.dataset.user;
+                const following = btn.dataset.following === 'true';
+                const url = following
+                    ? `/users/unfollow/${userId}`
+                    : `/users/follow/${userId}`;
+
+                btn.disabled = true;
+                try {
+                    const resp = await fetch(url, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        const isFollowing = data.following;
+                        btn.dataset.following = String(isFollowing);
+                        btn.textContent = isFollowing ? 'إلغاء المتابعة' : 'متابعة';
+                        btn.classList.toggle('is-following', isFollowing);
+                    }
+                } catch (_) {
+                    /* ignore */
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.trim();
+            if (clearBtn) clearBtn.hidden = !q;
+
+            clearTimeout(searchTimer);
+            if (!q) {
+                restoreOriginalView();
+                return;
+            }
+            searchTimer = setTimeout(() => performSearch(q), 400);
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                if (clearBtn) clearBtn.hidden = true;
+                restoreOriginalView();
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            clearBtn.hidden = true;
+            restoreOriginalView();
+        });
+    }
+
+    bindFollowButtons();
+})();
 </script>
 {% endblock %}

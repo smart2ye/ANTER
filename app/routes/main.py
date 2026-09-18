@@ -9,6 +9,7 @@ from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
 from app.services.privacy import visible_posts
 from app.services.feed_ranker import rank_post
+from app.services.geo_ranker import geo_score_for_post
 import math
 import re
 from collections import Counter
@@ -140,6 +141,7 @@ def build_feed(user):
             similarity=similarity,
             is_following=False,
             is_own_post=False,
+            country_score=geo_score_for_post(post, user),
         )
 
         suggested_with_scores.append((post, score))
@@ -180,6 +182,7 @@ def build_feed(user):
             similarity=similarity,
             is_following=is_following,
             is_own_post=is_own_post,
+            country_score=geo_score_for_post(post, user),
         )
 
     all_posts.sort(key=feed_score, reverse=True)

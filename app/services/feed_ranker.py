@@ -36,6 +36,17 @@ def relationship_score(is_following=False, is_own_post=False):
     return 0.0
 
 
+def geo_score(country_score_value=0.0):
+    """ANTER: نقاط الموقع الجغرافي (0-30 → مقياس 0-3).
+
+    لا يعتمد على GPS، بل على country_code المُدخَل عند التسجيل.
+    - نفس الدولة → 30 نقطة أصلية → 3.0
+    - دولة مجاورة → 15 → 1.5
+    - دولة عربية → 8 → 0.8
+    """
+    return max(0.0, min(30.0, country_score_value or 0.0)) / 10.0
+
+
 def rank_post(
     *,
     created_at,
@@ -45,16 +56,22 @@ def rank_post(
     similarity=0.0,
     is_following=False,
     is_own_post=False,
+    country_score=0.0,
 ):
-    """Return a hybrid ranking score for one feed post."""
+    """Return a hybrid ranking score for one feed post.
+
+    ANTER: country_score مُعامل جديد (0-30 → 0-3) لتعزيز المنشورات المحلية.
+    """
     freshness = freshness_score(created_at)
     engagement = engagement_score(likes, comments, reposts)
     interest = interest_score(similarity)
     relationship = relationship_score(is_following, is_own_post)
+    geo = geo_score(country_score)
 
     return (
         freshness * 4.0
         + engagement * 1.5
         + interest * 4.0
         + relationship * 3.0
+        + geo * 2.0
     )

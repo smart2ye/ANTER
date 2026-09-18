@@ -5,6 +5,7 @@ from flask_login import login_required, current_user
 from app.models import User, Follow, Post, Hashtag
 from app.extensions import db
 from app.utils.media_urls import avatar_url
+from app.services.geo_ranker import geo_score_for_user
 from sqlalchemy import func
 
 explore_bp = Blueprint('explore', __name__, url_prefix='/explore')
@@ -28,6 +29,7 @@ def explore():
     ).limit(15).all()
 
     suggested_ids = [row[0] for row in second_degree]
+    mutual_counts = {row[0]: row[1] for row in second_degree}
 
     # إذا كانت قائمة الدرجة الثانية فارغة، اعرض مستخدمين لديهم منشورات حديثة.
     if not suggested_ids:
@@ -40,19 +42,32 @@ def explore():
             ~Post.author_id.in_(following_ids)
         ).group_by(Post.author_id).order_by(
             func.count(Post.id).desc()
-        ).limit(20).all()
+        ).limit(30).all()
         suggested_ids = [row[0] for row in active_users]
+        mutual_counts = {row[0]: 0 for row in active_users}
 
-    # استعلام واحد بدلاً من استعلام لكل مستخدم، مع الحفاظ على ترتيب الاقتراحات.
+    # ANTER: نُوسّع القائمة ثم نُعيد ترتيبها بمعيار مركّب
+    # (أصدقاء مشتركون + النقاط الجغرافية). كل 5 أصدقاء مشتركين = نفس وزن نفس الدولة.
     users_by_id = {
         user.id: user
-        for user in User.query.filter(User.id.in_(suggested_ids[:20])).all()
+        for user in User.query.filter(User.id.in_(suggested_ids[:30])).all()
     }
-    suggested_users = [
-        users_by_id[user_id]
-        for user_id in suggested_ids[:20]
-        if user_id in users_by_id
-    ]
+
+    def _suggest_score(uid):
+        u = users_by_id.get(uid)
+        if not u:
+            return -1.0
+        mutual = mutual_counts.get(uid, 0) or 0
+        geo = geo_score_for_user(u, current_user)
+        return mutual * 5.0 + geo
+
+    ranked_ids = sorted(
+        [uid for uid in suggested_ids if uid in users_by_id],
+        key=_suggest_score,
+        reverse=True,
+    )
+
+    suggested_users = [users_by_id[uid] for uid in ranked_ids[:20]]
 
     return render_template('explore.html', users=suggested_users)
 

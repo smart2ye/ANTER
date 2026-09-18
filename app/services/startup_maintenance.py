@@ -61,7 +61,18 @@ def run_startup_schema_upgrades(app) -> bool:
             'visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
             'shared_video_id': 'INTEGER',
         },
-        'videos': {'public_id': 'VARCHAR(40)', 'shares': 'INTEGER DEFAULT 0'},
+        'story': {
+            'media_data': binary_type,
+            'media_mime': 'VARCHAR(100)',
+        },
+        'videos': {
+            'public_id': 'VARCHAR(40)',
+            'shares': 'INTEGER DEFAULT 0',
+            'video_data': binary_type,
+            'video_mime': "VARCHAR(100) DEFAULT 'video/mp4'",
+            'thumbnail_data': binary_type,
+            'thumbnail_mime': "VARCHAR(100) DEFAULT 'image/jpeg'",
+        },
         'comments': {'audio_url': 'VARCHAR(255)'},
         'call_logs': {'call_type': "VARCHAR(16) NOT NULL DEFAULT 'voice'"},
         'reports': {

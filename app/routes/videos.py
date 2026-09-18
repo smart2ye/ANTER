@@ -94,13 +94,47 @@ def upload():
         else:
             thumbnail_path = create_thumbnail(video_path, is_reel)
 
+        # ANTER: نقرأ الملفات من القرص ونحفظها في قاعدة البيانات (تخزين دائم)
+        video_bytes = None
+        thumb_bytes = None
+
+        try:
+            from pathlib import Path
+            uploads_root = Path(current_app.root_path) / 'static' / 'uploads'
+            disk_video = uploads_root / video_path
+            if disk_video.exists():
+                video_bytes = disk_video.read_bytes()
+        except Exception as e:
+            current_app.logger.warning(f'تعذر قراءة الفيديو من القرص: {e}')
+
+        try:
+            if thumbnail_path and thumbnail_path != 'default_thumb.png':
+                from pathlib import Path
+                uploads_root = Path(current_app.root_path) / 'static' / 'uploads'
+                disk_thumb = uploads_root / thumbnail_path
+                if disk_thumb.exists():
+                    thumb_bytes = disk_thumb.read_bytes()
+        except Exception as e:
+            current_app.logger.warning(f'تعذر قراءة الصورة المصغرة: {e}')
+
+        # تحديد mime الصحيح
+        video_ext = (video_path or '').rsplit('.', 1)[-1].lower()
+        video_mime = {'mp4': 'video/mp4', 'webm': 'video/webm', 'mov': 'video/quicktime', 'avi': 'video/x-msvideo', 'mkv': 'video/x-matroska'}.get(video_ext, 'video/mp4')
+
+        thumb_ext = (thumbnail_path or '').rsplit('.', 1)[-1].lower()
+        thumb_mime = {'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'webp': 'image/webp', 'gif': 'image/gif'}.get(thumb_ext, 'image/jpeg')
+
         video = Video(
             title=description,
             description=description,
             file_path=video_path,
             thumbnail_path=thumbnail_path or 'default_thumb.png',
             is_reel=is_reel,
-            author_id=current_user.id
+            author_id=current_user.id,
+            video_data=video_bytes,
+            video_mime=video_mime,
+            thumbnail_data=thumb_bytes,
+            thumbnail_mime=thumb_mime if thumb_bytes else None,
         )
         db.session.add(video)
         db.session.commit()

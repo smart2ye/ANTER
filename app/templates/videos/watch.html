@@ -12,9 +12,9 @@
                        class="reel-player"
                        playsinline
                        preload="metadata"
-                       poster="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}"
+                       poster="{{ url_for('media.video_thumbnail', public_id=video.public_id) }}"
                        aria-label="{{ video.title or 'فيديو ANTER' }}">
-                    <source src="{{ url_for('static', filename='uploads/' + video.file_path) }}">
+                    <source src="{{ url_for('media.video_stream', public_id=video.public_id) }}">
                     متصفحك لا يدعم تشغيل الفيديو.
                 </video>
 

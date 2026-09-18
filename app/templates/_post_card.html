@@ -80,7 +80,7 @@
         <div class="anter-shared-reel-media">
             {% if post.shared_video.thumbnail_path %}
             <img
-                src="{{ url_for('static', filename='uploads/' + post.shared_video.thumbnail_path) }}"
+                src="{{ url_for('media.video_thumbnail', public_id=post.shared_video.public_id) }}"
                 alt="{{ post.shared_video.title or 'ريل جديد' }}"
                 loading="lazy">
             {% endif %}

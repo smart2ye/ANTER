@@ -6,7 +6,7 @@
            class="reel-card-link"
            aria-label="تشغيل ريل: {{ video.title or 'فيديو بدون عنوان' }}">
             <div class="reel-card-media">
-                <img src="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}"
+                <img src="{{ url_for('media.video_thumbnail', public_id=video.public_id) }}"
                      alt="صورة معاينة ريل {{ video.title or '' }}"
                      loading="lazy"
                      decoding="async">

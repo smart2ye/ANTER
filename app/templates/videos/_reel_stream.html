@@ -7,9 +7,9 @@
                    playsinline
                    loop
                    preload="none"
-                   poster="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}"
+                   poster="{{ url_for('media.video_thumbnail', public_id=video.public_id) }}"
                    aria-label="{{ video.title or 'ريل جديد' }}"
-                   data-video-src="{{ url_for('static', filename='uploads/' + video.file_path) }}">
+                   data-video-src="{{ url_for('media.video_stream', public_id=video.public_id) }}">
                 متصفحك لا يدعم تشغيل الفيديو.
             </video>
 

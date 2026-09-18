@@ -31,6 +31,61 @@ def avatar(user_id):
     return _image_response(user.avatar_data, user.avatar_mime)
 
 
+@media_bp.route('/video/<public_id>')
+def video_stream(public_id):
+    """ANTER: بث فيديو الريل من قاعدة البيانات (تخزين دائم)."""
+    from app.models import Video
+    from flask import abort, Response, redirect, url_for
+
+    video = Video.query.filter_by(public_id=public_id).first()
+    if not video:
+        abort(404)
+
+    # إن وُجد BLOB في القاعدة → نُقدمه مباشرة
+    if video.video_data:
+        return Response(
+            video.video_data,
+            mimetype=video.video_mime or 'video/mp4',
+            headers={
+                'Content-Length': str(len(video.video_data)),
+                'Accept-Ranges': 'bytes',
+                'Cache-Control': 'public, max-age=3600',
+            },
+        )
+
+    # fallback: الملف على القرص (للتوافق مع الملفات القديمة)
+    if video.file_path:
+        return redirect(url_for('static', filename='uploads/' + video.file_path))
+
+    abort(404)
+
+
+@media_bp.route('/video-thumb/<public_id>')
+def video_thumbnail(public_id):
+    """ANTER: الصورة المصغرة للريل من قاعدة البيانات."""
+    from app.models import Video
+    from flask import abort, Response, redirect, url_for
+
+    video = Video.query.filter_by(public_id=public_id).first()
+    if not video:
+        abort(404)
+
+    if video.thumbnail_data:
+        return Response(
+            video.thumbnail_data,
+            mimetype=video.thumbnail_mime or 'image/jpeg',
+            headers={
+                'Content-Length': str(len(video.thumbnail_data)),
+                'Cache-Control': 'public, max-age=3600',
+            },
+        )
+
+    if video.thumbnail_path and video.thumbnail_path != 'default_thumb.png':
+        return redirect(url_for('static', filename='uploads/' + video.thumbnail_path))
+
+    abort(404)
+
+
 @media_bp.route('/post/<int:post_id>')
 def post_image(post_id):
     """Legacy numeric media URL for older rendered pages."""

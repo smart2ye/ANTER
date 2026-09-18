@@ -64,7 +64,8 @@ def get_stories_feed():
     now = datetime.utcnow()
     
     # جلب المستخدمين الذين يتابعهم المستخدم الحالي + المستخدم نفسه
-    following_ids = [u.id for u in current_user.following]
+    # ANTER: current_user.following يُرجع علاقات Follow، ونحتاج IDs المستخدمين المتابَعين
+    following_ids = [f.followed_id for f in current_user.following]
     following_ids.append(current_user.id)
 
     # جلب القصص النشطة التي لم تنتهِ صلاحيتها

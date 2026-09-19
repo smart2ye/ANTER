@@ -65,7 +65,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'media_data': binary_type,
             'media_mime': 'VARCHAR(100)',
         },
-        'video_comments': {'edited_at': 'TIMESTAMP NULL'},
+        'video_comments': {'edited_at': 'TIMESTAMP'},
         'videos': {
             'public_id': 'VARCHAR(40)',
             'shares': 'INTEGER DEFAULT 0',
@@ -74,7 +74,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'thumbnail_data': binary_type,
             'thumbnail_mime': "VARCHAR(100) DEFAULT 'image/jpeg'",
         },
-        'comments': {'audio_url': 'VARCHAR(255)', 'edited_at': 'TIMESTAMP NULL'},
+        'comments': {'audio_url': 'VARCHAR(255)', 'edited_at': 'TIMESTAMP'},
         'call_logs': {'call_type': "VARCHAR(16) NOT NULL DEFAULT 'voice'"},
         'reports': {
             'message_id': 'INTEGER',
@@ -83,15 +83,37 @@ def run_startup_schema_upgrades(app) -> bool:
     }
 
     table_names = set(inspector.get_table_names())
-    with db.engine.begin() as connection:
-        for table_name, required_columns in required_columns_by_table.items():
-            if table_name not in table_names:
-                continue
-            columns = {column['name'] for column in inspector.get_columns(table_name)}
-            for name, sql_type in required_columns.items():
-                if name not in columns:
-                    connection.execute(text(f'ALTER TABLE {table_name} ADD COLUMN {name} {sql_type}'))
 
+    # ANTER: كل ALTER في transaction مستقلة، حتى لا "يسمّم" الفشل الجلسة كاملة.
+    for table_name, required_columns in required_columns_by_table.items():
+        if table_name not in table_names:
+            continue
+        try:
+            existing_columns = {
+                column['name']
+                for column in inspect(db.engine).get_columns(table_name)
+            }
+        except Exception:
+            continue
+
+        for name, sql_type in required_columns.items():
+            if name in existing_columns:
+                continue
+            try:
+                with db.engine.begin() as connection:
+                    connection.execute(
+                        text(f'ALTER TABLE {table_name} ADD COLUMN {name} {sql_type}')
+                    )
+                app.logger.info(
+                    'Added column %s.%s (%s)', table_name, name, sql_type
+                )
+            except Exception as exc:
+                # نُسجّل الخطأ ونُكمل — الفشل هنا ليس حرجًا.
+                app.logger.warning(
+                    'Could not add %s.%s: %s', table_name, name, exc
+                )
+
+    with db.engine.begin() as connection:
         for table_name in ('posts', 'videos'):
             if table_name in table_names:
                 connection.execute(text(

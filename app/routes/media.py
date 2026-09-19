@@ -31,33 +31,125 @@ def avatar(user_id):
     return _image_response(user.avatar_data, user.avatar_mime)
 
 
+# ANTER: الحد الأقصى لكل chunk عند بث الفيديو (2 MB).
+# يمنع تحميل ملف 14 MB كاملًا في طلب واحد → يحل OOM على Render Free.
+_VIDEO_CHUNK_SIZE = 2 * 1024 * 1024
+
+
+def _fetch_video_chunk(public_id, start, length):
+    """يجلب جزءًا من video_data من القاعدة دون تحميل BLOB كاملًا."""
+    from sqlalchemy import text
+    from app.extensions import db
+
+    dialect = db.engine.dialect.name
+    if dialect == 'postgresql':
+        sql = text(
+            "SELECT substring(video_data FROM :start FOR :length) "
+            "FROM videos WHERE public_id = :pid"
+        )
+    else:
+        sql = text(
+            "SELECT substr(video_data, :start, :length) "
+            "FROM videos WHERE public_id = :pid"
+        )
+    row = db.session.execute(
+        sql, {"start": start + 1, "length": length, "pid": public_id}
+    ).first()
+    if not row or row[0] is None:
+        return b''
+    return bytes(row[0])
+
+
+def _fetch_video_meta(public_id):
+    """يجلب طول الفيديو ونوعه فقط — بدون BLOB."""
+    from sqlalchemy import text
+    from app.extensions import db
+
+    row = db.session.execute(
+        text(
+            "SELECT length(video_data) AS size, video_mime, file_path "
+            "FROM videos WHERE public_id = :pid"
+        ),
+        {"pid": public_id},
+    ).first()
+    return row
+
+
 @media_bp.route('/video/<public_id>')
 def video_stream(public_id):
-    """ANTER: بث فيديو الريل من قاعدة البيانات (تخزين دائم)."""
-    from app.models import Video
-    from flask import abort, Response, redirect, url_for
+    """ANTER: بث فيديو الريل على شكل chunks مع دعم Range requests.
 
-    video = Video.query.filter_by(public_id=public_id).first()
-    if not video:
+    يمنع تحميل BLOB كاملًا في الذاكرة → لا OOM على Render Free Tier.
+    """
+    from flask import abort, Response, redirect, url_for, request
+
+    meta = _fetch_video_meta(public_id)
+    if meta is None:
         abort(404)
 
-    # إن وُجد BLOB في القاعدة → نُقدمه مباشرة
-    if video.video_data:
-        return Response(
-            video.video_data,
-            mimetype=video.video_mime or 'video/mp4',
-            headers={
-                'Content-Length': str(len(video.video_data)),
-                'Accept-Ranges': 'bytes',
-                'Cache-Control': 'public, max-age=3600',
-            },
-        )
+    total_size = int(meta.size) if meta.size is not None else 0
+    mime = meta.video_mime or 'video/mp4'
+    file_path = meta.file_path
 
-    # fallback: الملف على القرص (للتوافق مع الملفات القديمة)
-    if video.file_path:
-        return redirect(url_for('static', filename='uploads/' + video.file_path))
+    # fallback: الفيديو على القرص فقط (بدون BLOB)
+    if total_size == 0:
+        if file_path:
+            return redirect(url_for('static', filename='uploads/' + file_path))
+        abort(404)
 
-    abort(404)
+    # -------- معالجة Range header --------
+    range_header = request.headers.get('Range', '').strip()
+    start = 0
+    end = total_size - 1
+    status = 200
+
+    if range_header.startswith('bytes='):
+        raw = range_header[6:]
+        try:
+            parts = raw.split(',', 1)[0].split('-', 1)
+            if parts[0]:
+                start = int(parts[0])
+                if len(parts) > 1 and parts[1]:
+                    end = int(parts[1])
+            elif len(parts) > 1 and parts[1]:
+                # "bytes=-N" = آخر N بايت
+                tail = int(parts[1])
+                start = max(0, total_size - tail)
+                end = total_size - 1
+        except (ValueError, IndexError):
+            start, end = 0, total_size - 1
+
+        if start < 0:
+            start = 0
+        if end >= total_size:
+            end = total_size - 1
+        if start > end:
+            return Response(
+                status=416,
+                headers={'Content-Range': f'bytes */{total_size}'},
+            )
+        status = 206
+
+    # -------- تقييد الحجم لكل طلب --------
+    requested = end - start + 1
+    if requested > _VIDEO_CHUNK_SIZE:
+        end = start + _VIDEO_CHUNK_SIZE - 1
+        content_length = _VIDEO_CHUNK_SIZE
+    else:
+        content_length = requested
+
+    data = _fetch_video_chunk(public_id, start, content_length)
+
+    headers = {
+        'Content-Type': mime,
+        'Content-Length': str(len(data)),
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=3600',
+    }
+    if status == 206:
+        headers['Content-Range'] = f'bytes {start}-{end}/{total_size}'
+
+    return Response(data, status=status, headers=headers)
 
 
 @media_bp.route('/video-thumb/<public_id>')

@@ -310,6 +310,9 @@ def get_comments(video_id):
             'id': comment.id,
             'content': comment.content,
             'created_at': comment.created_at.isoformat() if comment.created_at else '',
+            'edited_at': comment.edited_at.isoformat() if comment.edited_at else None,
+            'author_id': comment.author_id,
+            'can_edit': comment.author_id == current_user.id,
             'likes': comment.like_count(),
             'liked': comment.likes.filter_by(user_id=current_user.id).first() is not None,
             'author': {
@@ -324,6 +327,9 @@ def get_comments(video_id):
                     'id': reply.id,
                     'content': reply.content,
                     'created_at': reply.created_at.isoformat() if reply.created_at else '',
+                    'edited_at': reply.edited_at.isoformat() if reply.edited_at else None,
+                    'author_id': reply.author_id,
+                    'can_edit': reply.author_id == current_user.id,
                     'likes': reply.like_count(),
                     'liked': reply.likes.filter_by(user_id=current_user.id).first() is not None,
                     'author': {
@@ -343,6 +349,73 @@ def get_comments(video_id):
         'video_id': video.id,
         'count': video.comment_count(),
         'comments': [serialize(comment) for comment in comments]
+    })
+
+
+@videos_bp.route('/comment/<int:comment_id>/edit', methods=['POST'])
+@login_required
+@csrf.exempt
+def edit_video_comment(comment_id):
+    """تعديل تعليق ريل — لصاحبه فقط."""
+    c = VideoComment.query.get_or_404(comment_id)
+
+    if c.author_id != current_user.id:
+        return jsonify({'success': False, 'message': 'لا يمكنك تعديل تعليق غيرك.'}), 403
+
+    data = request.get_json(silent=True) or request.form
+    content = (data.get('content') or '').strip()
+
+    if not content:
+        return jsonify({'success': False, 'message': 'التعليق لا يمكن أن يكون فارغاً.'}), 400
+    if len(content) > 2000:
+        return jsonify({'success': False, 'message': 'التعليق طويل جداً.'}), 400
+
+    if content == c.content:
+        return jsonify({
+            'success': True,
+            'message': 'لم يتم أي تغيير.',
+            'content': c.content,
+            'edited': bool(c.edited_at),
+        })
+
+    c.content = content
+    c.edited_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'تم تعديل التعليق.',
+        'content': c.content,
+        'edited': True,
+    })
+
+
+@videos_bp.route('/comment/<int:comment_id>/delete', methods=['POST'])
+@login_required
+@csrf.exempt
+def delete_video_comment(comment_id):
+    """حذف تعليق ريل — لصاحبه أو صاحب الريل أو الأدمن."""
+    c = VideoComment.query.get_or_404(comment_id)
+    video = Video.query.get(c.video_id)
+
+    can_delete = (
+        c.author_id == current_user.id
+        or (video and video.author_id == current_user.id)
+        or getattr(current_user, 'is_admin', False)
+    )
+
+    if not can_delete:
+        return jsonify({'success': False, 'message': 'لا يمكنك حذف هذا التعليق.'}), 403
+
+    video_id = c.video_id
+    comment_id_value = c.id
+    db.session.delete(c)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'تم حذف التعليق.',
+        'comment_id': comment_id_value,
     })
 
 

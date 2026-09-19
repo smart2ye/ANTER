@@ -10,6 +10,8 @@ class VideoComment(db.Model):
     video_id = db.Column(db.Integer, db.ForeignKey('videos.id'), nullable=False, index=True)
     parent_id = db.Column(db.Integer, db.ForeignKey('video_comments.id'), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # ANTER: مؤشر "تم التعديل"
+    edited_at = db.Column(db.DateTime, nullable=True)
 
     author = db.relationship('User', backref=db.backref('video_comments', lazy='dynamic', cascade='all, delete-orphan'))
     replies = db.relationship('VideoComment', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')

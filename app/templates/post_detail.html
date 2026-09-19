@@ -1,4 +1,103 @@
 {% extends "base.html" %}
 {% block content %}
+
+<div class="anter-post-detail">
+
+    <!-- رأس: زر رجوع -->
+    <div class="anter-post-detail__header">
+        <button type="button"
+                class="anter-post-detail__back"
+                id="anterPostDetailBack"
+                aria-label="رجوع">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            <span>رجوع</span>
+        </button>
+    </div>
+
+    <!-- بطاقة المنشور الكاملة -->
     {% include "_post_card.html" %}
+</div>
+
+<script>
+(function _anterPostDetail() {
+    'use strict';
+
+    // ---------- زر الرجوع ----------
+    const backBtn = document.getElementById('anterPostDetailBack');
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            if (window.history.length > 1 && document.referrer) {
+                window.history.back();
+            } else {
+                window.location.href = "{{ url_for('main.index') }}";
+            }
+        });
+    }
+
+    // ---------- فتح التعليقات تلقائيًا ----------
+    document.addEventListener('DOMContentLoaded', function() {
+        const section = document.querySelector('.comments-section');
+        if (!section) return;
+        if (section.dataset.loaded === 'true') return;
+
+        const toggle = document.querySelector('.comment-toggle');
+        if (!toggle) return;
+
+        // تأخير بسيط لضمان أن JS قد ربط الأحداث
+        setTimeout(function() {
+            toggle.click();
+        }, 350);
+    });
+})();
+</script>
+
+<style>
+.anter-post-detail {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 12px 0 40px;
+}
+
+.anter-post-detail__header {
+    padding: 4px 4px 12px;
+}
+
+.anter-post-detail__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 10px;
+    background: var(--card-bg, #fff);
+    color: var(--text-color, #050505);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.anter-post-detail__back i {
+    color: var(--fb-blue, #1877f2);
+}
+
+.anter-post-detail__back:hover {
+    background: rgba(24, 119, 242, 0.06);
+    border-color: rgba(24, 119, 242, 0.35);
+    color: var(--fb-blue, #1877f2);
+}
+
+.anter-post-detail__back:active {
+    transform: scale(0.97);
+}
+
+[data-bs-theme="dark"] .anter-post-detail__back,
+.dark-mode .anter-post-detail__back {
+    background: #242526;
+    border-color: #3a3b3c;
+    color: #e4e6eb;
+}
+</style>
+
 {% endblock %}

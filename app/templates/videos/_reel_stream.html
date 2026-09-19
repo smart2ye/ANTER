@@ -902,6 +902,9 @@
     function renderComment(comment, isReply = false) {
         const author = comment.author || {};
         const replyClass = isReply ? ' is-reply' : '';
+        const editedMark = comment.edited_at
+            ? '<span class="reels-comment-edited">· تم التعديل</span>'
+            : '';
 
         const replies = (comment.replies || []).map(reply =>
             renderComment(reply, true)
@@ -909,7 +912,9 @@
 
         return `
             <article class="reels-comment-card${replyClass}"
-                     data-comment-id="${comment.id}">
+                     data-comment-id="${comment.id}"
+                     data-author-id="${comment.author_id || ''}"
+                     data-edited="${comment.edited_at ? 'true' : 'false'}">
 
                 <img class="reels-comment-avatar"
                      src="${avatarUrl(author.avatar_url, author.avatar)}"
@@ -917,11 +922,65 @@
 
                 <div class="reels-comment-body">
                     <div class="reels-comment-author-row">
-                        <strong>${escapeHtml(author.name || author.username || 'مستخدم')}</strong>
-                        <span>@${escapeHtml(author.username || '')}</span>
+                        <div class="reels-comment-author-info">
+                            <strong>${escapeHtml(author.name || author.username || 'مستخدم')}</strong>
+                            <span>@${escapeHtml(author.username || '')}</span>
+                            ${editedMark}
+                        </div>
+                        <button type="button"
+                                class="reels-comment-menu-btn"
+                                data-reel-comment-menu
+                                aria-label="خيارات التعليق"
+                                aria-expanded="false">
+                            <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
+                        </button>
+                        <div class="reels-comment-menu" hidden>
+                            <button type="button"
+                                    class="reels-comment-menu-item"
+                                    data-reel-comment-action="copy"
+                                    data-comment-id="${comment.id}">
+                                <i class="fas fa-copy" aria-hidden="true"></i>
+                                نسخ النص
+                            </button>
+                            ${comment.can_edit ? `
+                            <button type="button"
+                                    class="reels-comment-menu-item"
+                                    data-reel-comment-action="edit"
+                                    data-comment-id="${comment.id}">
+                                <i class="fas fa-pen" aria-hidden="true"></i>
+                                تعديل
+                            </button>
+                            <button type="button"
+                                    class="reels-comment-menu-item reels-comment-menu-item--danger"
+                                    data-reel-comment-action="delete"
+                                    data-comment-id="${comment.id}">
+                                <i class="fas fa-trash" aria-hidden="true"></i>
+                                حذف
+                            </button>
+                            ` : ''}
+                        </div>
                     </div>
 
-                    <p class="reels-comment-text">${escapeHtml(comment.content)}</p>
+                    <p class="reels-comment-text" data-reel-comment-text>${escapeHtml(comment.content)}</p>
+
+                    <form class="reels-comment-edit-form" hidden data-comment-id="${comment.id}">
+                        <textarea class="reels-comment-edit-input"
+                                  maxlength="2000"
+                                  rows="2">${escapeHtml(comment.content)}</textarea>
+                        <div class="reels-comment-edit-actions">
+                            <button type="button"
+                                    class="reels-comment-edit-cancel"
+                                    data-reel-comment-action="cancel-edit">
+                                إلغاء
+                            </button>
+                            <button type="button"
+                                    class="reels-comment-edit-save"
+                                    data-reel-comment-action="save-edit"
+                                    data-comment-id="${comment.id}">
+                                حفظ
+                            </button>
+                        </div>
+                    </form>
 
                     <div class="reels-comment-tools">
                         <button type="button"
@@ -1244,6 +1303,208 @@
         const index = Math.max(0, items.indexOf(activeItem) + (event.key === 'ArrowDown' ? 1 : -1));
         const target = items[Math.min(items.length - 1, index)];
         target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+})();
+</script>
+
+<script>
+/* ============================================================
+   ANTER Reel Comment Menu + Edit + Delete
+   ============================================================ */
+(function _anterReelCommentMenu() {
+    'use strict';
+
+    const commentsList = document.getElementById('reelsCommentsList');
+    if (!commentsList) return;
+
+    function showToast(msg, kind) {
+        let box = document.getElementById('anterReelCommentToast');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'anterReelCommentToast';
+            box.className = 'anter-img-toast';
+            document.body.appendChild(box);
+        }
+        box.textContent = msg;
+        box.className = 'anter-img-toast is-visible ' + (kind || '');
+        clearTimeout(box._t);
+        box._t = setTimeout(() => box.classList.remove('is-visible'), 2200);
+    }
+
+    function getCsrf() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    }
+
+    function closeAllMenus() {
+        commentsList.querySelectorAll('.reels-comment-menu').forEach(m => m.hidden = true);
+        commentsList.querySelectorAll('[data-reel-comment-menu]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    }
+
+    // ---------- فتح/إغلاق القائمة ----------
+    commentsList.addEventListener('click', (e) => {
+        const toggle = e.target.closest('[data-reel-comment-menu]');
+        if (toggle) {
+            e.preventDefault();
+            e.stopPropagation();
+            const row = toggle.closest('.reels-comment-author-row');
+            const menu = row?.querySelector('.reels-comment-menu');
+            if (!menu) return;
+            const willOpen = menu.hidden;
+            closeAllMenus();
+            if (willOpen) {
+                menu.hidden = false;
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+            return;
+        }
+
+        if (!e.target.closest('.reels-comment-menu')) {
+            closeAllMenus();
+        }
+    }, true);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAllMenus();
+    });
+
+    // ---------- تنفيذ الإجراءات ----------
+    commentsList.addEventListener('click', async (e) => {
+        const item = e.target.closest('[data-reel-comment-action]');
+        if (!item) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const action = item.dataset.reelCommentAction;
+        const commentId = item.dataset.commentId;
+        const card = commentId ? commentsList.querySelector(`.reels-comment-card[data-comment-id="${commentId}"]`) : null;
+
+        closeAllMenus();
+
+        // ---------- نسخ ----------
+        if (action === 'copy' && card) {
+            const textEl = card.querySelector('[data-reel-comment-text]');
+            const text = textEl ? textEl.textContent.trim() : '';
+            if (!text) return;
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('تم نسخ النص ✓', 'success');
+            } catch (_) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+                showToast('تم نسخ النص ✓', 'success');
+            }
+            return;
+        }
+
+        // ---------- بدء التعديل ----------
+        if (action === 'edit' && card) {
+            const textEl = card.querySelector('[data-reel-comment-text]');
+            const form = card.querySelector('.reels-comment-edit-form');
+            const input = form?.querySelector('.reels-comment-edit-input');
+            if (!textEl || !form || !input) return;
+            input.value = textEl.textContent.trim();
+            textEl.hidden = true;
+            form.hidden = false;
+            input.focus();
+            input.setSelectionRange(input.value.length, input.value.length);
+            return;
+        }
+
+        // ---------- إلغاء التعديل ----------
+        if (action === 'cancel-edit' && card) {
+            const textEl = card.querySelector('[data-reel-comment-text]');
+            const form = card.querySelector('.reels-comment-edit-form');
+            if (textEl) textEl.hidden = false;
+            if (form) form.hidden = true;
+            return;
+        }
+
+        // ---------- حفظ التعديل ----------
+        if (action === 'save-edit' && card && commentId) {
+            const form = card.querySelector('.reels-comment-edit-form');
+            const input = form?.querySelector('.reels-comment-edit-input');
+            const saveBtn = item;
+            if (!input || !saveBtn) return;
+
+            const newContent = input.value.trim();
+            if (!newContent) {
+                showToast('التعليق لا يمكن أن يكون فارغاً.', 'error');
+                return;
+            }
+
+            saveBtn.classList.add('is-loading');
+            saveBtn.disabled = true;
+
+            try {
+                const resp = await fetch(`/videos/comment/${commentId}/edit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrf(),
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ content: newContent }),
+                });
+                const data = await resp.json().catch(() => ({}));
+
+                if (!resp.ok || data.success === false) {
+                    throw new Error(data.message || 'تعذر حفظ التعديل.');
+                }
+
+                const textEl = card.querySelector('[data-reel-comment-text]');
+                if (textEl) {
+                    textEl.textContent = data.content;
+                    textEl.hidden = false;
+                }
+                if (form) form.hidden = true;
+
+                // إظهار "تم التعديل"
+                if (data.edited) {
+                    const info = card.querySelector('.reels-comment-author-info');
+                    if (info && !info.querySelector('.reels-comment-edited')) {
+                        const span = document.createElement('span');
+                        span.className = 'reels-comment-edited';
+                        span.textContent = '· تم التعديل';
+                        info.appendChild(span);
+                    }
+                }
+
+                showToast('تم تعديل التعليق ✓', 'success');
+            } catch (err) {
+                showToast(err.message || 'تعذر حفظ التعديل.', 'error');
+            } finally {
+                saveBtn.classList.remove('is-loading');
+                saveBtn.disabled = false;
+            }
+            return;
+        }
+
+        // ---------- حذف ----------
+        if (action === 'delete' && card && commentId) {
+            if (!confirm('هل تريد حذف هذا التعليق نهائيًا؟')) return;
+            try {
+                const resp = await fetch(`/videos/comment/${commentId}/delete`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrf() },
+                    credentials: 'same-origin',
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || data.success === false) {
+                    throw new Error(data.message || 'تعذر حذف التعليق.');
+                }
+                card.style.transition = 'opacity .2s ease';
+                card.style.opacity = '0';
+                setTimeout(() => card.remove(), 200);
+                showToast('تم حذف التعليق ✓', 'success');
+            } catch (err) {
+                showToast(err.message || 'تعذر حذف التعليق.', 'error');
+            }
+            return;
+        }
     });
 })();
 </script>

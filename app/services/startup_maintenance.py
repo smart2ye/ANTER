@@ -65,6 +65,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'media_data': binary_type,
             'media_mime': 'VARCHAR(100)',
         },
+        'video_comments': {'edited_at': 'TIMESTAMP NULL'},
         'videos': {
             'public_id': 'VARCHAR(40)',
             'shares': 'INTEGER DEFAULT 0',

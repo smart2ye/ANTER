@@ -8672,3 +8672,210 @@ a.anter-profile-stat:hover {
     .anter-notif-item__action-icon { width: 20px; height: 20px; font-size: 0.62rem; }
     .anter-notif-item__dot { top: 12px; left: 12px; width: 8px; height: 8px; }
 }
+
+/* ============================================================
+   ANTER Reel Comment Menu — قائمة خيارات تعليق الريل
+   ============================================================ */
+.reels-comment-author-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.reels-comment-edited {
+    font-size: 0.7rem;
+    color: #8892a6;
+    font-style: italic;
+}
+
+.reels-comment-author-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    position: relative;
+}
+
+.reels-comment-menu-btn {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #8892a6;
+    cursor: pointer;
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity .15s ease, background .15s ease, color .15s ease;
+}
+
+.reels-comment-card:hover .reels-comment-menu-btn,
+.reels-comment-menu-btn[aria-expanded="true"] {
+    opacity: 1;
+}
+
+.reels-comment-menu-btn:hover,
+.reels-comment-menu-btn[aria-expanded="true"] {
+    background: rgba(24, 119, 242, 0.1);
+    color: #1877f2;
+}
+
+@media (hover: none) {
+    .reels-comment-menu-btn { opacity: 1; }
+}
+
+/* القائمة المنسدلة */
+.reels-comment-menu {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    z-index: 50;
+    min-width: 160px;
+    padding: 6px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+    animation: reelsCommentMenuIn .15s ease-out;
+    direction: rtl;
+}
+
+.reels-comment-menu[hidden] { display: none; }
+
+@keyframes reelsCommentMenuIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.reels-comment-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 9px 11px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #050505;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: start;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+
+.reels-comment-menu-item i {
+    width: 16px;
+    color: #65676b;
+}
+
+.reels-comment-menu-item:hover {
+    background: rgba(24, 119, 242, 0.08);
+}
+
+.reels-comment-menu-item:hover i {
+    color: #1877f2;
+}
+
+.reels-comment-menu-item--danger {
+    color: #dc2626;
+}
+
+.reels-comment-menu-item--danger i { color: #dc2626; }
+
+.reels-comment-menu-item--danger:hover {
+    background: rgba(220, 38, 38, 0.08);
+}
+
+/* نموذج التعديل */
+.reels-comment-edit-form {
+    margin-top: 6px;
+    padding: 8px;
+    border-radius: 10px;
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+}
+
+.reels-comment-edit-form[hidden] { display: none; }
+
+.reels-comment-edit-input {
+    display: block;
+    width: 100%;
+    min-height: 52px;
+    padding: 8px 10px;
+    border: 1px solid #dfe2e6;
+    border-radius: 8px;
+    background: #fff;
+    color: #050505;
+    font-family: inherit;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+}
+
+.reels-comment-edit-input:focus { border-color: #1877f2; }
+
+.reels-comment-edit-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.reels-comment-edit-cancel,
+.reels-comment-edit-save {
+    padding: 5px 12px;
+    border: 0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.reels-comment-edit-cancel {
+    background: transparent;
+    color: #65676b;
+    border: 1px solid #e5e7eb;
+}
+
+.reels-comment-edit-save {
+    background: linear-gradient(135deg, #1877f2, #6a4cff);
+    color: #fff;
+}
+
+.reels-comment-edit-save.is-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* الوضع الداكن */
+[data-bs-theme="dark"] .reels-comment-menu,
+.dark-mode .reels-comment-menu {
+    background: #242526;
+    border-color: #3a3b3c;
+    color: #e4e6eb;
+}
+
+[data-bs-theme="dark"] .reels-comment-menu-item,
+.dark-mode .reels-comment-menu-item {
+    color: #e4e6eb;
+}
+
+[data-bs-theme="dark"] .reels-comment-edit-form,
+.dark-mode .reels-comment-edit-form {
+    background: #3a3b3c;
+    border-color: #4a4b4d;
+}
+
+[data-bs-theme="dark"] .reels-comment-edit-input,
+.dark-mode .reels-comment-edit-input {
+    background: #242526;
+    border-color: #4a4b4d;
+    color: #e4e6eb;
+}

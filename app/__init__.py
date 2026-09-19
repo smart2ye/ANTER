@@ -212,39 +212,6 @@ def create_app(test_config=None):
         except Exception:
             pass
 
-    # ============================================
-    # ANTER: تشخيص القاعدة (مؤقت — نُزيله لاحقًا)
-    # ============================================
-    @app.route('/__diag')
-    def _anter_diag():
-        from flask import jsonify
-        from app.models import Post, Video, Comment, Story, Notification, User
-        results = {}
-        for name, model in [
-            ('users', User),
-            ('posts', Post),
-            ('videos', Video),
-            ('comments', Comment),
-            ('stories', Story),
-            ('notifications', Notification),
-        ]:
-            try:
-                results[name] = model.query.count()
-            except Exception as exc:
-                results[name] = f"{type(exc).__name__}: {str(exc)[:180]}"
-                try:
-                    db.session.rollback()
-                except Exception:
-                    pass
-        try:
-            from sqlalchemy import inspect, text
-            insp = inspect(db.engine)
-            cols = [c['name'] for c in insp.get_columns('video_comments')]
-            results['video_comments_columns'] = cols
-        except Exception as exc:
-            results['video_comments_columns'] = f"ERR: {str(exc)[:180]}"
-        return jsonify(results)
-
     @app.before_request
     def update_last_seen():
         from flask_login import current_user

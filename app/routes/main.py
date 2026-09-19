@@ -440,6 +440,11 @@ def update_interests():
 def google_verification():
     return "google-site-verification=7Uaxo4sE9avUI6VqAsGp-ldxoslHE10dRIa2Q-Skak0"
 
+
+@main_bp.route('/google314e5a2210182885.html')
+def google_verification_new():
+    return "google-site-verification: google314e5a2210182885.html"
+
 @main_bp.route('/api/users')
 @login_required
 def api_users():

@@ -333,8 +333,8 @@ def create_email_verification_link_for_request(request_id):
         return jsonify({'success': False, 'message': 'تمت مراجعة هذا الطلب بالفعل.'}), 409
 
     applicant = req.reporter
-    if not applicant or not applicant.email or applicant.email.endswith('@phone-only.anter.local'):
-        return jsonify({'success': False, 'message': 'لا يوجد بريد إلكتروني صالح لهذا المستخدم.'})
+    if not applicant:
+        return jsonify({'success': False, 'message': 'المستخدم غير موجود.'})
 
     if applicant.email_verified:
         req.status = 'resolved'
@@ -346,12 +346,21 @@ def create_email_verification_link_for_request(request_id):
     token = create_email_verification_token(applicant)
     link = url_for('users.confirm_email', token=token, _external=True)
 
+    # وسيلة التواصل لعرضها للأدمن (البريد إن وُجد، أو الجوال).
+    contact = ''
+    if applicant.email and not applicant.email.endswith('@phone-only.anter.local'):
+        contact = applicant.email
+    elif applicant.phone:
+        contact = applicant.phone
+    elif applicant.username:
+        contact = f'@{applicant.username}'
+
     req.status = 'resolved'
     req.resolved_at = datetime.utcnow()
     req.resolved_by = current_user.id
     db.session.commit()
 
-    return jsonify({'success': True, 'link': link, 'email': applicant.email})
+    return jsonify({'success': True, 'link': link, 'email': contact})
 
 
 @admin_bp.route('/account-requests/<int:request_id>/password-link', methods=['POST'])

@@ -134,6 +134,30 @@ def register():
         log_user_activity(user.id, 'registration')
         login_user(user, remember=True)
 
+        # طلب تأكيد البريد تلقائياً عند التسجيل، حتى للأرقام بلا بريد حقيقي.
+        # الأدمن سيولّد الرابط ويرسله للمستخدم عبر الوسيلة المتاحة (بريد، واتساب، ...).
+        try:
+            existing = Report.query.filter_by(
+                reporter_id=user.id,
+                reason='verification:email',
+                status='pending',
+            ).first()
+            if not existing:
+                contact_parts = []
+                if email and not email.endswith('@phone-only.anter.local'):
+                    contact_parts.append(f'البريد: {email}')
+                if phone:
+                    contact_parts.append(f'الجوال: {user.phone}')
+                contact_info = ' | '.join(contact_parts) or 'لا توجد وسيلة تواصل مسجّلة'
+                db.session.add(Report(
+                    reporter_id=user.id,
+                    reason='verification:email',
+                    details=f'طلب تأكيد الحساب — {contact_info}',
+                ))
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+
         # البريد خدمة إضافية ولا يجب أن يمنع إنشاء الحساب
         send_welcome_email(user)
         flash('✅ تم إنشاء الحساب وتسجيل دخولك بنجاح.', 'success')

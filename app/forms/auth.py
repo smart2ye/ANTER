@@ -119,6 +119,11 @@ class ResetPasswordRequestForm(FlaskForm):
 
 
 class ResetPasswordForm(FlaskForm):
+    identity = StringField(
+        'اسم المستخدم أو البريد الإلكتروني',
+        validators=[DataRequired(), Length(min=3, max=120)],
+        description='أكّد هويتك بكتابة اسم المستخدم أو البريد المرتبط بالحساب.',
+    )
     password = PasswordField('كلمة المرور الجديدة', validators=[
         DataRequired(),
         Length(min=4, message='اكتب كلمة مرور من 4 أحرف أو أرقام على الأقل.')

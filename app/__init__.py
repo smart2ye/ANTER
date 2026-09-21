@@ -159,6 +159,26 @@ def create_app(test_config=None):
     app.add_template_global(post_image_url, name='post_image_url')
 
     @app.context_processor
+    def inject_admin_pending_count():
+        from flask_login import current_user
+        from flask import request
+        if not current_user.is_authenticated or not getattr(current_user, 'is_admin', False):
+            return {'admin_pending_requests': 0}
+        if not request.path.startswith('/admin'):
+            return {'admin_pending_requests': 0}
+        try:
+            from app.extensions import db
+            from app.models import Report
+            from app.routes.admin import ACCOUNT_REQUEST_REASONS
+            count = db.session.query(Report).filter(
+                Report.reason.in_(ACCOUNT_REQUEST_REASONS),
+                Report.status == 'pending',
+            ).count()
+            return {'admin_pending_requests': count}
+        except Exception:
+            return {'admin_pending_requests': 0}
+
+    @app.context_processor
     def inject_assistant_account_switching():
         from flask_login import current_user
         from app.services.anter_account_switching import can_switch_back, can_switch_to_assistant

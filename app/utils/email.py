@@ -1,35 +1,54 @@
 import os
-import resend
+import smtplib
+import ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from flask import url_for
 
-RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
-RESEND_FROM = "ANTER <onboarding@resend.dev>"
+MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))
+MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true").lower() in {"1", "true", "yes", "on"}
+MAIL_USERNAME = os.environ.get("MAIL_USERNAME") or os.environ.get("MAIL_FROM")
+MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+MAIL_FROM = os.environ.get("MAIL_FROM") or MAIL_USERNAME
+
 
 def send_email(to, subject, html_content):
+    """Send an HTML email via Gmail SMTP."""
     try:
-        if not RESEND_API_KEY:
-            print("❌ RESEND_API_KEY غير موجود")
+        if not MAIL_USERNAME or not MAIL_PASSWORD:
+            print("ERROR: MAIL_USERNAME or MAIL_PASSWORD missing")
             return False
 
-        resend.api_key = RESEND_API_KEY
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = str(subject)
+        msg["From"] = f"ANTER <{MAIL_FROM}>"
+        msg["To"] = to
+        msg.attach(MIMEText(html_content, "html", "utf-8"))
 
-        params = {
-            "from": RESEND_FROM,
-            "to": [to],
-            "subject": str(subject),
-            "html": html_content,
-        }
+        context = ssl.create_default_context()
+        if MAIL_PORT == 465:
+            # Implicit SSL (SMTPS) - works reliably on Termux / OpenSSL 3
+            with smtplib.SMTP_SSL(MAIL_SERVER, MAIL_PORT, timeout=30, context=context) as server:
+                server.ehlo()
+                server.login(MAIL_USERNAME, MAIL_PASSWORD)
+                server.sendmail(MAIL_FROM, [to], msg.as_string())
+        else:
+            with smtplib.SMTP(MAIL_SERVER, MAIL_PORT, timeout=30) as server:
+                server.ehlo()
+                if MAIL_USE_TLS:
+                    server.starttls(context=context)
+                    server.ehlo()
+                server.login(MAIL_USERNAME, MAIL_PASSWORD)
+                server.sendmail(MAIL_FROM, [to], msg.as_string())
 
-        response = resend.Emails.send(params)
-
-        print(f"✅ تم إرسال البريد عبر Resend إلى {to}")
-        print(f"📨 Resend response: {response}")
-
+        print(f"OK: email sent to {to}")
         return True
 
     except Exception as e:
-        print(f"❌ فشل الإرسال عبر Resend: {e}")
+        print(f"ERROR: send_email failed: {type(e).__name__}: {e}")
         return False
+
 
 def send_reset_email(user, token):
     reset_link = url_for('auth.reset_password', token=token, _external=True)

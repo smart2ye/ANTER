@@ -174,12 +174,19 @@ def _direct_anter_reply(
 
     greeting_markers = ("السلام عليكم", "مرحبا", "مرحباً", "اهلا", "أهلاً", "هلا")
     wellbeing_markers = ("كيف حالك", "كيفك", "كيف الحال")
-    if any(marker in normalized for marker in greeting_markers):
-        if "السلام عليكم" in normalized:
-            return f"وعليكم السلام يا {name}، أهلاً بك. أنا بخير، ويسعدني أن نكمل الحديث هنا. ما الذي يدور في بالك؟"
-        return f"أهلاً يا {name}، نورت ANTER. أنا بخير وجاهز نتكلم أو ننجز أي شيء يخص المنصة."
-    if any(marker in normalized for marker in wellbeing_markers):
-        return f"أنا بخير يا {name}، شكراً لسؤالك. ما الموضوع الذي تحب نبدأ به؟"
+    _strip_chars = " \t،,.!؟?-—\u060c\u061f\n"
+    greeting_match = next((m for m in greeting_markers if m in normalized), None)
+    if greeting_match:
+        remainder = normalized.replace(greeting_match, "", 1).strip(_strip_chars)
+        if len(remainder) < 20:
+            if "السلام عليكم" in normalized:
+                return f"وعليكم السلام يا {name}، أهلاً بك. أنا بخير، ويسعدني أن نكمل الحديث هنا. ما الذي يدور في بالك؟"
+            return f"أهلاً يا {name}، نورت ANTER. أنا بخير وجاهز نتكلم أو ننجز أي شيء يخص المنصة."
+    wellbeing_match = next((m for m in wellbeing_markers if m in normalized), None)
+    if wellbeing_match:
+        remainder = normalized.replace(wellbeing_match, "", 1).strip(_strip_chars)
+        if len(remainder) < 20:
+            return f"أنا بخير يا {name}، شكراً لسؤالك. ما الموضوع الذي تحب نبدأ به؟"
 
     identity_markers = ("ما اسمك", "ما اسمك؟", "من انت", "من أنت", "من تكون", "انت هنا", "أنت هنا")
     if any(marker in normalized for marker in identity_markers):
@@ -200,6 +207,11 @@ def _direct_anter_reply(
 
     mentions_anter = "anter" in normalized or "انتر" in normalized or "أنتر" in normalized
     if not mentions_anter:
+        return None
+
+    # الردود الجاهزة عن ANTER مخصّصة للأسئلة القصيرة المركّزة فقط.
+    # الرسائل الطويلة (مثل نص بريد مُلصَق) قد تذكر ANTER عرضاً، فتُحوَّل إلى النموذج.
+    if len(normalized) > 200:
         return None
 
     founder_markers = ("مؤسس", "المؤسس", "اسس", "أسس")
@@ -232,7 +244,10 @@ def _assistant_system_prompt() -> str:
         "لا تخلط ANTER بالكيانات الرياضية أو بأي منصة أخرى. "
         "لا تدّع أنك إنسان، ولا تخترع حقائق عن المنصة. "
         "إن لم تكن متأكداً، قل ذلك ببساطة واقترح الخطوة التالية المناسبة. "
-        "في الأسئلة العامة والتحيات، اجعل الرد قصيراً: فقرتان صغيرتان كحد أقصى أو نحو 4 جمل. "
+        "في التحيات والأسئلة العابرة، اجعل الرد قصيراً: فقرتان صغيرتان كحد أقصى أو نحو 4 جمل. "
+        "أما إذا طلب المستخدم صراحة شرحاً، أو تفصيلاً، أو خطوات، أو مقارنة، أو مثالاً ملموساً، "
+        "فأجب بنبرة تعليمية منظّمة: استخدم عناوين فرعية قصيرة أو قوائم مرقّمة عند الحاجة، واذكر مثالاً عملياً واحداً على الأقل، "
+        "دون إطالة لا فائدة فيها ودون تكرار. "
         "لا تسرد مراحل التأسيس أو خطط التطوير أو تفاصيل تشغيل المنصة إلا إذا طلب المستخدم ذلك صراحة. "
         "اكتب الإجابة النهائية فقط من دون أي وسوم تفكير أو تحليل داخلي."
     )

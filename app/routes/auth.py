@@ -187,13 +187,20 @@ def reset_password_request():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user:
-            s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-            token = s.dumps(user.id, salt='password-reset')
-            reset_url = url_for('auth.reset_password', token=token, _external=True)
-            # تم إخفاء الرابط تماماً من الشاشة لمنع استغلاله من قبل أي شخص يعرف البريد
-            # في الإنتاج يتم إرسال هذا الرابط حصرياً عبر البريد الإلكتروني الحقيقي للمستخدم
-            # للتسجيل والاختبار المحلي، يتم تسجيل الرابط في سجلات الخادم الآمنة فقط
-            send_reset_email(user, token)
+            from app.models import Report
+            existing = Report.query.filter_by(
+                reporter_id=user.id,
+                reason='password-reset-request',
+                status='pending',
+            ).first()
+            if not existing:
+                req = Report(
+                    reporter_id=user.id,
+                    reason='password-reset-request',
+                    details=f'طلب إعادة تعيين كلمة السر للبريد: {user.email}',
+                )
+                db.session.add(req)
+                db.session.commit()
         
         # دائماً نظهر نفس الرسالة الأمنية بغض النظر عن وجود الحساب لمنع تخمين الإيميلات
         flash('✅ إذا كان البريد الإلكتروني مسجلاً لدينا، فقد تم إرسال تعليمات استعادة كلمة المرور إليه.', 'success')
@@ -216,6 +223,12 @@ def reset_password(token):
         return redirect(url_for('auth.reset_password_request'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
+        identity = (form.identity.data or '').strip().lower()
+        user_username = (user.username or '').strip().lower()
+        user_email = (user.email or '').strip().lower()
+        if identity not in (user_username, user_email):
+            flash('❌ اسم المستخدم أو البريد غير مطابق للحساب المرتبط بهذا الرابط.', 'danger')
+            return render_template('auth/reset_password.html', form=form)
         user.set_password(form.password.data)
         log_user_activity(user.id, "password_change")
         db.session.commit()

@@ -8,6 +8,13 @@ import os
 
 admin_bp = Blueprint('admin', __name__)
 VERIFICATION_REQUEST_REASON = 'verification:account'
+EMAIL_VERIFICATION_REQUEST_REASON = 'verification:email'
+PASSWORD_RESET_REQUEST_REASON = 'password-reset-request'
+ACCOUNT_REQUEST_REASONS = (
+    VERIFICATION_REQUEST_REASON,
+    EMAIL_VERIFICATION_REQUEST_REASON,
+    PASSWORD_RESET_REQUEST_REASON,
+)
 
 def admin_required(f):
     from functools import wraps
@@ -161,6 +168,67 @@ def toggle_user_verification(user_id):
     db.session.commit()
     return jsonify({'success': True, 'is_verified': user.is_verified})
 
+
+@admin_bp.route('/users/send-email/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def send_email_to_user(user_id):
+    from app.utils.email import send_email
+    from markupsafe import escape
+
+    user = User.query.get_or_404(user_id)
+    if not user.email or user.email.endswith('@phone-only.anter.local'):
+        return jsonify({'success': False, 'message': 'لا يوجد بريد إلكتروني صالح لهذا المستخدم.'})
+
+    data = request.get_json(silent=True) or request.form
+    subject = (data.get('subject') or '').strip()
+    body = (data.get('message') or '').strip()
+
+    if not subject or not body:
+        return jsonify({'success': False, 'message': 'الموضوع ونص الرسالة مطلوبان.'})
+
+    # Admin-only: allow raw HTML in body (email body, not rendered on site).
+    safe_subject = str(escape(subject))
+    html = body
+
+    ok = send_email(user.email, safe_subject, html)
+    if ok:
+        return jsonify({'success': True, 'message': f'تم إرسال البريد إلى {user.email}'})
+    return jsonify({'success': False, 'message': 'فشل إرسال البريد. تحقق من سجلات الخادم.'})
+
+
+@admin_bp.route('/users/email-verify-link/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def generate_email_verification_link(user_id):
+    """توليد رابط تأكيد البريد الإلكتروني لمستخدم معيّن."""
+    from app.routes.users import create_email_verification_token
+
+    user = User.query.get_or_404(user_id)
+    if not user.email or user.email.endswith('@phone-only.anter.local'):
+        return jsonify({'success': False, 'message': 'لا يوجد بريد إلكتروني صالح لهذا المستخدم.'})
+
+    if getattr(user, 'email_verified', False):
+        return jsonify({'success': False, 'message': 'البريد الإلكتروني مؤكد بالفعل.'})
+
+    token = create_email_verification_token(user)
+    link = url_for('users.confirm_email', token=token, _external=True)
+    return jsonify({'success': True, 'link': link, 'email': user.email})
+
+
+@admin_bp.route('/users/password-reset-link/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def generate_password_reset_link(user_id):
+    """توليد رابط إعادة تعيين كلمة السر لمستخدم معيّن (صالح ساعة واحدة)."""
+    from itsdangerous import URLSafeTimedSerializer
+
+    user = User.query.get_or_404(user_id)
+    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    token = s.dumps(user.id, salt='password-reset')
+    link = url_for('auth.reset_password', token=token, _external=True)
+    return jsonify({'success': True, 'link': link, 'email': user.email})
+
 # ============================================
 # إدارة المنشورات (مع CSRF حماية)
 # ============================================
@@ -218,8 +286,8 @@ def support_requests():
 @login_required
 @admin_required
 def verification_requests():
-    requests = Report.query.filter_by(
-        reason=VERIFICATION_REQUEST_REASON,
+    requests = Report.query.filter(
+        Report.reason.in_(ACCOUNT_REQUEST_REASONS),
     ).order_by(Report.created_at.desc()).all()
     return render_template('admin/verification_requests.html', requests=requests)
 
@@ -247,6 +315,94 @@ def approve_verification_request(request_id):
     ))
     db.session.commit()
     return jsonify({'success': True, 'is_verified': True})
+
+
+@admin_bp.route('/account-requests/<int:request_id>/email-link', methods=['POST'])
+@login_required
+@admin_required
+def create_email_verification_link_for_request(request_id):
+    """توليد رابط تأكيد البريد لصاحب الطلب (لا يُرسَل تلقائيًا)."""
+    from app.routes.users import create_email_verification_token
+
+    req = Report.query.filter_by(
+        id=request_id,
+        reason=EMAIL_VERIFICATION_REQUEST_REASON,
+    ).first_or_404()
+
+    if req.status != 'pending':
+        return jsonify({'success': False, 'message': 'تمت مراجعة هذا الطلب بالفعل.'}), 409
+
+    applicant = req.reporter
+    if not applicant or not applicant.email or applicant.email.endswith('@phone-only.anter.local'):
+        return jsonify({'success': False, 'message': 'لا يوجد بريد إلكتروني صالح لهذا المستخدم.'})
+
+    if applicant.email_verified:
+        req.status = 'resolved'
+        req.resolved_at = datetime.utcnow()
+        req.resolved_by = current_user.id
+        db.session.commit()
+        return jsonify({'success': False, 'message': 'البريد مؤكد بالفعل.'})
+
+    token = create_email_verification_token(applicant)
+    link = url_for('users.confirm_email', token=token, _external=True)
+
+    req.status = 'resolved'
+    req.resolved_at = datetime.utcnow()
+    req.resolved_by = current_user.id
+    db.session.commit()
+
+    return jsonify({'success': True, 'link': link, 'email': applicant.email})
+
+
+@admin_bp.route('/account-requests/<int:request_id>/password-link', methods=['POST'])
+@login_required
+@admin_required
+def create_password_reset_link_for_request(request_id):
+    """توليد رابط إعادة تعيين كلمة السر لصاحب الطلب (لا يُرسَل تلقائيًا)."""
+    from itsdangerous import URLSafeTimedSerializer
+
+    req = Report.query.filter_by(
+        id=request_id,
+        reason=PASSWORD_RESET_REQUEST_REASON,
+    ).first_or_404()
+
+    if req.status != 'pending':
+        return jsonify({'success': False, 'message': 'تمت مراجعة هذا الطلب بالفعل.'}), 409
+
+    applicant = req.reporter
+    if not applicant:
+        return jsonify({'success': False, 'message': 'المستخدم غير موجود.'})
+
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    token = serializer.dumps(applicant.id, salt='password-reset')
+    link = url_for('auth.reset_password', token=token, _external=True)
+
+    req.status = 'resolved'
+    req.resolved_at = datetime.utcnow()
+    req.resolved_by = current_user.id
+    db.session.commit()
+
+    return jsonify({'success': True, 'link': link, 'email': applicant.email or '(no email)'})
+
+
+@admin_bp.route('/account-requests/<int:request_id>/reject', methods=['POST'])
+@login_required
+@admin_required
+def reject_account_request(request_id):
+    """رفض طلب (تأكيد بريد أو إعادة كلمة السر)."""
+    req = Report.query.filter(
+        Report.id == request_id,
+        Report.reason.in_((EMAIL_VERIFICATION_REQUEST_REASON, PASSWORD_RESET_REQUEST_REASON)),
+    ).first_or_404()
+
+    if req.status != 'pending':
+        return jsonify({'success': False, 'message': 'تمت مراجعة هذا الطلب بالفعل.'}), 409
+
+    req.status = 'rejected'
+    req.resolved_at = datetime.utcnow()
+    req.resolved_by = current_user.id
+    db.session.commit()
+    return jsonify({'success': True})
 
 
 @admin_bp.route('/verification-requests/<int:request_id>/reject', methods=['POST'])

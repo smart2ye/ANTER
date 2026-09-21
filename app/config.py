@@ -49,7 +49,7 @@ else:
         'pool_pre_ping': True,
         'pool_recycle': 120,
         'connect_args': {
-            'connect_timeout': 10,
+            'connect_timeout': 30,
             'keepalives': 1,
             'keepalives_idle': 30,
             'keepalives_interval': 10,
@@ -155,7 +155,7 @@ class Config:
     ANTER_OWNER_ADMIN_USERNAME = os.environ.get(
         'ANTER_OWNER_ADMIN_USERNAME', 'abdulqader.mahdly'
     ).strip().lstrip('@')
-    ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS', 1200, 100)
+    ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS', 3000, 100)
     ANTER_ASSISTANT_MAX_REPLY_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_REPLY_CHARACTERS', 1200, 300)
     ANTER_ASSISTANT_MINI_LLM_ARABIC_API_KEY = os.environ.get(
         'ANTER_ASSISTANT_MINI_LLM_ARABIC_API_KEY', MINI_LLM_ARABIC_API_KEY

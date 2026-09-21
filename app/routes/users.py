@@ -191,24 +191,26 @@ def send_email_verification_request():
         flash('تم تأكيد بريدك الإلكتروني بالفعل.', 'info')
         return redirect(url_for('users.settings'))
 
-    # منع إعادة الإرسال المتكرر من نفس الجلسة.
-    now = datetime.utcnow().timestamp()
-    last_sent = session.get('email_verification_last_sent', 0)
-
-    if now - last_sent < 60:
-        remaining = max(1, int(60 - (now - last_sent)))
-        flash(f'انتظر {remaining} ثانية قبل إعادة إرسال رسالة التأكيد.', 'warning')
+    # فحص وجود طلب معلق بالفعل
+    existing = Report.query.filter_by(
+        reporter_id=current_user.id,
+        reason='verification:email',
+        status='pending',
+    ).first()
+    if existing:
+        flash('لديك طلب تأكيد بريد قيد المراجعة. سيصلك الرابط قريبًا.', 'info')
         return redirect(url_for('users.settings'))
 
-    token = create_email_verification_token(current_user)
+    # إنشاء طلب للمسؤول بدلاً من الإرسال التلقائي
+    report = Report(
+        reporter_id=current_user.id,
+        reason='verification:email',
+        details=f'طلب تأكيد البريد الإلكتروني: {email}',
+    )
+    db.session.add(report)
+    db.session.commit()
 
-    if not send_email_verification(current_user, token):
-        flash('تعذر إرسال رسالة تأكيد البريد الإلكتروني. حاول مرة أخرى لاحقًا.', 'danger')
-        return redirect(url_for('users.settings'))
-
-    session['email_verification_last_sent'] = now
-
-    flash('تم إرسال رسالة تأكيد البريد الإلكتروني. تحقق من صندوق الوارد.', 'success')
+    flash('تم إرسال طلب تأكيد البريد إلى الإدارة. سيصلك الرابط قريبًا.', 'success')
     return redirect(url_for('users.settings'))
 
 

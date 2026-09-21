@@ -157,6 +157,17 @@
                             data-verified="{{ 'true' if user.is_verified else 'false' }}">
                         <i class="fas fa-check-circle"></i> {% if user.is_verified %}إزالة التوثيق{% else %}توثيق{% endif %}
                     </button>
+                    <button class="btn btn-sm btn-outline-success gen-verify-link"
+                            data-url="{{ url_for('admin.generate_email_verification_link', user_id=user.id) }}"
+                            {% if user.email_verified %}disabled title="البريد مؤكد بالفعل"{% endif %}>
+                        <i class="fas fa-link"></i> تأكيد
+                    </button>
+                    <button class="btn btn-sm btn-outline-info send-email"
+                            data-url="{{ url_for('admin.send_email_to_user', user_id=user.id) }}"
+                            data-email="{{ user.email or '' }}"
+                            data-name="{{ user.username }}">
+                        <i class="fas fa-envelope"></i> بريد
+                    </button>
                     <button class="btn btn-sm btn-outline-danger delete-user" 
                             data-url="{{ url_for('admin.delete_user', user_id=user.id) }}"
                             {% if user.id == current_user.id %}disabled{% endif %}>
@@ -211,6 +222,72 @@
                 .then(data => {
                     if (data.success) location.reload();
                 });
+        });
+    });
+
+    function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(
+                () => alert('تم نسخ الرابط إلى الحافظة:\n\n' + text),
+                () => prompt('انسخ الرابط يدوياً:', text)
+            );
+        } else {
+            prompt('انسخ الرابط يدوياً:', text);
+        }
+    }
+
+    function handleLinkButton(className) {
+        document.querySelectorAll('.' + className).forEach(btn => {
+            btn.addEventListener('click', function() {
+                fetch(this.dataset.url, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            copyToClipboard(data.link);
+                        } else {
+                            alert(data.message || 'فشل توليد الرابط');
+                        }
+                    })
+                    .catch(err => alert('خطأ في الاتصال: ' + err));
+            });
+        });
+    }
+
+    handleLinkButton('gen-verify-link');
+
+    document.querySelectorAll('.send-email').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const url = this.dataset.url;
+            const email = this.dataset.email;
+            const name = this.dataset.name;
+
+            if (!email || email.endsWith('@phone-only.anter.local')) {
+                alert('لا يوجد بريد إلكتروني صالح لهذا المستخدم.');
+                return;
+            }
+
+            const subject = prompt(`إرسال بريد إلى ${name} (${email})\n\nالموضوع:`);
+            if (!subject) return;
+
+            const message = prompt('نص الرسالة:');
+            if (!message) return;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({ subject: subject, message: message })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message || (data.success ? 'تم الإرسال' : 'فشل الإرسال'));
+                })
+                .catch(err => alert('خطأ في الاتصال: ' + err));
         });
     });
 

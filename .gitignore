@@ -85,3 +85,6 @@ users_export.csv
 # ANTER: نسخ احتياطية محلية (لا تُرفع إلى GitHub)
 *.bak_*
 *.backup_*
+
+# مجلدات الملفات القديمة المؤقتة
+_old_files_*/

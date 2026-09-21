@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify, redirect, url_for, flash, request
+from flask import Blueprint, render_template, jsonify, redirect, url_for, flash, request, current_app
 import json
 from flask_login import login_required, current_user
 from app.extensions import db
@@ -133,7 +133,7 @@ def send_push_notification(user_id, title, body, icon='/static/icons/anter-icon-
     vapid_public_key = os.environ.get('VAPID_PUBLIC_KEY')
 
     if not vapid_private_key or not vapid_public_key:
-        print('⚠️ VAPID keys not configured')
+        current_app.logger.warning('VAPID keys not configured — push notifications disabled')
         return
 
     for sub in subscriptions:
@@ -155,4 +155,4 @@ def send_push_notification(user_id, title, body, icon='/static/icons/anter-icon-
                 db.session.delete(sub)
                 db.session.commit()
             else:
-                print(f'Push error: {e}')
+                current_app.logger.warning('Push error: %s', e)

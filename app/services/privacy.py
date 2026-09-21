@@ -6,7 +6,15 @@ PROFILE_VISIBILITIES = {'public', 'followers'}
 
 
 def is_owner_or_admin(viewer, subject):
-    return bool(viewer and subject and (viewer.id == subject.id or getattr(viewer, 'is_admin', False)))
+    if not viewer or not subject:
+        return False
+    if not getattr(viewer, 'is_authenticated', False):
+        return False
+    viewer_id = getattr(viewer, 'id', None)
+    subject_id = getattr(subject, 'id', None)
+    if viewer_id is None or subject_id is None:
+        return False
+    return viewer_id == subject_id or bool(getattr(viewer, 'is_admin', False))
 
 
 def follows(viewer, subject):

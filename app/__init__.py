@@ -98,6 +98,9 @@ def create_app(test_config=None):
         from app.models import Like, User
         from flask_login import current_user
 
+        if not getattr(current_user, 'is_authenticated', False):
+            return []
+
         reactions = (
             Like.query
             .filter_by(post_id=post_id)

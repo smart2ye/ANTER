@@ -390,6 +390,31 @@ def edit_video_comment(comment_id):
     })
 
 
+@videos_bp.route('/delete/<int:video_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def delete_video(video_id):
+    """حذف ريل — لصاحبه أو الأدمن."""
+    video = Video.query.get_or_404(video_id)
+
+    can_delete = (
+        video.author_id == current_user.id
+        or getattr(current_user, 'is_admin', False)
+    )
+
+    if not can_delete:
+        return jsonify({'success': False, 'message': 'لا يمكنك حذف هذا الريل.'}), 403
+
+    db.session.delete(video)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'تم حذف الريل.',
+        'video_id': video_id,
+    })
+
+
 @videos_bp.route('/comment/<int:comment_id>/delete', methods=['POST'])
 @login_required
 @csrf.exempt

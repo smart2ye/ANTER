@@ -276,6 +276,26 @@ def delete_post(post_id):
 # ============================================
 # نظام البلاغات (مع CSRF حماية)
 # ============================================
+@admin_bp.route('/videos')
+@login_required
+@admin_required
+def videos():
+    from app.models import Video
+    videos_list = Video.query.order_by(Video.created_at.desc()).all()
+    return render_template('admin/videos.html', videos=videos_list)
+
+
+@admin_bp.route('/videos/delete/<int:video_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_video_admin(video_id):
+    from app.models import Video
+    video = Video.query.get_or_404(video_id)
+    db.session.delete(video)
+    db.session.commit()
+    return jsonify({'success': True})
+
+
 @admin_bp.route('/reports')
 @login_required
 @admin_required

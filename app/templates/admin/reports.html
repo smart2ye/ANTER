@@ -32,6 +32,10 @@
                         <a href="{{ url_for('admin.view_post', post_id=report.post_id, from='reports') }}">منشور #{{ report.post_id }}</a>
                     {% elif report.comment_id %}
                         <span>تعليق #{{ report.comment_id }}</span>
+                    {% elif report.video_id %}
+                        <a href="{{ url_for('videos.watch', public_id=report.video.public_id) if report.video else '#' }}" target="_blank">
+                            ريل #{{ report.video_id }}
+                        </a>
                     {% else %}
                         <span class="text-muted">محتوى لم يعد متاحاً</span>
                     {% endif %}

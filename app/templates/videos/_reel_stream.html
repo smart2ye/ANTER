@@ -120,6 +120,17 @@
                     <span>تبليغ</span>
                 </button>
 
+                {% if current_user.is_authenticated and current_user.id == video.author_id %}
+                <button type="button"
+                        class="reel-stream-action reel-stream-delete"
+                        data-video-id="{{ video.id }}"
+                        data-url="{{ url_for('videos.delete_video', video_id=video.id) }}"
+                        aria-label="حذف الريل">
+                    <i class="fas fa-trash" aria-hidden="true"></i>
+                    <span>حذف</span>
+                </button>
+                {% endif %}
+
                 <a class="reel-stream-action reel-stream-more"
                    href="{{ url_for('videos.watch', public_id=video.public_id) }}"
                    aria-label="فتح صفحة الريل">
@@ -1507,4 +1518,36 @@
         }
     });
 })();
+
+/* ANTER: حذف الريل */
+document.querySelectorAll('.reel-stream-delete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+        if (!window.confirm('هل أنت متأكد من حذف هذا الريل؟ لا يمكن التراجع.')) return;
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+        btn.disabled = true;
+        try {
+            const response = await fetch(btn.dataset.url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) {
+                throw new Error((data && data.message) || 'تعذر حذف الريل');
+            }
+            const item = btn.closest('.reel-stream-item');
+            if (item) {
+                item.style.transition = 'opacity 0.3s';
+                item.style.opacity = '0';
+                setTimeout(() => item.remove(), 300);
+            }
+        } catch (error) {
+            alert(error.message || 'تعذر حذف الريل');
+            btn.disabled = false;
+        }
+    });
+});
 </script>

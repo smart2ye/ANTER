@@ -90,6 +90,20 @@ def inbox():
     ]
     conversations.sort(key=lambda item: item[1].created_at, reverse=True)
 
+    # عدد الرسائل غير المقروءة لكل محادثة (لتمييزها في القائمة).
+    from sqlalchemy import func
+    unread_rows = (
+        db.session.query(Message.sender_id, func.count(Message.id))
+        .filter(
+            Message.receiver_id == current_user.id,
+            Message.is_read == False,  # noqa: E712
+            Message.deleted_by_receiver == False,  # noqa: E712
+        )
+        .group_by(Message.sender_id)
+        .all()
+    )
+    unread_by_user = {sender_id: count for sender_id, count in unread_rows}
+
     # يعرض الشريط الحسابات التي يتابعها المستخدم وهي متصلة الآن. النتيجة محدودة
     # لتبقى الصفحة خفيفة وسريعة على الهاتف، وتُفتح المحادثة مباشرة عند الضغط عليها.
     followed_users = (
@@ -108,6 +122,7 @@ def inbox():
         'messages/inbox.html',
         conversations=conversations,
         online_friends=online_friends,
+        unread_by_user=unread_by_user,
         get_status_icon=get_status_icon,
         get_user_status=get_user_status,
     )

@@ -39,7 +39,8 @@
         <h6 id="conversations-title" class="fw-bold mb-2">المحادثات</h6>
         {% if conversations %}
             {% for user, last_msg, is_muted in conversations %}
-            <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="conversation-row conversation-card text-decoration-none text-dark">
+            {% set unread_count = unread_by_user.get(user.id, 0) %}
+            <a href="{{ url_for('messages.chat', user_id=user.id) }}" class="conversation-row conversation-card text-decoration-none text-dark{% if unread_count > 0 %} is-unread{% endif %}">
                 <div class="conversation-avatar-wrap">
                     <img src="{{ avatar_url(user) }}" width="52" height="52" class="rounded-circle" style="object-fit: cover;" alt="صورة {{ user.name or user.username }}">
                     {% if get_user_status(user)['status'] == 'online' %}<span class="conversation-online-dot"></span>{% endif %}
@@ -48,7 +49,12 @@
                     <div class="d-flex justify-content-between align-items-center gap-2">
                         <strong class="conversation-name text-truncate">{{ user.name or user.username }} {{ verified_badge(user) }}</strong>
                         {% if is_muted %}<span class="text-muted small" title="تم كتم المحادثة"><i class="fas fa-bell-slash"></i></span>{% endif %}
-                        <small class="text-muted text-nowrap"><time data-local-time="{{ last_msg.created_at.isoformat() }}" data-time-style="time">{{ last_msg.created_at.strftime('%H:%M') }}</time></small>
+                        <small class="text-nowrap">
+                            {% if unread_count > 0 %}
+                                <span class="conversation-unread-badge">{{ unread_count }}</span>
+                            {% endif %}
+                            <span class="text-muted"><time data-local-time="{{ last_msg.created_at.isoformat() }}" data-time-style="time">{{ last_msg.created_at.strftime('%H:%M') }}</time></span>
+                        </small>
                     </div>
                     <p class="conversation-preview text-muted small mb-0 text-truncate">
                         {% if last_msg.sender_id == current_user.id %}<span class="conversation-you">أنت</span>{% endif %}
@@ -98,6 +104,10 @@
     .online-friends-empty { color: var(--text-muted, #6c757d); background: #f7f9fc; border-radius: 12px; padding: 13px; text-align: center; font-size: .9rem; }
     .online-friends-empty i { color: #8ba7cf; margin-left: 6px; }
     .conversation-card { display: flex; align-items: center; gap: 12px; padding: 13px 12px; margin-bottom: 8px; border: 1px solid transparent; border-radius: 18px; background: var(--card-bg, #fff); box-shadow: 0 3px 13px rgba(20, 47, 88, .035); transition: background .18s ease, transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    .conversation-card.is-unread { background: #eef4ff; border-color: #cfe0ff; }
+    .conversation-card.is-unread .conversation-name { font-weight: 800; }
+    .conversation-card.is-unread .conversation-preview { color: #174a8b !important; font-weight: 600; }
+    .conversation-unread-badge { display: inline-block; background: #16a34a; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-inline-end: 6px; vertical-align: middle; }
     .conversation-card:hover, .conversation-card:focus { border-color: #cfe3ff; background: #f5f9ff; box-shadow: 0 9px 21px rgba(20, 83, 143, .1); transform: translateX(-3px); outline: none; }
     .conversation-avatar-wrap img { box-shadow: 0 3px 9px rgba(16, 48, 86, .12); }
     .conversation-online-dot { width: 15px; height: 15px; left: 0; bottom: 1px; }

@@ -166,6 +166,16 @@
                     <option value="followers" {% if current_user.profile_visibility == 'followers' %}selected{% endif %}>المتابعون فقط</option>
                 </select>
             </div>
+            <div class="mb-2">
+                <label class="form-label">من يمكنه الكتابة على حائطي</label>
+                <select name="wall_visibility" class="form-control">
+                    <option value="public" {% if current_user.wall_visibility == 'public' %}selected{% endif %}>أي مستخدم مسجّل</option>
+                    <option value="followers" {% if current_user.wall_visibility == 'followers' %}selected{% endif %}>المتابعون فقط</option>
+                    <option value="mutual" {% if current_user.wall_visibility == 'mutual' %}selected{% endif %}>المتابعة المتبادلة فقط</option>
+                    <option value="none" {% if current_user.wall_visibility == 'none' %}selected{% endif %}>مغلق (لا أحد)</option>
+                </select>
+                <small class="text-muted">يسمح هذا الخيار للآخرين بكتابة منشورات على حائطك.</small>
+            </div>
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" name="hide_followers" id="hide_followers" {% if current_user.hide_followers %}checked{% endif %}>
                 <label class="form-check-label" for="hide_followers">إخفاء قوائم المتابعين ومن أتابعهم</label>

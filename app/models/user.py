@@ -22,6 +22,17 @@ class User(UserMixin, db.Model):
     birth_date = db.Column(db.Date, nullable=True)
     is_private = db.Column(db.Boolean, default=False)
     profile_visibility = db.Column(db.String(20), default='public', nullable=False)
+    # من يستطيع الكتابة على حائطي:
+    #   public    = أي مستخدم مسجّل
+    #   followers = المتابعون فقط
+    #   mutual    = المتابعة المتبادلة فقط
+    #   none      = الحائط مغلق
+    wall_visibility = db.Column(
+        db.String(20),
+        default='public',
+        nullable=False,
+        server_default='public',
+    )
     hide_followers = db.Column(db.Boolean, default=False)
     show_online_status = db.Column(db.Boolean, default=True, nullable=False)
     show_email = db.Column(db.Boolean, default=False)
@@ -44,7 +55,13 @@ class User(UserMixin, db.Model):
     terms_agreed = db.Column(db.Boolean, default=False)
 
     # العلاقات
-    posts = db.relationship('Post', backref='author', lazy='dynamic', cascade='all, delete-orphan')
+    posts = db.relationship(
+        'Post',
+        foreign_keys='Post.author_id',
+        backref='author',
+        lazy='dynamic',
+        cascade='all, delete-orphan',
+    )
     comments = db.relationship('Comment', backref='author', lazy='dynamic', cascade='all, delete-orphan')
     messages_sent = db.relationship('Message', foreign_keys='Message.sender_id', backref='sender', lazy='dynamic')
     messages_received = db.relationship('Message', foreign_keys='Message.receiver_id', backref='receiver', lazy='dynamic')

@@ -40,5 +40,35 @@ def can_view_post(viewer, post):
     return visibility == 'followers' and follows(viewer, post.author)
 
 
+def can_post_on_wall(viewer, wall_owner):
+    """هل يستطيع viewer الكتابة على حائط wall_owner؟
+
+    تتبع قيم wall_visibility:
+      public    = أي مستخدم مسجّل
+      followers = المتابعون فقط
+      mutual    = المتابعة المتبادلة فقط
+      none      = الحائط مغلق
+    """
+    if not viewer or not wall_owner:
+        return False
+    if not getattr(viewer, 'is_authenticated', False):
+        return False
+    if viewer.id == wall_owner.id:
+        return True
+    if getattr(viewer, 'is_admin', False):
+        return True
+
+    policy = getattr(wall_owner, 'wall_visibility', 'public') or 'public'
+    if policy == 'none':
+        return False
+    if policy == 'public':
+        return True
+    if policy == 'followers':
+        return follows(viewer, wall_owner)
+    if policy == 'mutual':
+        return follows(viewer, wall_owner) and follows(wall_owner, viewer)
+    return False
+
+
 def visible_posts(posts, viewer):
     return [post for post in posts if can_view_post(viewer, post)]

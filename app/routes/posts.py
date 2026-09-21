@@ -203,6 +203,65 @@ def view(post_id):
         abort(403)
     return redirect(url_for('posts.view_post', public_id=post.public_id), code=301)
 
+@posts_bp.route('/wall/<username>', methods=['POST'])
+@login_required
+def post_on_wall(username):
+    """نشر منشور نصي على حائط مستخدم آخر."""
+    from app.services.privacy import can_post_on_wall
+
+    wall_owner = User.query.filter_by(username=username).first_or_404()
+
+    if not can_post_on_wall(current_user, wall_owner):
+        flash('لا يمكنك الكتابة على حائط هذا المستخدم.', 'danger')
+        return redirect(url_for('users.profile', username=username))
+
+    content = (request.form.get('content') or '').strip()
+    if not content:
+        flash('لا يمكن نشر منشور فارغ.', 'warning')
+        return redirect(url_for('users.profile', username=username))
+
+    if len(content) > 3000:
+        content = content[:3000]
+
+    try:
+        post = Post(
+            content=content,
+            author_id=current_user.id,
+            wall_owner_id=wall_owner.id,
+            visibility='public',
+        )
+        db.session.add(post)
+        db.session.flush()
+
+        # إشعار لصاحب الحائط
+        if wall_owner.id != current_user.id:
+            notif = Notification(
+                user_id=wall_owner.id,
+                actor_id=current_user.id,
+                action='wall_post',
+                post_id=post.id,
+            )
+            db.session.add(notif)
+
+        db.session.commit()
+
+        try:
+            log_user_activity(current_user.id, 'wall_post', {
+                'post_id': post.id,
+                'wall_owner_id': wall_owner.id,
+            })
+        except Exception:
+            pass
+
+        flash('تم نشر المنشور على الحائط.', 'success')
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Failed to post on wall')
+        flash('تعذر نشر المنشور. حاول مرة أخرى.', 'danger')
+
+    return redirect(url_for('users.profile', username=username))
+
+
 @posts_bp.route('/comment/<int:post_id>', methods=['POST'])
 @login_required
 @csrf.exempt

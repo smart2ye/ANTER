@@ -47,6 +47,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'avatar_data': binary_type,
             'avatar_mime': 'VARCHAR(100)',
             'profile_visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
+            'wall_visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
             'show_online_status': 'BOOLEAN NOT NULL DEFAULT TRUE',
             'email_verified': 'BOOLEAN NOT NULL DEFAULT FALSE',
         },
@@ -60,6 +61,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'link_image': 'VARCHAR(500)',
             'visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
             'shared_video_id': 'INTEGER',
+            'wall_owner_id': 'INTEGER',
         },
         'story': {
             'media_data': binary_type,

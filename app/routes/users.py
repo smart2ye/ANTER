@@ -8,7 +8,7 @@ from app.utils.helpers import log_user_activity, get_user_activity_summary, get_
 from app.utils.image_storage import prepare_image_data
 from app.utils.profile_text import BIO_MAX_LENGTH, normalize_bio
 from app.services.anter_assistant import is_anter_assistant
-from app.services.privacy import can_view_profile, can_view_post
+from app.services.privacy import can_view_profile, can_view_post, can_post_on_wall
 from datetime import datetime
 import re
 from itsdangerous import URLSafeTimedSerializer
@@ -105,7 +105,19 @@ def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     if not can_view_profile(current_user, user):
         abort(403)
-    posts = [post for post in user.posts.order_by(Post.created_at.desc()).all() if can_view_post(current_user, post)]
+    from sqlalchemy import or_, and_
+    all_posts = (
+        Post.query
+        .filter(
+            or_(
+                Post.wall_owner_id == user.id,
+                and_(Post.author_id == user.id, Post.wall_owner_id.is_(None)),
+            )
+        )
+        .order_by(Post.created_at.desc())
+        .all()
+    )
+    posts = [post for post in all_posts if can_view_post(current_user, post)]
     is_following = current_user.is_following(user)
     return render_template(
         'profile.html',
@@ -114,6 +126,7 @@ def profile(username):
         is_following=is_following,
         get_status_icon=get_status_icon,
         is_anter_assistant=is_anter_assistant(user),
+        can_write_on_wall=can_post_on_wall(current_user, user),
     )
 
 @users_bp.route('/<username>/followers')
@@ -143,7 +156,13 @@ def user_videos(username):
         abort(403)
     videos = user.videos.order_by(Video.created_at.desc()).all()
     is_following = current_user.is_following(user)
-    return render_template('profile_videos.html', user=user, videos=videos, is_following=is_following)
+    return render_template(
+        'profile_videos.html',
+        user=user,
+        videos=videos,
+        is_following=is_following,
+        can_write_on_wall=can_post_on_wall(current_user, user),
+    )
 
 @users_bp.route('/edit', methods=['GET', 'POST'])
 @login_required
@@ -287,6 +306,7 @@ def settings():
         show_email = request.form.get('show_email') == 'on'
         is_private = request.form.get('is_private') == 'on'
         profile_visibility = request.form.get('profile_visibility', 'public')
+        wall_visibility = request.form.get('wall_visibility', 'public')
         hide_followers = request.form.get('hide_followers') == 'on'
         show_online_status = request.form.get('show_online_status') == 'on'
         message_privacy = request.form.get('message_privacy')
@@ -359,6 +379,10 @@ def settings():
             profile_visibility = 'followers'
         if profile_visibility != current_user.profile_visibility:
             changed_fields.append('خصوصية الملف الشخصي')
+        if wall_visibility not in {'public', 'followers', 'mutual', 'none'}:
+            wall_visibility = 'public'
+        if wall_visibility != current_user.wall_visibility:
+            changed_fields.append('خصوصية الحائط')
         if hide_followers != current_user.hide_followers:
             changed_fields.append('قوائم المتابعة')
         if show_online_status != current_user.show_online_status:
@@ -366,6 +390,7 @@ def settings():
         current_user.show_email = show_email
         current_user.is_private = is_private
         current_user.profile_visibility = profile_visibility
+        current_user.wall_visibility = wall_visibility
         current_user.hide_followers = hide_followers
         current_user.show_online_status = show_online_status
         if message_privacy in ['everyone', 'followers', 'none']:

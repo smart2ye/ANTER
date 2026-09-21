@@ -143,6 +143,30 @@
     </li>
 </ul>
 
+{% if can_write_on_wall and current_user.id != user.id %}
+<!-- نموذج الكتابة على الحائط -->
+<div class="anter-wall-composer">
+    <form method="POST" action="{{ url_for('posts.post_on_wall', username=user.username) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="anter-wall-composer-header">
+            <img src="{{ avatar_url(current_user) }}" alt="{{ current_user.name }}" class="anter-wall-composer-avatar">
+            <span>اكتب على حائط {{ user.name }}...</span>
+        </div>
+        <textarea name="content"
+                  class="anter-wall-composer-input"
+                  rows="2"
+                  maxlength="3000"
+                  placeholder="شارك شيئاً على حائطه..."
+                  required></textarea>
+        <div class="anter-wall-composer-footer">
+            <button type="submit" class="anter-profile-btn anter-profile-btn--primary">
+                <i class="fas fa-paper-plane" aria-hidden="true"></i> نشر
+            </button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
 <!-- ============================== -->
 <!-- عرض المنشورات -->
 <!-- ============================== -->
@@ -286,4 +310,48 @@ document.querySelectorAll('.follow-btn').forEach(function(btn) {
     });
 })();
 </script>
+<style>
+.anter-wall-composer {
+    background: var(--card-bg, #fff);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 16px;
+    box-shadow: 0 3px 13px rgba(20, 47, 88, 0.04);
+}
+.anter-wall-composer-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: var(--text-muted, #6b7280);
+}
+.anter-wall-composer-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.anter-wall-composer-input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 15px;
+    color: inherit;
+    outline: none;
+    min-height: 60px;
+    padding: 4px 2px;
+}
+.anter-wall-composer-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    padding-top: 10px;
+}
+</style>
+
 {% endblock %}

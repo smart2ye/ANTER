@@ -362,6 +362,17 @@ def about():
 def offline():
     return current_app.send_static_file('offline.html')
 
+@main_bp.route('/robots.txt')
+def robots_txt():
+    """خدمة robots.txt من الجذر للسماح لمحركات البحث بالوصول الصحيح."""
+    from flask import send_from_directory
+    return send_from_directory(
+        current_app.static_folder,
+        'robots.txt',
+        mimetype='text/plain',
+    )
+
+
 @main_bp.route('/sitemap.xml')
 def sitemap():
     """توليد خريطة الموقع (Sitemap) بشكل ديناميكي لضمان أرشفة كافة المنشورات والريلز والمستخدمين."""
@@ -369,19 +380,22 @@ def sitemap():
     
     # الصفحات الثابتة الأساسية
     pages = [
-        {'loc': url_for('main.index', _external=True), 'priority': 1.0, 'changefreq': 'always'},
         {'loc': url_for('main.about', _external=True), 'priority': 0.8, 'changefreq': 'monthly'},
         {'loc': url_for('main.help_center', _external=True), 'priority': 0.7, 'changefreq': 'monthly'},
         {'loc': url_for('main.privacy', _external=True), 'priority': 0.5, 'changefreq': 'monthly'},
         {'loc': url_for('main.terms', _external=True), 'priority': 0.5, 'changefreq': 'monthly'},
-        {'loc': url_for('auth.login', _external=True), 'priority': 0.6, 'changefreq': 'monthly'},
-        {'loc': url_for('auth.register', _external=True), 'priority': 0.7, 'changefreq': 'monthly'},
         {'loc': url_for('explore.explore', _external=True), 'priority': 0.9, 'changefreq': 'always'},
         {'loc': url_for('videos.reels', _external=True), 'priority': 0.8, 'changefreq': 'always'},
     ]
     
     # أرشفة المستخدمين (أحدث 200 مستخدم)
-    users = User.query.order_by(User.created_at.desc()).limit(200).all()
+    users = (
+        User.query
+        .filter(User.profile_visibility == 'public')
+        .order_by(User.created_at.desc())
+        .limit(200)
+        .all()
+    )
     for user in users:
         pages.append({
             'loc': url_for('users.profile', username=user.username, _external=True),
@@ -391,7 +405,13 @@ def sitemap():
         })
     
     # أرشفة المنشورات (أحدث 1000 منشور)
-    posts = Post.query.order_by(Post.created_at.desc()).limit(1000).all()
+    posts = (
+        Post.query
+        .filter(Post.visibility == 'public')
+        .order_by(Post.created_at.desc())
+        .limit(1000)
+        .all()
+    )
     for post in posts:
         pages.append({
             'loc': url_for('posts.view_post', public_id=post.public_id, _external=True),

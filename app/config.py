@@ -155,6 +155,7 @@ class Config:
     ANTER_OWNER_ADMIN_USERNAME = os.environ.get(
         'ANTER_OWNER_ADMIN_USERNAME', 'abdulqader.mahdly'
     ).strip().lstrip('@')
+    ANTER_PUBLIC_URL = os.environ.get('ANTER_PUBLIC_URL', 'https://anter-1.onrender.com').rstrip('/')
     ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_QUESTION_CHARACTERS', 3000, 100)
     ANTER_ASSISTANT_MAX_REPLY_CHARACTERS = env_int('ANTER_ASSISTANT_MAX_REPLY_CHARACTERS', 1200, 300)
     ANTER_ASSISTANT_MINI_LLM_ARABIC_API_KEY = os.environ.get(

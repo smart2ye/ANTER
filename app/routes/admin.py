@@ -7,6 +7,18 @@ from sqlalchemy import func
 import os
 
 admin_bp = Blueprint('admin', __name__)
+
+
+def _public_link(local_link):
+    """تحويل رابط محلي إلى الرابط العام (للإرسال الخارجي)."""
+    public = current_app.config.get('ANTER_PUBLIC_URL', '').rstrip('/')
+    if not public:
+        return local_link
+    from urllib.parse import urlsplit
+    parts = urlsplit(local_link)
+    query = ('?' + parts.query) if parts.query else ''
+    fragment = ('#' + parts.fragment) if parts.fragment else ''
+    return public + parts.path + query + fragment
 VERIFICATION_REQUEST_REASON = 'verification:account'
 EMAIL_VERIFICATION_REQUEST_REASON = 'verification:email'
 PASSWORD_RESET_REQUEST_REASON = 'password-reset-request'
@@ -212,7 +224,7 @@ def generate_email_verification_link(user_id):
         return jsonify({'success': False, 'message': 'البريد الإلكتروني مؤكد بالفعل.'})
 
     token = create_email_verification_token(user)
-    link = url_for('users.confirm_email', token=token, _external=True)
+    link = _public_link(url_for('users.confirm_email', token=token, _external=True))
     return jsonify({'success': True, 'link': link, 'email': user.email})
 
 
@@ -226,7 +238,7 @@ def generate_password_reset_link(user_id):
     user = User.query.get_or_404(user_id)
     s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
     token = s.dumps(user.id, salt='password-reset')
-    link = url_for('auth.reset_password', token=token, _external=True)
+    link = _public_link(url_for('auth.reset_password', token=token, _external=True))
     return jsonify({'success': True, 'link': link, 'email': user.email})
 
 # ============================================

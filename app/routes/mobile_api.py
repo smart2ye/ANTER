@@ -36,6 +36,8 @@ def _user_payload(user):
         'name': user.name,
         'avatar': user.avatar or '',
         'isOnline': bool(user.last_seen and (datetime.utcnow() - user.last_seen).total_seconds() < 180),
+        'bio': (user.bio or '').strip(),
+        'lastSeen': user.last_seen.isoformat() + 'Z' if user.last_seen else None,
     }
 
 
@@ -283,6 +285,69 @@ def contacts():
     ids = [row.followed_id for row in following]
     candidates = User.query.filter(User.id.in_(ids)).order_by(User.last_seen.desc()).all() if ids else []
     return jsonify({'contacts': [_user_payload(other) for other in candidates if _is_mutual_follow(user, other)]})
+
+
+@mobile_api_bp.route('/users/<string:username>', methods=['GET'])
+@mobile_api_required
+def user_profile(username):
+    """عرض بروفايل مستخدم آخر مع حالة المتابعة والحظر."""
+    user = g.mobile_user
+    other = _target_from_username(username)
+    if other is None:
+        return _json_error('المستخدم غير موجود.', 404)
+
+    is_following = Follow.query.filter_by(follower_id=user.id, followed_id=other.id).first() is not None
+    is_followed_by = Follow.query.filter_by(follower_id=other.id, followed_id=user.id).first() is not None
+    is_blocked = UserBlock.query.filter_by(blocker_id=user.id, blocked_id=other.id).first() is not None
+
+    payload = _user_payload(other)
+    payload.update({
+        'isFollowing': is_following,
+        'isFollowedBy': is_followed_by,
+        'isBlocked': is_blocked,
+        'isMutual': is_following and is_followed_by,
+        'isSelf': other.id == user.id,
+    })
+    return jsonify({'user': payload})
+
+
+@mobile_api_bp.route('/users/<string:username>/report', methods=['POST'])
+@mobile_api_required
+def report_user(username):
+    """بلاغ عن مستخدم — يُخزَّن في جدول Report بنمط user-report:<reason>."""
+    user = g.mobile_user
+    other = _target_from_username(username)
+    if other is None:
+        return _json_error('المستخدم غير موجود.', 404)
+    if other.id == user.id:
+        return _json_error('لا يمكنك الإبلاغ عن نفسك.', 400)
+
+    data = request.get_json(silent=True) or {}
+    reason = (data.get('reason') or '').strip()
+    details = (data.get('details') or '').strip()
+    if not reason:
+        return _json_error('الرجاء تحديد سبب الإبلاغ.', 400)
+    if len(reason) > 100:
+        reason = reason[:100]
+    if len(details) > 2000:
+        details = details[:2000]
+
+    existing = Report.query.filter(
+        Report.reporter_id == user.id,
+        Report.reason.like('user-report:%'),
+        Report.status == 'pending',
+    ).filter(Report.details.like(f'%[بلاغ عن مستخدم: {other.username}]%')).first()
+    if existing is not None:
+        return _json_error('لديك بلاغ معلّق بالفعل عن هذا المستخدم.', 409)
+
+    report = Report(
+        reporter_id=user.id,
+        reason=f'user-report:{reason}',
+        details=f'[بلاغ عن مستخدم: {other.username}]\n{details}',
+    )
+    db.session.add(report)
+    db.session.commit()
+    return jsonify({'success': True, 'reportId': report.id}), 201
 
 
 @mobile_api_bp.route('/conversations', methods=['GET'])

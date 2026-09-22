@@ -471,6 +471,13 @@ def send_message(username):
     if not _is_mutual_follow(user, other):
         return _json_error('يتطلب إرسال الرسالة متابعة متبادلة بين الحسابين.', 403)
     is_multipart = request.mimetype == 'multipart/form-data'
+    # DEBUG: نطبع ما يستقبله الخادم
+    current_app.logger.info(
+        'SEND_DEBUG: mimetype=%s, raw=%r, is_multipart=%s',
+        request.mimetype,
+        request.get_data(as_text=True)[:500],
+        is_multipart,
+    )
     data = request.form if is_multipart else (request.get_json(silent=True) or {})
     content = data.get('content', '')
     if not isinstance(content, str):

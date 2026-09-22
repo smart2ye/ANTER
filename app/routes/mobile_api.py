@@ -350,6 +350,118 @@ def report_user(username):
     return jsonify({'success': True, 'reportId': report.id}), 201
 
 
+@mobile_api_bp.route('/settings', methods=['GET'])
+@mobile_api_required
+def get_settings():
+    """إرجاع إعدادات الخصوصية الحالية للمستخدم."""
+    user = g.mobile_user
+    return jsonify({
+        'profileVisibility': user.profile_visibility or 'public',
+        'wallVisibility': user.wall_visibility or 'public',
+        'hideFollowers': bool(user.hide_followers),
+        'showOnlineStatus': bool(user.show_online_status),
+        'messagePrivacy': user.message_privacy or 'everyone',
+    })
+
+
+@mobile_api_bp.route('/settings', methods=['POST'])
+@mobile_api_required
+def update_settings():
+    """تحديث إعدادات الخصوصية (الحقول المُرسَلة فقط)."""
+    user = g.mobile_user
+    data = request.get_json(silent=True) or {}
+    changed = False
+
+    if 'profileVisibility' in data:
+        v = data['profileVisibility']
+        if v in ('public', 'followers'):
+            user.profile_visibility = v
+            changed = True
+
+    if 'wallVisibility' in data:
+        v = data['wallVisibility']
+        if v in ('public', 'followers', 'mutual', 'none'):
+            user.wall_visibility = v
+            changed = True
+
+    if 'hideFollowers' in data:
+        user.hide_followers = bool(data['hideFollowers'])
+        changed = True
+
+    if 'showOnlineStatus' in data:
+        user.show_online_status = bool(data['showOnlineStatus'])
+        changed = True
+
+    if 'messagePrivacy' in data:
+        v = data['messagePrivacy']
+        if v in ('everyone', 'followers', 'none'):
+            user.message_privacy = v
+            changed = True
+
+    if changed:
+        db.session.commit()
+    return jsonify({'success': True})
+
+
+@mobile_api_bp.route('/blocked-users', methods=['GET'])
+@mobile_api_required
+def blocked_users():
+    """قائمة المستخدمين المحظورين من قِبَل المستخدم الحالي."""
+    user = g.mobile_user
+    blocks = (
+        UserBlock.query
+        .filter_by(blocker_id=user.id)
+        .order_by(UserBlock.created_at.desc())
+        .all()
+    )
+    ids = [b.blocked_id for b in blocks]
+    users = User.query.filter(User.id.in_(ids)).all() if ids else []
+    by_id = {u.id: u for u in users}
+    items = []
+    for b in blocks:
+        u = by_id.get(b.blocked_id)
+        if u is None:
+            continue
+        payload = _user_payload(u)
+        payload['blockedAt'] = b.created_at.isoformat() + 'Z'
+        items.append(payload)
+    return jsonify({'blocked': items})
+
+
+@mobile_api_bp.route('/users/<string:username>/block', methods=['POST'])
+@mobile_api_required
+def block_user(username):
+    """حظر مستخدم (دائم في هذه المرحلة)."""
+    user = g.mobile_user
+    other = _target_from_username(username)
+    if other is None:
+        return _json_error('المستخدم غير موجود.', 404)
+    if other.id == user.id:
+        return _json_error('لا يمكنك حظر نفسك.', 400)
+
+    existing = UserBlock.query.filter_by(blocker_id=user.id, blocked_id=other.id).first()
+    if existing is None:
+        db.session.add(UserBlock(blocker_id=user.id, blocked_id=other.id))
+        db.session.commit()
+    return jsonify({'success': True, 'isBlocked': True})
+
+
+@mobile_api_bp.route('/users/<string:username>/block', methods=['DELETE'])
+@mobile_api_required
+def unblock_user(username):
+    """رفع الحظر."""
+    user = g.mobile_user
+    other = _target_from_username(username)
+    if other is None:
+        return _json_error('المستخدم غير موجود.', 404)
+
+    existing = UserBlock.query.filter_by(blocker_id=user.id, blocked_id=other.id).first()
+    if existing is not None:
+        db.session.delete(existing)
+        db.session.commit()
+    return jsonify({'success': True, 'isBlocked': False})
+
+
 @mobile_api_bp.route('/conversations', methods=['GET'])
 @mobile_api_required
 def conversations():

@@ -51,7 +51,29 @@
                         <span class="text-muted">محتوى لم يعد متاحاً</span>
                     {% endif %}
                 </td>
-                <td>{{ report.reason }}</td>
+                <td>
+                    {% if report.reason == 'spam' %}محتوى مزعج
+                    {% elif report.reason == 'harassment' %}تنمر أو مضايقة
+                    {% elif report.reason == 'violence' %}عنف
+                    {% elif report.reason == 'sexual' %}محتوى جنسي
+                    {% elif report.reason == 'hate' %}كراهية أو تحريض
+                    {% elif report.reason == 'misinformation' %}معلومات مضللة
+                    {% elif report.reason == 'copyright' %}انتهاك حقوق النشر
+                    {% elif report.reason == 'other' %}سبب آخر
+                    {% elif report.reason and report.reason.startswith('user-report:') %}
+                        {% set r = report.reason.replace('user-report:', '') %}
+                        {% if r == 'spam' %}محتوى مزعج
+                        {% elif r == 'harassment' %}تنمر أو مضايقة
+                        {% elif r == 'hate' %}كراهية أو تحريض
+                        {% elif r == 'impersonation' %}انتحال شخصية
+                        {% elif r == 'other' %}سبب آخر
+                        {% else %}{{ r }}{% endif %}
+                    {% elif report.reason == 'verification:account' %}طلب توثيق
+                    {% elif report.reason == 'verification:email' %}طلب تأكيد بريد
+                    {% elif report.reason == 'password-reset-request' %}طلب كلمة سر
+                    {% elif report.reason and report.reason.startswith('support:') %}طلب مساعدة
+                    {% else %}{{ report.reason }}{% endif %}
+                </td>
                 <td>
                     {% if report.status == 'pending' %}
                         <span class="badge bg-warning text-dark">معلق</span>

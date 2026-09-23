@@ -228,8 +228,20 @@ def create_app(test_config=None):
     # ANTER: تنظيف session في بداية كل طلب
     # يحمي من "connection مسمومة" في pool عند فشل أي commit سابق.
     # ============================================
+    @app.after_request
+    def _anter_static_cache_headers(response):
+        """الملفات الثابتة تُخزَّن ساعة في متصفح المستخدم."""
+        from flask import request as _req
+        if _req.path.startswith('/static/'):
+            response.headers['Cache-Control'] = 'public, max-age=3600'
+        return response
+
     @app.before_request
     def _anter_clean_session():
+        # تخطّي الملفات الثابتة — لا حاجة لتنظيف الـ session لطلب CSS/JS/صورة
+        from flask import request as _req
+        if _req.path.startswith('/static/'):
+            return
         try:
             db.session.rollback()
         except Exception:
@@ -237,7 +249,11 @@ def create_app(test_config=None):
 
     @app.before_request
     def update_last_seen():
+        from flask import request as _req
         from flask_login import current_user
+        # تخطّي الملفات الثابتة — يمنع Vary:Cookie + Cache-Control:no-cache
+        if _req.path.startswith('/static/'):
+            return
         if not current_user.is_authenticated:
             return
 

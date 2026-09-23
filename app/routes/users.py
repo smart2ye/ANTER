@@ -269,6 +269,74 @@ def confirm_email(token):
     return redirect(url_for('auth.login'))
 
 
+@users_bp.route('/<username>/report', methods=['POST'])
+@login_required
+@csrf.exempt
+def report_user(username):
+    """بلاغ عن مستخدم — يُخزَّن في Report بنمط user-report:<reason>."""
+    target = User.query.filter_by(username=username).first_or_404()
+
+    if target.id == current_user.id:
+        flash('لا يمكنك الإبلاغ عن نفسك.', 'warning')
+        return redirect(url_for('users.profile', username=username))
+
+    payload = request.get_json(silent=True) or {}
+    is_json = request.is_json or bool(payload)
+    reason = (payload.get('reason') if is_json else request.form.get('reason', '')).strip()
+    details = (payload.get('details') if is_json else request.form.get('details', '')).strip()
+
+    allowed = {
+        'spam': 'محتوى مزعج أو ترويجي',
+        'harassment': 'تنمر أو مضايقة',
+        'hate': 'كراهية أو تحريض',
+        'impersonation': 'انتحال شخصية',
+        'other': 'سبب آخر',
+    }
+
+    if reason not in allowed:
+        msg = 'يرجى اختيار سبب صالح للبلاغ.'
+        if is_json:
+            return jsonify({'success': False, 'message': msg}), 400
+        flash(msg, 'danger')
+        return redirect(url_for('users.profile', username=username))
+
+    existing = Report.query.filter(
+        Report.reporter_id == current_user.id,
+        Report.reason == f'user-report:{reason}',
+        Report.status == 'pending',
+    ).filter(Report.details.like(f'%[بلاغ عن مستخدم: {username}]%')).first()
+
+    if existing is not None:
+        msg = 'لديك بلاغ معلّق بالفعل عن هذا المستخدم.'
+        if is_json:
+            return jsonify({'success': False, 'message': msg}), 409
+        flash(msg, 'warning')
+        return redirect(url_for('users.profile', username=username))
+
+    report = Report(
+        reporter_id=current_user.id,
+        reason=f'user-report:{reason}',
+        details=f'[بلاغ عن مستخدم: {username}]\n{details}',
+        status='pending',
+    )
+    db.session.add(report)
+    db.session.commit()
+
+    try:
+        log_user_activity(current_user.id, 'user_report', {
+            'target_username': username,
+            'reason': reason,
+        })
+    except Exception:
+        pass
+
+    msg = 'تم استلام بلاغك وسيتم مراجعته.'
+    if is_json:
+        return jsonify({'success': True, 'message': msg, 'report_id': report.id})
+    flash(msg, 'success')
+    return redirect(url_for('users.profile', username=username))
+
+
 @users_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():

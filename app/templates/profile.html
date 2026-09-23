@@ -118,6 +118,14 @@
                         <span>متابعة</span>
                     </button>
                 {% endif %}
+                <button type="button"
+                        class="anter-profile-btn anter-profile-btn--outline"
+                        data-bs-toggle="modal"
+                        data-bs-target="#reportUserModal"
+                        aria-label="الإبلاغ عن المستخدم">
+                    <i class="fas fa-flag" aria-hidden="true"></i>
+                    <span>إبلاغ</span>
+                </button>
             {% endif %}
         </div>
     </div>
@@ -354,4 +362,99 @@ document.querySelectorAll('.follow-btn').forEach(function(btn) {
 }
 </style>
 
+
+<!-- Modal: الإبلاغ عن المستخدم -->
+<div class="modal fade" id="reportUserModal" tabindex="-1" aria-labelledby="reportUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: var(--card-bg); color: var(--text-light); border-radius: 16px;">
+            <div class="modal-header border-0">
+                <h6 class="modal-title" id="reportUserModalLabel">
+                    <i class="fas fa-flag text-danger"></i> الإبلاغ عن @{{ user.username }}
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-3">اختر سبب البلاغ. سيتم مراجعته من فريق ANTER.</p>
+                <div class="mb-2">
+                    <label class="d-block mb-1">
+                        <input type="radio" name="reportUserReason" value="spam" checked>
+                        محتوى مزعج أو ترويجي
+                    </label>
+                    <label class="d-block mb-1">
+                        <input type="radio" name="reportUserReason" value="harassment">
+                        تنمر أو مضايقة
+                    </label>
+                    <label class="d-block mb-1">
+                        <input type="radio" name="reportUserReason" value="hate">
+                        كراهية أو تحريض
+                    </label>
+                    <label class="d-block mb-1">
+                        <input type="radio" name="reportUserReason" value="impersonation">
+                        انتحال شخصية
+                    </label>
+                    <label class="d-block mb-1">
+                        <input type="radio" name="reportUserReason" value="other">
+                        سبب آخر
+                    </label>
+                </div>
+                <textarea id="reportUserDetails"
+                          class="form-control form-control-sm mt-2"
+                          rows="3"
+                          maxlength="500"
+                          placeholder="تفاصيل إضافية (اختياري)"></textarea>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-danger btn-sm" id="reportUserSubmitBtn">
+                    <i class="fas fa-paper-plane"></i> إرسال البلاغ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var btn = document.getElementById('reportUserSubmitBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', async function() {
+        var reasonEl = document.querySelector('input[name="reportUserReason"]:checked');
+        var reason = reasonEl ? reasonEl.value : 'other';
+        var detailsEl = document.getElementById('reportUserDetails');
+        var details = detailsEl ? detailsEl.value : '';
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+        btn.disabled = true;
+        var originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> إرسال...';
+
+        try {
+            var res = await fetch('{{ url_for("users.report_user", username=user.username) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({ reason: reason, details: details }),
+            });
+            var data = await res.json().catch(function() { return {}; });
+            alert(data.message || (data.success ? 'تم إرسال البلاغ.' : 'تعذر إرسال البلاغ.'));
+            if (data.success) {
+                var modalEl = document.getElementById('reportUserModal');
+                if (window.bootstrap && modalEl) {
+                    var modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
+            }
+        } catch (e) {
+            alert('تعذر الاتصال بالخادم.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    });
+})();
+</script>
 {% endblock %}

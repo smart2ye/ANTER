@@ -28,6 +28,13 @@ def _get_admin_path(config):
 
 def create_app(test_config=None):
     app = Flask(__name__)
+
+    # تفعيل ضغط gzip/brotli لكل الردود (CSS من 185 KB → ~30 KB)
+    try:
+        from flask_compress import Compress
+        Compress(app)
+    except Exception:
+        pass
     app.config.from_object(Config)
 
     if test_config:
@@ -229,11 +236,40 @@ def create_app(test_config=None):
     # يحمي من "connection مسمومة" في pool عند فشل أي commit سابق.
     # ============================================
     @app.after_request
-    def _anter_static_cache_headers(response):
-        """الملفات الثابتة تُخزَّن ساعة في متصفح المستخدم."""
+    def _anter_static_cache_and_compress(response):
+        """Cache + gzip للملفات الثابتة النصية (CSS/JS/SVG)."""
         from flask import request as _req
-        if _req.path.startswith('/static/'):
-            response.headers['Cache-Control'] = 'public, max-age=3600'
+        if not _req.path.startswith('/static/'):
+            return response
+
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+        response.direct_passthrough = False
+
+        if response.status_code != 200:
+            return response
+        if not _req.path.endswith(('.css', '.js', '.svg', '.json', '.txt', '.xml')):
+            return response
+        if 'Content-Encoding' in response.headers:
+            return response
+
+        accept = _req.headers.get('Accept-Encoding', '')
+        if 'gzip' not in accept:
+            return response
+
+        try:
+            data = response.get_data()
+        except Exception:
+            return response
+
+        if not data or len(data) < 500:
+            return response
+
+        import gzip as _gz
+        compressed = _gz.compress(data, compresslevel=6)
+        response.set_data(compressed)
+        response.headers['Content-Encoding'] = 'gzip'
+        response.headers['Content-Length'] = str(len(compressed))
+        response.headers['Vary'] = 'Accept-Encoding'
         return response
 
     @app.before_request

@@ -85,13 +85,13 @@ class Config:
     # ANTER mobile app (WebView APK via GitHub Releases)
     ANTER_APK_URL = os.environ.get(
         'ANTER_APK_URL',
-        'https://github.com/smart2ye/anter-webview-apk/releases/download/v1.0.2/ANTER_app.apk',
+        'https://github.com/smart2ye/anter-webview-apk/releases/download/v1.0.3/ANTER_app.apk',
     )
     ANTER_APK_SHA256 = os.environ.get(
         'ANTER_APK_SHA256',
         '2507268fa582194e5a485f96a84424fb34b7078f5e77b95cb0beeb394172bf0c',
     )
-    ANTER_APK_VERSION = os.environ.get('ANTER_APK_VERSION', '1.0.2')
+    ANTER_APK_VERSION = os.environ.get('ANTER_APK_VERSION', '1.0.3')
     ANTER_APK_SIZE = os.environ.get('ANTER_APK_SIZE', '3.62 MB')
     ANTER_APK_DATE = os.environ.get('ANTER_APK_DATE', '23 سبتمبر 2026')
     WEBRTC_TURN_URL = os.environ.get('WEBRTC_TURN_URL', '')

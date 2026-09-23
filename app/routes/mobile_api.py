@@ -888,6 +888,12 @@ def _normalize_phone(raw):
         s = '+' + s[2:]
     if not s.startswith('+'):
         s = '+' + s
+
+    # إزالة الصفر الزائد بعد كود الدولة (خطأ شائع في الأرقام السعودية والخليجية)
+    # مثال: +966052800941 ← +96652800941
+    if len(s) > 4 and s[1:4].isdigit() and s[4] == '0':
+        s = s[:4] + s[5:]
+
     # يجب أن يكون 8 إلى 15 رقمًا (معيار E.164)
     digits = s[1:]
     if not digits.isdigit() or not (8 <= len(digits) <= 15):
@@ -898,42 +904,37 @@ def _normalize_phone(raw):
 @mobile_api_bp.route('/suggested-follows', methods=['POST'])
 @mobile_api_required
 def suggested_follows_from_contacts():
+    """POST /api/mobile/suggested-follows
+    Body: { "hashes": ["<64-char sha256 hex>", ...] }
+    Returns matches by comparing hashes with normalized user phones.
     """
-    POST /api/mobile/v1/suggested-follows
-    Body: { "phones": ["+967...", "00967...", "737..."] }
+    import hashlib
 
-    يعيد: { "suggested": [ { "phone": "...", "user": {...}, "isFollowing": false } ] }
-    """
     user = g.mobile_user
     data = request.get_json(silent=True) or {}
-    raw_phones = data.get('phones')
+    raw_hashes = data.get('hashes')
 
-    if not isinstance(raw_phones, list):
-        return _json_error('يجب إرسال قائمة أرقام في الحقل phones.', 400)
-    if len(raw_phones) > 500:
-        return _json_error('عدد الأرقام كبير جدًا (الحد 500).', 400)
+    if not isinstance(raw_hashes, list):
+        return _json_error('يجب إرسال قائمة hashes في الحقل hashes.', 400)
+    if len(raw_hashes) > 500:
+        return _json_error('عدد البصمات كبير جدًا (الحد 500).', 400)
 
-    # تطبيع + إزالة المكرر
-    normalized = {}
-    for raw in raw_phones:
-        norm = _normalize_phone(raw)
-        if norm:
-            normalized[norm] = True
-    if not normalized:
-        return jsonify({'suggested': [], 'matched': 0})
+    hashes = set()
+    for h in raw_hashes:
+        if isinstance(h, str) and len(h) == 64:
+            try:
+                int(h, 16)
+                hashes.add(h.lower())
+            except ValueError:
+                pass
+    if not hashes:
+        return jsonify({'suggested': [], 'matched': 0, 'submitted': 0})
 
-    phones = list(normalized.keys())
-
-    # جلب المستخدمين المطابقين
-    candidates = User.query.filter(User.phone.in_(phones)).all()
-
-    # جلب من يتابعهم المستخدم حاليًا لتفادي التكرار
     already_following = {
         row.followed_id
         for row in Follow.query.filter_by(follower_id=user.id).all()
     }
 
-    # جلب المحظورين (في الاتجاهين)
     blocked_ids = {
         row.blocked_id
         for row in UserBlock.query.filter_by(blocker_id=user.id).all()
@@ -943,20 +944,28 @@ def suggested_follows_from_contacts():
         for row in UserBlock.query.filter_by(blocked_id=user.id).all()
     )
 
-    suggested = []
-    for other in candidates:
+    hash_to_user = {}
+    all_with_phone = User.query.filter(User.phone.isnot(None), User.phone != '').all()
+    for other in all_with_phone:
         if other.id == user.id:
             continue
         if other.id in blocked_ids:
             continue
-        # نُرجع حتى المتابَعين — لكن نضع علامة isFollowing
+        normalized = _normalize_phone(other.phone)
+        if not normalized:
+            continue
+        h = hashlib.sha256(normalized.encode('utf-8')).hexdigest()
+        if h in hashes:
+            hash_to_user[h] = other
+
+    suggested = []
+    for h, other in hash_to_user.items():
         suggested.append({
-            'phone': other.phone,
+            'hash': h,
             'user': _user_payload(other),
             'isFollowing': other.id in already_following,
         })
 
-    # الترتيب: غير المتابَعين أولًا، ثم النشطون
     suggested.sort(key=lambda item: (
         item['isFollowing'],
         not item['user'].get('isOnline'),
@@ -965,5 +974,6 @@ def suggested_follows_from_contacts():
     return jsonify({
         'suggested': suggested,
         'matched': len(suggested),
-        'submitted': len(phones),
+        'submitted': len(hashes),
     })
+

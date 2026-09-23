@@ -13,7 +13,7 @@
                     <img src="{{ avatar_url(comment.author) }}"
                          class="comment-avatar rounded-circle"
                          alt="{{ comment.author.name }}"
-                         style="width: 36px; height: 36px; object-fit: cover;">
+                         style="width: 36px; height: 36px; object-fit: cover;" loading="lazy" decoding="async">
                 </a>
                 <div class="comment-content flex-grow-1 bg-light p-3 rounded-4">
                     <div class="comment-header d-flex justify-content-between align-items-center mb-1">
@@ -113,7 +113,7 @@
                                     <img src="{{ avatar_url(reply.author) }}"
                                          class="comment-avatar rounded-circle"
                                          alt="{{ reply.author.name }}"
-                                         style="width: 28px; height: 28px; object-fit: cover;">
+                                         style="width: 28px; height: 28px; object-fit: cover;" loading="lazy" decoding="async">
                                 </a>
                                 <div class="comment-content flex-grow-1 bg-white border p-2 rounded-3">
                                     <div class="comment-header d-flex justify-content-between align-items-center mb-1">
@@ -244,7 +244,7 @@
         <div class="comment-composer-row">
             <img src="{{ avatar_url(current_user) }}"
                  class="comment-avatar comment-composer-avatar rounded-circle"
-                 alt="{{ current_user.name }}">
+                 alt="{{ current_user.name }}" loading="lazy" decoding="async">
             <div class="comment-composer-input flex-grow-1 position-relative">
                 <input type="text"
                        name="content"

@@ -366,46 +366,47 @@ document.querySelectorAll('.follow-btn').forEach(function(btn) {
 <!-- Modal: الإبلاغ عن المستخدم -->
 <div class="modal fade" id="reportUserModal" tabindex="-1" aria-labelledby="reportUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="background: var(--card-bg); color: var(--text-light); border-radius: 16px;">
-            <div class="modal-header border-0">
-                <h6 class="modal-title" id="reportUserModalLabel">
-                    <i class="fas fa-flag text-danger"></i> الإبلاغ عن @{{ user.username }}
+        <div class="modal-content" style="background: #ffffff; color: #1a1a1a; border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div class="modal-header" style="border-bottom: 1px solid #e9ecef; padding: 16px 20px;">
+                <h6 class="modal-title" id="reportUserModalLabel" style="color: #dc3545; font-weight: 700; margin: 0;">
+                    <i class="fas fa-flag"></i> الإبلاغ عن @{{ user.username }}
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
             </div>
-            <div class="modal-body">
-                <p class="small text-muted mb-3">اختر سبب البلاغ. سيتم مراجعته من فريق ANTER.</p>
-                <div class="mb-2">
-                    <label class="d-block mb-1">
-                        <input type="radio" name="reportUserReason" value="spam" checked>
-                        محتوى مزعج أو ترويجي
-                    </label>
-                    <label class="d-block mb-1">
-                        <input type="radio" name="reportUserReason" value="harassment">
-                        تنمر أو مضايقة
-                    </label>
-                    <label class="d-block mb-1">
-                        <input type="radio" name="reportUserReason" value="hate">
-                        كراهية أو تحريض
-                    </label>
-                    <label class="d-block mb-1">
-                        <input type="radio" name="reportUserReason" value="impersonation">
-                        انتحال شخصية
-                    </label>
-                    <label class="d-block mb-1">
-                        <input type="radio" name="reportUserReason" value="other">
-                        سبب آخر
-                    </label>
-                </div>
+            <div class="modal-body" style="padding: 16px 20px;">
+                <p style="color: #6c757d; font-size: 13px; margin-bottom: 14px;">
+                    اختر سبب البلاغ. سيتم مراجعته من فريق ANTER.
+                </p>
+                <label style="display: block; padding: 10px 12px; margin-bottom: 6px; border: 1px solid #e9ecef; border-radius: 10px; cursor: pointer; background: #f8f9fa;">
+                    <input type="radio" name="reportUserReason" value="spam" checked style="margin-inline-end: 8px;">
+                    <span style="color: #1a1a1a;">محتوى مزعج أو ترويجي</span>
+                </label>
+                <label style="display: block; padding: 10px 12px; margin-bottom: 6px; border: 1px solid #e9ecef; border-radius: 10px; cursor: pointer; background: #f8f9fa;">
+                    <input type="radio" name="reportUserReason" value="harassment" style="margin-inline-end: 8px;">
+                    <span style="color: #1a1a1a;">تنمر أو مضايقة</span>
+                </label>
+                <label style="display: block; padding: 10px 12px; margin-bottom: 6px; border: 1px solid #e9ecef; border-radius: 10px; cursor: pointer; background: #f8f9fa;">
+                    <input type="radio" name="reportUserReason" value="hate" style="margin-inline-end: 8px;">
+                    <span style="color: #1a1a1a;">كراهية أو تحريض</span>
+                </label>
+                <label style="display: block; padding: 10px 12px; margin-bottom: 6px; border: 1px solid #e9ecef; border-radius: 10px; cursor: pointer; background: #f8f9fa;">
+                    <input type="radio" name="reportUserReason" value="impersonation" style="margin-inline-end: 8px;">
+                    <span style="color: #1a1a1a;">انتحال شخصية</span>
+                </label>
+                <label style="display: block; padding: 10px 12px; margin-bottom: 6px; border: 1px solid #e9ecef; border-radius: 10px; cursor: pointer; background: #f8f9fa;">
+                    <input type="radio" name="reportUserReason" value="other" style="margin-inline-end: 8px;">
+                    <span style="color: #1a1a1a;">سبب آخر</span>
+                </label>
                 <textarea id="reportUserDetails"
-                          class="form-control form-control-sm mt-2"
+                          class="form-control"
                           rows="3"
                           maxlength="500"
-                          placeholder="تفاصيل إضافية (اختياري)"></textarea>
+                          placeholder="تفاصيل إضافية (اختياري)"
+                          style="margin-top: 12px; background: #f8f9fa; border: 1px solid #e9ecef; color: #1a1a1a; border-radius: 10px;"></textarea>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
-                <button type="button" class="btn btn-danger btn-sm" id="reportUserSubmitBtn">
+            <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 12px 20px;">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius: 8px;">إلغاء</button>
+                <button type="button" class="btn btn-danger btn-sm" id="reportUserSubmitBtn" style="border-radius: 8px; font-weight: 600;">
                     <i class="fas fa-paper-plane"></i> إرسال البلاغ
                 </button>
             </div>

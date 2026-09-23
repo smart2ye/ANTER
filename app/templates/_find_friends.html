@@ -1,0 +1,194 @@
+<div class="feed-find-friends" id="feed-find-friends" hidden>
+    <div class="feed-find-friends-body">
+        <div class="feed-find-friends-text">
+            <i class="fas fa-address-book" aria-hidden="true"></i>
+            <div>
+                <strong>ابحث عن أصدقائك على ANTER</strong>
+                <small id="find-friends-status">اكتشف من تعرفهم مسبقًا</small>
+            </div>
+        </div>
+        <button type="button" id="find-friends-btn" class="btn btn-sm btn-primary">
+            <i class="fas fa-search"></i> ابحث
+        </button>
+    </div>
+    <div id="find-friends-results" class="find-friends-results"></div>
+</div>
+
+<style>
+.feed-find-friends {
+    margin: 12px 0;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #eef4ff 0%, #f7f5ff 100%);
+    border: 1px solid #dbe7ff;
+}
+.feed-find-friends-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.feed-find-friends-text {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+.feed-find-friends-text i {
+    font-size: 22px;
+    color: #1877F2;
+    flex-shrink: 0;
+}
+.feed-find-friends-text strong {
+    display: block;
+    color: #1a1a1a;
+    font-size: 15px;
+}
+.feed-find-friends-text small {
+    color: #6b7280;
+    font-size: 12px;
+}
+.find-friends-results {
+    margin-top: 12px;
+    display: none;
+}
+.find-friends-results.is-visible {
+    display: block;
+}
+.find-friend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid #e9ecef;
+    margin-bottom: 6px;
+}
+.find-friend-item:hover {
+    border-color: #cfe0ff;
+    background: #f5f9ff;
+}
+.find-friend-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.find-friend-item > div {
+    flex-grow: 1;
+    min-width: 0;
+}
+.find-friend-item strong {
+    display: block;
+    font-size: 14px;
+    color: #1a1a1a;
+}
+.find-friend-item small {
+    color: #6b7280;
+    font-size: 12px;
+}
+.find-friend-item .badge {
+    background: #e5e7eb;
+    color: #374151;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+}
+</style>
+
+<script>
+(function() {
+    var root = document.getElementById('feed-find-friends');
+    if (!root) return;
+
+    // لا نُظهر القسم إلا في تطبيق ANTER (حيث يوجد الجسر)
+    if (!window.AnterContacts) {
+        return;
+    }
+
+    root.hidden = false;
+
+    var btn = document.getElementById('find-friends-btn');
+    var status = document.getElementById('find-friends-status');
+    var results = document.getElementById('find-friends-results');
+
+    btn.addEventListener('click', function() {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جارٍ البحث';
+        status.textContent = 'نقرأ جهات الاتصال من هاتفك...';
+        results.classList.remove('is-visible');
+        results.innerHTML = '';
+        try {
+            window.AnterContacts.requestHashes();
+        } catch (e) {
+            status.textContent = 'تعذر الوصول إلى جهات الاتصال.';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-search"></i> ابحث';
+        }
+    });
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+        });
+    }
+
+    function renderResults(items) {
+        if (!items.length) {
+            results.innerHTML = '<p class="text-muted small mb-0">لم نجد أحدًا من معارفك على ANTER حتى الآن.</p>';
+        } else {
+            results.innerHTML = items.map(function(u) {
+                var name = escapeHtml(u.name || u.username);
+                var uname = escapeHtml(u.username);
+                var avatar = '/media/avatar/' + u.id;
+                var badge = u.isFollowing ? '<span class="badge">متابَع</span>' : '';
+                return '<a class="find-friend-item" href="/users/' + uname + '">' +
+                       '<img src="' + avatar + '" alt="" class="find-friend-avatar" loading="lazy">' +
+                       '<div><strong>' + name + '</strong><small>@' + uname + '</small></div>' +
+                       badge + '</a>';
+            }).join('');
+        }
+        results.classList.add('is-visible');
+    }
+
+    window.onAnterHashesReceived = async function(hashes) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-search"></i> إعادة';
+
+        if (!Array.isArray(hashes) || hashes.length === 0) {
+            status.textContent = 'لا توجد جهات اتصال مطابقة.';
+            return;
+        }
+
+        status.textContent = 'نبحث بين مستخدمي ANTER...';
+        try {
+            var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            var csrf = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            var res = await fetch('/users/find-friends', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrf
+                },
+                body: JSON.stringify({ hashes: hashes })
+            });
+            var data = await res.json();
+            if (!data.success) {
+                status.textContent = data.message || 'فشل البحث.';
+                return;
+            }
+            status.textContent = data.matched > 0
+                ? ('وجدنا ' + data.matched + ' من معارفك على ANTER.')
+                : 'لم نجد أحدًا من معارفك على ANTER حتى الآن.';
+            renderResults(data.suggested || []);
+        } catch (e) {
+            status.textContent = 'تعذر الاتصال بالخادم.';
+        }
+    };
+})();
+</script>

@@ -4,7 +4,7 @@
     <div class="post-card-header">
         <div class="post-author-info">
             <a href="{{ url_for('users.profile', username=post.author.username) }}" class="post-avatar-link">
-                <img src="{{ avatar_url(post.author) }}" class="post-avatar" alt="{{ post.author.name }}">
+                <img src="{{ avatar_url(post.author) }}" class="post-avatar" alt="{{ post.author.name }}" loading="lazy" decoding="async" width="48" height="48">
             </a>
             <div class="post-author-meta">
                 <a href="{{ url_for('users.profile', username=post.author.username) }}" class="post-author-name">
@@ -165,6 +165,8 @@
              class="post-image js-lightbox"
              alt="صورة المنشور"
              loading="lazy"
+             decoding="async"
+             referrerpolicy="no-referrer"
              data-post-author="{{ post.author.username }}"
              data-is-owner="{{ 'true' if current_user.is_authenticated and current_user.id == post.author_id else 'false' }}"
              data-fullsrc="{{ post_image_url(post) }}">

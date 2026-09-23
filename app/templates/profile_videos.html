@@ -16,7 +16,7 @@
                 <img src="{{ avatar_url(user) }}"
                      alt="{{ user.name }}"
                      class="anter-profile-avatar js-lightbox"
-                     data-fullsrc="{{ avatar_url(user) }}">
+                     data-fullsrc="{{ avatar_url(user) }}" loading="lazy" decoding="async">
 
                 {% if user.is_verified %}
                 <span class="anter-profile-verified" title="حساب موثق">
@@ -143,7 +143,7 @@
                 <img src="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}"
                      class="card-img-top"
                      style="height: 100%; object-fit: cover;"
-                     onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'">
+                     onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'" loading="lazy" decoding="async">
                 <div class="position-absolute top-50 start-50 translate-middle">
                     <i class="fas fa-play-circle text-white" style="font-size: 3rem; opacity: 0.85;"></i>
                 </div>

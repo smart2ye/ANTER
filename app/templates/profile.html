@@ -18,7 +18,7 @@
                 <img src="{{ avatar_url(user) }}"
                      alt="{{ user.name }}"
                      class="anter-profile-avatar js-lightbox"
-                     data-fullsrc="{{ avatar_url(user) }}">
+                     data-fullsrc="{{ avatar_url(user) }}" loading="lazy" decoding="async">
 
                 {% if user.is_verified %}
                 <span class="anter-profile-verified" title="حساب موثق">
@@ -149,7 +149,7 @@
     <form method="POST" action="{{ url_for('posts.post_on_wall', username=user.username) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="anter-wall-composer-header">
-            <img src="{{ avatar_url(current_user) }}" alt="{{ current_user.name }}" class="anter-wall-composer-avatar">
+            <img src="{{ avatar_url(current_user) }}" alt="{{ current_user.name }}" class="anter-wall-composer-avatar" loading="lazy" decoding="async">
             <span>اكتب على حائط {{ user.name }}...</span>
         </div>
         <textarea name="content"

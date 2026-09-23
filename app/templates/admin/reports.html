@@ -36,6 +36,17 @@
                         <a href="{{ url_for('videos.watch', public_id=report.video.public_id) if report.video else '#' }}" target="_blank">
                             ريل #{{ report.video_id }}
                         </a>
+                    {% elif report.reason and report.reason.startswith('user-report:') %}
+                        {% set target = user_report_targets.get(report.id) %}
+                        {% if target and target.avatar_id %}
+                            <a href="{{ url_for('users.profile', username=target.username) }}" class="d-inline-flex align-items-center gap-2 text-decoration-none">
+                                <img src="{{ url_for('media.avatar', user_id=target.avatar_id) }}" width="32" height="32" class="rounded-circle" alt="">
+                                <span class="fw-semibold">{{ target.name }}</span>
+                                <small class="text-muted">@{{ target.username }}</small>
+                            </a>
+                        {% else %}
+                            <span class="text-muted">مستخدم محذوف أو غير معروف</span>
+                        {% endif %}
                     {% else %}
                         <span class="text-muted">محتوى لم يعد متاحاً</span>
                     {% endif %}

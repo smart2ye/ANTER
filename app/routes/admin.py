@@ -300,8 +300,35 @@ def delete_video_admin(video_id):
 @login_required
 @admin_required
 def reports():
+    import re
     reports_list = Report.query.order_by(Report.created_at.desc()).all()
-    return render_template('admin/reports.html', reports=reports_list)
+
+    # استخراج اسم المستخدم المُبلَّغ عنه من تفاصيل بلاغات المستخدمين
+    user_report_targets = {}
+    for r in reports_list:
+        if r.reason and r.reason.startswith('user-report:'):
+            m = re.search(r'\[بلاغ عن مستخدم:\s*([^\]\s]+)\]', r.details or '')
+            if m:
+                username = m.group(1).strip()
+                target = User.query.filter_by(username=username).first()
+                if target:
+                    user_report_targets[r.id] = {
+                        'username': target.username,
+                        'name': target.name or target.username,
+                        'avatar_id': target.id,
+                    }
+                    continue
+            user_report_targets[r.id] = {
+                'username': username if 'username' in locals() else '?',
+                'name': 'مستخدم محذوف',
+                'avatar_id': None,
+            }
+
+    return render_template(
+        'admin/reports.html',
+        reports=reports_list,
+        user_report_targets=user_report_targets,
+    )
 
 
 @admin_bp.route('/support-requests')

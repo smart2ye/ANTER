@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask import abort
 from flask_login import login_required, current_user, logout_user
 from app.extensions import db, csrf
-from app.models import User, Post, Video, Notification, Follow, Report
+from app.models import User, Post, Video, Notification, Follow, Report, UserBlock
 from app.forms.profile import ProfileForm
 from app.utils.helpers import log_user_activity, get_user_activity_summary, get_status_icon
 from app.utils.image_storage import prepare_image_data
@@ -335,6 +335,84 @@ def report_user(username):
         return jsonify({'success': True, 'message': msg, 'report_id': report.id})
     flash(msg, 'success')
     return redirect(url_for('users.profile', username=username))
+
+
+@users_bp.route('/find-friends', methods=['POST'])
+@login_required
+@csrf.exempt
+def find_friends():
+    """POST /users/find-friends
+    Body: { "hashes": ["<sha256 hex>", ...] }
+    يقارن البصمات بأرقام المستخدمين المعروفين ويعيد المقترحين.
+    """
+    import hashlib
+
+    data = request.get_json(silent=True) or {}
+    raw_hashes = data.get('hashes')
+
+    if not isinstance(raw_hashes, list):
+        return jsonify({'success': False, 'message': 'يجب إرسال قائمة hashes.'}), 400
+    if len(raw_hashes) > 500:
+        return jsonify({'success': False, 'message': 'عدد البصمات كبير جدًا (الحد 500).'}), 400
+
+    hashes = set()
+    for h in raw_hashes:
+        if isinstance(h, str) and len(h) == 64:
+            try:
+                int(h, 16)
+                hashes.add(h.lower())
+            except ValueError:
+                pass
+
+    if not hashes:
+        return jsonify({'success': True, 'suggested': [], 'matched': 0, 'submitted': 0})
+
+    user = current_user
+
+    # من يتابعهم المستخدم حاليًا
+    already_following = {
+        row.followed_id
+        for row in Follow.query.filter_by(follower_id=user.id).all()
+    }
+
+    # المحظورين (في الاتجاهين)
+    blocked_ids = {
+        row.blocked_id
+        for row in UserBlock.query.filter_by(blocker_id=user.id).all()
+    }
+    blocked_ids.update(
+        row.blocker_id
+        for row in UserBlock.query.filter_by(blocked_id=user.id).all()
+    )
+
+    # مطابقة
+    from app.routes.mobile_api import _normalize_phone
+    matches = []
+    for other in User.query.filter(User.phone.isnot(None), User.phone != '').all():
+        if other.id == user.id or other.id in blocked_ids:
+            continue
+        normalized = _normalize_phone(other.phone)
+        if not normalized:
+            continue
+        h = hashlib.sha256(normalized.encode('utf-8')).hexdigest()
+        if h in hashes:
+            matches.append({
+                'id': other.id,
+                'username': other.username,
+                'name': other.name,
+                'avatar_id': other.id,
+                'isFollowing': other.id in already_following,
+            })
+
+    # ترتيب: غير المتابَعين أولًا
+    matches.sort(key=lambda x: x['isFollowing'])
+
+    return jsonify({
+        'success': True,
+        'suggested': matches,
+        'matched': len(matches),
+        'submitted': len(hashes),
+    })
 
 
 @users_bp.route('/settings', methods=['GET', 'POST'])

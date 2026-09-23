@@ -102,12 +102,47 @@ class RegistrationForm(FlaskForm):
 
     def validate_phone(self, phone):
         value = (phone.data or '').strip()
-        if value:
-            if not re.fullmatch(r'[0-9]+', value):
-                raise ValidationError('رقم الجوال يجب أن يحتوي أرقاماً فقط.')
-            full_phone = self.country_code.data + value
-            if User.query.filter_by(phone=full_phone).first():
-                raise ValidationError('رقم الجوال مستخدم بالفعل.')
+        if not value:
+            return
+        if not re.fullmatch(r'[0-9]+', value):
+            raise ValidationError('رقم الجوال يجب أن يحتوي أرقاماً فقط.')
+
+        # إزالة الصفر في البداية (خطأ شائع) — إن وُجد
+        if value.startswith('0'):
+            value = value.lstrip('0')
+
+        cc = (self.country_code.data or '').strip()
+        required_length = None
+        required_prefix = None
+
+        # قواعد لكل دولة
+        if cc == '+966':
+            required_length = 9
+            required_prefix = '5'
+        elif cc == '+967':
+            required_length = 9
+            required_prefix = '7'
+
+        if required_length is not None:
+            if len(value) != required_length:
+                raise ValidationError(
+                    f'رقم الجوال لهذا البلد يجب أن يتكون من {required_length} أرقام (بدون الصفر في البداية).'
+                )
+            if required_prefix and not value.startswith(required_prefix):
+                raise ValidationError(
+                    f'رقم الجوال لهذا البلد يجب أن يبدأ بالرقم {required_prefix}.'
+                )
+        else:
+            # قواعد عامة للدول الأخرى
+            if not (6 <= len(value) <= 15):
+                raise ValidationError('رقم الجوال يجب أن يكون بين 6 و15 رقماً.')
+
+        # حفظ القيمة المُنظَّفة ليُستخدم في التسجيل لاحقًا
+        self.phone.data = value
+
+        full_phone = cc + value
+        if User.query.filter_by(phone=full_phone).first():
+            raise ValidationError('رقم الجوال مستخدم بالفعل.')
 
 
 # ============================================

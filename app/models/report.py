@@ -16,6 +16,7 @@ class Report(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     resolved_at = db.Column(db.DateTime, nullable=True)
     resolved_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    rejection_reason = db.Column(db.String(500), nullable=True)
 
     reporter = db.relationship('User', foreign_keys=[reporter_id])
     resolver = db.relationship('User', foreign_keys=[resolved_by])

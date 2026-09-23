@@ -93,6 +93,8 @@
                             {% elif notif.action in ['message', 'voice_message'] %}anter-notif-icon--message
                             {% elif notif.action == 'voice_call' %}anter-notif-icon--call
                             {% elif notif.action == 'verification_approved' %}anter-notif-icon--verified
+                            {% elif notif.action == 'report_resolved' %}anter-notif-icon--verified
+                            {% elif notif.action == 'report_rejected' %}anter-notif-icon--default
                             {% else %}anter-notif-icon--default{% endif %}">
                             <i class="fas
                                 {% if notif.action == 'like' %}fa-heart
@@ -104,6 +106,8 @@
                                 {% elif notif.action == 'voice_call' %}fa-phone
                                 {% elif notif.action == 'verification_approved' %}fa-check
                                 {% elif notif.action == 'verification_rejected' %}fa-times
+                                {% elif notif.action == 'report_resolved' %}fa-check-circle
+                                {% elif notif.action == 'report_rejected' %}fa-times-circle
                                 {% else %}fa-bell{% endif %}"
                                aria-hidden="true"></i>
                         </span>
@@ -127,11 +131,17 @@
                                 {% elif notif.action == 'voice_call' %}اتصل بك صوتيًا
                                 {% elif notif.action == 'verification_approved' %}تم توثيق حسابك ✓
                                 {% elif notif.action == 'verification_rejected' %}لم يُقبل طلب التوثيق
+                                {% elif notif.action == 'report_resolved' %}تمت مراجعة بلاغك
+                                {% elif notif.action == 'report_rejected' %}تم رفض بلاغك
                                 {% else %}لديك إشعار{% endif %}
                             </span>
                         </p>
 
-                        {% if notif.post and notif.post.content %}
+                        {% if notif.extra_text %}
+                        <p class="anter-notif-item__preview">
+                            <i class="fas fa-info-circle text-muted"></i> {{ notif.extra_text }}
+                        </p>
+                        {% elif notif.post and notif.post.content %}
                         <p class="anter-notif-item__preview">
                             {{ notif.post.content|truncate(80, True, '…') }}
                         </p>

@@ -92,14 +92,23 @@
     document.querySelectorAll('.reject-report').forEach(btn => {
         btn.addEventListener('click', function() {
             const url = this.dataset.url;
-            fetch(url, { 
+            const reason = prompt('سبب رفض البلاغ (سيظهر للمُبلِّغ):\nاتركه فارغاً لرفض بدون توضيح.', '');
+            if (reason === null) return;
+
+            fetch(url, {
                 method: 'POST',
-                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({ reason: reason })
             })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) location.reload();
-                });
+                    else alert(data.message || 'تعذر رفض البلاغ.');
+                })
+                .catch(() => alert('خطأ في الاتصال.'));
         });
     });
 

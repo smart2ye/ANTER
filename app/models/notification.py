@@ -10,6 +10,7 @@ class Notification(db.Model):
     action = db.Column(db.String(50), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=True)
     is_read = db.Column(db.Boolean, default=False)
+    extra_text = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     actor = db.relationship('User', foreign_keys=[actor_id])

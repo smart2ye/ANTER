@@ -503,6 +503,19 @@ def resolve_report(report_id):
     report.status = 'resolved'
     report.resolved_at = datetime.utcnow()
     report.resolved_by = current_user.id
+
+    # إشعار للمُبلِّغ بأن البلاغ حُلّ (نتجاهل بلاغات النظام أو بلاغات المستخدم عن نفسه)
+    try:
+        if report.reporter_id and report.reporter_id != current_user.id:
+            db.session.add(Notification(
+                user_id=report.reporter_id,
+                actor_id=current_user.id,
+                action='report_resolved',
+                extra_text='تمت مراجعة بلاغك واتخاذ الإجراء المناسب.',
+            ))
+    except Exception:
+        pass
+
     db.session.commit()
     return jsonify({'success': True})
 
@@ -511,9 +524,29 @@ def resolve_report(report_id):
 @admin_required
 def reject_report(report_id):
     report = Report.query.get_or_404(report_id)
+    data = request.get_json(silent=True) or {}
+    rejection_reason = (data.get('reason') or '').strip()[:500]
+
     report.status = 'rejected'
     report.resolved_at = datetime.utcnow()
     report.resolved_by = current_user.id
+    report.rejection_reason = rejection_reason or None
+
+    # إشعار للمُبلِّغ بسبب الرفض
+    try:
+        if report.reporter_id and report.reporter_id != current_user.id:
+            text = 'لم يُتخذ إجراء بشأن بلاغك.'
+            if rejection_reason:
+                text = f'تم رفض بلاغك. السبب: {rejection_reason}'
+            db.session.add(Notification(
+                user_id=report.reporter_id,
+                actor_id=current_user.id,
+                action='report_rejected',
+                extra_text=text[:500],
+            ))
+    except Exception:
+        pass
+
     db.session.commit()
     return jsonify({'success': True})
 

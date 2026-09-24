@@ -92,12 +92,43 @@
     color: #6b7280;
     font-size: 12px;
 }
-.find-friend-item .badge {
-    background: #e5e7eb;
-    color: #374151;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
+.find-friend-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-grow: 1;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+}
+.find-friend-follow {
+    border: none;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+.find-friend-follow.follow-btn-primary {
+    background: #1877F2;
+    color: #fff;
+}
+.find-friend-follow.follow-btn-primary:hover {
+    background: #0B5ED7;
+}
+.find-friend-follow.follow-btn-outline {
+    background: #fff;
+    color: #1877F2;
+    border: 1px solid #1877F2;
+}
+.find-friend-follow.follow-btn-outline:hover {
+    background: #f0f7ff;
+}
+.find-friend-follow:disabled {
+    opacity: 0.6;
+    cursor: wait;
 }
 </style>
 
@@ -146,12 +177,49 @@
                 var name = escapeHtml(u.name || u.username);
                 var uname = escapeHtml(u.username);
                 var avatar = '/media/avatar/' + u.id;
-                var badge = u.isFollowing ? '<span class="badge">متابَع</span>' : '';
-                return '<a class="find-friend-item" href="/users/' + uname + '">' +
+                var btnClass = u.isFollowing ? 'follow-btn-outline' : 'follow-btn-primary';
+                var btnText = u.isFollowing ? 'إلغاء' : 'متابعة';
+                return '<div class="find-friend-item">' +
+                       '<a href="/users/' + uname + '" class="find-friend-link">' +
                        '<img src="' + avatar + '" alt="" class="find-friend-avatar" loading="lazy">' +
                        '<div><strong>' + name + '</strong><small>@' + uname + '</small></div>' +
-                       badge + '</a>';
+                       '</a>' +
+                       '<button type="button" class="find-friend-follow ' + btnClass + '"' +
+                       ' data-user-id="' + u.id + '" data-following="' + (u.isFollowing ? 'true' : 'false') + '">' +
+                       btnText + '</button>' +
+                       '</div>';
             }).join('');
+
+            // ربط أزرار المتابعة
+            results.querySelectorAll('.find-friend-follow').forEach(function(btn) {
+                btn.addEventListener('click', async function() {
+                    var uid = btn.dataset.userId;
+                    var isFollowing = btn.dataset.following === 'true';
+                    var url = isFollowing ? '/users/unfollow/' + uid : '/users/follow/' + uid;
+
+                    btn.disabled = true;
+                    try {
+                        var res = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        var data = await res.json();
+                        if (data.success) {
+                            var nowFollowing = !!data.following;
+                            btn.dataset.following = nowFollowing ? 'true' : 'false';
+                            btn.textContent = nowFollowing ? 'إلغاء' : 'متابعة';
+                            btn.classList.toggle('follow-btn-primary', !nowFollowing);
+                            btn.classList.toggle('follow-btn-outline', nowFollowing);
+                        }
+                    } catch (e) {
+                        // silent
+                    } finally {
+                        btn.disabled = false;
+                    }
+                });
+            });
         }
         results.classList.add('is-visible');
     }

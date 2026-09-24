@@ -3,12 +3,12 @@
         <div class="feed-find-friends-text">
             <i class="fas fa-address-book" aria-hidden="true"></i>
             <div>
-                <strong>ابحث عن أصدقائك على ANTER</strong>
-                <small id="find-friends-status">اكتشف من تعرفهم مسبقًا</small>
+                <strong>اكتشف أشخاصًا قد تعرفهم</strong>
+                <small id="find-friends-status">اقتراحات مخصصة لك</small>
             </div>
         </div>
         <button type="button" id="find-friends-btn" class="btn btn-sm btn-primary">
-            <i class="fas fa-search"></i> ابحث
+            <i class="fas fa-magic"></i> اقترح
         </button>
     </div>
     <div id="find-friends-results" class="find-friends-results"></div>
@@ -151,13 +151,13 @@
     btn.addEventListener('click', function() {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جارٍ البحث';
-        status.textContent = 'نقرأ جهات الاتصال من هاتفك...';
+        status.textContent = 'جارٍ توليد الاقتراحات...';
         results.classList.remove('is-visible');
         results.innerHTML = '';
         try {
             window.AnterContacts.requestHashes();
         } catch (e) {
-            status.textContent = 'تعذر الوصول إلى جهات الاتصال.';
+            status.textContent = 'تعذر توليد الاقتراحات الآن.';
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-search"></i> ابحث';
         }
@@ -171,7 +171,7 @@
 
     function renderResults(items) {
         if (!items.length) {
-            results.innerHTML = '<p class="text-muted small mb-0">لم نجد أحدًا من معارفك على ANTER حتى الآن.</p>';
+            results.innerHTML = '<p class="text-muted small mb-0">لا توجد اقتراحات حاليًا. جرّب لاحقًا.</p>';
         } else {
             results.innerHTML = items.map(function(u) {
                 var name = escapeHtml(u.name || u.username);
@@ -226,14 +226,14 @@
 
     window.onAnterHashesReceived = async function(hashes) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-search"></i> إعادة';
+        btn.innerHTML = '<i class="fas fa-magic"></i> إعادة';
 
         if (!Array.isArray(hashes) || hashes.length === 0) {
             status.textContent = 'لا توجد جهات اتصال مطابقة.';
             return;
         }
 
-        status.textContent = 'نبحث بين مستخدمي ANTER...';
+        status.textContent = 'نُحضّر الاقتراحات...';
         try {
             var csrfMeta = document.querySelector('meta[name="csrf-token"]');
             var csrf = csrfMeta ? csrfMeta.getAttribute('content') : '';
@@ -251,8 +251,8 @@
                 return;
             }
             status.textContent = data.matched > 0
-                ? ('وجدنا ' + data.matched + ' من معارفك على ANTER.')
-                : 'لم نجد أحدًا من معارفك على ANTER حتى الآن.';
+                ? ('لديك ' + data.matched + ' اقتراحًا.')
+                : 'لا توجد اقتراحات حاليًا.';
             renderResults(data.suggested || []);
         } catch (e) {
             status.textContent = 'تعذر الاتصال بالخادم.';

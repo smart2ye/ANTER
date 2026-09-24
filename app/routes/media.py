@@ -1,4 +1,7 @@
-from flask import Blueprint, Response, redirect, url_for
+import os
+
+from flask import (Blueprint, Response, current_app, redirect,
+                    send_from_directory, url_for)
 
 from app.models import Post, User
 
@@ -28,7 +31,18 @@ def _image_response(data, mime_type):
 @media_bp.route('/avatar/<int:user_id>')
 def avatar(user_id):
     user = User.query.get_or_404(user_id)
-    return _image_response(user.avatar_data, user.avatar_mime)
+    if user.avatar_data:
+        return _image_response(user.avatar_data, user.avatar_mime)
+    # لا توجد صورة مرفوعة → استخدم أيقونة الذكر/الأنثى من static/img/
+    legacy = user.avatar or ''
+    if legacy.startswith('img/'):
+        return send_from_directory(
+            os.path.join(current_app.static_folder, 'img'),
+            os.path.basename(legacy),
+            mimetype='image/png',
+            max_age=300,
+        )
+    return redirect(url_for('static', filename='uploads/default.png'))
 
 
 # ANTER: الحد الأقصى لكل chunk عند بث الفيديو (2 MB).

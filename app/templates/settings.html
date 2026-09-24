@@ -5,234 +5,259 @@
     <div class="profile-status mt-1">
         {{ get_status_icon(current_user)|safe }}
     </div>
-    
-    <!-- تغيير كلمة المرور -->
-    <div class="mt-4">
-        <h6 class="border-bottom pb-2"><i class="fas fa-key"></i> تغيير كلمة المرور</h6>
-        <form method="POST" action="{{ url_for('users.settings') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="mb-2">
-                <label class="form-label">كلمة المرور الحالية</label>
-                <input type="password" name="current_password" class="form-control" required>
-            </div>
-            <div class="mb-2">
-                <label class="form-label">كلمة المرور الجديدة</label>
-                <input type="password" name="new_password" class="form-control" required minlength="6">
-            </div>
-            <div class="mb-2">
-                <label class="form-label">تأكيد كلمة المرور</label>
-                <input type="password" name="confirm_password" class="form-control" required>
-            </div>
-            <button type="submit" class="btn btn-primary">تغيير كلمة المرور</button>
-        <div style="margin-top: 10px;">
-            <a href="{{ url_for('auth.reset_password_request') }}" style="color: #6C3CE1;">🔑 نسيت كلمة السر الحالية؟</a>
-        </div>
-        </form>
-    </div>
 
-    <!-- المعلومات الشخصية -->
-    <div class="mt-4">
-        <h6 class="border-bottom pb-2"><i class="fas fa-user-edit"></i> المعلومات الشخصية</h6>
-        <form method="POST" action="{{ url_for('users.settings') }}" id="profile-info-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="mb-3">
-                <label class="form-label fw-semibold"><i class="fas fa-at text-primary"></i> اسم المستخدم ورابط الملف الشخصي</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light">@</span>
-                    <input type="text" name="username" id="username" class="form-control" value="{{ current_user.username }}" minlength="3" maxlength="30" pattern="[A-Za-z0-9_\u0600-\u06FF](?:[A-Za-z0-9_\u0600-\u06FF]|\.(?=[A-Za-z0-9_\u0600-\u06FF])){2,29}" autocomplete="username" dir="auto" aria-describedby="username-save-status username-profile-url" {% if is_anter_assistant(current_user) %}readonly{% endif %}>
+    <!-- ============ التبويبات ============ -->
+    <ul class="nav nav-pills nav-fill mb-4 mt-3 gap-1" style="background: var(--fb-bg, #f0f2f5); border-radius: 12px; padding: 4px;">
+        <li class="nav-item">
+            <button class="nav-link active rounded-pill fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-account" type="button" role="tab">
+                <i class="fas fa-user me-1"></i> الحساب
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link rounded-pill fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-security" type="button" role="tab">
+                <i class="fas fa-shield-alt me-1"></i> الأمان
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link rounded-pill fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-privacy" type="button" role="tab">
+                <i class="fas fa-lock me-1"></i> الخصوصية
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link rounded-pill fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-verification" type="button" role="tab">
+                <i class="fas fa-certificate me-1"></i> التوثيق
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- ============ تبويب الحساب ============ -->
+        <div class="tab-pane fade show active" id="tab-account" role="tabpanel">
+            <form method="POST" action="{{ url_for('users.settings') }}" id="profile-info-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="_section" value="account">
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold"><i class="fas fa-at text-primary"></i> اسم المستخدم ورابط الملف الشخصي</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">@</span>
+                        <input type="text" name="username" id="username" class="form-control" value="{{ current_user.username }}" minlength="3" maxlength="30" pattern="[A-Za-z0-9_\u0600-\u06FF](?:[A-Za-z0-9_\u0600-\u06FF]|\.(?=[A-Za-z0-9_\u0600-\u06FF])){2,29}" autocomplete="username" dir="auto" aria-describedby="username-save-status username-profile-url" {% if is_anter_assistant(current_user) %}readonly{% endif %}>
+                    </div>
+                    <small class="form-text text-muted">من 3 إلى 30 حرفاً أو رقماً، دون مسافات. رابطك: <span id="username-profile-url">{{ request.host_url.rstrip('/') }}/users/{{ current_user.username }}</span></small>
+                    <small id="username-save-status" class="d-block text-muted mt-1" aria-live="polite">اكتب الاسم الجديد ثم اضغط حفظ.</small>
+                    {% if is_anter_assistant(current_user) %}<small class="d-block text-warning mt-1">اسم مستخدم مساعد أنتر محجوز للحساب الرسمي.</small>{% endif %}
                 </div>
-                <small class="form-text text-muted">اختر اسماً من 3 إلى 30 حرفاً أو رقماً، من دون مسافات. يمكن استخدام الشرطة السفلية _ والنقطة بين أجزاء الاسم. رابطك سيكون: <span id="username-profile-url">{{ request.host_url.rstrip('/') }}/users/{{ current_user.username }}</span></small>
-                {% if not is_anter_assistant(current_user) %}
-                <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
-                    <button type="submit" class="btn btn-outline-primary btn-sm" id="save-username-button"><i class="fas fa-check"></i> حفظ اسم المستخدم</button>
-                    <small id="username-save-status" class="text-muted" aria-live="polite">اكتب الاسم الجديد ثم اضغط هذا الزر لحفظه.</small>
+
+                <div class="mb-2">
+                    <label class="form-label">الجنس</label>
+                    <select name="gender" class="form-control">
+                        <option value="">اختر</option>
+                        <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>ذكر</option>
+                        <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>أنثى</option>
+                        <option value="other" {% if current_user.gender == 'other' %}selected{% endif %}>أخرى</option>
+                    </select>
                 </div>
-                {% endif %}
-                {% if is_anter_assistant(current_user) %}<small class="d-block text-warning mt-1">اسم مستخدم مساعد أنتر محجوز للحساب الرسمي.</small>{% endif %}
-            </div>
-            <div class="mb-2">
-                <label class="form-label">الجنس</label>
-                <select name="gender" class="form-control">
-                    <option value="">اختر</option>
-                    <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>ذكر</option>
-                    <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>أنثى</option>
-                    <option value="other" {% if current_user.gender == 'other' %}selected{% endif %}>أخرى</option>
-                </select>
-            </div>
-            <div class="mb-2">
-                <label class="form-label">تاريخ الميلاد</label>
-                <input type="date" name="birth_date" class="form-control" value="{{ current_user.birth_date.strftime('%Y-%m-%d') if current_user.birth_date else '' }}">
-            </div>
-            <div class="row g-2 mb-2">
-                <div class="col-md-6">
+
+                <div class="mb-2">
+                    <label class="form-label">تاريخ الميلاد</label>
+                    <input type="date" name="birth_date" class="form-control" value="{{ current_user.birth_date.strftime('%Y-%m-%d') if current_user.birth_date else '' }}">
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-2"><i class="fas fa-check me-1"></i> حفظ بيانات الحساب</button>
+            </form>
+
+            <!-- السيرة الذاتية (نموذج مستقل) -->
+            <form method="POST" action="{{ url_for('users.update_settings_bio') }}" id="settings-bio-form" class="border-top mt-4 pt-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-2">
+                    <label class="form-label fw-semibold" for="settings-bio">السيرة الذاتية</label>
+                    <textarea name="bio" id="settings-bio" class="form-control" rows="4" maxlength="200" placeholder="اكتب نبذة قصيرة تعرّف بك..." aria-describedby="settings-bio-help settings-bio-count">{{ current_user.bio or '' }}</textarea>
+                    <div class="d-flex justify-content-between gap-2 mt-1">
+                        <small id="settings-bio-help" class="text-muted">حتى 200 حرف.</small>
+                        <small id="settings-bio-count" class="text-muted text-nowrap" aria-live="polite">0 / 200</small>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="save-settings-bio-button"><i class="fas fa-check me-1"></i> حفظ السيرة الذاتية</button>
+            </form>
+        </div>
+
+        <!-- ============ تبويب الأمان ============ -->
+        <div class="tab-pane fade" id="tab-security" role="tabpanel">
+            <!-- كلمة المرور -->
+            <form method="POST" action="{{ url_for('users.settings') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-key"></i> تغيير كلمة المرور</h6>
+                <div class="mb-2">
+                    <label class="form-label">كلمة المرور الحالية</label>
+                    <input type="password" name="current_password" class="form-control" required autocomplete="current-password">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">كلمة المرور الجديدة</label>
+                    <input type="password" name="new_password" class="form-control" required minlength="6" autocomplete="new-password">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">تأكيد كلمة المرور</label>
+                    <input type="password" name="confirm_password" class="form-control" required autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn btn-primary">تغيير كلمة المرور</button>
+                <div class="mt-2">
+                    <a href="{{ url_for('auth.reset_password_request') }}" style="color: #6C3CE1;">🔑 نسيت كلمة السر الحالية؟</a>
+                </div>
+            </form>
+
+            <!-- البريد الإلكتروني والجوال -->
+            <form method="POST" action="{{ url_for('users.settings') }}" class="border-top mt-4 pt-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="_section" value="security">
+                <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-envelope"></i> البريد والجوال</h6>
+
+                <div class="mb-2">
                     <label class="form-label">البريد الإلكتروني</label>
                     <input type="email" name="email" class="form-control" value="{{ current_user.email }}" autocomplete="email" dir="ltr">
                 </div>
-            </div>
 
-            <!-- تأكيد البريد الإلكتروني -->
-                <div class="mt-3 p-3 rounded border bg-light">
+                <!-- تأكيد البريد -->
+                <div class="mt-2 mb-3 p-3 rounded border bg-light">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                         <div>
                             <div class="fw-semibold">
                                 <i class="fas fa-envelope-open-text text-primary"></i>
                                 تأكيد البريد الإلكتروني
                             </div>
-
                             {% if current_user.email.endswith('@phone-only.anter.local') %}
-                                <small class="text-muted">
-                                    هذا الحساب لا يحتوي على بريد إلكتروني حقيقي.
-                                    أضف بريدًا إلكترونيًا من الحقل أعلاه أولًا.
-                                </small>
+                                <small class="text-muted">هذا الحساب لا يحتوي على بريد إلكتروني حقيقي. أضف بريدًا من الحقل أعلاه أولًا.</small>
                             {% elif current_user.email_verified %}
-                                <small class="text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                    تم تأكيد بريدك الإلكتروني
-                                </small>
+                                <small class="text-success"><i class="fas fa-check-circle"></i> تم تأكيد بريدك الإلكتروني</small>
                             {% else %}
-                                <small class="text-warning">
-                                    <i class="fas fa-exclamation-circle"></i>
-                                    بريدك الإلكتروني غير مؤكد
-                                </small>
+                                <small class="text-warning"><i class="fas fa-exclamation-circle"></i> بريدك الإلكتروني غير مؤكد</small>
                             {% endif %}
                         </div>
-
                         {% if current_user.email and not current_user.email.endswith('@phone-only.anter.local') and not current_user.email_verified %}
-                            <form method="POST" action="{{ url_for('users.send_email_verification_request') }}" class="m-0">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-paper-plane me-1"></i>
-                                    {% if session.get('email_verification_last_sent') %}
-                                        إعادة إرسال رسالة التأكيد
-                                    {% else %}
-                                        تأكيد البريد الإلكتروني
-                                    {% endif %}
-                                </button>
-                            </form>
+                            <button type="submit" form="send-email-verification-form" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-paper-plane me-1"></i> إرسال رابط التأكيد
+                            </button>
                         {% endif %}
                     </div>
-
-                    {% if current_user.email and not current_user.email.endswith('@phone-only.anter.local') and not current_user.email_verified %}
-                        <div class="small text-muted mt-2">
-                            سنرسل رابطًا آمنًا إلى بريدك الإلكتروني. الرابط صالح لمدة 24 ساعة.
-                        </div>
-                    {% endif %}
                 </div>
 
-            <div class="row g-2 mb-2">
-                <div class="col-md-6">
+                <div class="mb-2">
                     <label class="form-label">رقم الجوال</label>
                     <input type="tel" name="phone" class="form-control" value="{{ current_user.phone or '' }}" autocomplete="tel" dir="ltr">
                 </div>
-            </div>
-            <div class="mb-2">
-                <label class="form-label">كلمة المرور الحالية لتأكيد تغيير البريد أو رقم الجوال</label>
-                <input type="password" name="contact_password" class="form-control" autocomplete="current-password">
-                <small class="text-muted">لا تُحفظ كلمة المرور أو قيم الاتصال في سجل النشاط.</small>
-            </div>
-            <button type="submit" class="btn btn-primary">حفظ المعلومات</button>
-        </form>
-        <form method="POST" action="{{ url_for('users.update_settings_bio') }}" id="settings-bio-form" class="border-top mt-4 pt-3">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="mb-2">
-                <label class="form-label fw-semibold" for="settings-bio">السيرة الذاتية</label>
-                <textarea name="bio" id="settings-bio" class="form-control" rows="4" maxlength="200" placeholder="اكتب نبذة قصيرة تعرّف بك أو بمشروعك..." aria-describedby="settings-bio-help settings-bio-count">{{ current_user.bio or '' }}</textarea>
-                <div class="d-flex justify-content-between gap-2 mt-1">
-                    <small id="settings-bio-help" class="text-muted">حتى 200 حرف. تُحفظ المسافات والأسطر بصورة مرتبة.</small>
-                    <small id="settings-bio-count" class="text-muted text-nowrap" aria-live="polite">0 / 200</small>
+
+                <div class="mb-2">
+                    <label class="form-label">كلمة المرور الحالية لتأكيد تغيير البريد أو رقم الجوال</label>
+                    <input type="password" name="contact_password" class="form-control" autocomplete="current-password">
+                    <small class="text-muted">مطلوبة فقط إن غيّرت البريد أو الجوال.</small>
                 </div>
-            </div>
-            <button type="submit" class="btn btn-primary" id="save-settings-bio-button"><i class="fas fa-check me-1"></i> حفظ السيرة الذاتية</button>
-        </form>
-    </div>
 
-    <!-- إعدادات الخصوصية -->
-    <div class="mt-4">
-        <h6 class="border-bottom pb-2"><i class="fas fa-lock"></i> إعدادات الخصوصية</h6>
-        <form method="POST" action="{{ url_for('users.settings') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="show_email" id="show_email" {% if current_user.show_email %}checked{% endif %}>
-                <label class="form-check-label" for="show_email">إظهار البريد الإلكتروني في الملف الشخصي</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="is_private" id="is_private" {% if current_user.is_private %}checked{% endif %}>
-                <label class="form-check-label" for="is_private">حساب خاص (يقتصر الملف والمنشورات المقيدة على المتابعين)</label>
-            </div>
-            <div class="mb-2 mt-3">
-                <label class="form-label">من يمكنه رؤية ملفي ومنشوراتي المقيدة</label>
-                <select name="profile_visibility" class="form-control">
-                    <option value="public" {% if current_user.profile_visibility == 'public' %}selected{% endif %}>الجميع</option>
-                    <option value="followers" {% if current_user.profile_visibility == 'followers' %}selected{% endif %}>المتابعون فقط</option>
-                </select>
-            </div>
-            <div class="mb-2">
-                <label class="form-label">من يمكنه الكتابة على حائطي</label>
-                <select name="wall_visibility" class="form-control">
-                    <option value="public" {% if current_user.wall_visibility == 'public' %}selected{% endif %}>أي مستخدم مسجّل</option>
-                    <option value="followers" {% if current_user.wall_visibility == 'followers' %}selected{% endif %}>المتابعون فقط</option>
-                    <option value="mutual" {% if current_user.wall_visibility == 'mutual' %}selected{% endif %}>المتابعة المتبادلة فقط</option>
-                    <option value="none" {% if current_user.wall_visibility == 'none' %}selected{% endif %}>مغلق (لا أحد)</option>
-                </select>
-                <small class="text-muted">يسمح هذا الخيار للآخرين بكتابة منشورات على حائطك.</small>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="hide_followers" id="hide_followers" {% if current_user.hide_followers %}checked{% endif %}>
-                <label class="form-check-label" for="hide_followers">إخفاء قوائم المتابعين ومن أتابعهم</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="show_online_status" id="show_online_status" {% if current_user.show_online_status %}checked{% endif %}>
-                <label class="form-check-label" for="show_online_status">إظهار حالة اتصالي للأصدقاء</label>
-            </div>
-            <div class="mb-2">
-                <label class="form-label">من يمكنه إرسال رسائل إليك</label>
-                <select name="message_privacy" class="form-control">
-                    <option value="everyone" {% if current_user.message_privacy == 'everyone' %}selected{% endif %}>الجميع</option>
-                    <option value="followers" {% if current_user.message_privacy == 'followers' %}selected{% endif %}>المتابعون فقط</option>
-                    <option value="none" {% if current_user.message_privacy == 'none' %}selected{% endif %}>لا أحد</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">حفظ الخصوصية</button>
-        </form>
-    </div>
-
-    <!-- طلب التوثيق -->
-    <div class="mt-4">
-        <h6 class="border-bottom pb-2"><i class="fas fa-certificate text-primary"></i> توثيق الحساب</h6>
-        {% if current_user.is_verified %}
-            <div class="alert alert-success mb-0"><i class="fas fa-check-circle"></i> حسابك موثّق وتظهر العلامة الزرقاء بجوار اسمك.</div>
-        {% elif verification_request and verification_request.status == 'pending' %}
-            <div class="alert alert-warning mb-0"><i class="fas fa-clock"></i> طلب التوثيق قيد المراجعة منذ <time data-local-time="{{ verification_request.created_at.isoformat() }}" data-time-style="date">{{ verification_request.created_at.strftime('%Y-%m-%d') }}</time>. سنرسل لك إشعاراً عند صدور القرار.</div>
-        {% else %}
-            {% if verification_request and verification_request.status == 'rejected' %}
-                <div class="alert alert-light border small">لم يُقبل طلبك السابق. يمكنك إرسال طلب جديد بمعلومات أوضح.</div>
-            {% endif %}
-            <p class="text-muted small">أخبر الإدارة باختصار لماذا ينبغي توثيق حسابك. لا ترسل كلمات مرور أو بيانات حساسة.</p>
-            <form method="POST" action="{{ url_for('users.request_verification') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <label class="form-label" for="verification-details">سبب طلب التوثيق</label>
-                <textarea id="verification-details" name="details" class="form-control" rows="3" minlength="20" maxlength="500" required placeholder="مثال: هذا حساب الجهة أو المشروع الرسمي، وأرغب في توثيقه لأن..."></textarea>
-                <button type="submit" class="btn btn-outline-primary mt-2"><i class="fas fa-paper-plane"></i> إرسال طلب التوثيق</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check me-1"></i> حفظ البريد والجوال</button>
             </form>
-        {% endif %}
+
+            <!-- نموذج إرسال تأكيد البريد (مخفي، يُستدعى عبر زر) -->
+            <form id="send-email-verification-form" method="POST" action="{{ url_for('users.send_email_verification_request') }}" class="d-none">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            </form>
+        </div>
+
+        <!-- ============ تبويب الخصوصية ============ -->
+        <div class="tab-pane fade" id="tab-privacy" role="tabpanel">
+            <form method="POST" action="{{ url_for('users.settings') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="_section" value="privacy">
+
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="show_email" id="show_email" {% if current_user.show_email %}checked{% endif %}>
+                    <label class="form-check-label" for="show_email">إظهار البريد الإلكتروني في الملف الشخصي</label>
+                </div>
+
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="is_private" id="is_private" {% if current_user.is_private %}checked{% endif %}>
+                    <label class="form-check-label" for="is_private">حساب خاص (يقتصر الملف والمنشورات على المتابعين)</label>
+                </div>
+
+                <div class="mb-3 mt-3">
+                    <label class="form-label">من يمكنه رؤية ملفي ومنشوراتي</label>
+                    <select name="profile_visibility" class="form-control">
+                        <option value="public" {% if current_user.profile_visibility == 'public' %}selected{% endif %}>الجميع</option>
+                        <option value="followers" {% if current_user.profile_visibility == 'followers' %}selected{% endif %}>المتابعون فقط</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">من يمكنه الكتابة على حائطي</label>
+                    <select name="wall_visibility" class="form-control">
+                        <option value="public" {% if current_user.wall_visibility == 'public' %}selected{% endif %}>أي مستخدم مسجّل</option>
+                        <option value="followers" {% if current_user.wall_visibility == 'followers' %}selected{% endif %}>المتابعون فقط</option>
+                        <option value="mutual" {% if current_user.wall_visibility == 'mutual' %}selected{% endif %}>المتابعة المتبادلة فقط</option>
+                        <option value="none" {% if current_user.wall_visibility == 'none' %}selected{% endif %}>مغلق (لا أحد)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">من يمكنه إرسال رسائل إليك</label>
+                    <select name="message_privacy" class="form-control">
+                        <option value="everyone" {% if current_user.message_privacy == 'everyone' %}selected{% endif %}>الجميع</option>
+                        <option value="followers" {% if current_user.message_privacy == 'followers' %}selected{% endif %}>المتابعون فقط</option>
+                        <option value="none" {% if current_user.message_privacy == 'none' %}selected{% endif %}>لا أحد</option>
+                    </select>
+                </div>
+
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="hide_followers" id="hide_followers" {% if current_user.hide_followers %}checked{% endif %}>
+                    <label class="form-check-label" for="hide_followers">إخفاء قوائم المتابعين ومن أتابعهم</label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="show_online_status" id="show_online_status" {% if current_user.show_online_status %}checked{% endif %}>
+                    <label class="form-check-label" for="show_online_status">إظهار حالة اتصالي للأصدقاء</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check me-1"></i> حفظ الخصوصية</button>
+            </form>
+        </div>
+
+        <!-- ============ تبويب التوثيق ============ -->
+        <div class="tab-pane fade" id="tab-verification" role="tabpanel">
+            {% if current_user.is_verified %}
+                <div class="alert alert-success mb-0"><i class="fas fa-check-circle"></i> حسابك موثّق وتظهر العلامة الزرقاء بجوار اسمك.</div>
+            {% elif verification_request and verification_request.status == 'pending' %}
+                <div class="alert alert-warning mb-0"><i class="fas fa-clock"></i> طلب التوثيق قيد المراجعة منذ <time data-local-time="{{ verification_request.created_at.isoformat() }}" data-time-style="date">{{ verification_request.created_at.strftime('%Y-%m-%d') }}</time>.</div>
+            {% else %}
+                {% if verification_request and verification_request.status == 'rejected' %}
+                    <div class="alert alert-light border small">لم يُقبل طلبك السابق. يمكنك إرسال طلب جديد بمعلومات أوضح.</div>
+                {% endif %}
+                <p class="text-muted small">أخبر الإدارة باختصار لماذا ينبغي توثيق حسابك. لا ترسل كلمات مرور أو بيانات حساسة.</p>
+                <form method="POST" action="{{ url_for('users.request_verification') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <label class="form-label" for="verification-details">سبب طلب التوثيق</label>
+                    <textarea id="verification-details" name="details" class="form-control" rows="4" minlength="20" maxlength="500" required placeholder="مثال: هذا حساب الجهة أو المشروع الرسمي، وأرغب في توثيقه لأن..."></textarea>
+                    <button type="submit" class="btn btn-outline-primary mt-2"><i class="fas fa-paper-plane"></i> إرسال طلب التوثيق</button>
+                </form>
+            {% endif %}
+        </div>
+
     </div>
 </div>
-{% endblock %}
+
 <script>
+    // --- اسم المستخدم: تحديث رابط المعاينة ---
     const usernameInput = document.getElementById('username');
     const usernameStatus = document.getElementById('username-save-status');
     const usernameProfileUrl = document.getElementById('username-profile-url');
     if (usernameInput && usernameStatus && usernameProfileUrl) {
-        const baseProfileUrl = '{{ request.host_url.rstrip('/') }}/users/';
+        const baseProfileUrl = '{{ request.host_url.rstrip("/") }}/users/';
         usernameInput.addEventListener('input', function() {
             const value = this.value.trim().replace(/^@+/, '');
             usernameProfileUrl.textContent = baseProfileUrl + (value || '{{ current_user.username }}');
             usernameStatus.textContent = value
-                ? 'اضغط «حفظ اسم المستخدم» لتطبيق التغيير.'
+                ? 'اضغط «حفظ بيانات الحساب» لتطبيق التغيير.'
                 : 'أدخل اسماً من 3 إلى 30 حرفاً أو رقماً.';
         });
     }
 
+    // --- السيرة الذاتية: عدّاد الحروف ---
     const settingsBioInput = document.getElementById('settings-bio');
     const settingsBioCount = document.getElementById('settings-bio-count');
     if (settingsBioInput && settingsBioCount) {
@@ -242,24 +267,5 @@
         settingsBioInput.addEventListener('input', updateSettingsBioCount);
         updateSettingsBioCount();
     }
-
-    // تبديل الصوت من الإعدادات
-    const soundToggle = document.getElementById('soundToggle');
-    if (soundToggle) {
-        // قراءة الحالة من localStorage
-        const soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
-        soundToggle.checked = soundEnabled;
-
-        soundToggle.addEventListener('change', function() {
-            localStorage.setItem('soundEnabled', this.checked);
-            // تحديث مدير الصوت
-            if (typeof sounds !== 'undefined') {
-                sounds.enabled = this.checked;
-            }
-            // تشغيل صوت تجريبي
-            if (this.checked && typeof sounds !== 'undefined') {
-                sounds.notification();
-            }
-        });
-    }
 </script>
+{% endblock %}

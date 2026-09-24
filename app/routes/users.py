@@ -419,11 +419,13 @@ def find_friends():
 @login_required
 def settings():
     if request.method == 'POST':
-        # تغيير كلمة المرور
+        section = request.form.get('_section', 'account')
+        changed_fields = []
+
+        # ---------- كلمة المرور ----------
         current_password = request.form.get('current_password')
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
-        
         if any([current_password, new_password, confirm_password]):
             if not all([current_password, new_password, confirm_password]):
                 flash('جميع حقول كلمة المرور مطلوبة.', 'danger')
@@ -442,106 +444,118 @@ def settings():
             log_user_activity(current_user.id, 'password_change')
             flash('تم تغيير كلمة المرور بنجاح.', 'success')
             return redirect(url_for('users.settings'))
-        
-        # تحديث المعلومات الشخصية
-        desired_username = request.form.get('username')
-        desired_email = request.form.get('email')
-        desired_phone = request.form.get('phone')
-        gender = request.form.get('gender')
-        birth_date_str = request.form.get('birth_date')
-        show_email = request.form.get('show_email') == 'on'
-        is_private = request.form.get('is_private') == 'on'
-        profile_visibility = request.form.get('profile_visibility', 'public')
-        wall_visibility = request.form.get('wall_visibility', 'public')
-        hide_followers = request.form.get('hide_followers') == 'on'
-        show_online_status = request.form.get('show_online_status') == 'on'
-        message_privacy = request.form.get('message_privacy')
-        
-        changed_fields = []
-        if desired_username is not None:
-            username = desired_username.strip().lstrip('@')
-            if is_anter_assistant(current_user):
-                flash('اسم مستخدم مساعد أنتر محجوز ولا يمكن تغييره.', 'danger')
-                return redirect(url_for('users.settings'))
-            if not USERNAME_PATTERN.fullmatch(username):
-                flash('اسم المستخدم يجب أن يتكون من 3 إلى 30 حرفاً أو رقماً، من دون مسافات. يمكن استخدام الشرطة السفلية _ والنقطة بين أجزاء الاسم فقط.', 'danger')
-                return redirect(url_for('users.settings'))
-            existing_user = User.query.filter(User.username.ilike(username)).first()
-            if existing_user and existing_user.id != current_user.id:
-                flash('اسم المستخدم هذا مستخدم بالفعل. جرّب اسماً آخر.', 'danger')
-                return redirect(url_for('users.settings'))
-            if username != current_user.username:
-                current_user.username = username
-                changed_fields.append('اسم المستخدم')
 
-        if desired_email is not None:
-            email = desired_email.strip().lower()
-            if email and email != current_user.email:
-                if not current_user.check_password(request.form.get('contact_password', '')):
-                    flash('أدخل كلمة المرور الحالية لتغيير البريد الإلكتروني أو رقم الجوال.', 'danger')
+        # ---------- قسم الحساب ----------
+        if section == 'account':
+            desired_username = request.form.get('username')
+            if desired_username is not None:
+                username = desired_username.strip().lstrip('@')
+                if is_anter_assistant(current_user):
+                    flash('اسم مستخدم مساعد أنتر محجوز ولا يمكن تغييره.', 'danger')
                     return redirect(url_for('users.settings'))
-                existing_email = User.query.filter(User.email.ilike(email)).first()
-                if existing_email and existing_email.id != current_user.id:
-                    flash('هذا البريد الإلكتروني مستخدم بالفعل.', 'danger')
+                if not USERNAME_PATTERN.fullmatch(username):
+                    flash('اسم المستخدم يجب أن يتكون من 3 إلى 30 حرفاً أو رقماً، من دون مسافات.', 'danger')
                     return redirect(url_for('users.settings'))
-                current_user.email = email
-                current_user.email_verified = False
-                changed_fields.append('البريد الإلكتروني')
+                existing_user = User.query.filter(User.username.ilike(username)).first()
+                if existing_user and existing_user.id != current_user.id:
+                    flash('اسم المستخدم هذا مستخدم بالفعل.', 'danger')
+                    return redirect(url_for('users.settings'))
+                if username != current_user.username:
+                    current_user.username = username
+                    changed_fields.append('اسم المستخدم')
 
-        if desired_phone is not None:
-            phone = desired_phone.strip().replace(' ', '')
-            if phone != (current_user.phone or ''):
-                if not current_user.check_password(request.form.get('contact_password', '')):
-                    flash('أدخل كلمة المرور الحالية لتغيير البريد الإلكتروني أو رقم الجوال.', 'danger')
-                    return redirect(url_for('users.settings'))
-                existing_phone = User.query.filter_by(phone=phone or None).first() if phone else None
-                if existing_phone and existing_phone.id != current_user.id:
-                    flash('رقم الجوال مستخدم بالفعل.', 'danger')
-                    return redirect(url_for('users.settings'))
-                current_user.phone = phone or None
-                current_user.phone_verified = False
-                changed_fields.append('رقم الجوال')
+            gender = request.form.get('gender')
+            if gender is not None:
+                if gender != (current_user.gender or ''):
+                    changed_fields.append('الجنس')
+                current_user.gender = gender
 
-        if gender is not None:
-            if gender != (current_user.gender or ''):
-                changed_fields.append('الجنس')
-            current_user.gender = gender
-        if birth_date_str:
-            try:
-                birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date()
-                if birth_date != current_user.birth_date:
-                    changed_fields.append('تاريخ الميلاد')
-                current_user.birth_date = birth_date
-            except ValueError:
-                flash('تاريخ الميلاد غير صالح.', 'danger')
-                return redirect(url_for('users.settings'))
-        if show_email != current_user.show_email:
-            changed_fields.append('خصوصية البريد')
-        if is_private != current_user.is_private:
-            changed_fields.append('خصوصية الحساب')
-        if profile_visibility not in {'public', 'followers'}:
-            profile_visibility = 'public'
-        if is_private:
-            profile_visibility = 'followers'
-        if profile_visibility != current_user.profile_visibility:
-            changed_fields.append('خصوصية الملف الشخصي')
-        if wall_visibility not in {'public', 'followers', 'mutual', 'none'}:
-            wall_visibility = 'public'
-        if wall_visibility != current_user.wall_visibility:
-            changed_fields.append('خصوصية الحائط')
-        if hide_followers != current_user.hide_followers:
-            changed_fields.append('قوائم المتابعة')
-        if show_online_status != current_user.show_online_status:
-            changed_fields.append('حالة الظهور')
-        current_user.show_email = show_email
-        current_user.is_private = is_private
-        current_user.profile_visibility = profile_visibility
-        current_user.wall_visibility = wall_visibility
-        current_user.hide_followers = hide_followers
-        current_user.show_online_status = show_online_status
-        if message_privacy in ['everyone', 'followers', 'none']:
-            current_user.message_privacy = message_privacy
-        
+            birth_date_str = request.form.get('birth_date')
+            if birth_date_str:
+                try:
+                    birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date()
+                    if birth_date != current_user.birth_date:
+                        changed_fields.append('تاريخ الميلاد')
+                    current_user.birth_date = birth_date
+                except ValueError:
+                    flash('تاريخ الميلاد غير صالح.', 'danger')
+                    return redirect(url_for('users.settings'))
+
+        # ---------- قسم الأمان ----------
+        elif section == 'security':
+            desired_email = request.form.get('email')
+            if desired_email is not None:
+                email = desired_email.strip().lower()
+                if email and email != current_user.email:
+                    if not current_user.check_password(request.form.get('contact_password', '')):
+                        flash('أدخل كلمة المرور الحالية لتغيير البريد الإلكتروني أو رقم الجوال.', 'danger')
+                        return redirect(url_for('users.settings'))
+                    existing_email = User.query.filter(User.email.ilike(email)).first()
+                    if existing_email and existing_email.id != current_user.id:
+                        flash('هذا البريد الإلكتروني مستخدم بالفعل.', 'danger')
+                        return redirect(url_for('users.settings'))
+                    current_user.email = email
+                    current_user.email_verified = False
+                    changed_fields.append('البريد الإلكتروني')
+
+            desired_phone = request.form.get('phone')
+            if desired_phone is not None:
+                phone = desired_phone.strip().replace(' ', '')
+                if phone != (current_user.phone or ''):
+                    if not current_user.check_password(request.form.get('contact_password', '')):
+                        flash('أدخل كلمة المرور الحالية لتغيير البريد الإلكتروني أو رقم الجوال.', 'danger')
+                        return redirect(url_for('users.settings'))
+                    existing_phone = User.query.filter_by(phone=phone or None).first() if phone else None
+                    if existing_phone and existing_phone.id != current_user.id:
+                        flash('رقم الجوال مستخدم بالفعل.', 'danger')
+                        return redirect(url_for('users.settings'))
+                    current_user.phone = phone or None
+                    current_user.phone_verified = False
+                    changed_fields.append('رقم الجوال')
+
+        # ---------- قسم الخصوصية ----------
+        elif section == 'privacy':
+            show_email = request.form.get('show_email') == 'on'
+            if show_email != current_user.show_email:
+                changed_fields.append('خصوصية البريد')
+            current_user.show_email = show_email
+
+            is_private = request.form.get('is_private') == 'on'
+            if is_private != current_user.is_private:
+                changed_fields.append('خصوصية الحساب')
+            current_user.is_private = is_private
+
+            profile_visibility = request.form.get('profile_visibility', 'public')
+            if profile_visibility not in {'public', 'followers'}:
+                profile_visibility = 'public'
+            if is_private:
+                profile_visibility = 'followers'
+            if profile_visibility != current_user.profile_visibility:
+                changed_fields.append('خصوصية الملف الشخصي')
+            current_user.profile_visibility = profile_visibility
+
+            wall_visibility = request.form.get('wall_visibility', 'public')
+            if wall_visibility not in {'public', 'followers', 'mutual', 'none'}:
+                wall_visibility = 'public'
+            if wall_visibility != current_user.wall_visibility:
+                changed_fields.append('خصوصية الحائط')
+            current_user.wall_visibility = wall_visibility
+
+            hide_followers = request.form.get('hide_followers') == 'on'
+            if hide_followers != current_user.hide_followers:
+                changed_fields.append('قوائم المتابعة')
+            current_user.hide_followers = hide_followers
+
+            show_online_status = request.form.get('show_online_status') == 'on'
+            if show_online_status != current_user.show_online_status:
+                changed_fields.append('حالة الظهور')
+            current_user.show_online_status = show_online_status
+
+            message_privacy = request.form.get('message_privacy')
+            if message_privacy in ['everyone', 'followers', 'none']:
+                current_user.message_privacy = message_privacy
+
+        # ---------- حفظ ----------
         db.session.commit()
         if changed_fields:
             log_user_activity(current_user.id, 'settings_update', {'fields': changed_fields})
@@ -553,7 +567,7 @@ def settings():
                 log_user_activity(current_user.id, 'phone_change')
         flash('تم تحديث الإعدادات بنجاح.', 'success')
         return redirect(url_for('users.settings'))
-    
+
     verification_request = Report.query.filter_by(
         reporter_id=current_user.id,
         reason=VERIFICATION_REQUEST_REASON,

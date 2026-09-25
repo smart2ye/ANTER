@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+import hashlib
 import json
 from datetime import datetime
 
@@ -285,6 +286,71 @@ def contacts():
     ids = [row.followed_id for row in following]
     candidates = User.query.filter(User.id.in_(ids)).order_by(User.last_seen.desc()).all() if ids else []
     return jsonify({'contacts': [_user_payload(other) for other in candidates if _is_mutual_follow(user, other)]})
+
+
+@mobile_api_bp.route('/find-friends', methods=['POST'])
+@mobile_api_required
+def find_friends():
+    """POST /api/mobile/v1/find-friends
+    Body: { "hashes": ["<sha256 hex>", ...] }
+    يقارن البصمات بأرقام المستخدمين ويعيد المقترحين.
+    """
+    data = request.get_json(silent=True) or {}
+    raw_hashes = data.get('hashes')
+
+    if not isinstance(raw_hashes, list):
+        return _json_error('يجب إرسال قائمة hashes.', 400)
+    if len(raw_hashes) > 500:
+        return _json_error('عدد البصمات كبير جدًا (الحد 500).', 400)
+
+    hashes = set()
+    for h in raw_hashes:
+        if isinstance(h, str) and len(h) == 64:
+            try:
+                int(h, 16)
+                hashes.add(h.lower())
+            except ValueError:
+                pass
+
+    if not hashes:
+        return jsonify({'success': True, 'suggested': [], 'matched': 0, 'submitted': 0})
+
+    user = g.mobile_user
+
+    already_following = {
+        row.followed_id
+        for row in Follow.query.filter_by(follower_id=user.id).all()
+    }
+    blocked_ids = {
+        row.blocked_id
+        for row in UserBlock.query.filter_by(blocker_id=user.id).all()
+    }
+    blocked_ids.update(
+        row.blocker_id
+        for row in UserBlock.query.filter_by(blocked_id=user.id).all()
+    )
+
+    matches = []
+    for other in User.query.filter(User.phone.isnot(None), User.phone != '').all():
+        if other.id == user.id or other.id in blocked_ids:
+            continue
+        normalized = _normalize_phone(other.phone)
+        if not normalized:
+            continue
+        h = hashlib.sha256(normalized.encode('utf-8')).hexdigest()
+        if h in hashes:
+            payload = _user_payload(other)
+            payload['isFollowing'] = other.id in already_following
+            matches.append(payload)
+
+    matches.sort(key=lambda x: x['isFollowing'])
+
+    return jsonify({
+        'success': True,
+        'suggested': matches,
+        'matched': len(matches),
+        'submitted': len(hashes),
+    })
 
 
 @mobile_api_bp.route('/users/<string:username>', methods=['GET'])

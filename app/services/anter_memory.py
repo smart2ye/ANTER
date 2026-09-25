@@ -15,8 +15,8 @@ from app.extensions import db
 from app.models import AssistantMemory, User
 
 
-MAX_CONTEXT_ITEMS = 12
-MAX_CONTEXT_CHARS = 320
+MAX_CONTEXT_ITEMS = 24
+MAX_CONTEXT_CHARS = 800
 MAX_PREFERENCE_ITEMS = 6
 MAX_PREFERENCE_CHARS = 180
 
@@ -179,6 +179,59 @@ def recent_conversation(user: User, assistant: User) -> list[dict[str, str]]:
         if role in {"user", "assistant"} and text:
             items.append({"role": role, "text": text})
     return items[-MAX_CONTEXT_ITEMS:]
+
+
+def conversation_for_ai(
+    user: User,
+    assistant: User,
+    budget_chars: int = 3000,
+) -> list[dict[str, str]]:
+    """يبني سياق المحادثة السابقة لإرساله إلى محرك AI.
+
+    - يُعيد آخر الرسائل (الأحدث أولاً في الاقتطاع).
+    - يستبعد آخر رسالة للمستخدم (لأنها السؤال الحالي وسيُمرَّر منفصلًا).
+    - يحترم ميزانية أحرف صارمة لتفادي تجاوز حد المزوّد.
+    """
+    items: list[dict[str, str]] = []
+    memory = _get_memory(user, assistant)
+    if memory is None:
+        return items
+
+    raw = _load_list(memory.recent_context_json)
+    turns: list[dict[str, str]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        role = item.get("role")
+        text = _clean_text(item.get("text"), MAX_CONTEXT_CHARS)
+        if role not in {"user", "assistant"} or not text:
+            continue
+        # تجاهل الرسائل القصيرة جدًا (حرف أو رمز) لأنها تشوّش السياق.
+        if len(text.strip()) < 3:
+            continue
+        # تجاهل ردود الفشل المتكررة من المساعد — ليست جزءًا من الحوار الحقيقي.
+        if role == "assistant" and text.startswith("أنا مساعد أنتر. أحتاج إلى لحظة"):
+            continue
+        turns.append({"role": role, "text": text})
+
+    # استبعاد آخر رسالة للمستخدم (السؤال الحالي)
+    if turns and turns[-1]["role"] == "user":
+        turns = turns[:-1]
+
+    # نأخذ من الأحدث للأقدم حتى نستهلك الميزانية
+    selected: list[dict[str, str]] = []
+    used = 0
+    for turn in reversed(turns):
+        cost = len(turn["text"]) + 8  # هامش صغير للدور
+        if used + cost > budget_chars:
+            break
+        selected.append(turn)
+        used += cost
+
+    selected.reverse()
+    for turn in selected:
+        items.append({"role": turn["role"], "content": turn["text"]})
+    return items
 
 
 def clear_memory(user: User, assistant: User) -> bool:

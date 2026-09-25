@@ -16,7 +16,7 @@ from flask import current_app
 
 from app.extensions import db
 from app.models import Follow, User
-from app.services.anter_memory import display_name, local_memory_reply
+from app.services.anter_memory import conversation_for_ai, display_name, local_memory_reply
 
 
 ASSISTANT_UNAVAILABLE_REPLY = (
@@ -294,12 +294,24 @@ def get_assistant_reply(
         current_app.logger.warning("مفتاح محرك mini-llm Arabic غير مضبوط.")
         return None, ASSISTANT_UNAVAILABLE_REPLY
 
+    # سياق المحادثة السابقة (إن وُجد) — يُرسل قبل السؤال الحالي.
+    prior_turns: list[dict[str, str]] = []
+    if user is not None and assistant is not None:
+        try:
+            prior_turns = conversation_for_ai(user, assistant, budget_chars=3000)
+        except Exception:
+            current_app.logger.warning("تعذر بناء سياق مساعد أنتر.")
+            prior_turns = []
+
+    messages_payload: list[dict[str, str]] = [
+        {"role": "system", "content": _assistant_system_prompt()},
+    ]
+    messages_payload.extend(prior_turns)
+    messages_payload.append({"role": "user", "content": question})
+
     payload = {
         "model": current_app.config["ANTER_ASSISTANT_MINI_LLM_ARABIC_MODEL"],
-        "messages": [
-            {"role": "system", "content": _assistant_system_prompt()},
-            {"role": "user", "content": question},
-        ],
+        "messages": messages_payload,
         "temperature": 0.45,
         "max_tokens": current_app.config["ANTER_ASSISTANT_MINI_LLM_ARABIC_MAX_TOKENS"],
         "reasoning_effort": "none",

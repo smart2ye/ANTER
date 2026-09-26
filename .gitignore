@@ -88,3 +88,5 @@ users_export.csv
 
 # مجلدات الملفات القديمة المؤقتة
 _old_files_*/
+
+*.pre_color

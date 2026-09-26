@@ -3,15 +3,52 @@
    ======================================== */
 
 :root {
-    --fb-blue: #1877f2;
-    --fb-blue-dark: #0d65d9;
-    --fb-bg: #f0f2f5;
-    --fb-card: #ffffff;
-    --fb-text: #050505;
-    --fb-text-muted: #65676b;
-    --fb-border: #ced0d4;
-    --fb-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    --fb-radius: 12px;
+    /* ============================
+       ANTER Brand Palette
+       مستخرجة من الشعار الرسمي
+       ============================ */
+    --anter-navy:      #031E64;
+    --anter-dark:      #051B4E;
+    --anter-primary:   #003AAB;   /* الأزرق الرئيسي — أزرار وروابط */
+    --anter-primary-dark: #002A7A; /* hover */
+    --anter-electric:  #158AEC;
+    --anter-accent:    #00C8F8;   /* سيان نيون — للحدود والتوهج */
+    --anter-aqua:      #78F7FD;
+    --anter-purple:    #160B8E;
+    --anter-white:     #FFFFFF;
+
+    /* التدرّج الرسمي */
+    --anter-gradient: linear-gradient(135deg, #031E64 0%, #003AAB 35%, #00C8F8 65%, #160B8E 100%);
+    --anter-glow:
+        0 0 20px rgba(0, 58, 171, 0.45),
+        0 0 40px rgba(0, 200, 248, 0.25),
+        0 0 70px rgba(22, 11, 142, 0.20);
+
+    /* ============================
+       ألوان الواجهة الفاتحة
+       ============================ */
+    --anter-bg:           #f0f2f5;
+    --anter-bg-secondary: #e4e6eb;
+    --anter-card:         #ffffff;
+    --anter-text:         #050505;
+    --anter-text-muted:   #65676b;
+    --anter-border:       #ced0d4;
+    --anter-shadow:       0 2px 12px rgba(0,0,0,0.08);
+    --anter-radius:       12px;
+
+    /* ============================
+       توافق للخلف — يمكن حذفها لاحقًا
+       ============================ */
+    --fb-blue: var(--anter-primary);
+    --fb-blue-dark: var(--anter-primary-dark);
+    --fb-bg: var(--anter-bg);
+    --fb-bg-secondary: var(--anter-bg-secondary);
+    --fb-card: var(--anter-card);
+    --fb-text: var(--anter-text);
+    --fb-text-muted: var(--anter-text-muted);
+    --fb-border: var(--anter-border);
+    --fb-shadow: var(--anter-shadow);
+    --fb-radius: var(--anter-radius);
 }
 
 body {
@@ -284,7 +321,7 @@ body {
 
 .form-control:focus {
     border-color: var(--fb-blue);
-    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15);
+    box-shadow: 0 0 0 3px rgba(0, 58, 171, 0.15);
     background: #fff;
 }
 
@@ -510,8 +547,8 @@ body {
 
 .reaction-btn.btn-primary {
     background: #e7f3ff;
-    border-color: #1877f2;
-    color: #1877f2;
+    border-color: #003AAB;
+    color: #003AAB;
 }
 
 .reaction-menu .dropdown-item {
@@ -713,7 +750,7 @@ body {
     flex: 0 0 auto;
     width: 1em;
     height: 1em;
-    color: #1877f2 !important;
+    color: #003AAB !important;
     font-size: 0.82rem;
     line-height: 1;
     vertical-align: middle;
@@ -731,7 +768,7 @@ body {
     height: 24px;
     border: 2px solid var(--card-bg);
     border-radius: 50%;
-    background: #1877f2;
+    background: #003AAB;
     color: #fff;
     font-size: 0.7rem;
     line-height: 1;
@@ -1212,7 +1249,7 @@ body {
 
 .comment-form input:focus {
     border-color: var(--fb-blue);
-    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.12);
+    box-shadow: 0 0 0 3px rgba(0, 58, 171, 0.12);
 }
 
 .comment-form button {
@@ -1499,7 +1536,7 @@ body {
 }
 
 .notification-item.unread {
-    border-right-color: #1877f2;
+    border-right-color: #003AAB;
     background: #f0f7ff;
 }
 
@@ -1585,7 +1622,7 @@ body {
     gap: 7px;
     border-radius: 999px;
     white-space: nowrap;
-    box-shadow: 0 5px 14px rgba(24, 119, 242, 0.2);
+    box-shadow: 0 5px 14px rgba(0, 58, 171, 0.2);
 }
 
 .reels-grid {
@@ -1618,7 +1655,7 @@ body {
 .reel-card-link:focus-visible,
 .reel-action-button:focus-visible,
 .reel-back-link:focus-visible {
-    outline: 3px solid rgba(24, 119, 242, 0.5);
+    outline: 3px solid rgba(0, 58, 171, 0.5);
     outline-offset: 3px;
 }
 
@@ -1799,7 +1836,7 @@ body {
     min-height: min(74vh, 720px);
     place-items: center;
     background:
-        radial-gradient(circle at 50% 16%, rgba(24, 119, 242, 0.18), transparent 37%),
+        radial-gradient(circle at 50% 16%, rgba(0, 58, 171, 0.18), transparent 37%),
         #08090b;
 }
 
@@ -1863,7 +1900,7 @@ body {
 }
 
 .anter-player-center:hover {
-    background: rgba(24, 119, 242, 0.88);
+    background: rgba(0, 58, 171, 0.88);
     transform: translate(-50%, -50%) scale(1.08);
 }
 
@@ -2390,7 +2427,7 @@ body {
 
 [data-theme="dark"] .reel-comments-heading span,
 [data-theme="dark"] .reels-empty-icon {
-    background: rgba(24, 119, 242, 0.2);
+    background: rgba(0, 58, 171, 0.2);
 }
 
 [data-theme="dark"] .reel-comment-form .form-control {
@@ -2547,7 +2584,7 @@ body {
     overflow: hidden;
     isolation: isolate;
     background:
-        radial-gradient(circle at 50% 12%, rgba(24, 119, 242, 0.18), transparent 32%),
+        radial-gradient(circle at 50% 12%, rgba(0, 58, 171, 0.18), transparent 32%),
         #08090b;
 }
 
@@ -2984,8 +3021,8 @@ body {
 }
 
 .share-option-item:hover {
-    background: rgba(24, 119, 242, 0.08);
-    color: var(--primary, #1877f2);
+    background: rgba(0, 58, 171, 0.08);
+    color: var(--primary, #003AAB);
     transform: translateY(-2px);
 }
 
@@ -3180,7 +3217,7 @@ body {
 .quick-composer-avatar,
 .composer-author-avatar {
     flex: 0 0 auto;
-    border: 2px solid rgba(24, 119, 242, 0.24);
+    border: 2px solid rgba(0, 58, 171, 0.28);
     border-radius: 50%;
     object-fit: cover;
 }
@@ -3206,8 +3243,8 @@ body {
 }
 
 .quick-composer-trigger:hover {
-    border-color: rgba(24, 119, 242, 0.36);
-    background: rgba(24, 119, 242, 0.07);
+    border-color: rgba(0, 58, 171, 0.36);
+    background: rgba(0, 58, 171, 0.07);
     transform: translateY(-1px);
 }
 
@@ -3237,14 +3274,14 @@ body {
     border: 0;
     border-radius: 14px;
     color: #fff;
-    background: linear-gradient(135deg, #1877f2, #6257e7);
-    box-shadow: 0 6px 14px rgba(24, 119, 242, 0.26);
+    background: linear-gradient(135deg, #003AAB, #00C8F8);
+    box-shadow: 0 6px 14px rgba(0, 58, 171, 0.26);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .quick-composer-add:hover {
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 9px 18px rgba(24, 119, 242, 0.34);
+    box-shadow: 0 9px 18px rgba(0, 58, 171, 0.34);
 }
 
 .quick-composer-divider {
@@ -3399,8 +3436,8 @@ body {
 .composer-audience-chevron { font-size: .61rem; pointer-events: none; }
 
 .composer-audience-picker:focus-within {
-    border-color: #1877f2;
-    box-shadow: 0 0 0 3px rgba(24, 119, 242, .12);
+    border-color: #003AAB;
+    box-shadow: 0 0 0 3px rgba(0, 58, 171, .12);
 }
 
 .composer-textarea-wrap {
@@ -3412,8 +3449,8 @@ body {
 }
 
 .composer-textarea-wrap:focus-within {
-    border-color: rgba(24, 119, 242, 0.7);
-    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.11);
+    border-color: rgba(0, 58, 171, 0.7);
+    box-shadow: 0 0 0 3px rgba(0, 58, 171, 0.11);
 }
 
 .composer-textarea {
@@ -3464,10 +3501,10 @@ body {
     gap: 8px;
     margin-top: 9px;
     padding: 9px 11px;
-    border: 1px solid rgba(24, 119, 242, 0.18);
+    border: 1px solid rgba(0, 58, 171, 0.18);
     border-radius: 11px;
     color: #316eca;
-    background: rgba(24, 119, 242, 0.08);
+    background: rgba(0, 58, 171, 0.08);
     font-size: 0.78rem;
 }
 
@@ -3505,14 +3542,14 @@ body {
     margin-top: 4px;
     border: 1.5px dashed #b9c5d4;
     border-radius: 14px;
-    background: rgba(24, 119, 242, 0.025);
+    background: rgba(0, 58, 171, 0.025);
     transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
 .composer-media-area:hover,
 .composer-media-area.is-dragging {
-    border-color: #1877f2;
-    background: rgba(24, 119, 242, 0.08);
+    border-color: #003AAB;
+    background: rgba(0, 58, 171, 0.08);
 }
 
 .composer-media-area.is-dragging {
@@ -3640,8 +3677,8 @@ body {
 .composer-publish-btn {
     border: 0;
     color: #fff;
-    background: linear-gradient(135deg, #1877f2, #4068e8);
-    box-shadow: 0 5px 12px rgba(24, 119, 242, 0.24);
+    background: linear-gradient(135deg, #003AAB, #002A7A);
+    box-shadow: 0 5px 12px rgba(0, 58, 171, 0.28);
 }
 
 .composer-publish-btn:disabled {
@@ -3755,7 +3792,7 @@ body {
     width: 170px;
     height: 170px;
     border-radius: 50%;
-    background: rgba(99, 102, 241, 0.09);
+    background: rgba(22, 11, 142, 0.09);
     pointer-events: none;
 }
 
@@ -3774,7 +3811,7 @@ body {
     flex: 0 0 48px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid rgba(99, 102, 241, 0.18);
+    border: 2px solid rgba(22, 11, 142, 0.18);
 }
 
 .anter-composer-identity {
@@ -3822,8 +3859,8 @@ body {
 }
 
 .anter-composer-editor:focus-within {
-    border-color: rgba(99, 102, 241, 0.45);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08);
+    border-color: rgba(22, 11, 142, 0.45);
+    box-shadow: 0 0 0 4px rgba(22, 11, 142, 0.08);
 }
 
 .anter-composer-editor textarea {
@@ -3863,7 +3900,7 @@ body {
 }
 
 .anter-composer-hint i {
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
 }
 
 .anter-composer-tools {
@@ -3893,7 +3930,7 @@ body {
 
 .anter-composer-tool:hover {
     transform: translateY(-1px);
-    border-color: rgba(99, 102, 241, 0.35);
+    border-color: rgba(22, 11, 142, 0.35);
     box-shadow: 0 5px 15px rgba(15, 23, 42, 0.07);
 }
 
@@ -3905,8 +3942,8 @@ body {
     justify-content: center;
     flex: 0 0 34px;
     border-radius: 11px;
-    background: rgba(99, 102, 241, 0.10);
-    color: #6366f1;
+    background: rgba(22, 11, 142, 0.10);
+    color: #00C8F8;
     font-size: 0.95rem;
 }
 
@@ -4041,19 +4078,19 @@ body {
     padding: 8px 18px;
     border: 0;
     border-radius: 13px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: linear-gradient(135deg, #003AAB 0%, #00C8F8 100%);
     color: #fff;
     font-family: inherit;
     font-size: 0.88rem;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 7px 18px rgba(99, 102, 241, 0.22);
+    box-shadow: 0 7px 18px rgba(0, 58, 171, 0.28);
     transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
 }
 
 .anter-publish-button:hover {
     transform: translateY(-1px);
-    box-shadow: 0 9px 22px rgba(99, 102, 241, 0.30);
+    box-shadow: 0 9px 22px rgba(0, 58, 171, 0.38);
 }
 
 .anter-publish-button:disabled {
@@ -4179,7 +4216,7 @@ body {
 
 .reaction-toggle:focus-visible,
 .reaction-option:focus-visible {
-    outline: 3px solid rgba(24, 119, 242, 0.35);
+    outline: 3px solid rgba(0, 58, 171, 0.35);
     outline-offset: 2px;
 }
 
@@ -4275,8 +4312,8 @@ body {
 }
 
 .reaction-option.is-selected {
-    background: rgba(24, 119, 242, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(24, 119, 242, 0.25);
+    background: rgba(0, 58, 171, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(0, 58, 171, 0.25);
 }
 
 .reaction-summary-love { color: #d9486f; }
@@ -4584,7 +4621,7 @@ body.reels-comments-open {
     border: 0;
     border-radius: 10px;
     color: #fff;
-    background: #1877f2;
+    background: #003AAB;
     font-size: .75rem;
     font-weight: 800;
     cursor: pointer;
@@ -4639,7 +4676,7 @@ body.reels-comments-open {
 }
 
 .reels-comments-input-row input:focus {
-    border-color: #1877f2;
+    border-color: #003AAB;
     background: #fff;
 }
 
@@ -4652,7 +4689,7 @@ body.reels-comments-open {
     border: 0;
     border-radius: 50%;
     color: #fff;
-    background: #1877f2;
+    background: #003AAB;
     cursor: pointer;
     transition: transform .16s ease, opacity .16s ease;
 }
@@ -4737,9 +4774,9 @@ body.reels-comments-open {
     overflow: hidden;
     border-radius: 20px;
     background:
-        linear-gradient(135deg, #1877f2 0%, #6f42c1 55%, #9b59b6 100%);
+        linear-gradient(135deg, #003AAB 0%, #160B8E 55%, #160B8E 100%);
     color: #fff;
-    box-shadow: 0 10px 30px rgba(24, 119, 242, 0.20);
+    box-shadow: 0 10px 30px rgba(0, 58, 171, 0.20);
 }
 
 .moments-hero::after {
@@ -4843,7 +4880,7 @@ body.reels-comments-open {
     position: relative;
     height: 190px;
     overflow: hidden;
-    background: linear-gradient(135deg, #1877f2, #6f42c1);
+    background: linear-gradient(135deg, #003AAB, #160B8E);
 }
 
 .moment-cover img {
@@ -5118,13 +5155,13 @@ body.reels-comments-open {
 }
 
 .trends-tab:hover {
-    color: #1877f2;
+    color: #003AAB;
     text-decoration: none;
 }
 
 .trends-tab.active {
     background: #fff;
-    color: #1877f2;
+    color: #003AAB;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -5770,7 +5807,7 @@ body.reels-comments-open {
     border: 0;
     border-radius: 13px;
     color: #fff;
-    background: #1877f2;
+    background: #003AAB;
     font-weight: 900;
     cursor: pointer;
 }
@@ -6545,12 +6582,12 @@ body:has(.reels-feed-page--immersive) {
 }
 
 .feed-reels-header h2 i {
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
 }
 
 .feed-reels-more {
     font-size: 0.85rem;
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
     text-decoration: none;
     display: inline-flex;
     align-items: center;
@@ -6591,7 +6628,7 @@ body:has(.reels-feed-page--immersive) {
     width: 44px;
     height: 44px;
     flex: 0 0 44px;
-    border: 2px solid rgba(24, 119, 242, 0.15);
+    border: 2px solid rgba(0, 58, 171, 0.15);
 }
 
 .anter-composer-editor {
@@ -6602,8 +6639,8 @@ body:has(.reels-feed-page--immersive) {
 
 .anter-composer-editor:focus-within {
     background: var(--card-bg, #ffffff);
-    border-color: rgba(24, 119, 242, 0.35);
-    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.10);
+    border-color: rgba(0, 58, 171, 0.35);
+    box-shadow: 0 0 0 3px rgba(0, 58, 171, 0.10);
 }
 
 .anter-composer-editor textarea {
@@ -6639,7 +6676,7 @@ body:has(.reels-feed-page--immersive) {
 
 .anter-composer-tool:hover {
     background: var(--card-bg, #ffffff);
-    border-color: rgba(24, 119, 242, 0.25);
+    border-color: rgba(0, 58, 171, 0.25);
     box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
     transform: translateY(-1px);
 }
@@ -6671,12 +6708,12 @@ body:has(.reels-feed-page--immersive) {
     padding: 7px 16px;
     border-radius: 11px;
     font-size: 0.85rem;
-    background: linear-gradient(135deg, #1877f2, #4f9bff);
-    box-shadow: 0 5px 14px rgba(24, 119, 242, 0.22);
+    background: linear-gradient(135deg, #003AAB, #002A7A);
+    box-shadow: 0 5px 14px rgba(0, 58, 171, 0.28);
 }
 
 .anter-publish-button:hover {
-    box-shadow: 0 7px 18px rgba(24, 119, 242, 0.30);
+    box-shadow: 0 7px 18px rgba(0, 58, 171, 0.38);
 }
 
 /* الوضع الداكن */
@@ -6695,7 +6732,7 @@ body:has(.reels-feed-page--immersive) {
 [data-bs-theme="dark"] .anter-composer-editor:focus-within,
 .dark-mode .anter-composer-editor:focus-within {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(24, 119, 242, 0.45);
+    border-color: rgba(0, 58, 171, 0.45);
 }
 
 [data-bs-theme="dark"] .anter-composer-tool,
@@ -6809,7 +6846,7 @@ body:has(.reels-feed-page--immersive) {
     --anter-c-r: 22px;
     --anter-c-bg: #f5f6f7;
     --anter-c-bd: #dfe2e6;
-    --anter-c-blue: #1877f2;
+    --anter-c-blue: var(--anter-primary);
 }
 
 /* حقل التعليق الرئيسي */
@@ -7165,12 +7202,12 @@ body:has(.reels-feed-page--immersive) {
 
 .anter-img-menu__item:hover,
 .anter-img-menu__item:focus-visible {
-    background: var(--fb-bg, rgba(24, 119, 242, 0.08));
+    background: var(--fb-bg, rgba(0, 58, 171, 0.08));
     outline: none;
 }
 
 .anter-img-menu__item:hover i {
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
 }
 
 .anter-img-menu__item--danger {
@@ -7266,8 +7303,8 @@ body:has(.reels-feed-page--immersive) {
 }
 
 .anter-explore-search__box:focus-within {
-    border-color: var(--fb-blue, #1877f2);
-    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.10);
+    border-color: var(--fb-blue, #003AAB);
+    box-shadow: 0 0 0 3px rgba(0, 58, 171, 0.10);
 }
 
 .anter-explore-search__box i {
@@ -7329,13 +7366,13 @@ body:has(.reels-feed-page--immersive) {
 }
 
 .anter-explore-tab:hover {
-    background: rgba(24, 119, 242, 0.06);
-    color: var(--fb-blue, #1877f2);
+    background: rgba(0, 58, 171, 0.06);
+    color: var(--fb-blue, #003AAB);
 }
 
 .anter-explore-tab.is-active {
     background: var(--card-bg, #fff);
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
@@ -7394,7 +7431,7 @@ body:has(.reels-feed-page--immersive) {
     height: 72px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid rgba(24, 119, 242, 0.15);
+    border: 3px solid rgba(0, 58, 171, 0.15);
     margin-bottom: 4px;
 }
 
@@ -7415,7 +7452,7 @@ body:has(.reels-feed-page--immersive) {
 
 .anter-user-card__meta {
     font-size: 0.74rem;
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
     font-weight: 600;
 }
 
@@ -7424,7 +7461,7 @@ body:has(.reels-feed-page--immersive) {
     padding: 7px 18px;
     border: 0;
     border-radius: 999px;
-    background: var(--fb-blue, #1877f2);
+    background: var(--fb-blue, #003AAB);
     color: #fff;
     font-family: inherit;
     font-size: 0.8rem;
@@ -7509,7 +7546,7 @@ body:has(.reels-feed-page--immersive) {
 }
 
 .anter-post-card__meta span:last-child i {
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
 }
 
 /* شبكة الريلز */
@@ -7604,7 +7641,7 @@ body:has(.reels-feed-page--immersive) {
 .anter-explore-empty i {
     font-size: 3rem;
     margin-bottom: 16px;
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
     opacity: 0.4;
 }
 
@@ -7669,8 +7706,8 @@ body:has(.reels-feed-page--immersive) {
     margin-inline-start: 6px;
     padding: 2px 9px;
     border-radius: 999px;
-    background: rgba(24, 119, 242, 0.12);
-    color: var(--fb-blue, #1877f2);
+    background: rgba(0, 58, 171, 0.12);
+    color: var(--fb-blue, #003AAB);
     font-size: 0.75rem;
     font-weight: 700;
 }
@@ -7690,7 +7727,7 @@ body:has(.reels-feed-page--immersive) {
 
 .anter-profile-cover {
     height: 140px;
-    background: linear-gradient(135deg, #1877f2 0%, #6a4cff 100%);
+    background: linear-gradient(135deg, #003AAB 0%, #00C8F8 100%);
     position: relative;
 }
 
@@ -7745,7 +7782,7 @@ body:has(.reels-feed-page--immersive) {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: #1877f2;
+    background: #003AAB;
     color: #fff;
     font-size: 0.8rem;
     border: 3px solid var(--card-bg, #fff);
@@ -7762,17 +7799,17 @@ body:has(.reels-feed-page--immersive) {
     justify-content: center;
     border: 3px solid var(--card-bg, #fff);
     border-radius: 50%;
-    background: linear-gradient(135deg, #1877f2, #6a4cff);
+    background: linear-gradient(135deg, #003AAB, #00C8F8);
     color: #fff;
     cursor: pointer;
     font-size: 0.9rem;
     transition: transform .15s ease, box-shadow .15s ease;
-    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.35);
+    box-shadow: 0 4px 12px rgba(0, 58, 171, 0.35);
 }
 
 .anter-profile-avatar-edit:hover {
     transform: scale(1.08);
-    box-shadow: 0 6px 16px rgba(24, 119, 242, 0.5);
+    box-shadow: 0 6px 16px rgba(0, 58, 171, 0.5);
 }
 
 .anter-profile-avatar-edit:active {
@@ -7842,7 +7879,7 @@ body:has(.reels-feed-page--immersive) {
     padding: 5px 10px;
     margin-bottom: 8px;
     border-radius: 999px;
-    background: rgba(24, 119, 242, 0.09);
+    background: rgba(0, 58, 171, 0.09);
     color: #1769c2;
     font-size: 0.78rem;
     font-weight: 700;
@@ -7928,25 +7965,25 @@ a.anter-profile-stat:hover {
 }
 
 .anter-profile-btn--primary {
-    background: linear-gradient(135deg, #1877f2, #6a4cff);
+    background: linear-gradient(135deg, #003AAB, #00C8F8);
     color: #fff;
-    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.28);
+    box-shadow: 0 4px 12px rgba(0, 58, 171, 0.28);
 }
 
 .anter-profile-btn--primary:hover {
-    box-shadow: 0 6px 16px rgba(24, 119, 242, 0.4);
+    box-shadow: 0 6px 16px rgba(0, 58, 171, 0.4);
     color: #fff;
 }
 
 .anter-profile-btn--outline {
     background: transparent;
-    color: var(--fb-blue, #1877f2);
-    border-color: rgba(24, 119, 242, 0.35);
+    color: var(--fb-blue, #003AAB);
+    border-color: rgba(0, 58, 171, 0.35);
 }
 
 .anter-profile-btn--outline:hover {
-    background: rgba(24, 119, 242, 0.08);
-    color: var(--fb-blue, #1877f2);
+    background: rgba(0, 58, 171, 0.08);
+    color: var(--fb-blue, #003AAB);
 }
 
 .anter-profile-btn--danger {
@@ -8034,8 +8071,8 @@ a.anter-profile-stat:hover {
 
 .comment-menu-btn:hover,
 .comment-menu-btn[aria-expanded="true"] {
-    background: rgba(24, 119, 242, 0.08);
-    color: var(--fb-blue, #1877f2);
+    background: rgba(0, 58, 171, 0.08);
+    color: var(--fb-blue, #003AAB);
 }
 
 /* على اللمس: أظهر الزر دائمًا */
@@ -8096,11 +8133,11 @@ a.anter-profile-stat:hover {
 }
 
 .comment-menu__item:hover {
-    background: var(--fb-bg, rgba(24, 119, 242, 0.06));
+    background: var(--fb-bg, rgba(0, 58, 171, 0.06));
 }
 
 .comment-menu__item:hover i {
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
 }
 
 .comment-menu__item--danger {
@@ -8146,7 +8183,7 @@ a.anter-profile-stat:hover {
 }
 
 .comment-edit-input:focus {
-    border-color: var(--fb-blue, #1877f2);
+    border-color: var(--fb-blue, #003AAB);
 }
 
 .comment-edit-actions {
@@ -8179,9 +8216,9 @@ a.anter-profile-stat:hover {
 }
 
 .comment-edit-save {
-    background: linear-gradient(135deg, #1877f2, #6a4cff);
+    background: linear-gradient(135deg, #003AAB, #00C8F8);
     color: #fff;
-    box-shadow: 0 3px 10px rgba(24, 119, 242, 0.25);
+    box-shadow: 0 3px 10px rgba(0, 58, 171, 0.25);
 }
 
 .comment-edit-save:active {
@@ -8240,7 +8277,7 @@ a.anter-profile-stat:hover {
 }
 
 .anter-notif-title i {
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
 }
 
 .anter-notif-title__badge {
@@ -8274,9 +8311,9 @@ a.anter-profile-stat:hover {
 }
 
 .anter-notif-action-btn:hover:not(:disabled) {
-    background: rgba(24, 119, 242, 0.06);
-    border-color: rgba(24, 119, 242, 0.35);
-    color: var(--fb-blue, #1877f2);
+    background: rgba(0, 58, 171, 0.06);
+    border-color: rgba(0, 58, 171, 0.35);
+    color: var(--fb-blue, #003AAB);
 }
 
 .anter-notif-action-btn:active:not(:disabled) {
@@ -8329,13 +8366,13 @@ a.anter-profile-stat:hover {
 }
 
 .anter-notif-filter:hover {
-    background: rgba(24, 119, 242, 0.06);
-    color: var(--fb-blue, #1877f2);
+    background: rgba(0, 58, 171, 0.06);
+    color: var(--fb-blue, #003AAB);
 }
 
 .anter-notif-filter.is-active {
     background: var(--card-bg, #fff);
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
@@ -8347,8 +8384,8 @@ a.anter-profile-stat:hover {
     height: 20px;
     padding: 0 6px;
     border-radius: 999px;
-    background: rgba(24, 119, 242, 0.12);
-    color: var(--fb-blue, #1877f2);
+    background: rgba(0, 58, 171, 0.12);
+    color: var(--fb-blue, #003AAB);
     font-size: 0.7rem;
 }
 
@@ -8371,12 +8408,12 @@ a.anter-profile-stat:hover {
 
 .anter-notif-item:hover {
     background: var(--card-hover, #fafbfc);
-    border-color: rgba(24, 119, 242, 0.20);
+    border-color: rgba(0, 58, 171, 0.20);
 }
 
 .anter-notif-item.is-unread {
-    background: linear-gradient(90deg, rgba(24, 119, 242, 0.05), transparent 40%);
-    border-color: rgba(24, 119, 242, 0.18);
+    background: linear-gradient(90deg, rgba(0, 58, 171, 0.05), transparent 40%);
+    border-color: rgba(0, 58, 171, 0.18);
 }
 
 .anter-notif-item.is-removing {
@@ -8436,8 +8473,8 @@ a.anter-profile-stat:hover {
 }
 
 .anter-notif-icon--like { background: #ef4444; }
-.anter-notif-icon--comment { background: #1877f2; }
-.anter-notif-icon--reply { background: #6a4cff; }
+.anter-notif-icon--comment { background: #003AAB; }
+.anter-notif-icon--reply { background: #00C8F8; }
 .anter-notif-icon--follow { background: #10b981; }
 .anter-notif-icon--message { background: #f59e0b; }
 .anter-notif-icon--call { background: #06b6d4; }
@@ -8484,7 +8521,7 @@ a.anter-profile-stat:hover {
     padding: 6px 10px;
     border-radius: 8px;
     background: var(--fb-bg, #f7f8fa);
-    border-inline-start: 3px solid rgba(24, 119, 242, 0.35);
+    border-inline-start: 3px solid rgba(0, 58, 171, 0.35);
 }
 
 .anter-notif-item__time {
@@ -8501,8 +8538,8 @@ a.anter-profile-stat:hover {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: var(--fb-blue, #1877f2);
-    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.18);
+    background: var(--fb-blue, #003AAB);
+    box-shadow: 0 0 0 3px rgba(0, 58, 171, 0.18);
 }
 
 /* زر القائمة */
@@ -8530,8 +8567,8 @@ a.anter-profile-stat:hover {
 
 .anter-notif-item__menu-btn:hover,
 .anter-notif-item__menu-btn[aria-expanded="true"] {
-    background: rgba(24, 119, 242, 0.08);
-    color: var(--fb-blue, #1877f2);
+    background: rgba(0, 58, 171, 0.08);
+    color: var(--fb-blue, #003AAB);
 }
 
 @media (hover: none) {
@@ -8585,11 +8622,11 @@ a.anter-profile-stat:hover {
 }
 
 .anter-notif-item__menu-item:hover {
-    background: var(--fb-bg, rgba(24, 119, 242, 0.06));
+    background: var(--fb-bg, rgba(0, 58, 171, 0.06));
 }
 
 .anter-notif-item__menu-item:hover i {
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
 }
 
 .anter-notif-item__menu-item--danger {
@@ -8614,7 +8651,7 @@ a.anter-profile-stat:hover {
 .anter-notif-empty i {
     font-size: 3.5rem;
     margin-bottom: 16px;
-    color: var(--fb-blue, #1877f2);
+    color: var(--fb-blue, #003AAB);
     opacity: 0.3;
 }
 
@@ -8720,8 +8757,8 @@ a.anter-profile-stat:hover {
 
 .reels-comment-menu-btn:hover,
 .reels-comment-menu-btn[aria-expanded="true"] {
-    background: rgba(24, 119, 242, 0.1);
-    color: #1877f2;
+    background: rgba(0, 58, 171, 0.1);
+    color: #003AAB;
 }
 
 @media (hover: none) {
@@ -8775,11 +8812,11 @@ a.anter-profile-stat:hover {
 }
 
 .reels-comment-menu-item:hover {
-    background: rgba(24, 119, 242, 0.08);
+    background: rgba(0, 58, 171, 0.08);
 }
 
 .reels-comment-menu-item:hover i {
-    color: #1877f2;
+    color: #003AAB;
 }
 
 .reels-comment-menu-item--danger {
@@ -8819,7 +8856,7 @@ a.anter-profile-stat:hover {
     outline: none;
 }
 
-.reels-comment-edit-input:focus { border-color: #1877f2; }
+.reels-comment-edit-input:focus { border-color: #003AAB; }
 
 .reels-comment-edit-actions {
     display: flex;
@@ -8845,7 +8882,7 @@ a.anter-profile-stat:hover {
 }
 
 .reels-comment-edit-save {
-    background: linear-gradient(135deg, #1877f2, #6a4cff);
+    background: linear-gradient(135deg, #003AAB, #00C8F8);
     color: #fff;
 }
 

@@ -311,6 +311,9 @@ def create_app(test_config=None):
             'Permissions-Policy',
             'geolocation=(), microphone=(self), camera=(self), payment=()'
         )
+        # إزالة هيدر Render الذي يكشف المنصة (2026-09-27)
+        response.headers.pop('X-Render-Origin-Server', None)
+
         # HSTS: على HTTPS فقط (Render / Cloudflare)
         if request.is_secure:
             response.headers.setdefault(

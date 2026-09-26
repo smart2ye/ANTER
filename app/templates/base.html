@@ -270,6 +270,7 @@
 
         // مصدر واحد وخفيف لتحديث عداد الإشعارات.
         let previousNotifCount = null;
+        let previousMsgCount = null;
 
         function updateBadges() {
             // تحديث الإشعارات العامة
@@ -287,6 +288,7 @@
                 }
                 if (previousNotifCount !== null && data.count > previousNotifCount) {
                     showToast('لديك إشعار جديد!', 'info');
+                    window.dispatchEvent(new CustomEvent('anter:notification-count', { detail: { count: data.count } }));
                 }
                 previousNotifCount = data.count;
             }).catch(() => {});
@@ -304,6 +306,10 @@
                     msgBadge.textContent = data.count;
                     msgBadge.style.display = data.count > 0 ? 'block' : 'none';
                 }
+                if (previousMsgCount !== null && data.count > previousMsgCount) {
+                    window.dispatchEvent(new CustomEvent('anter:message-count', { detail: { count: data.count } }));
+                }
+                previousMsgCount = data.count;
             }).catch(() => {});
         }
 

@@ -599,36 +599,112 @@ class SoundManager {
     constructor() {
         this.enabled = localStorage.getItem('soundEnabled') !== 'false';
         this.ctx = null;
+        // auto-resume: يجعل السياق جاهزاً قبل الحاجة إليه
+        const resume = () => {
+            if (!this.enabled) return;
+            try {
+                const c = this._getContext();
+                if (c && c.state === 'suspended') c.resume().catch(() => {});
+            } catch (_) {}
+        };
+        ['pointerdown', 'touchstart', 'click', 'keydown'].forEach(ev =>
+            document.addEventListener(ev, resume, { passive: true, capture: true })
+        );
     }
+
     _getContext() {
-        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (!this.ctx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AC();
+        }
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+        }
         return this.ctx;
     }
-    _playTone(frequency, duration, type = 'sine', volume = 0.3) {
+
+    setEnabled(v) {
+        this.enabled = !!v;
+        localStorage.setItem('soundEnabled', this.enabled ? 'true' : 'false');
+        window.dispatchEvent(new CustomEvent('anter:sound-changed', { detail: { enabled: this.enabled } }));
+    }
+
+    isEnabled() { return this.enabled; }
+
+    _tone(freq, duration, { type = 'sine', volume = 0.20, attack = 0.008, delay = 0 } = {}) {
         if (!this.enabled) return;
         try {
             const ctx = this._getContext();
+            const t0 = ctx.currentTime + delay;
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = type;
-            osc.frequency.value = frequency;
-            gain.gain.value = volume;
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+            osc.frequency.setValueAtTime(freq, t0);
+            gain.gain.setValueAtTime(0.0001, t0);
+            gain.gain.exponentialRampToValueAtTime(volume, t0 + attack);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
             osc.connect(gain);
             gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + duration);
-        } catch (e) {}
+            osc.start(t0);
+            osc.stop(t0 + duration + 0.02);
+        } catch (_) {}
     }
-    notification() { this._playTone(800, 0.15, 'sine', 0.3); setTimeout(() => this._playTone(1000, 0.15, 'sine', 0.25), 150); }
-    like() { this._playTone(1200, 0.1, 'sine', 0.2); }
-    publish() { this._playTone(600, 0.1, 'sine', 0.2); setTimeout(() => this._playTone(800, 0.1, 'sine', 0.2), 100); setTimeout(() => this._playTone(1000, 0.15, 'sine', 0.25), 200); }
-    follow() { this._playTone(700, 0.12, 'sine', 0.2); setTimeout(() => this._playTone(900, 0.12, 'sine', 0.2), 120); }
+
+    _seq(notes) {
+        notes.forEach(n => this._tone(n.freq, n.dur, n));
+    }
+
+    // تفاعل (إعجاب/تعليق) — نقرة ناعمة
+    reaction() {
+        this._tone(520, 0.09, { type: 'triangle', volume: 0.16 });
+        this._tone(780, 0.07, { type: 'sine', volume: 0.10, delay: 0.03 });
+    }
+
+    // نشر ناجح — كورد صاعد
+    publish() {
+        this._seq([
+            { freq: 523.25, dur: 0.12, type: 'sine', volume: 0.20 },
+            { freq: 659.25, dur: 0.12, type: 'sine', volume: 0.20, delay: 0.10 },
+            { freq: 783.99, dur: 0.20, type: 'sine', volume: 0.22, delay: 0.20 },
+        ]);
+    }
+
+    // تعليق جديد
+    comment() {
+        this._tone(880, 0.18, { type: 'sine', volume: 0.18 });
+    }
+
+    // رسالة — Ding-Dong
+    message() {
+        this._tone(784, 0.16, { type: 'sine', volume: 0.18 });
+        this._tone(587, 0.20, { type: 'sine', volume: 0.18, delay: 0.14 });
+    }
+
+    // إشعار — ثلاث نغمات
+    notification() {
+        this._seq([
+            { freq: 587.33, dur: 0.12, type: 'sine', volume: 0.18 },
+            { freq: 783.99, dur: 0.12, type: 'sine', volume: 0.18, delay: 0.09 },
+            { freq: 1046.50, dur: 0.18, type: 'sine', volume: 0.20, delay: 0.18 },
+        ]);
+    }
+
+    // متابعة
+    follow() {
+        this._seq([
+            { freq: 659.25, dur: 0.12, type: 'sine', volume: 0.18 },
+            { freq: 987.77, dur: 0.16, type: 'sine', volume: 0.18, delay: 0.11 },
+        ]);
+    }
+
+    // توافق للخلف — استدعاءات قديمة
+    like() { this.reaction(); }
 }
+
 const sounds = new SoundManager();
 
 document.addEventListener('click', function(e) {
-    if (e.target.closest('.like-btn, .reaction-option, .comment-like-btn')) sounds.like();
+    if (e.target.closest('.like-btn, .reaction-option, .comment-like-btn')) sounds.reaction();
 });
 
 let previousNotificationCount = null;
@@ -638,6 +714,33 @@ document.addEventListener('anter:notification-count', function(event) {
         sounds.notification();
     }
     previousNotificationCount = count;
+
+// صوت رسالة جديدة
+document.addEventListener('anter:message-count', function() {
+    sounds.message();
+});
+
+// تشغيل الصوت على pointerdown (قبل أن يبدأ النموذج بالإرسال).
+// هذا يضمن أن النغمة تُسمَع قبل أن ينتقل المتصفح.
+document.addEventListener('pointerdown', function(e) {
+    const btn = e.target.closest('button[type="submit"], input[type="submit"], .composer-publish-btn, .anter-publish-button');
+    if (!btn) return;
+    const form = btn.closest('form');
+    if (!form) return;
+
+    // استثناء أزرار الحفظ في الإعدادات (لا صوت لها)
+    if (form.action && form.action.indexOf('/settings') !== -1) return;
+
+    try {
+        if (form.id === 'anterPostForm' || form.classList.contains('composer-form')) {
+            sounds.publish();
+        } else if (form.classList.contains('comment-form') || form.id === 'mainCommentForm') {
+            sounds.comment();
+        } else if (form.id === 'messageForm') {
+            sounds.message();
+        }
+    } catch (_) {}
+}, true);
 });
 
 // ==============================================

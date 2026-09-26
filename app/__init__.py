@@ -1,3 +1,4 @@
+import time
 from flask import Flask, flash, redirect, request, session, url_for
 from werkzeug.exceptions import RequestEntityTooLarge
 from app.config import Config
@@ -235,6 +236,104 @@ def create_app(test_config=None):
     # ANTER: تنظيف session في بداية كل طلب
     # يحمي من "connection مسمومة" في pool عند فشل أي commit سابق.
     # ============================================
+    # ============================================================
+    # Rate Limiting بسيط في الذاكرة (2026-09-27)
+    # يعمل بكفاءة مع gunicorn --workers=1 --threads=1
+    # ============================================================
+    from collections import defaultdict
+    from threading import Lock as _Lock
+
+    _rate_lock = _Lock()
+    _rate_buckets = defaultdict(list)
+
+    _RATE_LIMITS = {
+        # path_prefix: (max_requests, window_seconds)
+        '/auth/login': (10, 60),           # 10 محاولات/دقيقة لكل IP
+        '/auth/register': (5, 300),        # 5 تسجيلات/5 دقائق
+        '/auth/reset_password': (10, 300), # 10 طلبات استعادة/5 دقائق
+        '/auth/forgot': (10, 300),
+        '/api/ai/assist': (20, 60),        # 20 طلب AI/دقيقة
+        '/users/find-friends': (5, 60),    # 5 بحث جهات اتصال/دقيقة
+        '/messages/send': (60, 60),        # 60 رسالة/دقيقة
+    }
+
+    def _client_ip():
+        # Cloudflare / Render يضعون IP الحقيقي هنا
+        xff = request.headers.get('X-Forwarded-For', '')
+        if xff:
+            return xff.split(',')[0].strip()
+        return request.remote_addr or '0.0.0.0'
+
+    def _check_rate_limit(path):
+        for prefix, (limit, window) in _RATE_LIMITS.items():
+            if not path.startswith(prefix):
+                continue
+            key = (_client_ip(), prefix)
+            now = time.time()
+            with _rate_lock:
+                bucket = _rate_buckets[key]
+                # نحذف الطلبات القديمة
+                bucket[:] = [t for t in bucket if now - t < window]
+                if len(bucket) >= limit:
+                    return True, limit, window, len(bucket)
+                bucket.append(now)
+            return False, limit, window, len(bucket) + 1
+        return False, 0, 0, 0
+
+    @app.before_request
+    def _anter_rate_limit():
+        if request.path.startswith('/static/'):
+            return
+        limited, limit, window, count = _check_rate_limit(request.path)
+        if limited:
+            from flask import abort, make_response
+            retry_after = window
+            resp = make_response(
+                f'<html><body style="font-family:sans-serif;text-align:center;'
+                f'padding:60px 20px;direction:rtl"><h2>طلبات كثيرة جدًا</h2>'
+                f'<p>حاول مجددًا بعد {retry_after} ثانية.</p></body></html>',
+                429
+            )
+            resp.headers['Retry-After'] = str(retry_after)
+            return resp
+
+    @app.after_request
+    def _anter_security_headers(response):
+        """هيدرات أمان على كل الردود (2026-09-27)."""
+        # منع تضمين الموقع في iframe خارجي
+        response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+        # منع تخمين نوع المحتوى
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        # سياسة المُحيل
+        response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+        # إلغاء ميزات المتصفح الحساسة
+        response.headers.setdefault(
+            'Permissions-Policy',
+            'geolocation=(), microphone=(self), camera=(self), payment=()'
+        )
+        # HSTS: على HTTPS فقط (Render / Cloudflare)
+        if request.is_secure:
+            response.headers.setdefault(
+                'Strict-Transport-Security',
+                'max-age=31536000; includeSubDomains'
+            )
+        # CSP أساسية — لا تمنع أي شيء مستخدم حالياً
+        # (نسمح بـ inline scripts لأن ANTER يستخدمها بكثافة)
+        response.headers.setdefault(
+            'Content-Security-Policy',
+            "default-src 'self'; "
+            "img-src 'self' data: https:; "
+            "media-src 'self' https: blob:; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; "
+            "style-src 'self' 'unsafe-inline' https:; "
+            "font-src 'self' data: https:; "
+            "connect-src 'self' https: wss:; "
+            "frame-ancestors 'self'; "
+            "base-uri 'self'; "
+            "form-action 'self'"
+        )
+        return response
+
     @app.after_request
     def _anter_static_cache_and_compress(response):
         """Cache + gzip للملفات الثابتة النصية (CSS/JS/SVG)."""

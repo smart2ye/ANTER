@@ -58,11 +58,22 @@ else:
     }
 
 
+_ON_RENDER = bool(os.environ.get('RENDER'))
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or (lambda: (_ for _ in ()).throw(ValueError("SECRET_KEY must be set in environment")))()
     WTF_CSRF_SSL_STRICT = False
     SQLALCHEMY_DATABASE_URI = DATABASE_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # ==== كوكي آمن (2026-09-27) ====
+    # Secure يُفعَّل تلقائياً على Render، ويبقى معطّلاً للتطوير المحلي.
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', _ON_RENDER)
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SECURE = env_bool('REMEMBER_COOKIE_SECURE', _ON_RENDER)
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
     SQLALCHEMY_ENGINE_OPTIONS = DATABASE_ENGINE_OPTIONS
     UPLOAD_FOLDER = UPLOAD_FOLDER
     # Video files are streamed to a temporary file by Werkzeug, then saved directly to disk.

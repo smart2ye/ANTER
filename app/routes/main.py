@@ -430,13 +430,19 @@ def sitemap():
             'changefreq': 'never'
         })
         
+    # فرض https على كل الروابط (2026-09-27) — يمنع duplicate content
+    def _force_https(u):
+        if u.startswith('http://'):
+            return 'https://' + u[7:]
+        return u
+
     # بناء ملف XML
     sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     sitemap_xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     
     for page in pages:
         sitemap_xml += '  <url>\n'
-        sitemap_xml += f'    <loc>{page["loc"]}</loc>\n'
+        sitemap_xml += f'    <loc>{_force_https(page["loc"])}</loc>\n'
         if 'lastmod' in page:
             sitemap_xml += f'    <lastmod>{page["lastmod"]}</lastmod>\n'
         if 'changefreq' in page:

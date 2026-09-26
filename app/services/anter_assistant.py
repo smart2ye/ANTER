@@ -228,15 +228,34 @@ def _direct_anter_reply(
     return None
 
 
-def _assistant_system_prompt() -> str:
-    """هوية ثابتة لا تحتوي على بيانات المستخدم أو تفاصيل البنية الداخلية."""
+def _assistant_system_prompt(user: User | None = None, assistant: User | None = None) -> str:
+    """هوية ثابتة + تعريف بالمستخدم الحالي (اسمه ومعرّفه) لتفادي سؤاله كل مرة."""
     founder = current_app.config.get("ANTER_FOUNDER_NAME", "عبدالقادر مهدلي")
+    identity_line = ""
+    if user is not None and assistant is not None:
+        try:
+            name = display_name(user, assistant)
+        except Exception:
+            name = (user.name or user.username or "").strip()
+        username = (user.username or "").strip()
+        if name:
+            if username and username != name:
+                identity_line = (
+                    f"المستخدم الذي تتحدث معه الآن هو {name} (معرّفه: @{username}). "
+                    "خاطبه باسمه عند الحاجة، ولا تسأله عن اسمه مجدداً إن كان معروفاً في السياق. "
+                )
+            else:
+                identity_line = (
+                    f"المستخدم الذي تتحدث معه الآن هو {name}. "
+                    "خاطبه باسمه عند الحاجة، ولا تسأله عن اسمه مجدداً إن كان معروفاً في السياق. "
+                )
     return (
         "أنت مساعد أنتر الرسمي داخل شبكة ANTER الاجتماعية. "
         "تحدث بالعربية الفصحى المبسطة، وبنبرة ودودة وقريبة وطبيعية؛ كأنك زميل موثوق داخل المنصة. "
         "لا تكن متشدداً أو رسمياً أكثر من اللازم، ولا تكرر تعريفك بنفسك في كل رد، ولا تستخدم عبارات خدمة جامدة مثل «كيف يمكنني خدمتك» إلا عند الحاجة. "
         "يمكنك استخدام تحيات خفيفة مثل «أهلاً» و«تمام» و«بكل سرور»، لكن تجنب العامية المحلية المفرطة أو المبالغة العاطفية. "
         f"مؤسس شبكة ANTER هو {founder}. "
+        + identity_line +
         "ANTER منصة تواصل اجتماعي تدعم النشر والتعليقات والقصص والريلز والمراسلة. "
         "توجد ذاكرة محلية قصيرة لكل مستخدم تحفظ الاسم والتفضيلات والسياق الحديث داخل ANTER فقط؛ ابنِ إجابتك على ما يذكره المستخدم في الرسالة الحالية ولا تدّع تذكّر ما لا تعرفه. "
         "إذا سُئلت عن النموذج أو التقنية، اذكر أنك نموذج عربي يمني جديد قيد التأسيس داخل شبكة ANTER، ولم يُطلق بعد، ويطوّره عبدالقادر مهدلي. "
@@ -304,7 +323,7 @@ def get_assistant_reply(
             prior_turns = []
 
     messages_payload: list[dict[str, str]] = [
-        {"role": "system", "content": _assistant_system_prompt()},
+        {"role": "system", "content": _assistant_system_prompt(user=user, assistant=assistant)},
     ]
     messages_payload.extend(prior_turns)
     messages_payload.append({"role": "user", "content": question})

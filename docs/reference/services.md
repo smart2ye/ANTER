@@ -1,117 +1,170 @@
 # مرجع الخدمات (Services)
 
-**آخر تحديث:** 2026-09-17
-**المجموع:** 18 خدمة في app/services/
+**آخر تحديث:** 2026-09-27
+**المجموع:** 16 خدمة
 
-## AI والمحتوى الذكي
+## ai_service.py
 
-### ai_service.py
-- AIService — واجهة mini-llm Arabic
-- generate_response(prompt, max_tokens)
-- suggest_post, improve_text, suggest_comment
-- النموذج: qwen/qwen3.8-27b (Groq)
-- URL: https://api.groq.com/openai/v1/chat/completions
+**الفئات:** AIService
 
-### anter_assistant.py
-- إدارة حساب "مساعد أنتر"
-- ensure_anter_assistant_user()
-- get_assistant_reply()
-- is_anter_assistant(user)
+**دوال الفئات (methods):**
+- `._settings()`
+- `._clean_response()`
+- `._system_prompt()`
+- `.generate_response()`
+- `._clean_source()`
+- `.summarize_text()`
+- `.suggest_comment()`
+- `.suggest_post()`
+- `.improve_text()`
 
-### anter_memory.py
-- ذاكرة المساعد لكل مستخدم
-- remember_user_message, remember_assistant_reply
-- local_memory_reply
+## anter_account_switching.py
 
-### anter_daily_publication.py
-- منشور يومي تلقائي
-- ensure_daily_assistant_post()
+**دوال مستقلة:**
+- `is_switch_owner()`
+- `get_managed_assistant()`
+- `can_switch_to_assistant()`
+- `can_switch_back()`
+- `db_get_user()`
 
-### anter_user_messages.py
-- رسائل ترحيب
-- send_welcome_message, send_report_receipt
+## anter_assistant.py
 
-### anter_account_switching.py
-- تبديل بين المالك والمساعد
-- can_switch_to_assistant, can_switch_back
+**دوال مستقلة:**
+- `_messenger_download_reply()`
+- `is_anter_assistant()`
+- `ensure_anter_assistant_user()`
+- `follow_anter_assistant_for_user()`
+- `ensure_anter_assistant_followed_by_all_users()`
+- `_clean_question()`
+- `_clean_answer()`
+- `_direct_anter_reply()`
+- `_assistant_system_prompt()`
+- `_safe_provider_error()`
+- `get_assistant_reply()`
 
-## الترتيب والتوصية
+## anter_daily_publication.py
 
-### feed_ranker.py
-- ترتيب منشورات الـFeed
-- rank_post(created_at, likes, comments, reposts, similarity, is_following, is_own_post)
-- مكونات: Freshness (36h) + Engagement + Interest + Relationship
+**دوال مستقلة:**
+- `anter_today()`
+- `ensure_daily_assistant_post()`
 
-### reels_ranker.py
-- ترتيب الريلز
-- rank_reels(user, limit, exclude_ids)
-- إشارات: متابع (+35), like (+18), comment (+22)
-- engagement: likes×1.5, comments×2.5, shares×3
-- freshness: 24h (+18), 72h (+12), 168h (+7)
+## anter_memory.py
 
-### moment_detector.py
-- كشف ANTER Moments
-- detect_for_post(post)
-- الشروط: 3 منشورات على الأقل بنفس الهاشتاق خلال 24 ساعة
+**دوال مستقلة:**
+- `_clean_text()`
+- `_load_list()`
+- `_save_list()`
+- `_get_memory()`
+- `_is_sensitive()`
+- `is_memory_clear_request()`
+- `display_name()`
+- `_append_context()`
+- `remember_user_message()`
+- `remember_assistant_reply()`
+- `recent_conversation()`
+- `conversation_for_ai()`
+- `clear_memory()`
+- `preference_values()`
+- `role_description()`
+- `recent_user_context()`
+- `_prior_user_messages()`
+- `local_memory_reply()`
 
-## السلامة والخصوصية
+## anter_user_messages.py
 
-### message_safety.py
-- is_blocked_between(a, b)
-- blocked_counterparty_ids
-- block_user, unblock_user
+**دوال مستقلة:**
+- `_already_sent()`
+- `send_welcome_message()`
+- `send_report_receipt()`
 
-### privacy.py
-- can_view_profile, can_view_post, visible_posts
-- is_owner_or_admin, follows
+## explore_service.py
 
-## المصادقة
+**دوال مستقلة:**
+- `_hot_score()`
+- `_post_engagement()`
+- `_reel_engagement()`
+- `trending_posts()`
+- `trending_reels()`
+- `trending_users()`
+- `normalize_arabic()`
+- `search_users()`
 
-### mobile_api_auth.py
-- issue_mobile_token(user, device_name)
-- current_mobile_token()
-- mobile_api_required (decorator)
-- Tokens: SHA-256 hash فقط
+**دوال الفئات (methods):**
+- `._score()`
 
-### owner_admin.py
-- ensure_configured_owner_is_admin()
+## feed_ranker.py
 
-## الصيانة
+**دوال مستقلة:**
+- `freshness_score()`
+- `engagement_score()`
+- `interest_score()`
+- `relationship_score()`
+- `geo_score()`
+- `rank_post()`
 
-### startup_maintenance.py
-- run_startup_schema_upgrades(app)
-- يضمن وجود أعمدة/جداول جديدة
+## geo_ranker.py
 
-## الملفات المساعدة (app/utils/)
+**دوال مستقلة:**
+- `normalize_country_code()`
+- `country_score()`
+- `geo_score_for_post()`
+- `geo_score_for_user()`
 
-### email.py
-- Resend API (verify, reset, welcome)
-- send_reset_email, send_email_verification
-- send_welcome_email, send_password_change_confirmation
+## message_safety.py
 
-### helpers.py
-- save_uploaded_image, save_video_file, save_audio_file
-- create_thumbnail
-- extract_hashtags, process_hashtags
-- extract_link_metadata
-- parse_mentions
-- log_user_activity
-- get_user_activity_summary
-- get_user_status, get_status_icon
-- allowed_file, allowed_audio_file, allowed_video_file
+**دوال مستقلة:**
+- `is_blocked_between()`
+- `blocked_counterparty_ids()`
+- `block_user()`
+- `unblock_user()`
 
-### image_storage.py
-- prepare_image_data — يقص + يضغط
+## mobile_api_auth.py
 
-### media_urls.py
-- avatar_url(user) — يفضّل BLOB
-- post_image_url(post)
+**دوال مستقلة:**
+- `_token_hash()`
+- `issue_mobile_token()`
+- `issue_mobile_browser_authorization()`
+- `exchange_mobile_browser_authorization()`
+- `revoke_mobile_token()`
+- `current_mobile_token()`
+- `mobile_api_required()`
 
-### public_ids.py
-- generate_public_id(prefix) — p_xxx للمنشورات، r_xxx للريلز
+**دوال الفئات (methods):**
+- `.wrapped()`
 
-### story_cleanup.py
-- delete_expired_stories(app)
+## moment_detector.py
 
-### profile_text.py
-- normalize_bio(value)
+**دوال مستقلة:**
+- `_normalize_hashtag()`
+- `_post_hashtags()`
+- `find_matching_moment()`
+- `detect_for_post()`
+
+## owner_admin.py
+
+**دوال مستقلة:**
+- `ensure_configured_owner_is_admin()`
+
+## privacy.py
+
+**دوال مستقلة:**
+- `is_owner_or_admin()`
+- `follows()`
+- `can_view_profile()`
+- `can_view_post()`
+- `can_post_on_wall()`
+- `visible_posts()`
+
+## reels_ranker.py
+
+**دوال مستقلة:**
+- `_activity_video_ids()`
+- `_followed_author_ids()`
+- `_score_video()`
+- `rank_reels()`
+
+## startup_maintenance.py
+
+**دوال مستقلة:**
+- `should_run_schema_upgrades()`
+- `run_startup_schema_upgrades()`

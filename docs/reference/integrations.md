@@ -1,6 +1,6 @@
 # مرجع التكاملات الخارجية
 
-**آخر تحديث:** 2026-09-17
+**آخر تحديث:** 2026-09-27
 
 ## قواعد البيانات
 
@@ -8,9 +8,9 @@
 - Host: anter-anter.h.aivencloud.com
 - Port: 28630
 - DB: defaultdb
-- User: avnadmin
+- User: anter_app (صلاحيات محدودة)
 - Region: AWS Bahrain (me-south-1)
-- الخطة: Free (5 GB)
+- الخطة: Free (1 GB)
 
 ### SQLite (التطوير المحلي)
 - Path: instance/anter.db
@@ -66,8 +66,8 @@
 - smart2ye/anter-twa — تجربة TWA (مهجورة)
 
 ### Releases
-- APK الأخير: v1.0.1
-- الرابط: https://github.com/smart2ye/anter-webview-apk/releases/download/v1.0.1/ANTER.apk
+- APK الأخير: v1.0.7 (ANTER_app.apk)
+- الرابط: https://github.com/smart2ye/anter-webview-apk/releases/download/v1.0.7/ANTER_app.apk
 
 ## متغيرات البيئة الكاملة
 - SECRET_KEY — Flask sessions
@@ -83,3 +83,25 @@
 - UPLOAD_FOLDER — مسار الرفع
 - ADMIN_PATH — مسار الأدمن
 - ANTER_APK_URL, ANTER_APK_VERSION, ANTER_APK_SIZE, ANTER_APK_DATE — صفحة about
+
+## Rate Limiting (2026-09-27)
+في الذاكرة — يعمل مع `--workers=1`:
+- `/auth/login`: 10/دقيقة
+- `/auth/register`: 5/5 دقائق
+- `/auth/reset_password`, `/auth/forgot`: 10/5 دقائق
+- `/api/ai/assist`: 20/دقيقة
+- `/users/find-friends`: 5/دقيقة
+- `/messages/send`: 60/دقيقة
+
+## Security Headers (2026-09-27)
+تُضاف على كل الردود:
+- X-Frame-Options: SAMEORIGIN
+- X-Content-Type-Options: nosniff
+- Referrer-Policy: strict-origin-when-cross-origin
+- Permissions-Policy: geolocation=(), microphone=(self), camera=(self), payment=()
+- Strict-Transport-Security: max-age=31536000
+- Content-Security-Policy: default-src 'self' + inline scripts/media
+
+## Cloudflare Tunnel (للتطوير)
+- الأمر: `cloudflared tunnel --protocol http2 --edge-ip-version 4 --url http://127.0.0.1:5050`
+- تجربة أسرع بكثير من Render Free (بلا cold start)

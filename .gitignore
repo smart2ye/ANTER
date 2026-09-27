@@ -90,3 +90,5 @@ users_export.csv
 _old_files_*/
 
 *.pre_color
+requirements.txt.pre_upgrade
+*.pre_upgrade

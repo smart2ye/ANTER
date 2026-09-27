@@ -1,12 +1,12 @@
 # ANTER — المرجع الشامل
 
-**آخر تحديث:** 2026-09-17
-**الإصدار:** 1.0.1
+**آخر تحديث:** 2026-09-27
+**الإصدار: 2.0.0
 
 ## نظرة عامة
 منصة تواصل اجتماعي عربية مبنية على Flask + SQLAlchemy + Jinja2.
 
-- Backend: Python 3.14.6 + Flask 2.3.3
+- Backend: Python 3.14.6 + Flask 3.1.3
 - Database: PostgreSQL (Aiven) للإنتاج + SQLite للتطوير
 - Frontend: Vanilla JS + Bootstrap 5
 - Hosting: Render (Free Tier)
@@ -14,10 +14,10 @@
 ## الأحجام
 - المشروع: 118 MB
 - 108 ملف Python
-- 47 قالب HTML
+- 46 قالب HTML
 - 5 ملفات JS
-- 31 موديل
-- 19 blueprint (156 سطر route)
+- 34 موديل
+- 18 blueprint (188 route)
 
 ## البنية
 app/
@@ -25,10 +25,10 @@ app/
   config.py            الإعدادات
   extensions.py        db, csrf, login_manager
   forms/               نماذج WTForms
-  models/              31 موديل
-  routes/              19 blueprint
+  models/              34 موديل
+  routes/              18 blueprint
   services/            18 خدمة
-  templates/           47 قالب
+  templates/           46 قالب
   static/              css, js, icons, uploads
   utils/               أدوات مساعدة
 docs/reference/        هذا المرجع
@@ -39,7 +39,7 @@ instance/anter.db      SQLite محلي
 ## الروابط
 - الإنتاج: https://anter-1.onrender.com
 - GitHub: https://github.com/smart2ye/ANTER
-- APK: https://github.com/smart2ye/anter-webview-apk/releases/download/v1.0.1/ANTER.apk
+- APK: https://github.com/smart2ye/anter-webview-apk/releases/download/v1.0.7/ANTER_app.apk
 - Aiven DB: anter-anter.h.aivencloud.com:28630
 
 ## التشغيل المحلي
@@ -49,7 +49,7 @@ unset DATABASE_URL
 PORT=5051 python3 run.py
 
 ## Stack
-- Flask 2.3.3
+- Flask 3.1.3
 - SQLAlchemy 2.0 + Flask-SQLAlchemy 3.1.1
 - Flask-Login 0.6.2 + Werkzeug
 - Flask-WTF 1.1.1 + WTForms 3.0.1

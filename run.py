@@ -19,9 +19,6 @@ def health_check():
     # يعمل بشكل آمن ومحدود: ينشئ منشوراً واحداً فقط في اليوم عند أول فحص صحة.
     ensure_daily_assistant_post()
     response = make_response('OK', 200)
-    database_kind = db.engine.dialect.name
-    response.headers['X-ANTER-Database'] = database_kind
-    response.headers['X-ANTER-Persistent-Database'] = 'true' if database_kind != 'sqlite' else 'false'
     return response
 
 if __name__ == '__main__':

@@ -660,7 +660,7 @@ def delete_account():
     password = request.form.get('password', '').strip()
     if not current_user.check_password(password):
         flash('كلمة المرور غير صحيحة.', 'danger')
-        return redirect(url_for('users.profile', username=current_user.username))
+        return redirect(url_for('users.settings'))
     
     from app.models import Post, Comment, Message, Follow, Like, Notification, CommentLike
     

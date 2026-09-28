@@ -84,13 +84,6 @@
                 <a href="{{ url_for('posts.create') }}" class="anter-profile-btn anter-profile-btn--primary">
                     <i class="fas fa-plus-circle" aria-hidden="true"></i> منشور جديد
                 </a>
-                <button type="button"
-                        class="anter-profile-btn anter-profile-btn--danger"
-                        data-bs-toggle="modal"
-                        data-bs-target="#deleteAccountModal"
-                        aria-label="حذف الحساب">
-                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                </button>
             {% else %}
                 {% if is_following %}
                     <button class="anter-profile-btn anter-profile-btn--outline follow-btn"
@@ -164,24 +157,6 @@
 </div>
 {% endif %}
 
-<!-- Modal حذف الحساب -->
-<div class="modal fade" id="deleteAccountModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content" style="background: var(--card-bg); color: var(--text-light);">
-            <div class="modal-header border-0 py-2">
-                <h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle"></i> تأكيد الحذف</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body py-2">
-                <p class="small">هل أنت متأكد من حذف حسابك؟</p>
-                <p class="text-danger small">سيتم حذف جميع بياناتك نهائياً.</p>
-                <form method="POST" action="{{ url_for('users.delete_account') }}">
-                    <div class="mb-2"><input type="password" name="password" class="form-control form-control-sm" placeholder="كلمة المرور" required></div>
-                    <button type="submit" class="btn btn-danger btn-sm w-100">تأكيد الحذف</button>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>

@@ -92,3 +92,4 @@ _old_files_*/
 *.pre_color
 requirements.txt.pre_upgrade
 *.pre_upgrade
+*.pre_logo

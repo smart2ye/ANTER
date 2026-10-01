@@ -573,16 +573,46 @@ def settings():
         reason=VERIFICATION_REQUEST_REASON,
     ).order_by(Report.created_at.desc()).first()
 
-    # بلاغات المستخدم (بلاغات + طلبات دعم) — تبويب «المساعدة والدعم»
-    my_reports = (
+    # بلاغات المستخدم — تبويب «المساعدة والدعم»
+    # نستبعد طلبات النظام (توثيق، استعادة كلمة سر، طلبات حساب) لأنها ليست بلاغات.
+    SYSTEM_REQUEST_PREFIXES = (
+        'support:',
+        'verification:',
+        'verification-',
+        'email-verification',
+        'password-reset-request',
+        'password-reset',
+        'account-request:',
+        'account_request:',
+    )
+
+    my_all = (
         Report.query
         .filter(Report.reporter_id == current_user.id)
-        .filter(~Report.reason.startswith(VERIFICATION_REQUEST_REASON or ''))
         .order_by(Report.created_at.desc())
         .all()
     )
-    my_content_reports = [r for r in my_reports if not r.reason.startswith('support:')]
-    my_support_requests = [r for r in my_reports if r.reason.startswith('support:')]
+
+    def _is_system_request(r):
+        reason = (r.reason or '').strip().lower()
+        return any(reason.startswith(prefix) for prefix in SYSTEM_REQUEST_PREFIXES)
+
+    from app.services.anter_user_messages import _resolve_topic
+
+    my_content_reports = [
+        r for r in my_all
+        if not _is_system_request(r) and not r.reason.startswith('support:')
+    ]
+    my_support_requests = [
+        r for r in my_all
+        if r.reason.startswith('support:')
+    ]
+
+    # نضيف تسمية عربية واضحة لكل بلاغ (تُستخدم في القالب)
+    for r in my_content_reports:
+        r.reason_label = _resolve_topic(r.reason)
+    for r in my_support_requests:
+        r.reason_label = _resolve_topic(r.reason)
 
     # بلاغ محدد مطلوب فتحه؟ (من رابط إشعار)
     focus_report_id = request.args.get('report', type=int)

@@ -565,5 +565,167 @@
         window.addEventListener('load', subscribeToPush);
     }
     </script>
+
+<!-- ============================================================
+     ANTER: Modal الإبلاغ عن المحتوى — يُستخدم لكل المنشورات والصور
+     ============================================================ -->
+<div class="modal fade" id="anterReportModal" tabindex="-1" aria-labelledby="anterReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-4 shadow-lg" style="background: var(--anter-card);">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title text-danger fw-bold" id="anterReportModalLabel">
+                    <i class="fas fa-exclamation-triangle me-1"></i> الإبلاغ عن المحتوى
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="text-muted small mb-3">
+                    اختر سبب الإبلاغ. راجعه فريق ANTER بعناية وبتدخل بشري.
+                </p>
+                <input type="hidden" id="anterReportPostId" value="">
+                <input type="hidden" id="anterReportSource" value="">
+
+                <div class="anter-report-reasons" id="anterReportReasons">
+                    <label class="anter-report-option d-flex align-items-start gap-2 p-2 mb-1 rounded-3" style="cursor:pointer;">
+                        <input type="radio" name="anterReportReason" value="spam" class="mt-1" checked>
+                        <span><strong class="d-block small">محتوى مزعج أو مكرر</strong><small class="text-muted">منشورات متكررة أو دعائية</small></span>
+                    </label>
+                    <label class="anter-report-option d-flex align-items-start gap-2 p-2 mb-1 rounded-3" style="cursor:pointer;">
+                        <input type="radio" name="anterReportReason" value="harassment" class="mt-1">
+                        <span><strong class="d-block small">تنمّر أو مضايقة</strong><small class="text-muted">إساءة شخصية أو تهديد</small></span>
+                    </label>
+                    <label class="anter-report-option d-flex align-items-start gap-2 p-2 mb-1 rounded-3" style="cursor:pointer;">
+                        <input type="radio" name="anterReportReason" value="hate" class="mt-1">
+                        <span><strong class="d-block small">خطاب كراهية</strong><small class="text-muted">تحريض ضد فئة أو شخص</small></span>
+                    </label>
+                    <label class="anter-report-option d-flex align-items-start gap-2 p-2 mb-1 rounded-3" style="cursor:pointer;">
+                        <input type="radio" name="anterReportReason" value="impersonation" class="mt-1">
+                        <span><strong class="d-block small">انتحال شخصية</strong><small class="text-muted">تقليد شخص أو جهة</small></span>
+                    </label>
+                    <label class="anter-report-option d-flex align-items-start gap-2 p-2 mb-1 rounded-3" style="cursor:pointer;">
+                        <input type="radio" name="anterReportReason" value="misinformation" class="mt-1">
+                        <span><strong class="d-block small">معلومات مضللة</strong><small class="text-muted">أخبار كاذبة أو ادعاءات</small></span>
+                    </label>
+                    <label class="anter-report-option d-flex align-items-start gap-2 p-2 mb-1 rounded-3" style="cursor:pointer;">
+                        <input type="radio" name="anterReportReason" value="other" class="mt-1">
+                        <span><strong class="d-block small">سبب آخر</strong><small class="text-muted">اكتب تفاصيل إضافية أدناه</small></span>
+                    </label>
+                </div>
+
+                <textarea id="anterReportDetails" class="form-control form-control-sm mt-2"
+                          rows="2" maxlength="500" placeholder="تفاصيل إضافية (اختياري)"></textarea>
+
+                <div class="alert alert-danger small mt-2 py-2 d-none" id="anterReportError"></div>
+
+                <button type="button" class="btn btn-danger btn-sm w-100 rounded-pill mt-2"
+                        id="anterReportSubmitBtn">
+                    <i class="fas fa-paper-plane me-1"></i> إرسال البلاغ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function _anterReportModal() {
+    'use strict';
+    const modalEl = document.getElementById('anterReportModal');
+    if (!modalEl) return;
+
+    const postIdInput = document.getElementById('anterReportPostId');
+    const sourceInput = document.getElementById('anterReportSource');
+    const detailsInput = document.getElementById('anterReportDetails');
+    const errorBox = document.getElementById('anterReportError');
+    const submitBtn = document.getElementById('anterReportSubmitBtn');
+
+    function getCsrf() {
+        const m = document.querySelector('meta[name="csrf-token"]');
+        return m ? m.getAttribute('content') : '';
+    }
+
+    function resetForm() {
+        detailsInput.value = '';
+        errorBox.classList.add('d-none');
+        errorBox.textContent = '';
+        const first = modalEl.querySelector('input[name="anterReportReason"][value="spam"]');
+        if (first) first.checked = true;
+        submitBtn.disabled = false;
+    }
+
+    // فتح المودال بأي زر يحمل data-anter-report
+    document.addEventListener('click', function(e) {
+        const trigger = e.target.closest('[data-anter-report]');
+        if (!trigger) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        // أغلق أي قائمة منسدلة مفتوحة
+        document.querySelectorAll('.anter-img-menu, .dropdown-menu.show').forEach(m => {
+            if (m.hidden === false) m.hidden = true;
+            m.classList.remove('show');
+        });
+
+        const postId = trigger.getAttribute('data-anter-report-post') || trigger.dataset.post || '';
+        const source = trigger.getAttribute('data-anter-report-source') || 'post';
+        postIdInput.value = postId;
+        sourceInput.value = source;
+        resetForm();
+
+        if (window.bootstrap && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else {
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+        }
+    }, true);
+
+    // إرسال البلاغ
+    submitBtn.addEventListener('click', async function() {
+        const postId = postIdInput.value;
+        const reasonEl = modalEl.querySelector('input[name="anterReportReason"]:checked');
+        const reason = reasonEl ? reasonEl.value : 'other';
+        const details = (detailsInput.value || '').trim();
+
+        if (!postId) {
+            errorBox.textContent = 'تعذر تحديد المنشور.';
+            errorBox.classList.remove('d-none');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        errorBox.classList.add('d-none');
+
+        try {
+            const resp = await fetch('/report/' + encodeURIComponent(postId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrf(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ post_id: parseInt(postId, 10), reason: reason, details: details })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || data.success === false) {
+                throw new Error(data.message || 'تعذر إرسال البلاغ.');
+            }
+            // إغلاق المودال + رسالة شكر
+            if (window.bootstrap && bootstrap.Modal) {
+                bootstrap.Modal.getInstance(modalEl)?.hide();
+            }
+            if (typeof window.showToast === 'function') {
+                window.showToast('شكرًا لتنبيهنا. تم إرسال البلاغ للإدارة لمراجعته.', 'success');
+            } else {
+                alert('شكرًا لتنبيهنا. تم إرسال البلاغ للإدارة لمراجعته.');
+            }
+        } catch (err) {
+            errorBox.textContent = err.message || 'تعذر إرسال البلاغ.';
+            errorBox.classList.remove('d-none');
+            submitBtn.disabled = false;
+        }
+    });
+})();
+</script>
 </body>
 </html>

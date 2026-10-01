@@ -356,7 +356,7 @@
                         </div>
                         <div class="mb-2">
                             <strong class="small">السبب:</strong>
-                            <span class="small">{{ r.reason }}</span>
+                            <span class="small">{{ r.reason_label or r.reason }}</span>
                         </div>
                         {% if r.details %}
                         <details class="mb-2">
@@ -431,7 +431,7 @@
                             <span class="text-muted small">#{{ r.id }}</span>
                         </div>
                         <div class="mb-2 small">
-                            <strong>الموضوع:</strong> {{ r.reason.replace('support:', '') }}
+                            <strong>الموضوع:</strong> {{ r.reason_label or r.reason.replace('support:', '') }}
                         </div>
                         {% if r.details %}
                         <details class="mb-2">

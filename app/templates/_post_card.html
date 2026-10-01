@@ -68,7 +68,11 @@
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                    <button class="dropdown-item py-2 text-warning fw-semibold" onclick="alert('شكرًا لتنبيهنا. تم إرسال البلاغ للإدارة لمراجعته.');">
+                    <button class="dropdown-item py-2 text-warning fw-semibold"
+                            type="button"
+                            data-anter-report
+                            data-anter-report-post="{{ post.id }}"
+                            data-anter-report-source="post">
                         <i class="fas fa-exclamation-triangle me-2"></i> إبلاغ عن المحتوى
                     </button>
                 </li>
@@ -204,8 +208,9 @@
             {% if current_user.id != post.author_id %}
             <button type="button"
                     class="anter-img-menu__item anter-img-menu__item--danger"
-                    data-img-action="report"
-                    data-post="{{ post.id }}"
+                    data-anter-report
+                    data-anter-report-post="{{ post.id }}"
+                    data-anter-report-source="image"
                     role="menuitem">
                 <i class="fas fa-flag" aria-hidden="true"></i>
                 <span>الإبلاغ عن الصورة</span>

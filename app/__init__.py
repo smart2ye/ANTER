@@ -355,8 +355,6 @@ def create_app(test_config=None):
             return response
 
         accept = _req.headers.get('Accept-Encoding', '')
-        if 'gzip' not in accept:
-            return response
 
         try:
             data = response.get_data()
@@ -366,10 +364,28 @@ def create_app(test_config=None):
         if not data or len(data) < 500:
             return response
 
-        import gzip as _gz
-        compressed = _gz.compress(data, compresslevel=6)
+        # نُفضّل Brotli (أصغر بـ 15–20%) ثم نرجع إلى gzip.
+        compressed = None
+        encoding = None
+
+        if 'br' in accept:
+            try:
+                import brotli as _br
+                compressed = _br.compress(data, quality=5)
+                encoding = 'br'
+            except Exception:
+                compressed = None
+
+        if compressed is None and 'gzip' in accept:
+            import gzip as _gz
+            compressed = _gz.compress(data, compresslevel=6)
+            encoding = 'gzip'
+
+        if compressed is None:
+            return response
+
         response.set_data(compressed)
-        response.headers['Content-Encoding'] = 'gzip'
+        response.headers['Content-Encoding'] = encoding
         response.headers['Content-Length'] = str(len(compressed))
         response.headers['Vary'] = 'Accept-Encoding'
         return response

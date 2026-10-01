@@ -572,10 +572,28 @@ def settings():
         reporter_id=current_user.id,
         reason=VERIFICATION_REQUEST_REASON,
     ).order_by(Report.created_at.desc()).first()
+
+    # بلاغات المستخدم (بلاغات + طلبات دعم) — تبويب «المساعدة والدعم»
+    my_reports = (
+        Report.query
+        .filter(Report.reporter_id == current_user.id)
+        .filter(~Report.reason.startswith(VERIFICATION_REQUEST_REASON or ''))
+        .order_by(Report.created_at.desc())
+        .all()
+    )
+    my_content_reports = [r for r in my_reports if not r.reason.startswith('support:')]
+    my_support_requests = [r for r in my_reports if r.reason.startswith('support:')]
+
+    # بلاغ محدد مطلوب فتحه؟ (من رابط إشعار)
+    focus_report_id = request.args.get('report', type=int)
+
     return render_template(
         'settings.html',
         is_anter_assistant=is_anter_assistant,
         verification_request=verification_request,
+        my_content_reports=my_content_reports,
+        my_support_requests=my_support_requests,
+        focus_report_id=focus_report_id,
     )
 
 

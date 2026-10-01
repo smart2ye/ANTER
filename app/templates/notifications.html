@@ -53,6 +53,12 @@
                 {% set link = url_for('users.profile', username=actor.username) %}
             {% elif notif.action in ['message', 'voice_message', 'voice_call'] and actor %}
                 {% set link = url_for('messages.chat', user_id=actor.id) %}
+            {% elif notif.action in ['report_resolved', 'report_rejected'] and notif.report_id %}
+                {% set link = url_for('users.settings') + '?report=' + (notif.report_id|string) + '#support' %}
+            {% elif notif.action == 'verification_approved' %}
+                {% set link = url_for('users.settings') + '#verification' %}
+            {% elif notif.action == 'verification_rejected' %}
+                {% set link = url_for('users.settings') + '#verification' %}
             {% endif %}
 
             {# تحديد الفئة #}

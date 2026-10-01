@@ -70,6 +70,7 @@ def run_startup_schema_upgrades(app) -> bool:
         'video_comments': {'edited_at': 'TIMESTAMP'},
         'notifications': {
             'extra_text': 'VARCHAR(500)',
+            'report_id': 'INTEGER',
         },
         'videos': {
             'public_id': 'VARCHAR(40)',
@@ -144,6 +145,9 @@ def run_startup_schema_upgrades(app) -> bool:
         if 'reports' in table_names:
             connection.execute(text('CREATE INDEX IF NOT EXISTS ix_reports_message_id ON reports (message_id)'))
             connection.execute(text('CREATE INDEX IF NOT EXISTS ix_reports_video_id ON reports (video_id)'))
+
+        if 'notifications' in table_names:
+            connection.execute(text('CREATE INDEX IF NOT EXISTS ix_notifications_report_id ON notifications (report_id)'))
 
     # ترحيل المعرفات العامة يُنفذ مرة عند الترقية، لا مع كل طلب إيقاظ.
     for model, prefix in ((Post, 'p'), (Video, 'r')):

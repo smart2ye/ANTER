@@ -28,6 +28,14 @@
                 <i class="fas fa-certificate me-1"></i> التوثيق
             </button>
         </li>
+        <li class="nav-item">
+            <button class="nav-link rounded-pill fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-support" type="button" role="tab" id="supportTabBtn">
+                <i class="fas fa-headset me-1"></i> المساعدة والدعم
+                {% if my_content_reports or my_support_requests %}
+                <span class="badge bg-primary rounded-pill ms-1">{{ (my_content_reports|length) + (my_support_requests|length) }}</span>
+                {% endif %}
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content">
@@ -311,6 +319,153 @@
             {% endif %}
         </div>
 
+        <!-- ============ تبويب المساعدة والدعم ============ -->
+        <div class="tab-pane fade" id="tab-support" role="tabpanel">
+            <h6 class="border-bottom pb-2 mb-3">
+                <i class="fas fa-headset text-primary"></i> المساعدة والدعم
+            </h6>
+            <p class="text-muted small mb-3">
+                هنا تجد جميع بلاغاتك وطلبات المساعدة التي أرسلتها، مع ردود الإدارة الكاملة.
+            </p>
+
+            <!-- بلاغات المحتوى -->
+            <h6 class="fw-semibold mt-4 mb-2">
+                <i class="fas fa-flag text-warning"></i> بلاغاتي على المحتوى
+                <span class="badge bg-secondary rounded-pill">{{ my_content_reports|length }}</span>
+            </h6>
+            {% if my_content_reports %}
+                <div class="list-group mb-4">
+                {% for r in my_content_reports %}
+                    {% set is_focus = (focus_report_id == r.id) %}
+                    <div class="list-group-item {% if is_focus %}border-primary border-2{% endif %}" id="report-{{ r.id }}">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <span class="badge
+                                    {% if r.status == 'pending' %}bg-warning text-dark
+                                    {% elif r.status == 'resolved' %}bg-success
+                                    {% else %}bg-secondary{% endif %}">
+                                    {% if r.status == 'pending' %}قيد المراجعة
+                                    {% elif r.status == 'resolved' %}تم الحل
+                                    {% else %}مرفوض{% endif %}
+                                </span>
+                                <span class="text-muted small ms-2">
+                                    {{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else '' }}
+                                </span>
+                            </div>
+                            <span class="text-muted small">#{{ r.id }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong class="small">السبب:</strong>
+                            <span class="small">{{ r.reason }}</span>
+                        </div>
+                        {% if r.details %}
+                        <details class="mb-2">
+                            <summary class="small text-muted" style="cursor:pointer;">التفاصيل التي أرسلتها</summary>
+                            <div class="small text-muted mt-2" style="white-space: pre-line;">{{ r.details }}</div>
+                        </details>
+                        {% endif %}
+
+                        {# رد الإدارة الكامل #}
+                        {% if r.status == 'resolved' %}
+                        <div class="alert alert-success small mt-2 mb-0 py-2">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <strong>رد الإدارة:</strong> تمت مراجعة بلاغك واتخاذ الإجراء المناسب.
+                            {% if r.resolved_at %}
+                            <div class="text-muted mt-1">تاريخ المراجعة: {{ r.resolved_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                            {% endif %}
+                        </div>
+                        {% elif r.status == 'rejected' %}
+                        <div class="alert alert-warning small mt-2 mb-0 py-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>رد الإدارة:</strong>
+                            {% if r.rejection_reason %}
+                                {{ r.rejection_reason }}
+                            {% else %}
+                                لم يُتخذ إجراء بشأن بلاغك. قد لا يخالف المحتوى معايير المنصة.
+                            {% endif %}
+                            {% if r.resolved_at %}
+                            <div class="text-muted mt-1">تاريخ المراجعة: {{ r.resolved_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-light small mt-2 mb-0 py-2 border">
+                            <i class="fas fa-clock me-1"></i> بلاغك قيد المراجعة، سنخبرك عند اتخاذ قرار.
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted small fst-italic">لم تقدّم أي بلاغ على محتوى بعد.</p>
+            {% endif %}
+
+            <!-- طلبات المساعدة -->
+            <h6 class="fw-semibold mt-4 mb-2">
+                <i class="fas fa-life-ring text-info"></i> طلبات المساعدة
+                <span class="badge bg-secondary rounded-pill">{{ my_support_requests|length }}</span>
+            </h6>
+            {% if my_support_requests %}
+                <div class="list-group mb-4">
+                {% for r in my_support_requests %}
+                    {% set is_focus = (focus_report_id == r.id) %}
+                    <div class="list-group-item {% if is_focus %}border-primary border-2{% endif %}" id="report-{{ r.id }}">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <span class="badge
+                                    {% if r.status == 'pending' %}bg-warning text-dark
+                                    {% elif r.status == 'resolved' %}bg-success
+                                    {% else %}bg-secondary{% endif %}">
+                                    {% if r.status == 'pending' %}قيد المعالجة
+                                    {% elif r.status == 'resolved' %}تمت المعالجة
+                                    {% else %}مغلق{% endif %}
+                                </span>
+                                <span class="text-muted small ms-2">
+                                    {{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else '' }}
+                                </span>
+                            </div>
+                            <span class="text-muted small">#{{ r.id }}</span>
+                        </div>
+                        <div class="mb-2 small">
+                            <strong>الموضوع:</strong> {{ r.reason.replace('support:', '') }}
+                        </div>
+                        {% if r.details %}
+                        <details class="mb-2">
+                            <summary class="small text-muted" style="cursor:pointer;">تفاصيل الطلب</summary>
+                            <div class="small text-muted mt-2" style="white-space: pre-line;">{{ r.details }}</div>
+                        </details>
+                        {% endif %}
+
+                        {% if r.status == 'resolved' %}
+                        <div class="alert alert-success small mt-2 mb-0 py-2">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <strong>رد الإدارة:</strong> تمت معالجة طلبك.
+                        </div>
+                        {% elif r.status == 'rejected' %}
+                        <div class="alert alert-warning small mt-2 mb-0 py-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>رد الإدارة:</strong>
+                            {% if r.rejection_reason %}{{ r.rejection_reason }}
+                            {% else %}لم يتمكن الفريق من معالجة الطلب.{% endif %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-light small mt-2 mb-0 py-2 border">
+                            <i class="fas fa-clock me-1"></i> طلبك قيد المعالجة.
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted small fst-italic">لم ترسل أي طلب مساعدة بعد.</p>
+            {% endif %}
+
+            <div class="mt-3">
+                <a href="{{ url_for('main.help_center') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-paper-plane me-1"></i> إرسال طلب مساعدة جديد
+                </a>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -340,5 +495,31 @@
         settingsBioInput.addEventListener('input', updateSettingsBioCount);
         updateSettingsBioCount();
     }
+
+    // --- فتح تبويب «المساعدة والدعم» تلقائيًا عند الوصول من إشعار ---
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const hasReport = params.has('report');
+        const hash = window.location.hash;
+        const shouldOpenSupport = hasReport || hash === '#support';
+        if (shouldOpenSupport) {
+            const btn = document.getElementById('supportTabBtn');
+            if (btn && window.bootstrap && bootstrap.Tab) {
+                new bootstrap.Tab(btn).show();
+            }
+            // تمرير إلى البلاغ المحدد بعد فتح التبويب
+            if (hasReport) {
+                const reportId = params.get('report');
+                setTimeout(function() {
+                    const el = document.getElementById('report-' + reportId);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        el.classList.add('bg-warning-subtle');
+                        setTimeout(() => el.classList.remove('bg-warning-subtle'), 3000);
+                    }
+                }, 400);
+            }
+        }
+    })();
 </script>
 {% endblock %}

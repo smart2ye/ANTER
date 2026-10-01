@@ -511,6 +511,7 @@ def resolve_report(report_id):
                 user_id=report.reporter_id,
                 actor_id=current_user.id,
                 action='report_resolved',
+                report_id=report.id,
                 extra_text='تمت مراجعة بلاغك واتخاذ الإجراء المناسب.',
             ))
     except Exception:
@@ -542,6 +543,7 @@ def reject_report(report_id):
                 user_id=report.reporter_id,
                 actor_id=current_user.id,
                 action='report_rejected',
+                report_id=report.id,
                 extra_text=text[:500],
             ))
     except Exception:

@@ -86,6 +86,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'message_id': 'INTEGER',
             'video_id': 'INTEGER',
             'rejection_reason': 'VARCHAR(500)',
+            'resolution_note': 'TEXT',
         },
     }
 

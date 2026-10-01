@@ -7,6 +7,66 @@ from app.services.anter_assistant import ensure_anter_assistant_user
 
 WELCOME_PREFIX = "مرحباً بك في ANTER"
 REPORT_ACK_PREFIX = "تم استلام بلاغك"
+REPORT_RESOLVED_PREFIX = "شكراً لك — تم اتخاذ إجراء بشأن بلاغك"
+REPORT_REJECTED_PREFIX = "راجعنا بلاغك"
+
+
+# أسماء عربية لأنواع البلاغات (مفتاح القاموس = قيمة reason الأساسية)
+REPORT_TOPICS = {
+    'spam': 'المحتوى المزعج أو المكرر',
+    'harassment': 'التحرش أو التنمّر',
+    'hate': 'خطاب الكراهية',
+    'hate_speech': 'خطاب الكراهية',
+    'impersonation': 'انتحال الشخصية',
+    'violence': 'العنف أو التهديد',
+    'threat': 'التهديد',
+    'nudity': 'المحتوى غير اللائق',
+    'sexual': 'المحتوى الجنسي',
+    'misinformation': 'المعلومات المضللة',
+    'false_info': 'المعلومات المضللة',
+    'copyright': 'انتهاك حقوق الملكية',
+    'scam': 'الاحتيال أو النصب',
+    'self_harm': 'إيذاء النفس',
+    'terrorism': 'المحتوى الإرهابي',
+    'other': 'سبب آخر',
+    'support': 'طلب مساعدة',
+}
+
+
+def _resolve_topic(reason):
+    """يحوّل reason الخام إلى وصف عربي واضح."""
+    if not reason:
+        return 'محتوى مخالف'
+
+    raw = reason.strip().lower()
+
+    # أزل البادئات
+    for prefix in ('user-report:', 'support:', 'account-request:'):
+        if raw.startswith(prefix):
+            raw = raw[len(prefix):].strip()
+
+    # جرّب المطابقة المباشرة
+    if raw in REPORT_TOPICS:
+        return REPORT_TOPICS[raw]
+
+    # جرّب المطابقة الجزئية
+    for key, label in REPORT_TOPICS.items():
+        if key in raw:
+            return label
+
+    # إن كان نصًا عربيًا (سبب حر) — استخدمه مباشرةً
+    if any('\u0600' <= ch <= '\u06FF' for ch in reason):
+        return reason.strip()[:80]
+
+    return 'محتوى مخالف'
+
+
+def _safe_first_name(user):
+    """اسم مختصر للاستخدام في الترحيب."""
+    if not user:
+        return 'صديقنا'
+    name = (getattr(user, 'name', None) or getattr(user, 'username', None) or '').strip()
+    return name.split()[0] if name else 'صديقنا'
 
 
 def _already_sent(sender_id, receiver_id, prefix):
@@ -68,3 +128,50 @@ def send_report_receipt(reporter, report, post):
     )
     db.session.add(inbox_message)
     return message
+
+def build_report_resolution_text(reporter, report):
+    """يبني نص رسالة شكر وتأكيد عند حل البلاغ.
+
+    لا يُرسل عبر الشات — يُخزَّن في report.resolution_note
+    ويُعرض في تبويب «المساعدة والدعم» وفي الإشعار.
+    """
+    name = _safe_first_name(reporter)
+    topic = _resolve_topic(report.reason)
+
+    return (
+        f"شكراً لك — تم اتخاذ إجراء بشأن بلاغك\n\n"
+        f"مرحباً {name}،\n"
+        f"راجعنا بلاغك رقم {report.id} بخصوص «{topic}»، "
+        f"وتأكدنا من مخالفته لمعايير مجتمع ANTER، وتم اتخاذ الإجراء المناسب.\n\n"
+        f"شكراً لحرصك على جعل ANTER مساحة آمنة ومحترمة. "
+        f"مساهمتك تُحدث فرقاً حقيقياً. 💙\n\n"
+        f"— فريق ANTER"
+    )
+
+
+def build_report_rejection_text(reporter, report, admin_note=None):
+    """يبني نص رسالة توضيح عند رفض البلاغ.
+
+    لا يُرسل عبر الشات — يُخزَّن في report.resolution_note
+    ويُعرض في تبويب «المساعدة والدعم» وفي الإشعار.
+    """
+    name = _safe_first_name(reporter)
+    topic = _resolve_topic(report.reason)
+
+    body = (
+        f"راجعنا بلاغك رقم {report.id}\n\n"
+        f"مرحباً {name}،\n"
+        f"راجعنا بلاغك بخصوص «{topic}» بعناية. "
+        f"بعد التدقيق، لم نجد أن المحتوى يخالف معايير مجتمع ANTER حالياً.\n\n"
+    )
+
+    if admin_note:
+        body += f"ملاحظة الفريق: {admin_note.strip()[:400]}\n\n"
+
+    body += (
+        f"نقدّر حرصك على حماية المجتمع، ونشجّعك على الاستمرار في الإبلاغ عن أي محتوى تراه مخالفاً. "
+        f"وجودك معنا يجعل ANTER أفضل. 🌟\n\n"
+        f"— فريق ANTER"
+    )
+    return body
+

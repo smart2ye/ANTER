@@ -367,24 +367,29 @@
 
                         {# رد الإدارة الكامل #}
                         {% if r.status == 'resolved' %}
-                        <div class="alert alert-success small mt-2 mb-0 py-2">
+                        <div class="alert alert-success mt-2 mb-0 py-3" style="white-space: pre-line;">
                             <i class="fas fa-check-circle me-1"></i>
-                            <strong>رد الإدارة:</strong> تمت مراجعة بلاغك واتخاذ الإجراء المناسب.
+                            {% if r.resolution_note %}
+                                {{ r.resolution_note }}
+                            {% else %}
+                                <strong>رد الإدارة:</strong> تمت مراجعة بلاغك واتخاذ الإجراء المناسب.
+                            {% endif %}
                             {% if r.resolved_at %}
-                            <div class="text-muted mt-1">تاريخ المراجعة: {{ r.resolved_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                            <div class="text-muted small mt-2">تاريخ المراجعة: {{ r.resolved_at.strftime('%Y-%m-%d %H:%M') }}</div>
                             {% endif %}
                         </div>
                         {% elif r.status == 'rejected' %}
-                        <div class="alert alert-warning small mt-2 mb-0 py-2">
+                        <div class="alert alert-warning mt-2 mb-0 py-3" style="white-space: pre-line;">
                             <i class="fas fa-info-circle me-1"></i>
-                            <strong>رد الإدارة:</strong>
-                            {% if r.rejection_reason %}
-                                {{ r.rejection_reason }}
+                            {% if r.resolution_note %}
+                                {{ r.resolution_note }}
                             {% else %}
-                                لم يُتخذ إجراء بشأن بلاغك. قد لا يخالف المحتوى معايير المنصة.
+                                <strong>رد الإدارة:</strong>
+                                {% if r.rejection_reason %}{{ r.rejection_reason }}
+                                {% else %}لم يُتخذ إجراء بشأن بلاغك.{% endif %}
                             {% endif %}
                             {% if r.resolved_at %}
-                            <div class="text-muted mt-1">تاريخ المراجعة: {{ r.resolved_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                            <div class="text-muted small mt-2">تاريخ المراجعة: {{ r.resolved_at.strftime('%Y-%m-%d %H:%M') }}</div>
                             {% endif %}
                         </div>
                         {% else %}
@@ -436,16 +441,24 @@
                         {% endif %}
 
                         {% if r.status == 'resolved' %}
-                        <div class="alert alert-success small mt-2 mb-0 py-2">
+                        <div class="alert alert-success mt-2 mb-0 py-3" style="white-space: pre-line;">
                             <i class="fas fa-check-circle me-1"></i>
-                            <strong>رد الإدارة:</strong> تمت معالجة طلبك.
+                            {% if r.resolution_note %}
+                                {{ r.resolution_note }}
+                            {% else %}
+                                <strong>رد الإدارة:</strong> تمت معالجة طلبك.
+                            {% endif %}
                         </div>
                         {% elif r.status == 'rejected' %}
-                        <div class="alert alert-warning small mt-2 mb-0 py-2">
+                        <div class="alert alert-warning mt-2 mb-0 py-3" style="white-space: pre-line;">
                             <i class="fas fa-info-circle me-1"></i>
-                            <strong>رد الإدارة:</strong>
-                            {% if r.rejection_reason %}{{ r.rejection_reason }}
-                            {% else %}لم يتمكن الفريق من معالجة الطلب.{% endif %}
+                            {% if r.resolution_note %}
+                                {{ r.resolution_note }}
+                            {% else %}
+                                <strong>رد الإدارة:</strong>
+                                {% if r.rejection_reason %}{{ r.rejection_reason }}
+                                {% else %}لم يتمكن الفريق من معالجة الطلب.{% endif %}
+                            {% endif %}
                         </div>
                         {% else %}
                         <div class="alert alert-light small mt-2 mb-0 py-2 border">

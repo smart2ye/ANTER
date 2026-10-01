@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from app.extensions import db, csrf
 from app.models import CommentLike, Follow, Like, Post, Comment, Report, Repost, User, UserActivity, Notification
+from app.services.anter_user_messages import build_report_resolution_text, build_report_rejection_text
 from datetime import datetime, timedelta
 from sqlalchemy import func
 import os
@@ -512,10 +513,14 @@ def resolve_report(report_id):
                 actor_id=current_user.id,
                 action='report_resolved',
                 report_id=report.id,
-                extra_text='تمت مراجعة بلاغك واتخاذ الإجراء المناسب.',
+                extra_text='تمت مراجعة بلاغك واتخاذ الإجراء المناسب. اضغط للاطلاع على التفاصيل الكاملة.',
             ))
+            # نص كامل يُخزَّن في التقرير (يظهر في تبويب «المساعدة والدعم»)
+            reporter = User.query.get(report.reporter_id)
+            if reporter:
+                report.resolution_note = build_report_resolution_text(reporter, report)
     except Exception:
-        pass
+        current_app.logger.warning('تعذر إرسال رسالة حل البلاغ', exc_info=True)
 
     db.session.commit()
     return jsonify({'success': True})
@@ -546,8 +551,12 @@ def reject_report(report_id):
                 report_id=report.id,
                 extra_text=text[:500],
             ))
+            # نص كامل يُخزَّن في التقرير (يظهر في تبويب «المساعدة والدعم»)
+            reporter = User.query.get(report.reporter_id)
+            if reporter:
+                report.resolution_note = build_report_rejection_text(reporter, report, rejection_reason)
     except Exception:
-        pass
+        current_app.logger.warning('تعذر إرسال رسالة رفض البلاغ', exc_info=True)
 
     db.session.commit()
     return jsonify({'success': True})

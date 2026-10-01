@@ -21,7 +21,7 @@ class Video(db.Model):
     shares = db.Column(db.Integer, default=0)
     is_reel = db.Column(db.Boolean, default=True)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     author = db.relationship('User', backref=db.backref('videos', lazy='dynamic', cascade='all, delete-orphan'))

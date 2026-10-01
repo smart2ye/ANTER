@@ -149,6 +149,21 @@ def run_startup_schema_upgrades(app) -> bool:
 
         if 'notifications' in table_names:
             connection.execute(text('CREATE INDEX IF NOT EXISTS ix_notifications_report_id ON notifications (report_id)'))
+            connection.execute(text('CREATE INDEX IF NOT EXISTS ix_notifications_created_at ON notifications (created_at)'))
+            connection.execute(text('CREATE INDEX IF NOT EXISTS ix_notifications_is_read ON notifications (is_read)'))
+
+        if 'posts' in table_names:
+            connection.execute(text('CREATE INDEX IF NOT EXISTS ix_posts_created_at ON posts (created_at)'))
+
+        if 'videos' in table_names:
+            connection.execute(text('CREATE INDEX IF NOT EXISTS ix_videos_created_at ON videos (created_at)'))
+
+        if 'messages' in table_names:
+            connection.execute(text('CREATE INDEX IF NOT EXISTS ix_messages_created_at ON messages (created_at)'))
+            connection.execute(text('CREATE INDEX IF NOT EXISTS ix_messages_is_read ON messages (is_read)'))
+
+        if 'story' in table_names:
+            connection.execute(text('CREATE INDEX IF NOT EXISTS ix_story_created_at ON story (created_at)'))
 
     # ترحيل المعرفات العامة يُنفذ مرة عند الترقية، لا مع كل طلب إيقاظ.
     for model, prefix in ((Post, 'p'), (Video, 'r')):

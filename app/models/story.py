@@ -12,7 +12,7 @@ class Story(db.Model):
     media_mime = db.Column(db.String(100), nullable=True)
     media_type = db.Column(db.String(10), default='image')
     caption = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
 

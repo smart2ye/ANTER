@@ -18,7 +18,7 @@ class Post(db.Model):
     link_description = db.Column(db.Text, nullable=True)
     link_image = db.Column(db.String(500), nullable=True)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     # إن كان المنشور مكتوباً على حائط شخص آخر، يُخزّن هنا صاحب الحائط.

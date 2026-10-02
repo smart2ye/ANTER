@@ -37,10 +37,28 @@ def prepare_image_data(uploaded_file):
     if not mime_type:
         return None, None
 
+    # ANTER (2026-10-02): تصغير تلقائي — يمنع تخزين صور 4000px بحجم 2.5MB.
+    # الحد الأقصى: 1600×1600 (يكفي للعرض الكامل على الجوال والشاشات العادية).
+    MAX_DIM = 1600
+    if max(image.width, image.height) > MAX_DIM:
+        ratio = MAX_DIM / max(image.width, image.height)
+        new_size = (int(image.width * ratio), int(image.height * ratio))
+        image = image.resize(new_size, Image.LANCZOS)
+
     # Normalize the file while preserving transparency for PNG/GIF images.
     output = BytesIO()
-    if image_format == 'JPEG' and image.mode not in ('RGB', 'L'):
-        image = image.convert('RGB')
+
+    # تحويل إلى WebP: أصغر بـ 25-35% من JPEG/PNG، مدعوم في كل المتصفحات الحديثة.
+    # نحافظ على الشفافية (RGBA) إن وُجدت.
+    if image_format in ('JPEG', 'PNG', 'WEBP'):
+        if image.mode in ('RGBA', 'LA', 'P'):
+            image = image.convert('RGBA')
+        elif image.mode != 'RGB':
+            image = image.convert('RGB')
+        image.save(output, format='WEBP', quality=85, method=5, optimize=True)
+        return output.getvalue(), 'image/webp'
+
+    # GIF: نحتفظ بالصيغة (فقدان حركة/شفافية معقد).
     save_kwargs = {'optimize': True}
     if image_format == 'JPEG':
         save_kwargs['quality'] = 88

@@ -199,6 +199,12 @@
                             {% endif %}
 
                             <div class="message-meta">
+                                {% if msg.is_ai %}
+                                    <span class="anter-ai-badge" title="رد مولّد بواسطة مساعد أنتر (ذكاء اصطناعي)">
+                                        <i class="fas fa-robot" aria-hidden="true"></i>
+                                        <span class="anter-ai-badge__label">AI</span>
+                                    </span>
+                                {% endif %}
                                 <time class="message-time" datetime="{{ msg.created_at.isoformat() }}" data-local-time="{{ msg.created_at.isoformat() }}" data-time-style="time">{{ msg.created_at.strftime('%H:%M') }}</time>
                                 {% if msg.sender_id == current_user.id and not msg.is_deleted_everyone %}
                                     <span class="read-receipt" title="{{ 'تمت القراءة' if msg.is_read else 'تم الإرسال' }}">
@@ -253,6 +259,16 @@
             </div>
         {% endif %}
     </div>
+
+    <!-- زر الانتقال لآخر رسالة -->
+    <button type="button"
+            id="scrollToBottomBtn"
+            class="anter-scroll-bottom-btn d-none"
+            aria-label="الانتقال لآخر رسالة"
+            title="الانتقال لآخر رسالة">
+        <i class="fas fa-arrow-down" aria-hidden="true"></i>
+        <span class="anter-scroll-bottom-badge d-none" id="scrollBottomBadge"></span>
+    </button>
 
     {% if not can_message %}
         <aside class="alert alert-info d-flex align-items-center justify-content-between gap-2 mt-3 mb-2" role="status">
@@ -425,6 +441,103 @@
     .call-log-retry { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; margin-right: 4px; border-radius: 999px; font-size: .74rem; white-space: nowrap; }
     .message-row.is-sent { justify-content: flex-start; }
     .message-row.is-received { justify-content: flex-end; }
+    /* ============================================================
+       شارة AI على رسائل مساعد أنتر المولّدة آليًا
+       ============================================================ */
+    .anter-ai-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 1px 6px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(0, 200, 248, 0.16), rgba(22, 11, 142, 0.14));
+        color: #0e7490;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        border: 1px solid rgba(0, 200, 248, 0.35);
+        user-select: none;
+        line-height: 1.4;
+    }
+    .anter-ai-badge i {
+        font-size: 0.68rem;
+    }
+    .anter-ai-badge__label {
+        font-size: 0.6rem;
+    }
+    /* على الفقاعات المُرسَلة (الزرقاء) — تبقى الشارة مقروءة */
+    .is-sent .anter-ai-badge {
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.35);
+    }
+    [data-theme="dark"] .anter-ai-badge {
+        background: rgba(0, 200, 248, 0.18);
+        color: #78F7FD;
+        border-color: rgba(120, 247, 253, 0.4);
+    }
+
+    /* ============================================================
+       زر الانتقال لآخر رسالة
+       ============================================================ */
+    .chat-page { position: relative; }
+    .anter-scroll-bottom-btn {
+        position: absolute;
+        bottom: 96px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 58, 171, 0.15);
+        background: var(--card-bg, #fff);
+        color: var(--anter-primary, #003AAB);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 20;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+        animation: anterScrollBtnIn 0.22s ease;
+    }
+    .anter-scroll-bottom-btn:hover {
+        transform: translateX(-50%) translateY(-2px);
+        box-shadow: 0 9px 22px rgba(0, 0, 0, 0.18);
+    }
+    .anter-scroll-bottom-btn:active {
+        transform: translateX(-50%) scale(0.94);
+    }
+    .anter-scroll-bottom-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: #e11d48;
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 0 2px var(--card-bg, #fff);
+    }
+    @keyframes anterScrollBtnIn {
+        from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    [data-theme="dark"] .anter-scroll-bottom-btn {
+        background: #1f2937;
+        color: #78F7FD;
+        border-color: rgba(120, 247, 253, 0.25);
+    }
+    [data-theme="dark"] .anter-scroll-bottom-badge {
+        box-shadow: 0 0 0 2px #1f2937;
+    }
+
     /* ============================================================
        فاصل التاريخ بين الرسائل
        ============================================================ */
@@ -1452,6 +1565,54 @@ document.addEventListener('DOMContentLoaded', () => {
     
     formatAssistantMessages();
     if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+
+    // ============================================================
+    // زر الانتقال لآخر رسالة
+    // ============================================================
+    (function initScrollToBottom() {
+        const btn = document.getElementById('scrollToBottomBtn');
+        if (!btn || !chatBox) return;
+
+        const BOTTOM_THRESHOLD = 140; // بكسل — نعتبر المستخدم "في الأسفل" خلال هذه المسافة
+
+        function isNearBottom() {
+            return (chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight) < BOTTOM_THRESHOLD;
+        }
+
+        function updateBtnVisibility() {
+            if (isNearBottom()) {
+                btn.classList.add('d-none');
+            } else {
+                btn.classList.remove('d-none');
+            }
+        }
+
+        function smoothScrollToBottom() {
+            try {
+                chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+            } catch (_) {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        btn.addEventListener('click', smoothScrollToBottom);
+
+        // راقب التمرير لإظهار/إخفاء الزر
+        chatBox.addEventListener('scroll', updateBtnVisibility, { passive: true });
+
+        // إن ظهرت رسالة جديدة والمستخدم في الأسفل، بقِ في الأسفل تلقائيًا
+        const originalScroll = chatBox.scrollTop;
+        const observer = new MutationObserver(() => {
+            if (isNearBottom()) {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+            updateBtnVisibility();
+        });
+        observer.observe(chatBox, { childList: true, subtree: true });
+
+        // الحالة الأولية
+        updateBtnVisibility();
+    })();
     if (voiceCallButton) voiceCallButton.addEventListener('click', startVoiceCall);
     if (videoCallButton) videoCallButton.addEventListener('click', startVideoCall);
     if (enableCallNotificationsButton) {

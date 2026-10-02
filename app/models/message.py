@@ -6,6 +6,8 @@ class Message(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False, default='')
+    # ANTER: True إن كانت الرسالة مولّدة آليًا من مساعد أنتر (AI) — لا تشمل ردود الموظفين بحساب المساعد.
+    is_ai = db.Column(db.Boolean, nullable=False, default=False, server_default='0', index=True)
     # الاحتفاظ بـ audio_path للتوافق مع الرسائل القديمة، وتخزين الصوت الجديد
     # في قاعدة البيانات لتفادي فقدان/فشل ملفات الرفع في بيئات الإنتاج المؤقتة.
     audio_path = db.Column(db.String(255), nullable=True)

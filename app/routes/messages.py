@@ -583,6 +583,7 @@ def send(user_id):
                             receiver_id=current_user.id,
                             content=assistant_reply,
                             parent_id=message.id,
+                            is_ai=True,
                         ))
                         db.session.commit()
                         remember_assistant_reply(current_user, other, assistant_reply)

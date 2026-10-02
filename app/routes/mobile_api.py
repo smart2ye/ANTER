@@ -177,6 +177,7 @@ def _create_assistant_reply(user, assistant, user_message):
             receiver_id=user.id,
             content=assistant_reply,
             parent_id=user_message.id,
+            is_ai=True,
         )
         db.session.add(reply)
         db.session.commit()

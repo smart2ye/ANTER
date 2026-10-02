@@ -93,6 +93,7 @@ def send_welcome_message(user):
             "يمكنك مشاركة أفكارك، متابعة من يهمك، واستخدام الرسائل بأمان واحترام. "
             "إذا احتجت مساعدة في استخدام المنصة أو صياغة محتوى، اكتب لي في أي وقت."
         ),
+        is_ai=True,
     )
     db.session.add(message)
     return message
@@ -114,10 +115,12 @@ def send_report_receipt(reporter, report, post):
         sender_id=assistant.id,
         receiver_id=reporter.id,
         content=report_summary,
+        is_ai=True,
     )
     db.session.add(message)
 
     # تنبيه تشغيلي داخل صندوق وارد مساعد أنتر للمراجعة البشرية، من دون كشف تفاصيل أكثر من اللازم.
+    # ملاحظة: هذه رسالة من المستخدم للمساعد، لذا لا تُعلَّم كـ is_ai.
     inbox_message = Message(
         sender_id=reporter.id,
         receiver_id=assistant.id,

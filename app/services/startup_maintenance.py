@@ -31,6 +31,7 @@ def run_startup_schema_upgrades(app) -> bool:
     binary_type = 'BYTEA' if db.engine.dialect.name == 'postgresql' else 'BLOB'
     required_columns_by_table = {
         'messages': {
+            'is_ai': "BOOLEAN NOT NULL DEFAULT FALSE",
             'audio_path': 'VARCHAR(255)',
             'audio_data': binary_type,
             'audio_mime': 'VARCHAR(100)',
@@ -161,6 +162,7 @@ def run_startup_schema_upgrades(app) -> bool:
         if 'messages' in table_names:
             connection.execute(text('CREATE INDEX IF NOT EXISTS ix_messages_created_at ON messages (created_at)'))
             connection.execute(text('CREATE INDEX IF NOT EXISTS ix_messages_is_read ON messages (is_read)'))
+            connection.execute(text('CREATE INDEX IF NOT EXISTS ix_messages_is_ai ON messages (is_ai)'))
 
         if 'story' in table_names:
             connection.execute(text('CREATE INDEX IF NOT EXISTS ix_story_created_at ON story (created_at)'))

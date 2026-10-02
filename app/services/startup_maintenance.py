@@ -32,6 +32,7 @@ def run_startup_schema_upgrades(app) -> bool:
     required_columns_by_table = {
         'messages': {
             'is_ai': "BOOLEAN NOT NULL DEFAULT FALSE",
+            'read_at': 'TIMESTAMP',
             'audio_path': 'VARCHAR(255)',
             'audio_data': binary_type,
             'audio_mime': 'VARCHAR(100)',

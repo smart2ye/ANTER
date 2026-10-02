@@ -19,6 +19,7 @@ class Message(db.Model):
     attachment_kind = db.Column(db.String(20), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     is_read = db.Column(db.Boolean, default=False, index=True)
+    read_at = db.Column(db.DateTime, nullable=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     

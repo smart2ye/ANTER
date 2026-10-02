@@ -168,19 +168,33 @@ def chat(user_id):
     ]
     timeline.sort(key=lambda entry: entry['created_at'])
 
+    from datetime import datetime as _dt
     unread_changed = False
     for message in messages:
         if message.receiver_id == current_user.id and not message.is_read:
             message.is_read = True
+            message.read_at = _dt.utcnow()
             unread_changed = True
     if unread_changed:
         db.session.commit()
+
+    # آخر رسالة أرسلتها أنا وتمت قراءتها (لعرض «شوهدت»)
+    last_read_msg = (
+        Message.query
+        .filter_by(sender_id=current_user.id, receiver_id=other.id, is_read=True)
+        .order_by(Message.id.desc())
+        .first()
+    )
+    last_read_id = last_read_msg.id if last_read_msg else None
+    last_read_at = last_read_msg.read_at if last_read_msg else None
 
     return render_template(
         'messages/chat.html',
         other=other,
         messages=messages,
         timeline=timeline,
+        last_read_id=last_read_id,
+        last_read_at=last_read_at,
         get_status_icon=get_status_icon,
         rtc_config=get_rtc_config(),
         is_anter_assistant=is_anter_assistant(other),

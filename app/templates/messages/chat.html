@@ -60,9 +60,20 @@
 
     <div class="chat-box" id="chatBox" aria-live="polite">
         {% if timeline %}
+            {% set ns = namespace(last_date=None) %}
             {% for entry in timeline %}
                 {% if entry.kind == 'message' %}
                     {% set msg = entry.item %}
+                    {% set msg_date = msg.created_at.date() if msg.created_at else None %}
+                    {% if msg_date and msg_date != ns.last_date %}
+                        {% set ns.last_date = msg_date %}
+                        <div class="anter-date-separator" role="separator" aria-label="فاصل تاريخ">
+                            <span class="anter-date-separator__label">{{ msg.created_at | date_label }}</span>
+                            {% if msg.created_at | date_label in ['اليوم', 'أمس'] %}
+                                <small class="anter-date-separator__full">{{ msg.created_at.strftime('%d/%m/%Y') }}</small>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                     <article class="message-row {% if msg.sender_id == current_user.id %}is-sent{% else %}is-received{% endif %}" id="msg-{{ msg.id }}" data-id="{{ msg.id }}">
                     <div class="message-bubble-container">
                         <div class="message-bubble shadow-sm" onclick="showMsgActions({{ msg.id }}, event)">
@@ -414,6 +425,36 @@
     .call-log-retry { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; margin-right: 4px; border-radius: 999px; font-size: .74rem; white-space: nowrap; }
     .message-row.is-sent { justify-content: flex-start; }
     .message-row.is-received { justify-content: flex-end; }
+    /* ============================================================
+       فاصل التاريخ بين الرسائل
+       ============================================================ */
+    .anter-date-separator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        margin: 14px 0 10px;
+        text-align: center;
+        user-select: none;
+    }
+    .anter-date-separator__label {
+        background: rgba(0, 58, 171, 0.08);
+        color: var(--anter-primary, #003AAB);
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 999px;
+        letter-spacing: 0.2px;
+    }
+    .anter-date-separator__full {
+        color: var(--text-muted, #65676b);
+        font-size: 0.68rem;
+    }
+    [data-theme="dark"] .anter-date-separator__label {
+        background: rgba(21, 138, 236, 0.15);
+        color: #78F7FD;
+    }
+
     .message-bubble { min-width: 74px; max-width: min(85%, 580px); padding: 11px 14px; border-radius: 19px; position: relative; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; box-shadow: 0 3px 10px rgba(0,0,0,.055); overflow-wrap: break-word; word-break: normal; }
     .message-bubble:active { transform: scale(0.98); }
     .message-bubble:hover { box-shadow: 0 6px 15px rgba(24, 74, 127, .12); }

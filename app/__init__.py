@@ -227,6 +227,45 @@ def create_app(test_config=None):
     from app.utils.helpers import parse_mentions
     app.add_template_filter(linkify_hashtags, name='linkify_hashtags')
     app.add_template_filter(parse_mentions, name='parse_mentions')
+
+    # فلتر: يحوّل تاريخًا إلى تسمية عربية (اليوم، أمس، أو التاريخ الكامل)
+    from datetime import date as _date, datetime as _dt
+
+    def _anter_date_label(value):
+        if value is None:
+            return ''
+        if isinstance(value, _dt):
+            value = value.date()
+        if not isinstance(value, _date):
+            return str(value)
+        today = _date.today()
+        delta = (today - value).days
+        if delta == 0:
+            return 'اليوم'
+        if delta == 1:
+            return 'أمس'
+        if delta == 2:
+            return 'قبل يومين'
+        if 3 <= delta <= 6:
+            return f'قبل {delta} أيام'
+        if 7 <= delta <= 13:
+            return 'قبل أسبوع'
+        if delta < 30:
+            weeks = delta // 7
+            return f'قبل {weeks} أسابيع'
+        if delta < 365:
+            months = delta // 30
+            if months == 1:
+                return 'قبل شهر'
+            if months == 2:
+                return 'قبل شهرين'
+            return f'قبل {months} أشهر'
+        years = delta // 365
+        if years == 1:
+            return 'قبل سنة'
+        return f'قبل {years} سنوات'
+
+    app.add_template_filter(_anter_date_label, name='date_label')
     app.add_template_global(verified_badge, name='verified_badge')
 
     # ============================================

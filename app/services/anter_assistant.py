@@ -169,8 +169,56 @@ def _direct_anter_reply(
 
     founder = current_app.config.get("ANTER_FOUNDER_NAME", "عبدالقادر مهدلي")
     founder_normalized = founder.casefold()
-    if founder_normalized and founder_normalized in normalized:
-        return f"أهلاً بك يا {founder}. يسعدني التواصل معك بوصفك مؤسس شبكة ANTER. كيف يمكنني مساعدتك اليوم؟"
+    # الاسم الأول للمؤسس (مثال: "عبدالقادر" من "عبدالقادر مهدلي")
+    founder_first = founder_normalized.split()[0] if founder_normalized.split() else founder_normalized
+
+    # هل السؤال يذكر المؤسس (بالاسم الكامل أو الأول)؟
+    mentions_founder = (
+        (founder_normalized and founder_normalized in normalized)
+        or (founder_first and len(founder_first) >= 4 and founder_first in normalized)
+    )
+
+    if mentions_founder:
+        # === أسئلة الهوية المباشرة: «هل أنت فلان؟» ===
+        identity_question_markers = (
+            "هل انت", "هل أنت", "انت هو", "أنت هو",
+            "هل انت هو", "هل أنت هو",
+            "انت تكون", "أنت تكون",
+            "هل انت فلان", "هل أنت فلان",
+        )
+        # أيضاً: "انت <الاسم>" حيث الاسم هو المؤسس مباشرة
+        direct_identity = (
+            f"انت {founder_first}" in normalized
+            or f"أنت {founder_first}" in normalized
+            or f"انت {founder_normalized}" in normalized
+            or f"أنت {founder_normalized}" in normalized
+        )
+
+        if any(m in normalized for m in identity_question_markers) or direct_identity:
+            return (
+                f"لا، أنا مساعد أنتر — نموذج ذكاء اصطناعي عربي مبني داخل منصة ANTER. "
+                f"لست {founder}، بل أساعده في خدمة المجتمع. "
+                f"{founder} هو مؤسس الشبكة وصاحب الرؤية. "
+                f"كيف يمكنني مساعدتك اليوم؟"
+            )
+
+        # === أسئلة الغائب: «من هو فلان؟» ===
+        third_person_markers = (
+            "من هو", "من هي", "عرفني", "عرّفني", "حدثني عن", "أخبرني عن",
+            "من مؤسس", "من هو مؤسس", "من صاحب", "من هو صاحب",
+            "معلومات عن", "من يكون",
+        )
+        if any(m in normalized for m in third_person_markers):
+            return f"{founder} هو مؤسس شبكة ANTER وصاحب رؤيتها."
+
+        # === استثناء: إن كان المستخدم نفسه المؤسس ===
+        user_is_founder = (
+            user is not None
+            and (user.name or '').strip() == founder.strip()
+        )
+        if user_is_founder:
+            return f"أهلاً بك يا {founder}. يسعدني التواصل معك بوصفك مؤسس شبكة ANTER. كيف يمكنني مساعدتك اليوم؟"
+        return f"{founder} هو مؤسس شبكة ANTER."
 
     greeting_markers = ("السلام عليكم", "مرحبا", "مرحباً", "اهلا", "أهلاً", "هلا")
     wellbeing_markers = ("كيف حالك", "كيفك", "كيف الحال")

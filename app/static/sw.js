@@ -1,12 +1,12 @@
 /* ============================================================
-   ANTER Service Worker — v3
+   ANTER Service Worker — v4
    - Cache-First للأصول الثابتة (CSS/JS/أيقونات/خطوط).
    - Network-First لصفحات HTML (يضمن رؤية آخر المنشورات).
    - يتجاهل تمامًا: /api/, /messages/, /notifications/, /sse/, /calls/, /media/.
    - يدعم الإشعارات الخارجية (Web Push).
    ============================================================ */
 
-const CACHE_VERSION = 'anter-v3';
+const CACHE_VERSION = 'anter-v4';
 const OFFLINE_URL = '/static/offline.html';
 
 // مسارات لن تُخزَّن أبدًا (بيانات حيّة أو حساسة).

@@ -72,6 +72,18 @@ def main():
         print("استخدم --dry-run أو --apply")
         sys.exit(1)
 
+    # تنظيف الرابط: إزالة التعليقات والمسافات الزائدة
+    db_url = (os.environ.get("DATABASE_URL", "") or "").strip()
+    # إزالة أي تعليق بعد #
+    if "#" in db_url:
+        db_url = db_url.split("#", 1)[0].rstrip()
+    # إصلاح البادئة القديمة
+    if db_url.startswith("postgres://"):
+        db_url = "postgresql://" + db_url[len("postgres://"):]
+        print("صحّحنا الرابط: postgres:// → postgresql://")
+    os.environ["DATABASE_URL"] = db_url
+    print(f"طول الرابط بعد التنظيف: {len(db_url)}")
+
     from app import create_app
     from app.extensions import db
     from app.models import Post

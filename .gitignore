@@ -94,3 +94,5 @@ requirements.txt.pre_upgrade
 *.pre_upgrade
 *.pre_logo
 *.pre_optim
+.env.pre_migration
+.env.pre_*

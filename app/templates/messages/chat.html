@@ -5,10 +5,17 @@
         <a href="{{ url_for('messages.inbox') }}" class="btn btn-light chat-back" aria-label="العودة إلى الرسائل">
             <i class="fas fa-arrow-right"></i>
         </a>
-        <img src="{{ avatar_url(other) }}" width="44" height="44" class="rounded-circle" style="object-fit: cover;" alt="{{ other.name }}">
+        <a href="{{ url_for('users.profile', username=other.username) }}"
+           class="chat-header-avatar-link"
+           aria-label="فتح ملف {{ other.name }}">
+            <img src="{{ avatar_url(other) }}" width="44" height="44" class="rounded-circle" style="object-fit: cover;" alt="{{ other.name }}">
+        </a>
         <div class="flex-grow-1">
-            <h1 class="h6 mb-0 fw-bold">{{ other.name }} {{ verified_badge(other) }}</h1>
-            <span class="text-muted small">@{{ other.username }}</span>
+            <a href="{{ url_for('users.profile', username=other.username) }}"
+               class="chat-header-name-link text-decoration-none text-reset">
+                <h1 class="h6 mb-0 fw-bold">{{ other.name }} {{ verified_badge(other) }}</h1>
+                <span class="text-muted small">@{{ other.username }}</span>
+            </a>
             {% if is_anter_assistant %}
                 <span class="badge text-bg-primary ms-1"><i class="fas fa-robot me-1"></i>مساعد آلي</span>
             {% endif %}
@@ -214,6 +221,17 @@
                             </div>
                         </div>
                     </div>
+                    {% if msg.sender_id != current_user.id %}
+                        <a href="{{ url_for('users.profile', username=other.username) }}"
+                           class="message-row-avatar-link"
+                           aria-label="فتح ملف {{ other.name }}">
+                            <img src="{{ avatar_url(other) }}"
+                                 class="message-row-avatar"
+                                 width="28" height="28"
+                                 loading="lazy"
+                                 alt="{{ other.name }}">
+                        </a>
+                    {% endif %}
                     </article>
                 {% else %}
                     {% set call = entry.item %}
@@ -425,6 +443,12 @@
     .chat-page, .chat-page * { box-sizing: border-box; }
     .chat-page { width: 100%; min-width: 0; max-width: 860px; margin: 0 auto; position: relative; overflow-x: clip; }
     .chat-header { min-width: 0; flex-wrap: wrap; background: var(--card-bg, #fff); border: 1px solid rgba(0,0,0,.07); border-radius: 16px; padding: 12px 14px; box-shadow: 0 4px 18px rgba(0,0,0,.04); }
+    .chat-header-avatar-link { display: inline-block; border-radius: 50%; transition: transform 0.18s ease, box-shadow 0.18s ease; }
+    .chat-header-avatar-link:hover { transform: scale(1.05); box-shadow: 0 0 0 3px rgba(0, 58, 171, 0.15); }
+    .chat-header-avatar-link:active { transform: scale(0.97); }
+    .chat-header-name-link { display: block; transition: opacity 0.15s ease; }
+    .chat-header-name-link:hover { opacity: 0.8; }
+    .chat-header-name-link:hover .h6 { color: var(--anter-primary, #003AAB); }
     .chat-header .flex-grow-1 { min-width: 0; }
     .chat-header h1, .chat-header .text-muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .chat-box { width: 100%; min-width: 0; height: min(65vh, 620px); overflow-x: hidden; overflow-y: auto; padding: clamp(12px, 2.6vw, 20px); border-radius: 20px; background: linear-gradient(160deg, #fbfcff, #f4f8fc); border: 1px solid rgba(0,0,0,.06); scroll-behavior: smooth; }
@@ -440,7 +464,37 @@
     .call-log-kind { color: inherit; opacity: .82; font-size: .7rem; font-weight: 700; }
     .call-log-retry { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; margin-right: 4px; border-radius: 999px; font-size: .74rem; white-space: nowrap; }
     .message-row.is-sent { justify-content: flex-start; }
-    .message-row.is-received { justify-content: flex-end; }
+    .message-row.is-received { justify-content: flex-end; align-items: flex-end; gap: 8px; }
+
+    /* أيقونة بروفايل بجانب رسائل الطرف الآخر */
+    .message-row-avatar-link {
+        display: inline-block;
+        flex-shrink: 0;
+        align-self: flex-end;
+        margin-bottom: 4px;
+        border-radius: 50%;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .message-row-avatar-link:hover {
+        transform: scale(1.06);
+        box-shadow: 0 0 0 2px rgba(0, 58, 171, 0.2);
+    }
+    .message-row-avatar-link:active {
+        transform: scale(0.96);
+    }
+    .message-row-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        display: block;
+        background: #e4e6eb;
+    }
+    /* داخل مساعد أنتر: صورة الروبوت */
+    .chat-page[data-user-id] .message-row.is-received.is-ai .message-row-avatar {
+        padding: 4px;
+        background: linear-gradient(135deg, rgba(0, 200, 248, 0.2), rgba(22, 11, 142, 0.15));
+    }
     /* ============================================================
        شارة AI على رسائل مساعد أنتر المولّدة آليًا
        ============================================================ */

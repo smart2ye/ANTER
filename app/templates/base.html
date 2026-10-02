@@ -7,7 +7,7 @@
     <meta name="google-site-verification" content="_m65Cb8auG7qSkNQU5STK5SZ3UR_jceGSPj4vOJos5k" />
     <meta name="google-site-verification" content="29Rx8TALGsI_JWXnexPy7HzJYwzMe_Pf2zwidMy74aQ" />
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <!-- SEO Meta Tags -->
@@ -21,17 +21,18 @@
     <meta property="og:url" content="https://anter-1.onrender.com/">
     <meta property="og:title" content="ANTER - الجيل الجديد من الشبكات الاجتماعية العربية">
     <meta property="og:description" content="تواصل، شارك، واكتشف قوة الذكاء الاصطناعي في منصة عربية جديدة.">
-    <meta property="og:image" content="{{ url_for('static', filename='img/logo.png', _external=True) }}">
+    <meta property="og:image" content="{{ url_for('static', filename='img/logo-og.png', _external=True) }}">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://anter-1.onrender.com/">
     <meta property="twitter:title" content="ANTER - أنتر">
     <meta property="twitter:description" content="شبكة تواصل اجتماعي عربية تدمج بين البشر والذكاء الاصطناعي.">
-    <meta property="twitter:image" content="{{ url_for('static', filename='img/logo.png', _external=True) }}">
+    <meta property="twitter:image" content="{{ url_for('static', filename='img/logo-og.png', _external=True) }}">
 
     <title>ANTER - أنتر</title>
     
+    <link rel="preload" href="{{ url_for('static', filename='vendor/cairo/cairo-arabic.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link href="{{ url_for('static', filename='vendor/cairo/cairo.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.rtl.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/anter-icons.min.css') }}">
@@ -54,7 +55,7 @@
     <nav class="navbar navbar-expand-lg sticky-top fb-navbar">
         <div class="container-fluid px-3">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="ANTER Logo" style="height: 32px; width: auto; margin-left: 8px; border-radius: 6px;">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="ANTER Logo" width="32" height="32" style="height: 32px; width: 32px; margin-left: 8px; border-radius: 6px;">
                 أنتر
             </a>
             <div class="d-flex align-items-center">

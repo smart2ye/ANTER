@@ -93,3 +93,4 @@ _old_files_*/
 requirements.txt.pre_upgrade
 *.pre_upgrade
 *.pre_logo
+*.pre_optim

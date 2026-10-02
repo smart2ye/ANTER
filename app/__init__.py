@@ -367,12 +367,14 @@ def create_app(test_config=None):
             "img-src 'self' data: https:; "
             "media-src 'self' https: blob:; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; "
-            "style-src 'self' 'unsafe-inline' https:; "
-            "font-src 'self' data: https:; "
+            "style-src 'self' 'unsafe-inline'; "
+            "font-src 'self' data:; "
             "connect-src 'self' https: wss:; "
             "frame-ancestors 'self'; "
             "base-uri 'self'; "
-            "form-action 'self'"
+            "form-action 'self'; "
+            "object-src 'none'; "
+            "upgrade-insecure-requests"
         )
         return response
 
@@ -383,7 +385,11 @@ def create_app(test_config=None):
         if not _req.path.startswith('/static/'):
             return response
 
-        response.headers['Cache-Control'] = 'public, max-age=3600'
+        # ملفات مكتبات (Bootstrap, FontAwesome, Cairo) لا تتغير → cache طويل
+        if _req.path.startswith('/static/vendor/'):
+            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        else:
+            response.headers['Cache-Control'] = 'public, max-age=3600'
         response.direct_passthrough = False
 
         if response.status_code != 200:

@@ -26,6 +26,7 @@ jobs:
       - name: Run migration
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SECRET_KEY: 'migration-only-dummy-secret-key-not-used'
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "ERROR: DATABASE_URL secret is missing"

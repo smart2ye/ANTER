@@ -239,7 +239,10 @@
             {% set total = reactions.like + reactions.love + reactions.haha + reactions.angry + reactions.sad %}
             {% set recent_users = get_recent_reaction_users(post.id) %}
             {% if total > 0 %}
-                <a href="/post/{{ post.id }}/reactions" class="text-decoration-none">
+                <a href="#"
+                   data-anter-reactions="{{ post.id }}"
+                   class="text-decoration-none anter-reactions-trigger"
+                   aria-label="عرض المتفاعلين">
                     <span class="reaction-summary-text" id="reaction-summary-text-{{ post.id }}">
                         {% if recent_users %}
                             {% for user in recent_users %}

@@ -727,5 +727,226 @@
     });
 })();
 </script>
+
+<!-- ============================================================
+     ANTER: نافذة المتفاعلين مع المنشور
+     ============================================================ -->
+<div class="modal fade" id="anterReactionsModal" tabindex="-1" aria-labelledby="anterReactionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 rounded-4 shadow-lg" style="background: var(--anter-card, #fff);">
+            <div class="modal-header border-0 pb-2">
+                <h6 class="modal-title fw-bold" id="anterReactionsModalLabel">
+                    <i class="fas fa-heart text-danger me-1"></i> التفاعلات
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+
+            <!-- فلاتر أنواع التفاعل -->
+            <div class="anter-reactions-filters px-3 pb-2 d-flex flex-wrap gap-1" id="anterReactionsFilters">
+                <button type="button" class="anter-rf-btn is-active" data-rf="">الكل <span class="anter-rf-count" data-rf-count="all"></span></button>
+                <button type="button" class="anter-rf-btn" data-rf="like">👍 <span class="anter-rf-count" data-rf-count="like"></span></button>
+                <button type="button" class="anter-rf-btn" data-rf="love">🥰 <span class="anter-rf-count" data-rf-count="love"></span></button>
+                <button type="button" class="anter-rf-btn" data-rf="haha">🤣 <span class="anter-rf-count" data-rf-count="haha"></span></button>
+                <button type="button" class="anter-rf-btn" data-rf="angry">😡 <span class="anter-rf-count" data-rf-count="angry"></span></button>
+                <button type="button" class="anter-rf-btn" data-rf="sad">😢 <span class="anter-rf-count" data-rf-count="sad"></span></button>
+            </div>
+
+            <div class="modal-body pt-0" id="anterReactionsBody">
+                <div class="text-center text-muted py-4" id="anterReactionsLoading">
+                    <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+                    جارٍ التحميل...
+                </div>
+                <div class="anter-reactions-list" id="anterReactionsList" hidden></div>
+                <div class="text-center text-muted py-4 d-none" id="anterReactionsEmpty">
+                    <i class="far fa-heart fa-2x mb-2 d-block"></i>
+                    لا يوجد متفاعلون بعد.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .anter-rf-btn {
+        border: 1px solid rgba(0,0,0,.08);
+        background: var(--anter-bg, #f0f2f5);
+        color: var(--anter-text, #050505);
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .anter-rf-btn:hover { background: rgba(0, 58, 171, 0.08); border-color: rgba(0, 58, 171, 0.2); }
+    .anter-rf-btn.is-active {
+        background: var(--anter-primary, #003AAB);
+        color: #fff;
+        border-color: var(--anter-primary, #003AAB);
+    }
+    .anter-rf-count {
+        font-size: 0.72rem;
+        opacity: 0.75;
+    }
+    .anter-rf-btn.is-active .anter-rf-count { opacity: 0.95; }
+
+    .anter-reactions-list {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    .anter-reaction-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 4px;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.15s ease;
+        border-radius: 8px;
+    }
+    .anter-reaction-item:hover { background: rgba(0, 58, 171, 0.04); }
+    .anter-reaction-item:last-child { border-bottom: none; }
+    .anter-reaction-item img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    .anter-reaction-item .anter-ri-name {
+        flex-grow: 1;
+        min-width: 0;
+        font-weight: 600;
+        font-size: 0.9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .anter-reaction-item .anter-ri-emoji {
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+    [data-theme="dark"] .anter-rf-btn {
+        background: #1f2937;
+        border-color: rgba(255,255,255,.1);
+        color: #e5e7eb;
+    }
+    [data-theme="dark"] .anter-reaction-item:hover { background: rgba(21, 138, 236, 0.08); }
+    [data-theme="dark"] .anter-reaction-item { border-bottom-color: rgba(255,255,255,.06); }
+</style>
+
+<script>
+(function _anterReactionsModal() {
+    'use strict';
+    const modalEl = document.getElementById('anterReactionsModal');
+    if (!modalEl) return;
+
+    const listEl = document.getElementById('anterReactionsList');
+    const loadingEl = document.getElementById('anterReactionsLoading');
+    const emptyEl = document.getElementById('anterReactionsEmpty');
+    const filtersEl = document.getElementById('anterReactionsFilters');
+
+    const EMOJI = { like: '👍', love: '🥰', haha: '🤣', angry: '😡', sad: '😢' };
+    const LABELS = { like: 'إعجاب', love: 'حب', haha: 'ضحك', angry: 'غضب', sad: 'حزن' };
+
+    let currentPostId = null;
+    let currentFilter = '';
+
+    function showLoading() {
+        loadingEl.classList.remove('d-none');
+        listEl.hidden = true;
+        emptyEl.classList.add('d-none');
+    }
+
+    function renderUsers(users) {
+        loadingEl.classList.add('d-none');
+        if (!users || users.length === 0) {
+            listEl.hidden = true;
+            emptyEl.classList.remove('d-none');
+            return;
+        }
+        emptyEl.classList.add('d-none');
+        listEl.hidden = false;
+        listEl.innerHTML = users.map(u => {
+            const emoji = EMOJI[u.reaction] || '👍';
+            const verified = u.is_verified ? ' <i class="fas fa-check-circle text-primary" style="font-size:.75rem;"></i>' : '';
+            const me = u.is_me ? ' <span class="badge bg-light text-dark" style="font-size:.65rem;">أنت</span>' : '';
+            return `
+                <a href="/users/${encodeURIComponent(u.username)}" class="anter-reaction-item">
+                    <img src="${u.avatar}" alt="${u.name}" loading="lazy">
+                    <div class="anter-ri-name">${u.name}${verified}${me}<div class="text-muted small" style="font-weight:400;">@${u.username}</div></div>
+                    <span class="anter-ri-emoji" title="${LABELS[u.reaction] || ''}">${emoji}</span>
+                </a>
+            `;
+        }).join('');
+    }
+
+    function renderStats(stats, total) {
+        const allBtn = filtersEl.querySelector('[data-rf-count="all"]');
+        if (allBtn) allBtn.textContent = total || 0;
+        for (const key of ['like','love','haha','angry','sad']) {
+            const el = filtersEl.querySelector(`[data-rf-count="${key}"]`);
+            if (el) {
+                const n = (stats && stats[key]) || 0;
+                el.textContent = n > 0 ? n : '';
+            }
+        }
+    }
+
+    async function load(postId, filter) {
+        currentPostId = postId;
+        currentFilter = filter || '';
+        showLoading();
+        try {
+            const url = `/post/${postId}/reactions.json` + (currentFilter ? `?type=${currentFilter}` : '');
+            const resp = await fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } });
+            const data = await resp.json();
+            if (!data.success) throw new Error('فشل التحميل');
+            renderStats(data.stats, data.stats ? Object.values(data.stats).reduce((a,b)=>a+b,0) : 0);
+            renderUsers(data.users);
+        } catch (err) {
+            loadingEl.classList.add('d-none');
+            listEl.hidden = true;
+            emptyEl.classList.remove('d-none');
+            emptyEl.querySelector('i').className = 'fas fa-exclamation-triangle fa-2x mb-2 d-block text-warning';
+            emptyEl.textContent = 'تعذر تحميل المتفاعلين.';
+        }
+    }
+
+    // تفويض الحدث: أي زر يحمل data-anter-reactions
+    document.addEventListener('click', function(e) {
+        const trigger = e.target.closest('[data-anter-reactions]');
+        if (!trigger) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const postId = trigger.getAttribute('data-anter-reactions');
+        if (!postId) return;
+
+        // إعادة الفلاتر لحالتها الافتراضية
+        filtersEl.querySelectorAll('.anter-rf-btn').forEach(b => b.classList.toggle('is-active', b.dataset.rf === ''));
+
+        if (window.bootstrap && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else {
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+        }
+        load(postId, '');
+    }, true);
+
+    // فلاتر
+    filtersEl.addEventListener('click', function(e) {
+        const btn = e.target.closest('.anter-rf-btn');
+        if (!btn || !currentPostId) return;
+        filtersEl.querySelectorAll('.anter-rf-btn').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        load(currentPostId, btn.dataset.rf || '');
+    });
+})();
+</script>
 </body>
 </html>

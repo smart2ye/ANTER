@@ -31,8 +31,8 @@
   "@type": "SocialMediaPosting",
   "headline": {{ _excerpt|tojson }},
   "url": {{ _url|tojson }},
-  "datePublished": {% if post.created_at %}{{ post.created_at.isoformat()|tojson }}{% else %}null{% endif %},
-  "dateModified": {% if post.updated_at %}{{ post.updated_at.isoformat()|tojson }}{% elif post.created_at %}{{ post.created_at.isoformat()|tojson }}{% else %}null{% endif %},
+  "datePublished": {% if post.created_at %}{{ (post.created_at.isoformat() + 'Z')|tojson }}{% else %}null{% endif %},
+  "dateModified": {% if post.updated_at %}{{ (post.updated_at.isoformat() + 'Z')|tojson }}{% elif post.created_at %}{{ (post.created_at.isoformat() + 'Z')|tojson }}{% else %}null{% endif %},
   "author": {
     "@type": "Person",
     "name": {{ _author|tojson }},

@@ -51,7 +51,7 @@
   "name": {{ _title|tojson }},
   "description": {{ _desc[:300]|tojson }},
   "thumbnailUrl": {{ _thumb|tojson }},
-  "uploadDate": {% if focused_video.created_at %}{{ focused_video.created_at.isoformat()|tojson }}{% else %}null{% endif %},
+  "uploadDate": {% if focused_video.created_at %}{{ (focused_video.created_at.isoformat() + 'Z')|tojson }}{% else %}null{% endif %},
   "url": {{ _url|tojson }},
   "author": {
     "@type": "Person",

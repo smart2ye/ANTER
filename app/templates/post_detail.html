@@ -1,4 +1,53 @@
 {% extends "base.html" %}
+
+{# ============================================================
+   SEO خاص بصفحة المنشور
+   ============================================================ #}
+{% set _author = post.author.name or post.author.username %}
+{% set _excerpt = (post.content or '')[:140] %}
+{% set _url = url_for('posts.view_post', public_id=post.public_id, _external=True) %}
+
+{% block page_title %}{{ _author }}: {{ _excerpt }}{% if _excerpt|length >= 140 %}…{% endif %} — ANTER{% endblock %}
+
+{% block meta_description %}{{ _author }} على ANTER: {{ _excerpt }}{% if _excerpt|length >= 140 %}…{% endif %}{% endblock %}
+
+{% block canonical %}<link rel="canonical" href="{{ _url }}">{% endblock %}
+
+{% block og_type %}article{% endblock %}
+{% block og_url %}{{ _url }}{% endblock %}
+{% block og_title %}{{ _author }} على ANTER{% endblock %}
+{% block og_description %}{{ _excerpt }}{% endblock %}
+{% block og_image %}{% if post.image_data or post.image %}{{ post_image_url(post) }}{% else %}{{ url_for('static', filename='img/logo-og.png', _external=True) }}{% endif %}{% endblock %}
+
+{% block twitter_url %}{{ _url }}{% endblock %}
+{% block twitter_title %}{{ _author }} على ANTER{% endblock %}
+{% block twitter_description %}{{ _excerpt }}{% endblock %}
+{% block twitter_image %}{% if post.image_data or post.image %}{{ post_image_url(post) }}{% else %}{{ url_for('static', filename='img/logo-og.png', _external=True) }}{% endif %}{% endblock %}
+
+{% block json_ld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SocialMediaPosting",
+  "headline": {{ _excerpt|tojson }},
+  "url": {{ _url|tojson }},
+  "datePublished": {% if post.created_at %}{{ post.created_at.isoformat()|tojson }}{% else %}null{% endif %},
+  "dateModified": {% if post.updated_at %}{{ post.updated_at.isoformat()|tojson }}{% elif post.created_at %}{{ post.created_at.isoformat()|tojson }}{% else %}null{% endif %},
+  "author": {
+    "@type": "Person",
+    "name": {{ _author|tojson }},
+    "url": {{ url_for('users.profile', username=post.author.username, _external=True)|tojson }}
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ANTER",
+    "url": {{ url_for('main.index', _external=True)|tojson }}
+  }{% if post.image_data or post.image %},
+  "image": {{ post_image_url(post)|tojson }}{% endif %}
+}
+</script>
+{% endblock %}
+
 {% block content %}
 
 <div class="anter-post-detail">

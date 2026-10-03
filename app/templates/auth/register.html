@@ -1,4 +1,10 @@
 {% extends "base.html" %}
+
+{% block page_title %}إنشاء حساب — ANTER{% endblock %}
+{% block meta_description %}انضم إلى شبكة ANTER الاجتماعية العربية وابدأ التواصل الآن.{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block canonical %}<link rel="canonical" href="{{ url_for('auth.register', _external=True) }}">{% endblock %}
+
 {% block content %}
 <div class="auth-page d-flex justify-content-center align-items-center">
     <div class="card auth-card shadow-lg border-0 rounded-4 p-4">

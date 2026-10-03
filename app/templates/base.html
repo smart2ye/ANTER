@@ -10,27 +10,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="ANTER - شبكة تواصل اجتماعي عربية تدمج بين التواصل البشري الحقيقي وقدرات الذكاء الاصطناعي المتقدمة. اكتشف عالماً جديداً من التفاعل الذكي.">
-    <meta name="keywords" content="أنتر, ANTER, شبكة اجتماعية, تواصل اجتماعي عربي, ذكاء اصطناعي, ريلز عربي, تعليقات صوتية">
+    <!-- SEO Meta Tags (قابلة للتخصيص من القوالب الفرعية) -->
+    <meta name="description" content="{% block meta_description %}ANTER - شبكة تواصل اجتماعي عربية تدمج بين التواصل البشري الحقيقي وقدرات الذكاء الاصطناعي المتقدمة. اكتشف عالماً جديداً من التفاعل الذكي.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}أنتر, ANTER, شبكة اجتماعية, تواصل اجتماعي عربي, ذكاء اصطناعي, ريلز عربي, تعليقات صوتية{% endblock %}">
     <meta name="author" content="عبدالقادر مهدلي">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="{% block meta_robots %}index, follow{% endblock %}">
+
+    {% block canonical %}{% endblock %}
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://anter-1.onrender.com/">
-    <meta property="og:title" content="ANTER - الجيل الجديد من الشبكات الاجتماعية العربية">
-    <meta property="og:description" content="تواصل، شارك، واكتشف قوة الذكاء الاصطناعي في منصة عربية جديدة.">
-    <meta property="og:image" content="{{ url_for('static', filename='img/logo-og.png', _external=True) }}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ request.url }}{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}ANTER - الجيل الجديد من الشبكات الاجتماعية العربية{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}تواصل، شارك، واكتشف قوة الذكاء الاصطناعي في منصة عربية جديدة.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='img/logo-og.png', _external=True) }}{% endblock %}">
+    <meta property="og:site_name" content="ANTER">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://anter-1.onrender.com/">
-    <meta property="twitter:title" content="ANTER - أنتر">
-    <meta property="twitter:description" content="شبكة تواصل اجتماعي عربية تدمج بين البشر والذكاء الاصطناعي.">
-    <meta property="twitter:image" content="{{ url_for('static', filename='img/logo-og.png', _external=True) }}">
+    <meta property="twitter:url" content="{% block twitter_url %}{{ request.url }}{% endblock %}">
+    <meta property="twitter:title" content="{% block twitter_title %}ANTER - أنتر{% endblock %}">
+    <meta property="twitter:description" content="{% block twitter_description %}شبكة تواصل اجتماعي عربية تدمج بين البشر والذكاء الاصطناعي.{% endblock %}">
+    <meta property="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='img/logo-og.png', _external=True) }}{% endblock %}">
 
-    <title>ANTER - أنتر</title>
+    <title>{% block page_title %}ANTER - أنتر{% endblock %}</title>
+
+    {% block json_ld %}{% endblock %}
     
     <link rel="preload" href="{{ url_for('static', filename='vendor/cairo/cairo-arabic.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link href="{{ url_for('static', filename='vendor/cairo/cairo.css') }}" rel="stylesheet">

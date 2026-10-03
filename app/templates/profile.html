@@ -1,4 +1,48 @@
 {% extends "base.html" %}
+
+{# ============================================================
+   SEO خاص بصفحة المستخدم
+   ============================================================ #}
+{% set _name = user.name or user.username %}
+{% set _username = user.username %}
+{% set _bio = (user.bio or '')[:150] %}
+{% set _url = url_for('users.profile', username=user.username, _external=True) %}
+
+{% block page_title %}{{ _name }} (@{{ _username }}) — ANTER{% endblock %}
+
+{% block meta_description %}{% if _bio %}{{ _bio }}{% else %}الملف الشخصي لـ {{ _name }} (@{{ _username }}) على شبكة ANTER الاجتماعية.{% endif %}{% endblock %}
+
+{% block canonical %}<link rel="canonical" href="{{ _url }}">{% endblock %}
+
+{% block og_type %}profile{% endblock %}
+{% block og_url %}{{ _url }}{% endblock %}
+{% block og_title %}{{ _name }} على ANTER{% endblock %}
+{% block og_description %}{% if _bio %}{{ _bio }}{% else %}تابع {{ _name }} على ANTER.{% endif %}{% endblock %}
+{% block og_image %}{{ avatar_url(user) }}{% endblock %}
+
+{% block twitter_url %}{{ _url }}{% endblock %}
+{% block twitter_title %}{{ _name }} (@{{ _username }}) — ANTER{% endblock %}
+{% block twitter_description %}{% if _bio %}{{ _bio }}{% else %}تابع {{ _name }} على ANTER.{% endif %}{% endblock %}
+{% block twitter_image %}{{ avatar_url(user) }}{% endblock %}
+
+{% block json_ld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  "url": {{ _url|tojson }},
+  "mainEntity": {
+    "@type": "Person",
+    "name": {{ _name|tojson }},
+    "alternateName": {{ ("@" + _username)|tojson }},
+    "url": {{ _url|tojson }}{% if user.bio %},
+    "description": {{ (user.bio[:300])|tojson }}{% endif %},
+    "image": {{ avatar_url(user)|tojson }}
+  }
+}
+</script>
+{% endblock %}
+
 {% block content %}
 
 <!-- ============================== -->

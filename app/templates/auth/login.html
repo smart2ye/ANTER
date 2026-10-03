@@ -1,4 +1,10 @@
 {% extends "base.html" %}
+
+{% block page_title %}تسجيل الدخول — ANTER{% endblock %}
+{% block meta_description %}سجّل دخولك إلى حسابك على شبكة ANTER الاجتماعية.{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block canonical %}<link rel="canonical" href="{{ url_for('auth.login', _external=True) }}">{% endblock %}
+
 {% block content %}
 
 <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">

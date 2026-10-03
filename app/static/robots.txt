@@ -1,17 +1,11 @@
+# ANTER — robots.txt
+# الصفحات الخاصة لا تُفهرس. صفحات الدخول/التسجيل تُعالج بـ noindex في القالب نفسه.
+
 User-agent: *
 Allow: /
-Allow: /p/
-Allow: /videos/r/
-Allow: /users/
-Allow: /explore
-Allow: /videos/reels
-Allow: /about
-Allow: /help
-Allow: /privacy
-Allow: /terms
+
+# منع الصفحات الخاصة من الفهرسة
 Disallow: /admin/
-Disallow: /admin
-Disallow: /auth/
 Disallow: /messages/
 Disallow: /notifications/
 Disallow: /settings
@@ -20,4 +14,7 @@ Disallow: /users/edit
 Disallow: /media/
 Disallow: /static/uploads/
 Disallow: /api/
+Disallow: /auth/reset_password
+Disallow: /auth/forgot
+
 Sitemap: https://anter-1.onrender.com/sitemap.xml

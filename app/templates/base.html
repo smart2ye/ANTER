@@ -83,6 +83,7 @@
                             <li><a class="dropdown-item" href="{{ url_for('users.profile', username=current_user.username) }}"><i class="fas fa-user"></i> ملفي</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('users.settings') }}"><i class="fas fa-cog"></i> الإعدادات</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('users.activity_log') }}"><i class="fas fa-history"></i> سجل النشاط</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.accounts_list') }}"><i class="fas fa-users-cog"></i> تبديل الحساب</a></li>
                             {% if can_switch_to_anter_assistant %}
                             <li>
                                 <form method="POST" action="{{ url_for('auth.switch_to_assistant') }}">

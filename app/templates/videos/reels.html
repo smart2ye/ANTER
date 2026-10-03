@@ -1,5 +1,78 @@
 {% extends "base.html" %}
 
+{# ============================================================
+   SEO لصفحة الريلز
+   إذا كان هناك ريل محدد (focused_video)، نُخصص له؛ وإلا فهي صفحة عامة.
+   ============================================================ #}
+{% if focused_video %}
+    {% set _v = focused_video %}
+    {% set _title = _v.title or 'ريل جديد' %}
+    {% set _desc = _v.description or ('شاهد ' + _title + ' على ANTER Reels') %}
+    {% set _url = url_for('videos.watch', public_id=_v.public_id, _external=True) %}
+    {% set _author_name = _v.author.name or _v.author.username %}
+    {% set _author_url = url_for('users.profile', username=_v.author.username, _external=True) %}
+    {% if _v.thumbnail_path %}
+        {% set _thumb = url_for('static', filename='uploads/' + _v.thumbnail_path, _external=True) %}
+    {% else %}
+        {% set _thumb = url_for('static', filename='img/logo-og.png', _external=True) %}
+    {% endif %}
+    {% set _page_title = _title + ' — ANTER Reels' %}
+    {% set _og_type = 'video.other' %}
+{% else %}
+    {% set _title = 'ANTER Reels' %}
+    {% set _desc = 'شاهد ريلز عربية قصيرة على ANTER — فن، كوميديا، موسيقى، ومحتوى إبداعي في تصفح سلس.' %}
+    {% set _url = url_for('videos.reels', _external=True) %}
+    {% set _thumb = url_for('static', filename='img/logo-og.png', _external=True) %}
+    {% set _page_title = 'ANTER Reels — ريلز عربية قصيرة' %}
+    {% set _og_type = 'website' %}
+{% endif %}
+
+{% block page_title %}{{ _page_title }}{% endblock %}
+{% block meta_description %}{{ _desc[:160] }}{% endblock %}
+{% block canonical %}<link rel="canonical" href="{{ _url }}">{% endblock %}
+
+{% block og_type %}{{ _og_type }}{% endblock %}
+{% block og_url %}{{ _url }}{% endblock %}
+{% block og_title %}{{ _title }}{% endblock %}
+{% block og_description %}{{ _desc[:160] }}{% endblock %}
+{% block og_image %}{{ _thumb }}{% endblock %}
+
+{% block twitter_url %}{{ _url }}{% endblock %}
+{% block twitter_title %}{{ _page_title }}{% endblock %}
+{% block twitter_description %}{{ _desc[:160] }}{% endblock %}
+{% block twitter_image %}{{ _thumb }}{% endblock %}
+
+{% block json_ld %}
+{% if focused_video %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": {{ _title|tojson }},
+  "description": {{ _desc[:300]|tojson }},
+  "thumbnailUrl": {{ _thumb|tojson }},
+  "uploadDate": {% if focused_video.created_at %}{{ focused_video.created_at.isoformat()|tojson }}{% else %}null{% endif %},
+  "url": {{ _url|tojson }},
+  "author": {
+    "@type": "Person",
+    "name": {{ _author_name|tojson }},
+    "url": {{ _author_url|tojson }}
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ANTER",
+    "url": {{ url_for('main.index', _external=True)|tojson }}
+  }{% if focused_video.views %},
+  "interactionStatistic": {
+    "@type": "InteractionCounter",
+    "interactionType": { "@type": "WatchAction" },
+    "userInteractionCount": {{ focused_video.views }}
+  }{% endif %}
+}
+</script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <section class="reels-feed-page reels-feed-page--immersive"
          aria-labelledby="reels-page-heading">

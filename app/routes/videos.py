@@ -208,7 +208,12 @@ def watch(public_id):
             stream_videos = [video]
 
     comments = video.comments.filter_by(parent_id=None).order_by(VideoComment.created_at.asc()).all()
-    return render_template('videos/reels.html', videos=stream_videos, comments=comments)
+    return render_template(
+        'videos/reels.html',
+        videos=stream_videos,
+        comments=comments,
+        focused_video=video,
+    )
 
 @videos_bp.route('/like/<int:video_id>', methods=['POST'])
 @login_required

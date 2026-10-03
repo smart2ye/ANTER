@@ -25,11 +25,23 @@
 {% block twitter_image %}{% if post.image_data or post.image %}{{ post_image_url(post) }}{% else %}{{ url_for('static', filename='img/logo-og.png', _external=True) }}{% endif %}{% endblock %}
 
 {% block json_ld %}
+{% set _full_text = (post.content or _excerpt or '') %}
+{% set _has_image = (post.image_data or post.image) %}
+{% set _has_video = post.shared_video %}
+{% if _has_video and _has_video.thumbnail_path %}
+  {% set _thumb_url = url_for('static', filename='uploads/' + _has_video.thumbnail_path, _external=True) %}
+{% elif _has_image %}
+  {% set _thumb_url = post_image_url(post) %}
+{% else %}
+  {% set _thumb_url = url_for('static', filename='img/logo-og.png', _external=True) %}
+{% endif %}
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SocialMediaPosting",
   "headline": {{ _excerpt|tojson }},
+  "text": {{ _full_text|tojson }},
   "url": {{ _url|tojson }},
   "datePublished": {% if post.created_at %}{{ (post.created_at.isoformat() + 'Z')|tojson }}{% else %}null{% endif %},
   "dateModified": {% if post.updated_at %}{{ (post.updated_at.isoformat() + 'Z')|tojson }}{% elif post.created_at %}{{ (post.created_at.isoformat() + 'Z')|tojson }}{% else %}null{% endif %},
@@ -42,8 +54,22 @@
     "@type": "Organization",
     "name": "ANTER",
     "url": {{ url_for('main.index', _external=True)|tojson }}
-  }{% if post.image_data or post.image %},
-  "image": {{ post_image_url(post)|tojson }}{% endif %}
+  },
+  "image": {{ _thumb_url|tojson }}{% if _has_video %},
+  "video": {
+    "@type": "VideoObject",
+    "name": {{ (_has_video.title or _excerpt)|tojson }},
+    "description": {{ (_has_video.description or _excerpt)|tojson }},
+    "thumbnailUrl": {{ _thumb_url|tojson }},
+    "uploadDate": {% if _has_video.created_at %}{{ (_has_video.created_at.isoformat() + 'Z')|tojson }}{% elif post.created_at %}{{ (post.created_at.isoformat() + 'Z')|tojson }}{% else %}null{% endif %},
+    "url": {{ url_for('videos.watch', public_id=_has_video.public_id, _external=True)|tojson }},
+    "contentUrl": {{ url_for('videos.watch', public_id=_has_video.public_id, _external=True)|tojson }},
+    "publisher": {
+      "@type": "Organization",
+      "name": "ANTER",
+      "url": {{ url_for('main.index', _external=True)|tojson }}
+    }
+  }{% endif %}
 }
 </script>
 {% endblock %}

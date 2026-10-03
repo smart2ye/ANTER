@@ -224,9 +224,10 @@ def create_app(test_config=None):
 
         return Markup(re.sub(r'(?<!&)#([\w\u0600-\u06FF]+)', replace_tag, escaped_content))
 
-    from app.utils.helpers import parse_mentions
+    from app.utils.helpers import parse_mentions, render_rich_text
     app.add_template_filter(linkify_hashtags, name='linkify_hashtags')
     app.add_template_filter(parse_mentions, name='parse_mentions')
+    app.add_template_filter(render_rich_text, name='render_rich_text')
 
     # فلتر: يحوّل تاريخًا إلى تسمية عربية (اليوم، أمس، أو التاريخ الكامل)
     from datetime import date as _date, datetime as _dt

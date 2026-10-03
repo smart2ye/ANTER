@@ -82,7 +82,7 @@
 
     <!-- محتوى المنشور -->
     <div class="post-content">
-        <p>{{ post.content | linkify_hashtags | parse_mentions | safe }}</p>
+        <div class="anter-rich-text">{{ post.content | render_rich_text }}</div>
     </div>
 
     {% if post.shared_video %}

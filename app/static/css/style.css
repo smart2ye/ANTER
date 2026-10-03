@@ -8941,3 +8941,110 @@ a.anter-profile-stat:hover {
     border-color: #4a4b4d;
     color: #e4e6eb;
 }
+
+/* ============================================================
+   ANTER: كتل الكود في المنشورات والتعليقات والرسائل
+   ============================================================ */
+.anter-rich-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.anter-rich-text p {
+    margin: 0;
+}
+
+.anter-codeblock {
+    margin: 10px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #1e1e2e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-family: 'Courier New', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    direction: ltr;
+    text-align: left;
+}
+
+.anter-codeblock__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.72rem;
+    color: #a6adc8;
+}
+
+.anter-codeblock__lang {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #78F7FD;
+}
+
+.anter-codeblock__copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cdd6f4;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.anter-codeblock__copy:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.anter-codeblock__copy.is-copied {
+    background: rgba(38, 166, 73, 0.25);
+    border-color: rgba(38, 166, 73, 0.6);
+    color: #a6e3a1;
+}
+
+.anter-codeblock pre {
+    margin: 0;
+    padding: 12px 14px;
+    overflow-x: auto;
+    background: transparent;
+    color: #cdd6f4;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    white-space: pre;
+    direction: ltr;
+    text-align: left;
+}
+
+.anter-codeblock code {
+    font-family: inherit;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
+}
+
+/* داخل الرسائل المُرسَلة: خلفية الكود أوضح */
+.is-sent .anter-codeblock {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* داخل الفقاعات: عرض محدود */
+.message-text .anter-codeblock {
+    max-width: 100%;
+}
+
+@media (max-width: 576px) {
+    .anter-codeblock pre {
+        font-size: 0.76rem;
+        padding: 10px 12px;
+    }
+}
+

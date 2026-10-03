@@ -355,3 +355,87 @@ def get_status_icon(user, viewer=None):
         return f'<span class="status-indicator online"><span class="status-dot"></span> 🟢 متصل الآن</span>'
     else:
         return f'<span class="status-indicator offline"><span class="status-dot"></span> 🔴 {status["last_seen"]}</span>'
+
+# ============================================================
+# ANTER: عرض المحتوى الغني — كتل كود + hashtags + mentions
+# ============================================================
+_CODE_BLOCK_RE = re.compile(
+    r'```([a-zA-Z0-9_+\-]{0,32})[ \t]*\r?\n(.*?)```',
+    re.DOTALL,
+)
+
+
+def _render_plain_segment(text):
+    """يطبّق hashtags و mentions على نص مُهرَّب من HTML."""
+    from markupsafe import escape
+
+    escaped = str(escape(text))
+
+    def replace_mention(match):
+        username = match.group(1)
+        user = User.query.filter_by(username=username).first()
+        if user:
+            return (
+                f'<a href="{url_for("users.profile", username=username)}" '
+                f'class="mention">@{escape(username)}</a>'
+            )
+        return f'@{escape(username)}'
+
+    escaped = re.sub(r'@([\w\u0600-\u06FF.]+)', replace_mention, escaped)
+
+    def replace_tag(match):
+        tag = match.group(1)
+        tag_url = url_for('explore.hashtag', tag=tag)
+        return f'<a href="{escape(tag_url)}" class="hashtag-link">#{escape(tag)}</a>'
+
+    escaped = re.sub(r'(?<!&)#([\w\u0600-\u06FF]+)', replace_tag, escaped)
+
+    return escaped
+
+
+def render_rich_text(content):
+    """يحوّل محتوى المستخدم إلى HTML آمن مع دعم كتل الكود.
+
+    - ```lang\n...\n``` → <pre><code class="language-lang">
+    - #hashtag → رابط
+    - @mention → رابط
+    - بقية المحتوى: يُهرَّب من HTML (XSS-safe)
+    """
+    from markupsafe import Markup, escape
+    from html import unescape
+
+    if not content:
+        return Markup('')
+
+    text = unescape(str(content))
+
+    matches = list(_CODE_BLOCK_RE.finditer(text))
+    if not matches:
+        return Markup(_render_plain_segment(text))
+
+    out = []
+    cursor = 0
+    for m in matches:
+        if m.start() > cursor:
+            out.append(_render_plain_segment(text[cursor:m.start()]))
+        lang = (m.group(1) or '').strip().lower()[:32]
+        code = m.group(2).rstrip('\n')
+        lang_class = f' class="language-{escape(lang)}"' if lang else ''
+        lang_label = escape(lang or 'code')
+        out.append(
+            '<div class="anter-codeblock">'
+            '<div class="anter-codeblock__head">'
+            f'<span class="anter-codeblock__lang">{lang_label}</span>'
+            '<button type="button" class="anter-codeblock__copy" data-anter-code-copy>'
+            '<i class="far fa-copy" aria-hidden="true"></i> <span>نسخ</span>'
+            '</button>'
+            '</div>'
+            f'<pre><code{lang_class}>{escape(code)}</code></pre>'
+            '</div>'
+        )
+        cursor = m.end()
+    if cursor < len(text):
+        out.append(_render_plain_segment(text[cursor:]))
+
+    return Markup(''.join(out))
+

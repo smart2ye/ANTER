@@ -64,7 +64,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    <div class="comment-text text-break" data-comment-text>{{ comment.content | parse_mentions | safe }}</div>
+                    <div class="comment-text text-break anter-rich-text" data-comment-text>{{ comment.content | render_rich_text }}</div>
                     <form class="comment-edit-form" hidden data-comment-id="{{ comment.id }}">
                         <textarea class="comment-edit-input" maxlength="2000" rows="2">{{ comment.content }}</textarea>
                         <div class="comment-edit-actions">
@@ -164,7 +164,7 @@
                                             {% endif %}
                                         </div>
                                     </div>
-                                    <div class="comment-text text-break small" data-comment-text>{{ reply.content | parse_mentions | safe }}</div>
+                                    <div class="comment-text text-break small anter-rich-text" data-comment-text>{{ reply.content | render_rich_text }}</div>
                                     <form class="comment-edit-form" hidden data-comment-id="{{ reply.id }}">
                                         <textarea class="comment-edit-input" maxlength="2000" rows="2">{{ reply.content }}</textarea>
                                         <div class="comment-edit-actions">

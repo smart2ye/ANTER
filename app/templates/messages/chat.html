@@ -173,7 +173,7 @@
                                     </a>
 
                                 {% elif msg.content %}
-                                    <div class="message-text mb-1{% if is_anter_assistant and msg.sender_id == other.id %} assistant-rich-text{% endif %}" dir="auto">{{ msg.content }}</div>
+                                    <div class="message-text mb-1 anter-rich-text" dir="auto">{{ msg.content | render_rich_text }}</div>
                                 {% endif %}
                                 
                                 {% if msg.attachment_data %}

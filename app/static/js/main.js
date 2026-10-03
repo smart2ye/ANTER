@@ -1750,3 +1750,63 @@ document.addEventListener('click', function(e) {
         } catch (_) {}
     };
 })();
+
+/* ============================================================
+   ANTER: زر «نسخ» لكتل الكود
+   ============================================================ */
+(function _anterCodeCopy() {
+    'use strict';
+
+    function showCopyFeedback(btn) {
+        const originalHTML = btn.innerHTML;
+        btn.classList.add('is-copied');
+        btn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> <span>تم النسخ</span>';
+        clearTimeout(btn._copyResetTimer);
+        btn._copyResetTimer = setTimeout(function() {
+            btn.classList.remove('is-copied');
+            btn.innerHTML = originalHTML;
+        }, 1600);
+    }
+
+    async function copyFromButton(btn) {
+        const block = btn.closest('.anter-codeblock');
+        if (!block) return;
+        const codeEl = block.querySelector('pre code');
+        if (!codeEl) return;
+        const text = codeEl.innerText || codeEl.textContent || '';
+
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+                showCopyFeedback(btn);
+                return;
+            }
+        } catch (_) {}
+
+        // fallback للمتصفحات القديمة أو http
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.top = '-1000px';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+            showCopyFeedback(btn);
+        } catch (_) {
+            // فشل النسخ بصمت
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-anter-code-copy]');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        copyFromButton(btn);
+    }, true);
+})();
+

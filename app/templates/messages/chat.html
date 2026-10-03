@@ -352,7 +352,7 @@
                 <i class="fas fa-paperclip"></i>
             </button>
             <input type="file" name="attachment" id="attachmentInput" accept="image/*,.pdf,.txt,.doc,.docx" class="d-none" {% if not can_message %}disabled{% endif %}>
-            <input type="text" name="content" id="messageInput" class="form-control composer-input" placeholder="{{ 'اكتب سؤالك لمساعد أنتر...' if is_anter_assistant else 'اكتب رسالة...' }}" autocomplete="off" {% if not can_message %}disabled aria-describedby="followToMessageHint"{% else %}autofocus{% endif %}>
+            <textarea name="content" id="messageInput" class="form-control composer-input" placeholder="{{ 'اكتب سؤالك لمساعد أنتر...' if is_anter_assistant else 'اكتب رسالة... (Ctrl+Enter للإرسال)' }}" autocomplete="off" rows="1" {% if not can_message %}disabled aria-describedby="followToMessageHint"{% else %}autofocus{% endif %}></textarea>
             <button class="btn btn-primary composer-send" type="submit" id="sendMessageButton" {% if not can_message %}disabled{% endif %}>
                 <i class="fas fa-paper-plane"></i>
             </button>
@@ -658,7 +658,9 @@
         color: #78F7FD;
     }
 
-    .message-bubble { min-width: 74px; max-width: min(85%, 580px); padding: 11px 14px; border-radius: 19px; position: relative; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; box-shadow: 0 3px 10px rgba(0,0,0,.055); overflow-wrap: break-word; word-break: normal; }
+    .message-bubble { min-width: 74px; max-width: min(85%, 580px); padding: 11px 14px; border-radius: 19px; position: relative; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; box-shadow: 0 3px 10px rgba(0,0,0,.055); overflow-wrap: break-word; word-break: normal; box-sizing: border-box; overflow: hidden; }
+    .message-bubble:has(.anter-codeblock) { max-width: min(92%, 620px); }
+    .message-text { min-width: 0; max-width: 100%; }
     .message-bubble:active { transform: scale(0.98); }
     .message-bubble:hover { box-shadow: 0 6px 15px rgba(24, 74, 127, .12); }
     .is-sent .message-bubble { background: #003AAB; color: #fff; border-bottom-right-radius: 4px; }
@@ -668,6 +670,45 @@
     .is-sent .quoted-message .text-primary { color: #fff !important; }
     .is-sent .quoted-message .text-muted { color: rgba(255,255,255,0.8) !important; }
     .message-meta { display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: 4px; font-size: 0.65rem; opacity: 0.8; }
+
+    /* كتلة الكود داخل فقاعة الرسالة */
+    .message-text .anter-codeblock {
+        max-width: 100%;
+        width: 100%;
+        margin: 8px 0;
+        box-sizing: border-box;
+    }
+    .message-text .anter-codeblock pre {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .message-text .anter-codeblock__head {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .message-text .anter-rich-text {
+        min-width: 0;
+        max-width: 100%;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+    @media (max-width: 575.98px) {
+        .message-text .anter-codeblock pre {
+            font-size: 0.72rem;
+            padding: 8px 10px;
+        }
+        .message-text .anter-codeblock__head {
+            padding: 5px 8px;
+        }
+        .message-text .anter-codeblock__copy span {
+            display: none;
+        }
+        .message-text .anter-codeblock__copy {
+            padding: 3px 8px;
+        }
+    }
     .assistant-rich-text { direction: rtl; text-align: right; font-size: .9rem; line-height: 1.76; overflow-wrap: break-word; word-break: normal; unicode-bidi: plaintext; }
     .assistant-rich-text > *:last-child { margin-bottom: 0; }
     .assistant-rich-paragraph { margin: 0 0 8px; font-size: inherit; line-height: inherit; unicode-bidi: plaintext; }
@@ -703,7 +744,21 @@
     .chat-composer { background: var(--card-bg, #fff); padding: 10px; border-radius: 18px; border: 1px solid #eee; box-shadow: 0 4px 18px rgba(0,0,0,.04); }
     .assistant-memory-notice { padding: 10px 12px; border: 1px solid rgba(24,119,242,.18); background: rgba(24,119,242,.06); color: #24405f; border-radius: 14px; font-size: .85rem; }
     .composer-row { display: flex; gap: 8px; align-items: center; }
-    .composer-input { border-radius: 20px; background: #f0f2f5; border: none; min-height: 42px; }
+    .composer-input {
+        border-radius: 20px;
+        background: #f0f2f5;
+        border: none;
+        min-height: 42px;
+        max-height: 160px;
+        resize: none;
+        padding: 10px 14px;
+        line-height: 1.4;
+        font-family: inherit;
+        overflow-y: auto;
+        overflow-x: hidden;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
     .chat-attachment img { max-width: 280px; border-radius: 10px; }
     .recording-dot { width: 8px; height: 8px; background: red; border-radius: 50%; display: inline-block; animation: pulse 1s infinite; }
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
@@ -1702,6 +1757,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // الحالة الأولية
         updateBtnVisibility();
+    })();
+
+    // ============================================================
+    // ANTER: textarea الرسالة — أسطر متعددة + auto-resize
+    // ============================================================
+    (function initMessageTextarea() {
+        const ta = document.getElementById('messageInput');
+        if (!ta) return;
+
+        // auto-resize: الحقل يتمدد مع المحتوى
+        function autoResize() {
+            ta.style.height = 'auto';
+            const maxH = 160;
+            const newH = Math.min(ta.scrollHeight, maxH);
+            ta.style.height = newH + 'px';
+            ta.style.overflowY = ta.scrollHeight > maxH ? 'auto' : 'hidden';
+        }
+
+        ta.addEventListener('input', autoResize);
+        autoResize();
+
+        // Enter = سطر جديد | Ctrl/Cmd+Enter = إرسال
+        ta.addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter') return;
+            if (e.ctrlKey || e.metaKey) {
+                // إرسال
+                e.preventDefault();
+                const form = document.getElementById('messageForm');
+                if (form) {
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        form.submit();
+                    }
+                }
+            }
+            // خلاف ذلك: Enter يُدرج سطرًا جديدًا (السلوك الافتراضي)
+        });
+
+        // بعد إرسال ناجح — أعد ضبط الحقل
+        document.addEventListener('anter:message-sent', function() {
+            ta.value = '';
+            autoResize();
+            ta.focus();
+        });
     })();
     if (voiceCallButton) voiceCallButton.addEventListener('click', startVoiceCall);
     if (videoCallButton) videoCallButton.addEventListener('click', startVideoCall);

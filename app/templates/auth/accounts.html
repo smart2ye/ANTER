@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block page_title %}الحسابات المحفوظة — ANTER{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block content %}
+
+<div class="container my-4" style="max-width: 640px;">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
+
+            <h4 class="fw-bold mb-3">
+                <i class="fas fa-users-cog text-primary me-2"></i> الحسابات المحفوظة
+            </h4>
+            <p class="text-muted small mb-4">
+                هذه الحسابات محفوظة على هذا الجهاز فقط. يمكنك التبديل بينها بضغطة واحدة.
+            </p>
+
+            {% if accounts %}
+            <div class="list-group list-group-flush mb-3">
+                {% for acc in accounts %}
+                <div class="list-group-item d-flex align-items-center gap-3 px-0">
+                    <img src="{{ acc.avatar_url }}" alt="" width="44" height="44" class="rounded-circle" style="object-fit: cover;">
+
+                    <div class="flex-grow-1" style="min-width: 0;">
+                        <div class="fw-semibold text-truncate">
+                            {{ acc.name }}
+                            {% if acc.is_current %}
+                                <span class="badge bg-primary rounded-pill ms-1">الحالي</span>
+                            {% elif acc.is_online %}
+                                <span class="badge bg-success rounded-pill ms-1">متصل</span>
+                            {% endif %}
+                        </div>
+                        <div class="text-muted small text-truncate">@{{ acc.username }}</div>
+                    </div>
+
+                    {% if acc.is_current %}
+                        <span class="text-muted small">— </span>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('auth.accounts_switch') }}" class="m-0">
+                            <input type="hidden" name="token" value="{{ acc.token }}">
+                            <input type="hidden" name="next" value="{{ url_for('main.index') }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                تبديل
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for('auth.accounts_remove', user_id=acc.user_id) }}" class="m-0">
+                        <button type="submit" class="btn btn-sm btn-link text-danger p-0 ms-1" title="إزالة">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.accounts_clear') }}" onsubmit="return confirm('هل تريد مسح كل الحسابات المحفوظة؟');">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-trash-alt me-1"></i> مسح كل الحسابات
+                </button>
+            </form>
+
+            {% else %}
+            <p class="text-muted text-center py-4">
+                <i class="fas fa-user-slash fa-2x d-block mb-2"></i>
+                لا توجد حسابات محفوظة بعد.
+            </p>
+            {% endif %}
+
+            <hr class="my-4">
+
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100 rounded-pill">
+                <i class="fas fa-plus-circle me-1"></i> إضافة حساب جديد
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

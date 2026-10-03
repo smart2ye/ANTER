@@ -2,7 +2,7 @@ from urllib.parse import urlencode, urlsplit, urlunsplit, parse_qsl
 
 from flask import Blueprint, abort, render_template, redirect, url_for, flash, request, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
-from app.extensions import db
+from app.extensions import db, csrf
 from app.models import User
 from app.forms.auth import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from itsdangerous import URLSafeTimedSerializer
@@ -10,6 +10,14 @@ from app.utils.helpers import log_user_activity
 from app.utils.email import send_reset_email, send_welcome_email
 from app.services.anter_assistant import ensure_anter_assistant_user, follow_anter_assistant_for_user
 from app.services.anter_user_messages import send_welcome_message
+from app.services.account_vault import (
+    add_account as vault_add,
+    clear_accounts as vault_clear,
+    enrich_accounts as vault_enrich,
+    get_saved_accounts as vault_list,
+    remove_account as vault_remove,
+    resolve_switch_token as vault_resolve,
+)
 from app.services.anter_account_switching import (
     can_switch_back,
     can_switch_to_assistant,
@@ -55,6 +63,16 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = LoginForm()
+
+    # الحسابات المحفوظة على هذا الجهاز (للعرض أسفل النموذج)
+    saved_accounts = []
+    try:
+        raw = vault_list()
+        if raw:
+            saved_accounts = [a for a in vault_enrich(raw) if not a.get('is_current')]
+    except Exception:
+        current_app.logger.exception('تعذر تحميل الحسابات المحفوظة')
+        saved_accounts = []
     if form.validate_on_submit():
         # البحث باستخدام اسم المستخدم أو البريد أو رقم الهاتف
         user = User.query.filter(
@@ -67,10 +85,16 @@ def login():
             log_user_activity(user.id, "login")
             next_page = request.args.get('next')
             flash('✅ تم تسجيل الدخول بنجاح!', 'success')
-            return redirect(next_page or url_for('main.index'))
+            resp = redirect(next_page or url_for('main.index'))
+            # احفظ الحساب في كوكي الحسابات المتعددة (للتبديل السريع لاحقًا).
+            try:
+                vault_add(user, resp)
+            except Exception:
+                current_app.logger.exception('فشل حفظ الحساب في account_vault')
+            return resp
         else:
             flash('❌ اسم المستخدم أو كلمة المرور غير صحيحة.', 'danger')
-    return render_template('auth/login.html', form=form)
+    return render_template('auth/login.html', form=form, saved_accounts=saved_accounts)
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -201,7 +225,68 @@ def logout():
     session.pop('anter_assistant_switch_owner_id', None)
     logout_user()
     flash('✅ تم تسجيل الخروج بنجاح، نراكم قريباً!', 'success')
+    # نُبقي كوكي الحسابات المحفوظة كي يستطيع المستخدم التبديل بسرعة.
     return redirect(url_for('auth.login'))
+
+
+# ============================================================
+# تبديل الحساب — ميزة "حسابات متعددة" مثل إنستغرام/فيسبوك
+# ============================================================
+@auth_bp.route('/accounts')
+def accounts_list():
+    """صفحة إدارة الحسابات المحفوظة على هذا الجهاز."""
+    raw = vault_list()
+    accounts = vault_enrich(raw) if raw else []
+    return render_template('auth/accounts.html', accounts=accounts)
+
+
+@auth_bp.route('/switch', methods=['POST'])
+@csrf.exempt
+def accounts_switch():
+    """يبدّل الجلسة الحالية إلى حساب محفوظ بدون كلمة سر."""
+    token = (request.form.get('token') or '').strip()
+    next_url = request.form.get('next') or url_for('main.index')
+    if not token:
+        flash('طلب غير صالح.', 'danger')
+        return redirect(url_for('auth.accounts_list'))
+
+    user = vault_resolve(token)
+    if not user:
+        flash('الرمز منتهي الصلاحية. يرجى تسجيل الدخول من جديد.', 'warning')
+        # نُزيل هذا الحساب من القائمة
+        resp = redirect(url_for('auth.login'))
+        try:
+            vault_remove_by_token_fallback = getattr(__import__('app.services.account_vault', fromlist=['remove_account']), 'remove_account')
+        except Exception:
+            pass
+        return resp
+
+    # نُسجّل الدخول
+    logout_user()
+    login_user(user, remember=True, force=True)
+    log_user_activity(user.id, 'switch_account')
+    flash(f'✅ تم التبديل إلى {user.name or user.username}.', 'success')
+    return redirect(next_url)
+
+
+@auth_bp.route('/accounts/remove/<int:user_id>', methods=['POST'])
+@csrf.exempt
+def accounts_remove(user_id):
+    """يُزيل حسابًا من القائمة المحفوظة."""
+    resp = redirect(url_for('auth.accounts_list'))
+    vault_remove(user_id, resp)
+    flash('تمت إزالة الحساب من هذا الجهاز.', 'success')
+    return resp
+
+
+@auth_bp.route('/accounts/clear', methods=['POST'])
+@csrf.exempt
+def accounts_clear():
+    """يمسح كل الحسابات المحفوظة."""
+    resp = redirect(url_for('auth.accounts_list'))
+    vault_clear(resp)
+    flash('تم مسح كل الحسابات المحفوظة.', 'success')
+    return resp
 
 @auth_bp.route('/reset_password_request', methods=['GET', 'POST'])
 def reset_password_request():

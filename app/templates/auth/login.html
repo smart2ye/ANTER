@@ -78,6 +78,38 @@
             <a href="{{ url_for('main.terms') }}" class="text-decoration-none">الشروط</a> و 
             <a href="{{ url_for('main.privacy') }}" class="text-decoration-none">سياسة الخصوصية</a>
         </p>
+    {% if saved_accounts %}
+        <div class="anter-saved-accounts">
+            <div class="anter-saved-accounts__divider">
+                <span>أو ادخل بحساب محفوظ</span>
+            </div>
+
+            {% for acc in saved_accounts %}
+            <form method="POST" action="{{ url_for('auth.accounts_switch') }}" class="anter-saved-account-form">
+                <input type="hidden" name="token" value="{{ acc.token }}">
+                <input type="hidden" name="next" value="{{ url_for('main.index') }}">
+                <button type="submit" class="anter-saved-account-btn">
+                    <img src="{{ acc.avatar_url }}" alt="" width="40" height="40" class="anter-saved-account-btn__avatar">
+                    <div class="anter-saved-account-btn__info">
+                        <div class="anter-saved-account-btn__name">
+                            {{ acc.name }}
+                            {% if acc.is_online %}
+                                <span class="anter-saved-account-btn__dot" title="متصل الآن"></span>
+                            {% endif %}
+                        </div>
+                        <div class="anter-saved-account-btn__username">@{{ acc.username }}</div>
+                    </div>
+                    <i class="fas fa-chevron-left anter-saved-account-btn__arrow"></i>
+                </button>
+            </form>
+            {% endfor %}
+
+            <a href="{{ url_for('auth.accounts_list') }}" class="anter-saved-accounts__manage">
+                <i class="fas fa-cog"></i> إدارة الحسابات
+            </a>
+        </div>
+    {% endif %}
+
     </div>
 </div>
 
@@ -93,6 +125,114 @@
         .auth-brand-logo { width: 68px; height: 68px; }
     }
     #loginPasswordToggle { border-color: #ced4da; min-height: 42px; }
+
+    /* الحسابات المحفوظة */
+    .anter-saved-accounts {
+        margin-top: 8px;
+        padding-top: 14px;
+    }
+    .anter-saved-accounts__divider {
+        text-align: center;
+        position: relative;
+        margin: 8px 0 14px;
+    }
+    .anter-saved-accounts__divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: rgba(0, 0, 0, 0.08);
+    }
+    .anter-saved-accounts__divider span {
+        position: relative;
+        background: var(--card-bg, #fff);
+        padding: 0 12px;
+        font-size: 0.78rem;
+        color: var(--text-muted, #65676b);
+    }
+    .anter-saved-account-form { margin: 0 0 6px; }
+    .anter-saved-account-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: var(--card-bg, #fff);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+        text-align: right;
+    }
+    .anter-saved-account-btn:hover {
+        background: rgba(0, 58, 171, 0.04);
+        border-color: rgba(0, 58, 171, 0.2);
+    }
+    .anter-saved-account-btn:active { transform: scale(0.98); }
+    .anter-saved-account-btn__avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    .anter-saved-account-btn__info {
+        flex-grow: 1;
+        min-width: 0;
+        text-align: right;
+    }
+    .anter-saved-account-btn__name {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text, #050505);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .anter-saved-account-btn__dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #26a649;
+    }
+    .anter-saved-account-btn__username {
+        font-size: 0.75rem;
+        color: var(--text-muted, #65676b);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .anter-saved-account-btn__arrow {
+        color: var(--text-muted, #65676b);
+        font-size: 0.8rem;
+        flex-shrink: 0;
+    }
+    .anter-saved-accounts__manage {
+        display: block;
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.8rem;
+        color: var(--anter-primary, #003AAB);
+        text-decoration: none;
+    }
+    .anter-saved-accounts__manage:hover { text-decoration: underline; }
+
+    [data-theme="dark"] .anter-saved-accounts__divider span {
+        background: #242526;
+        color: #b0b3b8;
+    }
+    [data-theme="dark"] .anter-saved-account-btn {
+        background: #242526;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+    [data-theme="dark"] .anter-saved-account-btn__name { color: #e4e6eb; }
+    [data-theme="dark"] .anter-saved-account-btn__username { color: #b0b3b8; }
 </style>
 <script>
     const loginPasswordInput = document.getElementById('loginPasswordInput');

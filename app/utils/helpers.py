@@ -368,6 +368,7 @@ _CODE_BLOCK_RE = re.compile(
 def _render_plain_segment(text):
     """يطبّق hashtags و mentions على نص مُهرَّب من HTML."""
     from markupsafe import escape
+    from app.models import User
 
     escaped = str(escape(text))
 

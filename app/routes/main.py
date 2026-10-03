@@ -471,6 +471,11 @@ def google_verification():
 def google_verification_new():
     return "google-site-verification: google314e5a2210182885.html"
 
+
+@main_bp.route('/googleC7pvqXYOiyvCVZLYRAyUb48doCONYF_GTzyQqPSUKfk.html')
+def google_verification_fourth():
+    return "google-site-verification: googleC7pvqXYOiyvCVZLYRAyUb48doCONYF_GTzyQqPSUKfk.html"
+
 @main_bp.route('/api/users')
 @login_required
 def api_users():

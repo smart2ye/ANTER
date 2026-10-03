@@ -8,42 +8,40 @@ from app.utils.media_urls import avatar_url
 videos_bp = Blueprint('videos', __name__, url_prefix='/videos')
 
 @videos_bp.route('/reels')
-@login_required
 def reels():
+    """صفحة الريلز العامة — تعمل للزوار والمستخدمين المسجّلين.
+
+    الزوار يشاهدون الريلز بدون تسجيل. الإعجاب/التعليق/المشاركة تتطلب تسجيل الدخول.
+    """
     videos = Video.query.filter_by(is_reel=True).order_by(Video.created_at.desc()).all()
 
-    # قائمة الأشخاص الذين يتابعهم المستخدم لإرسال الريلز إليهم.
-    # لا تعتمد على حالة الاتصال: تشمل Online وOffline.
-    blocked_ids = {
-        row.blocked_id
-        for row in UserBlock.query.filter_by(blocker_id=current_user.id).all()
-    }
-    blocked_ids.update(
-        row.blocker_id
-        for row in UserBlock.query.filter_by(blocked_id=current_user.id).all()
-    )
-
-    followed_users = (
-        Follow.query
-        .filter_by(follower_id=current_user.id)
-        .all()
-    )
-
     share_users = []
-    followed_ids = {
-        row.followed_id
-        for row in followed_users
-        if row.followed_id != current_user.id
-        and row.followed_id not in blocked_ids
-    }
-
-    if followed_ids:
-        share_users = (
-            User.query
-            .filter(User.id.in_(followed_ids))
-            .order_by(User.name.asc(), User.username.asc())
-            .all()
+    if current_user.is_authenticated:
+        # قائمة الأشخاص الذين يتابعهم المستخدم لإرسال الريلز إليهم.
+        blocked_ids = {
+            row.blocked_id
+            for row in UserBlock.query.filter_by(blocker_id=current_user.id).all()
+        }
+        blocked_ids.update(
+            row.blocker_id
+            for row in UserBlock.query.filter_by(blocked_id=current_user.id).all()
         )
+
+        followed_users = Follow.query.filter_by(follower_id=current_user.id).all()
+        followed_ids = {
+            row.followed_id
+            for row in followed_users
+            if row.followed_id != current_user.id
+            and row.followed_id not in blocked_ids
+        }
+
+        if followed_ids:
+            share_users = (
+                User.query
+                .filter(User.id.in_(followed_ids))
+                .order_by(User.name.asc(), User.username.asc())
+                .all()
+            )
 
     return render_template(
         'videos/reels.html',
@@ -174,24 +172,40 @@ def watch_legacy(video_id):
 
 
 @videos_bp.route('/r/<public_id>')
-@login_required
 def watch(public_id):
+    """صفحة عرض الريل — عامة للزوار والمستخدمين."""
     video = Video.query.filter_by(public_id=public_id).first_or_404()
     video.views += 1
     db.session.commit()
 
-    # ANTER: بعد الريل المضغوط، نكمل بنفس خوارزمية reels_ranker
-    # حتى تكون تجربة Reels موحّدة بين /videos/reels و /videos/r/<id>.
-    try:
-        from app.services.reels_ranker import rank_reels
-        ranked = rank_reels(
-            current_user,
-            limit=20,
-            exclude_ids=[video.id],
-        )
-        stream_videos = [video] + list(ranked)
-    except Exception:
-        stream_videos = [video]
+    stream_videos = [video]
+
+    if current_user.is_authenticated:
+        # ANTER: بعد الريل المضغوط، نكمل بنفس خوارزمية reels_ranker
+        # حتى تكون تجربة Reels موحّدة بين /videos/reels و /videos/r/<id>.
+        try:
+            from app.services.reels_ranker import rank_reels
+            ranked = rank_reels(
+                current_user,
+                limit=20,
+                exclude_ids=[video.id],
+            )
+            stream_videos = [video] + list(ranked)
+        except Exception:
+            stream_videos = [video]
+    else:
+        # للزوار: نعرض أحدث الريلز لإثراء المشاهدة بدون تسجيل.
+        try:
+            recent = (
+                Video.query
+                .filter(Video.is_reel.is_(True), Video.id != video.id)
+                .order_by(Video.created_at.desc())
+                .limit(20)
+                .all()
+            )
+            stream_videos = [video] + recent
+        except Exception:
+            stream_videos = [video]
 
     comments = video.comments.filter_by(parent_id=None).order_by(VideoComment.created_at.asc()).all()
     return render_template('videos/reels.html', videos=stream_videos, comments=comments)

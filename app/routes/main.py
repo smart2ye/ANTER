@@ -376,6 +376,13 @@ def robots_txt():
     )
 
 
+@main_bp.route('/d5a1393ec6a04f07aaacd9561975b833.txt')
+def indexnow_key():
+    """ملف التحقق من IndexNow (Bing + Yandex + Seznam + Naver)."""
+    from flask import Response
+    return Response('d5a1393ec6a04f07aaacd9561975b833', mimetype='text/plain')
+
+
 @main_bp.route('/sitemap.xml')
 def sitemap():
     """توليد خريطة الموقع (Sitemap) بشكل ديناميكي لضمان أرشفة كافة المنشورات والريلز والمستخدمين."""

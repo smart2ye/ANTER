@@ -1,0 +1,30 @@
+name: Submit URLs to IndexNow
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    # كل يوم الساعة 3 فجرًا UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Wait for Render deployment
+        if: github.event_name == 'push'
+        run: sleep 180
+
+      - name: Submit URLs from sitemap
+        run: |
+          python3 scripts/indexnow_submit.py --sitemap || true

@@ -189,8 +189,11 @@ def build_feed(user):
     return all_posts, top_suggested
 
 @main_bp.route('/')
-@login_required
 def index():
+    # الزائر غير المسجّل → صفحة هبوط تسويقية عامة (لعرض ANTER لمحركات البحث والزوار).
+    if not current_user.is_authenticated:
+        return render_template('landing.html')
+
     all_posts, top_suggested = build_feed(current_user)
     page_size = current_app.config['FEED_PAGE_SIZE']
 

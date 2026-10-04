@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+
+{# ============================================================
+   صفحة هبوط عامة للزوار غير المسجّلين
+   الهدف: عرض قيمة ANTER + SEO + دعوة للتسجيل
+   ============================================================ #}
+
+{% block page_title %}ANTER — شبكة تواصل اجتماعي عربية بذكاء اصطناعي{% endblock %}
+{% block meta_description %}ANTER شبكة تواصل اجتماعي عربية حديثة، تدمج التواصل البشري بقدرات الذكاء الاصطناعي. منشورات، ريلز، قصص، ومراسلة، بواجهة عربية كاملة.{% endblock %}
+{% block canonical %}<link rel="canonical" href="{{ url_for('main.index', _external=True) }}">{% endblock %}
+{% block og_type %}website{% endblock %}
+{% block og_url %}{{ url_for('main.index', _external=True) }}{% endblock %}
+{% block og_title %}ANTER — شبكة تواصل اجتماعي عربية{% endblock %}
+{% block og_description %}منصة عربية حديثة تجمع التواصل البشري مع مساعد ذكي، بدون إعلانات ولا بيع بيانات.{% endblock %}
+
+{% block content %}
+
+<div class="anter-landing">
+
+    <!-- Hero -->
+    <section class="anter-hero">
+        <div class="anter-hero__bg" aria-hidden="true"></div>
+        <div class="container anter-hero__inner">
+            <div class="anter-hero__text">
+                <span class="anter-hero__eyebrow">
+                    <i class="fas fa-sparkles" aria-hidden="true"></i>
+                    شبكة عربية جديدة
+                </span>
+                <h1 class="anter-hero__title">
+                    تواصل بذكاء.<br>
+                    شارك بإلهام.<br>
+                    <span class="anter-hero__title-accent">كن جزءًا من ANTER.</span>
+                </h1>
+                <p class="anter-hero__lead">
+                    منصة تواصل اجتماعي عربية تجمع البشر والذكاء الاصطناعي في تجربة واحدة —
+                    منشورات، ريلز، قصص، ومراسلة، بواجهة عربية كاملة، وباحترام كامل لخصوصيتك.
+                </p>
+
+                <div class="anter-hero__cta">
+                    <a href="{{ url_for('auth.register') }}" class="anter-btn anter-btn--primary">
+                        <i class="fas fa-user-plus" aria-hidden="true"></i>
+                        أنشئ حسابك مجانًا
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" class="anter-btn anter-btn--ghost">
+                        لديّ حساب — دخول
+                    </a>
+                </div>
+
+                <ul class="anter-hero__mini">
+                    <li><i class="fas fa-check-circle" aria-hidden="true"></i> بدون إعلانات</li>
+                    <li><i class="fas fa-check-circle" aria-hidden="true"></i> بدون بيع بيانات</li>
+                    <li><i class="fas fa-check-circle" aria-hidden="true"></i> مجاني بالكامل</li>
+                </ul>
+            </div>
+
+            <div class="anter-hero__visual" aria-hidden="true">
+                <div class="anter-mock">
+                    <div class="anter-mock__bar">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <div class="anter-mock__body">
+                        <div class="anter-mock__avatar"></div>
+                        <div class="anter-mock__lines">
+                            <div class="anter-mock__line anter-mock__line--short"></div>
+                            <div class="anter-mock__line"></div>
+                            <div class="anter-mock__line"></div>
+                        </div>
+                    </div>
+                    <div class="anter-mock__actions">
+                        <span>👍</span><span>💬</span><span>↗</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- المزايا -->
+    <section class="anter-features container">
+        <header class="anter-section-head">
+            <h2>لماذا ANTER؟</h2>
+            <p>لأننا نبني المكان الذي تفتقده الشبكات الكبرى: عربي بالكامل، ذكي، ومحترم لخصوصيتك.</p>
+        </header>
+
+        <div class="anter-features__grid">
+            <article class="anter-feature">
+                <div class="anter-feature__icon anter-feature__icon--ai">
+                    <i class="fas fa-robot" aria-hidden="true"></i>
+                </div>
+                <h3>مساعد ذكي عربي</h3>
+                <p>مساعد أنتر يفهم العربية، يساعدك في صياغة منشوراتك، ويلخّص المحتوى، ويتذكر سياق حديثك.</p>
+            </article>
+
+            <article class="anter-feature">
+                <div class="anter-feature__icon anter-feature__icon--privacy">
+                    <i class="fas fa-shield-halved" aria-hidden="true"></i>
+                </div>
+                <h3>خصوصية حقيقية</h3>
+                <p>لا إعلانات، لا بيع بيانات، ولا خوارزميات تلاعب. أنت تتحكم بمن يرى منشوراتك.</p>
+            </article>
+
+            <article class="anter-feature">
+                <div class="anter-feature__icon anter-feature__icon--content">
+                    <i class="fas fa-photo-film" aria-hidden="true"></i>
+                </div>
+                <h3>محتوى متنوع</h3>
+                <p>منشورات، ريلز، قصص، ورسائل — كل ما تحتاجه في مكان واحد، بواجهة عربية أصيلة.</p>
+            </article>
+
+            <article class="anter-feature">
+                <div class="anter-feature__icon anter-feature__icon--speed">
+                    <i class="fas fa-bolt" aria-hidden="true"></i>
+                </div>
+                <h3>سريع وخفيف</h3>
+                <p>مصمَّم ليعمل بسلاسة على شبكات الجوال. لا انتظار، لا تعقيد.</p>
+            </article>
+        </div>
+    </section>
+
+    <!-- دعوة أخيرة -->
+    <section class="anter-final">
+        <div class="container anter-final__inner">
+            <h2>جاهز تبدأ؟</h2>
+            <p>انضم إلى مجتمع ANTER وكن جزءًا من بناء شبكة عربية جديدة.</p>
+            <a href="{{ url_for('auth.register') }}" class="anter-btn anter-btn--primary anter-btn--large">
+                <i class="fas fa-user-plus" aria-hidden="true"></i>
+                إنشاء حساب مجاني
+            </a>
+        </div>
+    </section>
+
+</div>
+
+<style>
+    .anter-landing {
+        background: var(--anter-bg, #f0f2f5);
+    }
+
+    /* ========== Hero ========== */
+    .anter-hero {
+        position: relative;
+        overflow: hidden;
+        padding: 40px 0 60px;
+    }
+    .anter-hero__bg {
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 15% 20%, rgba(0, 200, 248, 0.18), transparent 45%),
+            radial-gradient(circle at 85% 80%, rgba(22, 11, 142, 0.15), transparent 50%),
+            linear-gradient(135deg, #031E64 0%, #003AAB 55%, #0a1c4a 100%);
+        z-index: 0;
+    }
+    .anter-hero__inner {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 40px;
+        align-items: center;
+        color: #fff;
+    }
+    .anter-hero__eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(120, 247, 253, 0.35);
+        color: #78F7FD;
+        padding: 5px 14px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        margin-bottom: 18px;
+    }
+    .anter-hero__title {
+        font-size: clamp(1.8rem, 5vw, 3rem);
+        font-weight: 900;
+        line-height: 1.25;
+        margin: 0 0 18px;
+    }
+    .anter-hero__title-accent {
+        background: linear-gradient(135deg, #00C8F8, #78F7FD);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .anter-hero__lead {
+        font-size: 1.02rem;
+        line-height: 1.8;
+        color: rgba(255, 255, 255, 0.88);
+        max-width: 540px;
+        margin: 0 0 28px;
+    }
+    .anter-hero__cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 22px;
+    }
+    .anter-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 22px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+        cursor: pointer;
+        border: 0;
+    }
+    .anter-btn--primary {
+        background: linear-gradient(135deg, #003AAB, #00C8F8);
+        color: #fff;
+        box-shadow: 0 10px 24px rgba(0, 200, 248, 0.32);
+    }
+    .anter-btn--primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(0, 200, 248, 0.42);
+        color: #fff;
+    }
+    .anter-btn--ghost {
+        background: rgba(255, 255, 255, 0.10);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.30);
+    }
+    .anter-btn--ghost:hover {
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+    }
+    .anter-btn--large {
+        padding: 14px 30px;
+        font-size: 1.02rem;
+    }
+    .anter-hero__mini {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0.82rem;
+        color: rgba(255, 255, 255, 0.78);
+    }
+    .anter-hero__mini li {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .anter-hero__mini i {
+        color: #78F7FD;
+    }
+
+    /* ========== Mockup ========== */
+    .anter-hero__visual {
+        display: flex;
+        justify-content: center;
+    }
+    .anter-mock {
+        width: 100%;
+        max-width: 280px;
+        background: rgba(255, 255, 255, 0.10);
+        border: 1px solid rgba(255, 255, 255, 0.20);
+        border-radius: 20px;
+        padding: 14px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.30);
+    }
+    .anter-mock__bar {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 14px;
+    }
+    .anter-mock__bar span {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.35);
+    }
+    .anter-mock__bar span:nth-child(1) { background: #ff6058; }
+    .anter-mock__bar span:nth-child(2) { background: #ffbd2e; }
+    .anter-mock__bar span:nth-child(3) { background: #28ca42; }
+    .anter-mock__body {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .anter-mock__avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00C8F8, #003AAB);
+        flex-shrink: 0;
+    }
+    .anter-mock__lines {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-top: 4px;
+    }
+    .anter-mock__line {
+        height: 8px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.22);
+    }
+    .anter-mock__line--short { width: 55%; }
+    .anter-mock__actions {
+        display: flex;
+        gap: 14px;
+        justify-content: flex-end;
+        font-size: 1.1rem;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    /* ========== Features ========== */
+    .anter-features {
+        padding: 60px 16px;
+    }
+    .anter-section-head {
+        text-align: center;
+        max-width: 620px;
+        margin: 0 auto 40px;
+    }
+    .anter-section-head h2 {
+        font-size: clamp(1.5rem, 3.5vw, 2rem);
+        font-weight: 900;
+        color: var(--anter-text, #050505);
+        margin: 0 0 10px;
+    }
+    .anter-section-head p {
+        color: var(--anter-text-muted, #65676b);
+        font-size: 0.98rem;
+        margin: 0;
+    }
+    .anter-features__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        max-width: 1080px;
+        margin: 0 auto;
+    }
+    .anter-feature {
+        background: var(--anter-card, #fff);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 18px;
+        padding: 24px;
+        text-align: right;
+        transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+    .anter-feature:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+    }
+    .anter-feature__icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: #fff;
+        margin-bottom: 14px;
+    }
+    .anter-feature__icon--ai { background: linear-gradient(135deg, #003AAB, #00C8F8); }
+    .anter-feature__icon--privacy { background: linear-gradient(135deg, #16a34a, #0e7490); }
+    .anter-feature__icon--content { background: linear-gradient(135deg, #160B8E, #6d28d9); }
+    .anter-feature__icon--speed { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+    .anter-feature h3 {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: var(--anter-text, #050505);
+        margin: 0 0 8px;
+    }
+    .anter-feature p {
+        font-size: 0.92rem;
+        line-height: 1.7;
+        color: var(--anter-text-muted, #65676b);
+        margin: 0;
+    }
+
+    /* ========== Final CTA ========== */
+    .anter-final {
+        padding: 60px 16px 80px;
+    }
+    .anter-final__inner {
+        max-width: 640px;
+        margin: 0 auto;
+        text-align: center;
+        background: linear-gradient(135deg, #031E64 0%, #003AAB 100%);
+        border-radius: 24px;
+        padding: 48px 24px;
+        color: #fff;
+        box-shadow: 0 24px 60px rgba(0, 58, 171, 0.28);
+    }
+    .anter-final__inner h2 {
+        font-size: clamp(1.5rem, 3.5vw, 2rem);
+        font-weight: 900;
+        margin: 0 0 10px;
+    }
+    .anter-final__inner p {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 0.98rem;
+        margin: 0 0 24px;
+    }
+
+    /* ========== Responsive ========== */
+    @media (max-width: 860px) {
+        .anter-hero__inner {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+        .anter-hero__lead { margin-left: auto; margin-right: auto; }
+        .anter-hero__cta { justify-content: center; }
+        .anter-hero__mini { justify-content: center; }
+        .anter-hero__visual { order: -1; }
+        .anter-mock { max-width: 220px; }
+        .anter-feature { text-align: center; }
+    }
+</style>
+
+{% endblock %}

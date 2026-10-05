@@ -1,10 +1,11 @@
 # مرجع القوالب (Templates)
 
-**آخر تحديث:** 2026-09-27
-**المجموع:** 46 قالب
+**آخر تحديث:** 2026-10-05
+**المجموع:** 48 قالب
 
 | المسار | يمتد من |
 |---|---|
+| `_composer.html` | — |
 | `_feed_recommendations.html` | — |
 | `_find_friends.html` | — |
 | `_post_card.html` | — |
@@ -19,6 +20,7 @@
 | `admin/users.html` | base.html |
 | `admin/verification_requests.html` | base.html |
 | `admin/videos.html` | base.html |
+| `auth/accounts.html` | base.html |
 | `auth/confirm_email.html` | base.html |
 | `auth/login.html` | base.html |
 | `auth/register.html` | base.html |
@@ -31,13 +33,13 @@
 | `followers.html` | base.html |
 | `help.html` | base.html |
 | `index.html` | base.html |
+| `landing.html` | base.html |
 | `messages/chat.html` | base.html |
 | `messages/inbox.html` | base.html |
 | `moments/detail.html` | base.html |
 | `moments/index.html` | base.html |
 | `notifications.html` | base.html |
 | `post_detail.html` | base.html |
-| `post_reactions.html` | base.html |
 | `posts/create.html` | base.html |
 | `posts/edit.html` | base.html |
 | `privacy.html` | base.html |

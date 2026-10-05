@@ -1,7 +1,21 @@
 # مرجع الخدمات (Services)
 
-**آخر تحديث:** 2026-09-27
-**المجموع:** 16 خدمة
+**آخر تحديث:** 2026-10-05
+**المجموع:** 18 خدمة
+
+## account_vault.py
+
+**دوال مستقلة:**
+- `_serializer()`
+- `_sign_for_user()`
+- `_user_from_token()`
+- `get_saved_accounts()`
+- `_write_accounts()`
+- `add_account()`
+- `remove_account()`
+- `clear_accounts()`
+- `resolve_switch_token()`
+- `enrich_accounts()`
 
 ## ai_service.py
 
@@ -73,9 +87,13 @@
 ## anter_user_messages.py
 
 **دوال مستقلة:**
+- `_resolve_topic()`
+- `_safe_first_name()`
 - `_already_sent()`
 - `send_welcome_message()`
 - `send_report_receipt()`
+- `build_report_resolution_text()`
+- `build_report_rejection_text()`
 
 ## explore_service.py
 
@@ -144,6 +162,14 @@
 
 **دوال مستقلة:**
 - `ensure_configured_owner_is_admin()`
+
+## password_reset.py
+
+**دوال مستقلة:**
+- `_serializer()`
+- `_payload_for()`
+- `generate_token()`
+- `verify_token()`
 
 ## privacy.py
 

@@ -1,6 +1,6 @@
 # مرجع النماذج (Models)
 
-**آخر تحديث:** 2026-09-27
+**آخر تحديث:** 2026-10-05
 **المجموع:** 34 موديل
 
 ## AssistantDailyPublication
@@ -165,6 +165,8 @@
 | `is_deleted_everyone` | BOOLEAN | ✓ |  |
 | `deleted_by_sender` | BOOLEAN | ✓ |  |
 | `deleted_by_receiver` | BOOLEAN | ✓ |  |
+| `is_ai` | BOOLEAN |  |  |
+| `read_at` | TIMESTAMP | ✓ |  |
 
 ## MobileAccessToken
 
@@ -254,6 +256,7 @@
 | `is_read` | BOOLEAN | ✓ |  |
 | `created_at` | DATETIME | ✓ |  |
 | `extra_text` | VARCHAR(500) | ✓ |  |
+| `report_id` | INTEGER | ✓ |  |
 
 ## OwnerAdminBootstrap
 
@@ -338,6 +341,7 @@
 | `resolved_at` | DATETIME | ✓ |  |
 | `resolved_by` | INTEGER | ✓ |  |
 | `rejection_reason` | VARCHAR(500) | ✓ |  |
+| `resolution_note` | TEXT | ✓ |  |
 
 ## Repost
 

@@ -1,7 +1,7 @@
 # مرجع المسارات (Routes)
 
-**آخر تحديث:** 2026-09-27
-**المجموع:** 188 route · 18 blueprint
+**آخر تحديث:** 2026-10-05
+**المجموع:** 194 route · 18 blueprint
 
 ## admin — `/admin`
 
@@ -47,12 +47,16 @@
 
 ## auth — `/auth`
 
+- `GET` `/auth/accounts` — _auth.py_
+- `POST` `/auth/accounts/clear` — _auth.py_
+- `POST` `/auth/accounts/remove/<int:user_id>` — _auth.py_
 - `GET,POST` `/auth/login` — _auth.py_
 - `GET` `/auth/logout` — _auth.py_
 - `GET` `/auth/messenger/authorize` — _auth.py_
 - `GET,POST` `/auth/register` — _auth.py_
 - `GET,POST` `/auth/reset_password/<token>` — _auth.py_
 - `GET,POST` `/auth/reset_password_request` — _auth.py_
+- `POST` `/auth/switch` — _auth.py_
 - `POST` `/auth/switch-back-to-owner` — _auth.py_
 - `POST` `/auth/switch-to-assistant` — _auth.py_
 
@@ -71,8 +75,10 @@
 - `GET` `/api/messenger/release` — _main.py_
 - `GET` `/api/posts` — _main.py_
 - `GET` `/api/users` — _main.py_
+- `GET` `/d5a1393ec6a04f07aaacd9561975b833.txt` — _main.py_
 - `GET` `/google-site-verification-7Uaxo4sE9avUI6VqAsGp-ldxoslHE10dRIa2Q-Skak0.html` — _main.py_
 - `GET` `/google314e5a2210182885.html` — _main.py_
+- `GET` `/googleC7pvqXYOiyvCVZLYRAyUb48doCONYF_GTzyQqPSUKfk.html` — _main.py_
 - `GET,POST` `/help` — _main.py_
 - `GET` `/login` — _main.py_
 - `GET` `/offline.html` — _main.py_
@@ -186,7 +192,7 @@
 
 ## reactions
 
-- `GET` `/post/<int:post_id>/reactions` — _reactions.py_
+- `GET` `/post/<int:post_id>/reactions.json` — _reactions.py_
 
 ## sse — `/sse`
 

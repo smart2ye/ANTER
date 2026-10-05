@@ -115,7 +115,7 @@ def build_feed(user):
     candidate_limit = current_app.config['FEED_CANDIDATE_LIMIT']
     following_ids = [follow.followed_id for follow in user.following] + [user.id]
     interests = get_user_interests(user.id)
-    post_query = Post.query
+    post_query = Post.query.options(joinedload(Post.author))
 
     followed_posts = post_query.filter(Post.author_id.in_(following_ids)) \
         .order_by(Post.id.desc()).limit(candidate_limit).all()

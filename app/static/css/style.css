@@ -1016,21 +1016,12 @@ body {
     transform: translateY(0);
 }
 
+/* .comment-item هو وسم مشترك — التخطيط يتم داخل الأبناء (.comment-card/.reply-card). */
 .comment-item {
-    display: flex;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.comment-item:last-child {
-    border-bottom: none;
+    padding: 6px 0;
 }
 
 .comment-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
     padding: 10px 0;
     border-bottom: 1px solid var(--border-color);
 }
@@ -9045,6 +9036,71 @@ a.anter-profile-stat:hover {
     .anter-codeblock pre {
         font-size: 0.76rem;
         padding: 10px 12px;
+    }
+}
+
+/* ============================================================
+   ANTER: شجرة الردود المتداخلة (تعليقات + ردود)
+   ============================================================ */
+.replies-list {
+    position: relative;
+    margin-top: 8px;
+    margin-inline-start: 46px;
+    padding-inline-start: 14px;
+    border-inline-start: 2px solid rgba(0, 58, 171, 0.18);
+    border-radius: 0 6px 6px 0;
+}
+
+.reply-card {
+    padding: 8px 0 4px;
+}
+
+.reply-card:last-child {
+    padding-bottom: 0;
+}
+
+.reply-card .comment-avatar {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border-color);
+}
+
+.reply-card .comment-avatar-link {
+    flex: 0 0 28px;
+}
+
+.reply-card .comment-content {
+    background: rgba(0, 58, 171, 0.04) !important;
+    border: 1px solid rgba(0, 58, 171, 0.10) !important;
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+    min-width: 0;
+}
+
+.reply-card .comment-author {
+    font-size: 0.85rem;
+}
+
+.reply-card .comment-text {
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+/* تمييز خفيف عند التمرير على أي تعليق أو رد */
+.comment-card:hover,
+.reply-card:hover {
+    background: rgba(0, 58, 171, 0.015);
+    border-radius: 10px;
+}
+
+/* على الجوال: تقليل المسافة اليسرى */
+@media (max-width: 576px) {
+    .replies-list {
+        margin-inline-start: 28px;
+        padding-inline-start: 10px;
+    }
+    .reply-card .comment-content {
+        padding: 7px 9px !important;
     }
 }
 

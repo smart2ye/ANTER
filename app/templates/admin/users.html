@@ -162,6 +162,12 @@
                             {% if user.email_verified %}disabled title="البريد مؤكد بالفعل"{% endif %}>
                         <i class="fas fa-link"></i> تأكيد
                     </button>
+                    <button class="btn btn-sm btn-outline-warning gen-reset-link"
+                            data-url="{{ url_for('admin.generate_password_reset_link', user_id=user.id) }}"
+                            data-name="{{ user.username }}"
+                            title="توليد رابط لإعادة تعيين كلمة السر">
+                        <i class="fas fa-key"></i> كلمة السر
+                    </button>
                     <button class="btn btn-sm btn-outline-info send-email"
                             data-url="{{ url_for('admin.send_email_to_user', user_id=user.id) }}"
                             data-email="{{ user.email or '' }}"
@@ -257,6 +263,7 @@
     }
 
     handleLinkButton('gen-verify-link');
+    handleLinkButton('gen-reset-link');
 
     document.querySelectorAll('.send-email').forEach(btn => {
         btn.addEventListener('click', function() {

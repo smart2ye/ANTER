@@ -320,15 +320,12 @@ def reset_password_request():
 def reset_password(token):
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
-    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-    try:
-        user_id = s.loads(token, salt='password-reset', max_age=3600)
-    except:
-        flash('❌ الرابط غير صالح أو انتهت صلاحيته.', 'danger')
-        return redirect(url_for('auth.reset_password_request'))
-    user = User.query.get(user_id)
+
+    from app.services.password_reset import verify_token
+    user = verify_token(token)
     if not user:
-        flash('❌ المستخدم غير موجود.', 'danger')
+        # الرمز لاغٍ: منتهي، مستخدم، أو استُخدم من قبل (تغيّر password_hash).
+        flash('❌ الرابط غير صالح أو انتهت صلاحيته.', 'danger')
         return redirect(url_for('auth.reset_password_request'))
     form = ResetPasswordForm()
     if form.validate_on_submit():

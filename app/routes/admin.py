@@ -233,12 +233,11 @@ def generate_email_verification_link(user_id):
 @login_required
 @admin_required
 def generate_password_reset_link(user_id):
-    """توليد رابط إعادة تعيين كلمة السر لمستخدم معيّن (صالح ساعة واحدة)."""
-    from itsdangerous import URLSafeTimedSerializer
+    """توليد رابط إعادة تعيين كلمة السر (صالح ساعة، لمرة واحدة)."""
+    from app.services.password_reset import generate_token
 
     user = User.query.get_or_404(user_id)
-    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-    token = s.dumps(user.id, salt='password-reset')
+    token = generate_token(user)
     link = _public_link(url_for('auth.reset_password', token=token, _external=True))
     return jsonify({'success': True, 'link': link, 'email': user.email})
 
@@ -442,8 +441,8 @@ def create_password_reset_link_for_request(request_id):
     if not applicant:
         return jsonify({'success': False, 'message': 'المستخدم غير موجود.'})
 
-    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-    token = serializer.dumps(applicant.id, salt='password-reset')
+    from app.services.password_reset import generate_token
+    token = generate_token(applicant)
     link = url_for('auth.reset_password', token=token, _external=True)
 
     req.status = 'resolved'

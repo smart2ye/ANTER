@@ -222,12 +222,12 @@
                     <input type="hidden" name="parent_id" value="{{ comment.id }}">
                     <input type="file" name="audio" accept="audio/*" class="d-none reply-audio-input" id="reply-audio-{{ comment.id }}">
                     <div class="input-group input-group-sm">
-                        <input type="text"
-                               name="content"
-                               id="input-reply-{{ comment.id }}"
-                               class="form-control rounded-pill"
-                               placeholder="اكتب ردك أو سجل صوتياً..."
-                               required>
+                        <textarea name="content"
+                                  id="input-reply-{{ comment.id }}"
+                                  class="form-control rounded-pill auto-grow-input"
+                                  placeholder="اكتب ردك أو سجل صوتياً..."
+                                  rows="1"
+                                  required></textarea>
                         <button type="button" class="btn btn-outline-secondary rounded-circle ms-1 reply-mic-btn" data-comment-id="{{ comment.id }}" title="تسجيل صوتي">
                             <i class="fas fa-microphone"></i>
                         </button>
@@ -264,12 +264,12 @@
                  class="comment-avatar comment-composer-avatar rounded-circle"
                  alt="{{ current_user.name }}" loading="lazy" decoding="async">
             <div class="comment-composer-input flex-grow-1 position-relative">
-                <input type="text"
-                       name="content"
-                       id="main-comment-input"
-                       class="form-control rounded-pill pe-5"
-                       placeholder="اكتب تعليقاً..."
-                       required>
+                <textarea name="content"
+                          id="main-comment-input"
+                          class="form-control rounded-pill pe-5 auto-grow-input"
+                          placeholder="اكتب تعليقاً..."
+                          rows="1"
+                          required></textarea>
                 
                 <button type="button" id="mainMicBtn" class="btn btn-link text-muted position-absolute top-50 translate-middle-y end-0 me-2 p-0" title="تسجيل صوتي" aria-label="تسجيل تعليق صوتي">
                     <i class="fas fa-microphone fa-lg"></i>

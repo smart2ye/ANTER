@@ -1241,7 +1241,8 @@ body {
     }
 }
 
-.comment-form input {
+.comment-form input,
+.comment-form textarea {
     flex: 1;
     padding: 8px 14px;
     border-radius: 20px;
@@ -1253,7 +1254,8 @@ body {
     transition: all 0.2s ease;
 }
 
-.comment-form input:focus {
+.comment-form input:focus,
+.comment-form textarea:focus {
     border-color: var(--fb-blue);
     box-shadow: 0 0 0 3px rgba(0, 58, 171, 0.12);
 }
@@ -9151,5 +9153,30 @@ a.anter-profile-stat:hover {
         padding: 4px 10px;
         font-size: 0.76rem;
     }
+}
+
+/* ============================================================
+   ANTER: حقول التعليق/الرد — textarea ينمو تلقائيًا
+   ============================================================ */
+.auto-grow-input {
+    resize: none;
+    overflow-y: hidden;
+    line-height: 1.45;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    min-height: 38px;
+    max-height: 200px;
+    field-sizing: content;
+    transition: height 0.12s ease;
+}
+
+.comment-composer-input .auto-grow-input {
+    min-height: 40px;
+    padding-inline: 14px 44px;
+}
+
+@media (max-width: 420px) {
+    .auto-grow-input { min-height: 36px; }
+    .comment-composer-input .auto-grow-input { min-height: 38px; }
 }
 

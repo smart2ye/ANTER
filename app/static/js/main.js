@@ -1878,3 +1878,37 @@ document.addEventListener('click', function(e) {
     }
 });
 
+/* ============================================================
+   ANTER: حقل التعليق/الرد — نمو تلقائي + Ctrl+Enter للإرسال
+   - Enter: سطر جديد (سلوك textarea الافتراضي)
+   - Ctrl+Enter (أو Cmd+Enter): إرسال النموذج
+   ============================================================ */
+(function () {
+    function autoGrow(el) {
+        if (!el || !el.classList || !el.classList.contains('auto-grow-input')) return;
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+    }
+
+    document.addEventListener('input', function (e) {
+        if (e.target && e.target.classList && e.target.classList.contains('auto-grow-input')) {
+            autoGrow(e.target);
+        }
+    }, true);
+
+    document.addEventListener('keydown', function (e) {
+        if (!e.target || !e.target.classList) return;
+        if (!e.target.classList.contains('auto-grow-input')) return;
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            const form = e.target.closest('form');
+            if (!form) return;
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        }
+    }, true);
+})();
+

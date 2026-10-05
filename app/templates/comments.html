@@ -189,6 +189,13 @@
                                             <i class="{% if user_reply_like %}fas{% else %}far{% endif %} fa-heart"></i>
                                             <span class="comment-like-count">{{ reply.like_count() }}</span>
                                         </button>
+                                        {# ANTER: زر «رد» على الردود — يُعيد فتح نموذج الرد الرئيسي للتعليق الأصلي. #}
+                                        <button type="button"
+                                                class="btn btn-link btn-sm text-muted text-decoration-none p-0 reply-toggle-btn"
+                                                data-comment-id="{{ comment.id }}"
+                                                data-username="{{ reply.author.username }}">
+                                            <i class="fas fa-reply"></i> رد
+                                        </button>
                                     </div>
                                 </div>
                             </div>

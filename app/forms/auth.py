@@ -49,6 +49,27 @@ GENDER_CHOICES = [
 ]
 
 
+# ============================================================
+# ANTER: نطاقات بريد محظورة (نطاقات مزيفة تُستخدم في التسجيل الآلي)
+# ============================================================
+BLOCKED_EMAIL_DOMAINS = {
+    # Gmail مزيف
+    'gmail10p.com', 'gmail10p.net', 'gmail10p.org',
+    # نطاقات بريد مؤقت شائعة
+    'temp-mail.org', 'tempmail.com', 'tempmail.net',
+    'guerrillamail.com', 'guerrillamail.net', 'guerrillamail.org',
+    '10minutemail.com', '10minutemail.net',
+    'yopmail.com', 'yopmail.fr', 'yopmail.net',
+    'mailinator.com', 'mailinator.net',
+    'sharklasers.com', 'guerrillamailblock.com', 'grr.la',
+    'dispostable.com', 'trashmail.com', 'throwawaymail.com',
+    'getnada.com', 'tempr.email', 'fakeinbox.com',
+    'spam4.me', 'mytemp.email', 'mohmal.com',
+    'maildrop.cc', 'inboxbear.com', 'mailcatch.com',
+    'mintemail.com', 'spambog.com', 'wegwerfmail.de',
+}
+
+
 class LoginForm(FlaskForm):
     username = StringField('رقم الجوال أو البريد الإلكتروني أو المعرف', validators=[DataRequired(), Length(min=3, max=120)])
     password = PasswordField('كلمة المرور', validators=[DataRequired()])
@@ -97,7 +118,16 @@ class RegistrationForm(FlaskForm):
 
     def validate_email(self, email):
         value = (email.data or '').strip().lower()
-        if value and User.query.filter_by(email=value).first():
+        if not value:
+            return
+
+        # رفض النطاقات المزيفة أو خدمات البريد المؤقت.
+        if '@' in value:
+            domain = value.rsplit('@', 1)[1].strip().lower()
+            if domain in BLOCKED_EMAIL_DOMAINS:
+                raise ValidationError('هذا النطاق غير مدعوم. استخدم بريداً حقيقياً.')
+
+        if User.query.filter_by(email=value).first():
             raise ValidationError('البريد الإلكتروني مستخدم بالفعل.')
 
     def validate_phone(self, phone):

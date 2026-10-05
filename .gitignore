@@ -96,3 +96,5 @@ requirements.txt.pre_upgrade
 *.pre_optim
 .env.pre_migration
 .env.pre_*
+*.pre_comments
+*.pre_*

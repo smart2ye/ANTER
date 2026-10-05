@@ -54,10 +54,10 @@ def send_reset_email(user, token):
     reset_link = url_for('auth.reset_password', token=token, _external=True)
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
-        <h2 style="color: #6C3CE1;">إعادة تعيين كلمة السر</h2>
+        <h2 style="color: #003AAB;">إعادة تعيين كلمة السر</h2>
         <p>مرحباً {user.username}،</p>
         <p>اضغط على الرابط أدناه لتغيير كلمة السر (صالح لمدة ساعة):</p>
-        <a href="{reset_link}" style="background: #6C3CE1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">تغيير كلمة السر</a>
+        <a href="{reset_link}" style="background: #003AAB; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">تغيير كلمة السر</a>
         <p style="margin-top: 20px; color: #888; font-size: 12px;">إذا لم تطلب إعادة التعيين، يمكنك تجاهل هذا البريد.</p>
         <p style="color: #888; font-size: 12px;">فريق دعم ANTER</p>
     </div>
@@ -83,7 +83,7 @@ def send_email_verification(user, token):
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; direction: rtl; color: #222;">
         <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #6C3CE1; margin-bottom: 8px;">ANTER</h1>
+            <h1 style="color: #003AAB; margin-bottom: 8px;">ANTER</h1>
             <h2>✉️ تأكيد البريد الإلكتروني</h2>
         </div>
 
@@ -96,12 +96,12 @@ def send_email_verification(user, token):
 
         <div style="text-align: center; margin: 30px 0;">
             <a href="{verification_link}"
-               style="display: inline-block; background: #6C3CE1; color: #fff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: bold;">
+               style="display: inline-block; background: #003AAB; color: #fff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: bold;">
                 تأكيد البريد الإلكتروني
             </a>
         </div>
 
-        <div style="background: #f7f5ff; border-radius: 10px; padding: 16px; margin: 24px 0;">
+        <div style="background: #f0f6ff; border-radius: 10px; padding: 16px; margin: 24px 0;">
             <strong>🔐 ملاحظة أمنية</strong>
             <p style="margin-bottom: 0;">
                 هذا الرابط صالح لمدة 24 ساعة فقط.
@@ -129,7 +129,7 @@ def send_welcome_email(user):
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; direction: rtl; color: #222;">
         <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #6C3CE1; margin-bottom: 8px;">ANTER</h1>
+            <h1 style="color: #003AAB; margin-bottom: 8px;">ANTER</h1>
             <h2>🎉 مرحباً بك يا {first_name}</h2>
         </div>
 
@@ -140,7 +140,7 @@ def send_welcome_email(user):
             ومشاركة أفكارك ومتابعة من يهمك.
         </p>
 
-        <div style="background: #f7f5ff; border-radius: 10px; padding: 16px; margin: 24px 0;">
+        <div style="background: #f0f6ff; border-radius: 10px; padding: 16px; margin: 24px 0;">
             <strong>🔐 نصيحة لحماية حسابك</strong>
             <p style="margin-bottom: 0;">
                 بريدك الإلكتروني غير مؤكد حتى الآن.
@@ -165,7 +165,7 @@ def send_password_change_confirmation(user):
     subject = "🔐 تم تغيير كلمة السر بنجاح – ANTER"
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
-        <h2 style="color: #6C3CE1;">🔐 تم تغيير كلمة السر</h2>
+        <h2 style="color: #003AAB;">🔐 تم تغيير كلمة السر</h2>
         <p>مرحباً {user.username}،</p>
         <p>تم تغيير كلمة السر الخاصة بحسابك على <strong>ANTER</strong> بنجاح.</p>
         <p>إذا لم تكن أنت من قام بهذا التغيير، يُرجى التواصل مع فريق الدعم فوراً.</p>

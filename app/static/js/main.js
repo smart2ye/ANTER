@@ -1810,3 +1810,71 @@ document.addEventListener('click', function(e) {
     }, true);
 })();
 
+/* ============================================================
+   ANTER: فتح/إغلاق نموذج الرد على التعليقات (delegated)
+   السبب: التعليقات تُحمَّل عبر innerHTML، فـ <script> داخل
+   الـ fragment لا يُنفَّذ. لذا نُعالجها هنا.
+   ============================================================ */
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.reply-toggle-btn');
+    if (!btn) return;
+
+    const commentId = btn.dataset.commentId;
+    const username = btn.dataset.username || '';
+    if (!commentId) return;
+
+    const formWrapper = document.getElementById('reply-form-' + commentId);
+    if (!formWrapper) return;
+
+    const inputField = document.getElementById('input-reply-' + commentId);
+
+    if (formWrapper.classList.contains('d-none')) {
+        // أغلق كل النماذج المفتوحة
+        document.querySelectorAll('.reply-form-wrapper').forEach(el => el.classList.add('d-none'));
+        formWrapper.classList.remove('d-none');
+
+        if (inputField) {
+            // أضف @username فقط إن لم يكن موجودًا في بداية الحقل
+            const mention = '@' + username + ' ';
+            const current = (inputField.value || '').trimStart();
+            if (username && !current.startsWith('@' + username)) {
+                inputField.value = mention;
+            }
+            inputField.focus();
+            // ضع المؤشر في نهاية النص
+            try { inputField.setSelectionRange(inputField.value.length, inputField.value.length); } catch (_) {}
+        }
+    } else {
+        formWrapper.classList.add('d-none');
+    }
+}, true);
+
+/* ============================================================
+   ANTER: فتح/إغلاق الردود على التعليقات (delegated)
+   ============================================================ */
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.replies-toggle-btn');
+    if (!btn) return;
+
+    const commentId = btn.dataset.repliesToggle;
+    if (!commentId) return;
+
+    const container = document.getElementById('replies-of-' + commentId);
+    if (!container) return;
+
+    const isOpen = !container.classList.contains('d-none');
+
+    if (isOpen) {
+        container.classList.add('d-none');
+        btn.setAttribute('aria-expanded', 'false');
+        const label = btn.querySelector('.replies-toggle-label');
+        const count = container.querySelectorAll('.reply-card').length;
+        if (label) label.textContent = 'عرض ' + count + ' رد';
+    } else {
+        container.classList.remove('d-none');
+        btn.setAttribute('aria-expanded', 'true');
+        const label = btn.querySelector('.replies-toggle-label');
+        if (label) label.textContent = 'إخفاء الردود';
+    }
+});
+

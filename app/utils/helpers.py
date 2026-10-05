@@ -169,12 +169,18 @@ def save_audio_file(file):
 
 def parse_mentions(text):
     from app.models import User
+    from markupsafe import escape
+
     def replace_mention(match):
         username = match.group(1)
         user = User.query.filter_by(username=username).first()
         if user:
-            return f'<a href="{url_for("users.profile", username=username)}" class="mention">@{username}</a>'
-        return f'@{username}'
+            # نُظهر الاسم الحقيقي بدل @username.
+            display = (user.name or user.username).strip() or user.username
+            href = url_for("users.profile", username=username)
+            return f'<a href="{escape(href)}" class="mention">@{escape(display)}</a>'
+        return f'@{escape(username)}'
+
     # دعم الحروف العربية في الـ Regex للإشارات
     pattern = r'@([\w\u0600-\u06FF.]+)'
     return re.sub(pattern, replace_mention, text)
@@ -376,9 +382,11 @@ def _render_plain_segment(text):
         username = match.group(1)
         user = User.query.filter_by(username=username).first()
         if user:
+            display = (user.name or user.username).strip() or user.username
+            href = url_for("users.profile", username=username)
             return (
-                f'<a href="{url_for("users.profile", username=username)}" '
-                f'class="mention">@{escape(username)}</a>'
+                f'<a href="{escape(href)}" '
+                f'class="mention">@{escape(display)}</a>'
             )
         return f'@{escape(username)}'
 

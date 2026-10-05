@@ -9104,3 +9104,52 @@ a.anter-profile-stat:hover {
     }
 }
 
+/* ============================================================
+   ANTER: زر «عرض/إخفاء الردود» على التعليقات
+   ============================================================ */
+.replies-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    margin-inline-start: 46px;
+    padding: 5px 12px;
+    background: rgba(0, 58, 171, 0.06);
+    color: var(--anter-primary, #003AAB);
+    border: 0;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.replies-toggle-btn:hover {
+    background: rgba(0, 58, 171, 0.12);
+}
+
+.replies-toggle-btn:active {
+    transform: scale(0.97);
+}
+
+.replies-toggle-btn i:first-child {
+    font-size: 0.85rem;
+}
+
+.replies-toggle-caret {
+    font-size: 0.7rem;
+    transition: transform 0.18s ease;
+}
+
+.replies-toggle-btn[aria-expanded="true"] .replies-toggle-caret {
+    transform: rotate(180deg);
+}
+
+@media (max-width: 576px) {
+    .replies-toggle-btn {
+        margin-inline-start: 28px;
+        padding: 4px 10px;
+        font-size: 0.76rem;
+    }
+}
+

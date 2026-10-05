@@ -98,9 +98,20 @@
                 </div>
             </div>
 
-            <!-- الردود على التعليق -->
+            <!-- الردود على التعليق (مغلقة افتراضيًا — تُفتح بالضغط على زر «عرض الردود») -->
             {% if comment.replies.count() > 0 %}
-                <div class="replies-list ms-5 mt-2 ps-3 border-start">
+                <button type="button"
+                        class="replies-toggle-btn"
+                        data-replies-toggle="{{ comment.id }}"
+                        aria-expanded="false"
+                        aria-controls="replies-of-{{ comment.id }}">
+                    <i class="fas fa-comment-dots" aria-hidden="true"></i>
+                    <span class="replies-toggle-label">عرض {{ comment.replies.count() }} رد</span>
+                    <i class="fas fa-chevron-down replies-toggle-caret" aria-hidden="true"></i>
+                </button>
+                <div class="replies-list ms-5 mt-2 ps-3 border-start d-none"
+                     id="replies-of-{{ comment.id }}"
+                     data-replies-container="{{ comment.id }}">
                     {% for reply in comment.replies.order_by('created_at').all() %}
                         {% set user_reply_like = reply.likes.filter_by(user_id=current_user.id).first() if current_user.is_authenticated else none %}
                         <div class="reply-card comment-item mb-2"

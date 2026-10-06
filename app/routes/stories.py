@@ -244,8 +244,13 @@ def delete_story(story_id):
     try:
         if story.media_url and story.media_url.startswith('/static/uploads/'):
             filepath = os.path.join(current_app.root_path, story.media_url.lstrip('/'))
-            if os.path.exists(filepath):
-                os.remove(filepath)
+            # ANTER: حماية من Path Traversal — تأكد أن المسار الحقيقي داخل مجلد الرفع.
+            real_path = os.path.realpath(filepath)
+            allowed_base = os.path.realpath(
+                os.path.join(current_app.root_path, 'static', 'uploads')
+            )
+            if real_path.startswith(allowed_base + os.sep) and os.path.exists(real_path):
+                os.remove(real_path)
     except Exception:
         pass
 

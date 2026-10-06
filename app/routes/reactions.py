@@ -18,7 +18,10 @@ def post_reactions_json(post_id):
     query = (
         db.session.query(User, Like.reaction_type)
         .join(Like, Like.user_id == User.id)
-        .filter(Like.post_id == post_id)
+        .filter(
+            Like.post_id == post_id,
+            User.is_deleted.is_(False),
+        )
     )
     if reaction_type and reaction_type in ['like', 'love', 'haha', 'angry', 'sad']:
         query = query.filter(Like.reaction_type == reaction_type)
@@ -40,9 +43,16 @@ def post_reactions_json(post_id):
 
     stats = {}
     for rt in ['like', 'love', 'haha', 'angry', 'sad']:
-        stats[rt] = db.session.query(Like).filter(
-            Like.post_id == post_id, Like.reaction_type == rt
-        ).count()
+        stats[rt] = (
+            db.session.query(Like)
+            .join(User, User.id == Like.user_id)
+            .filter(
+                Like.post_id == post_id,
+                Like.reaction_type == rt,
+                User.is_deleted.is_(False),
+            )
+            .count()
+        )
 
     return jsonify({
         'success': True,

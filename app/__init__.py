@@ -143,6 +143,9 @@ def create_app(test_config=None):
             user = User.query.get(item.user_id)
             if not user:
                 continue
+            # ANTER: لا نُظهر المتفاعلين المحذوفين.
+            if getattr(user, 'is_deleted', False):
+                continue
 
             seen.add(item.user_id)
 

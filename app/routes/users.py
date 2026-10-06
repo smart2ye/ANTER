@@ -103,6 +103,9 @@ def api_search():
 @login_required
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
+    # ANTER: الحسابات المحذوفة لا تُعرض لأي زائر (حتى الأدمن يراها كمرجع فقط).
+    if getattr(user, 'is_deleted', False) and not getattr(current_user, 'is_admin', False):
+        abort(404)
     if not can_view_profile(current_user, user):
         abort(403)
     from sqlalchemy import or_, and_

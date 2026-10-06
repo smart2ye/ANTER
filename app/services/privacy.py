@@ -26,6 +26,9 @@ def follows(viewer, subject):
 def can_view_profile(viewer, subject):
     if is_owner_or_admin(viewer, subject):
         return True
+    # ANTER: الحسابات المحذوفة لا تُعرض لأي زائر.
+    if getattr(subject, 'is_deleted', False):
+        return False
     return getattr(subject, 'profile_visibility', 'public') == 'public' or follows(viewer, subject)
 
 

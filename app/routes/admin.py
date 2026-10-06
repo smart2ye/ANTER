@@ -160,16 +160,11 @@ def delete_user(user_id):
     if user.id == current_user.id:
         return jsonify({'success': False, 'message': 'لا يمكن حذف نفسك'})
     # ANTER: الحذف المنطقي — لا نحذف الصف فعلياً لتفادي كسر العلاقات.
-    # نُعطّل الحساب ونطمس البريد/الهاتف، ونمنع تسجيل الدخول.
+    # نُعطّل الحساب ونمنع تسجيل الدخول، ونُبقي البريد/الهاتف محجوزين.
     user.is_deleted = True
     user.is_active = False
     user.deleted_at = datetime.utcnow()
-    # نُفرغ الهوية الفريدة حتى يستطيع صاحب نفس البريد التسجيل من جديد لو أراد.
-    original_email = user.email
-    original_phone = user.phone
-    user.email = f'deleted-{user.id}-{original_email}'[:120]
-    if original_phone:
-        user.phone = None
+    # نُبقي البريد والهاتف محجوزين (unique) — فلا يستطيع أحد التسجيل بنفس الهوية.
     db.session.commit()
     return jsonify({'success': True})
 

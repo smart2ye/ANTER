@@ -127,7 +127,10 @@ class RegistrationForm(FlaskForm):
             if domain in BLOCKED_EMAIL_DOMAINS:
                 raise ValidationError('هذا النطاق غير مدعوم. استخدم بريداً حقيقياً.')
 
-        if User.query.filter_by(email=value).first():
+        existing = User.query.filter_by(email=value).first()
+        if existing:
+            if getattr(existing, 'is_deleted', False):
+                raise ValidationError('هذا الحساب محذوف. لا يمكن التسجيل بنفس البريد.')
             raise ValidationError('البريد الإلكتروني مستخدم بالفعل.')
 
     def validate_phone(self, phone):
@@ -171,7 +174,10 @@ class RegistrationForm(FlaskForm):
         self.phone.data = value
 
         full_phone = cc + value
-        if User.query.filter_by(phone=full_phone).first():
+        existing = User.query.filter_by(phone=full_phone).first()
+        if existing:
+            if getattr(existing, 'is_deleted', False):
+                raise ValidationError('هذا الحساب محذوف. لا يمكن التسجيل بنفس الرقم.')
             raise ValidationError('رقم الجوال مستخدم بالفعل.')
 
 

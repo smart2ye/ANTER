@@ -16,6 +16,11 @@ def index():
         .limit(200)
         .all()
     )
+    # ANTER: لا نُظهر إشعارات صادرة من حسابات محذوفة.
+    notifs = [
+        n for n in notifs
+        if not getattr(n.actor, 'is_deleted', False)
+    ]
 
     unread_count = sum(1 for n in notifs if not n.is_read)
 
@@ -29,7 +34,18 @@ def index():
 @notifications_bp.route('/unread_count')
 @login_required
 def unread_count():
-    count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+    # ANTER: نستبعد إشعارات المحذوفين من العدّاد ليتوافق مع قائمة الصفحة.
+    from app.models import User
+    count = (
+        Notification.query
+        .join(User, User.id == Notification.actor_id)
+        .filter(
+            Notification.user_id == current_user.id,
+            Notification.is_read.is_(False),
+            User.is_deleted.is_(False),
+        )
+        .count()
+    )
     return jsonify({'count': count})
 
 @notifications_bp.route('/mark_read/<int:notification_id>', methods=['POST'])

@@ -1,7 +1,7 @@
 <!-- بطاقة التعليقات المشتركة -->
 <!-- ============================== -->
 <div class="comments-list">
-    {% for comment in post.comments.filter_by(parent_id=None).order_by('created_at').all() %}
+    {% for comment in post.comments.filter_by(parent_id=None).order_by('created_at').all() if not comment.author.is_deleted %}
         {% set user_comment_like = comment.likes.filter_by(user_id=current_user.id).first() if current_user.is_authenticated else none %}
         <article class="comment-card comment-item mb-2"
          id="comment-{{ comment.id }}"
@@ -112,7 +112,7 @@
                 <div class="replies-list ms-5 mt-2 ps-3 border-start d-none"
                      id="replies-of-{{ comment.id }}"
                      data-replies-container="{{ comment.id }}">
-                    {% for reply in comment.replies.order_by('created_at').all() %}
+                    {% for reply in comment.replies.order_by('created_at').all() if not reply.author.is_deleted %}
                         {% set user_reply_like = reply.likes.filter_by(user_id=current_user.id).first() if current_user.is_authenticated else none %}
                         <div class="reply-card comment-item mb-2"
                              id="comment-{{ reply.id }}"

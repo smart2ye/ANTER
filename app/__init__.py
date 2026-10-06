@@ -349,6 +349,12 @@ def create_app(test_config=None):
         response.headers.setdefault('X-Content-Type-Options', 'nosniff')
         # سياسة المُحيل
         response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+        # عزل العملية (حماية ضد Spectre)
+        response.headers.setdefault('Origin-Agent-Cluster', '?1')
+        # منع المواقع الخارجية من تضمين مواردنا كصور/سكربتات
+        response.headers.setdefault('Cross-Origin-Resource-Policy', 'same-origin')
+        # عزل نافذة المتصفح (يمنع window.opener abuse)
+        response.headers.setdefault('Cross-Origin-Opener-Policy', 'same-origin')
         # إلغاء ميزات المتصفح الحساسة
         response.headers.setdefault(
             'Permissions-Policy',
@@ -378,6 +384,7 @@ def create_app(test_config=None):
             "base-uri 'self'; "
             "form-action 'self'; "
             "object-src 'none'; "
+            "block-all-mixed-content; "
             "upgrade-insecure-requests"
         )
         return response

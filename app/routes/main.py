@@ -227,7 +227,10 @@ def index():
         if followed_ids:
             share_users = (
                 _User.query
-                .filter(_User.id.in_(followed_ids))
+                .filter(
+                    _User.id.in_(followed_ids),
+                    _User.is_deleted.is_(False),
+                )
                 .order_by(_User.name.asc(), _User.username.asc())
                 .all()
             )

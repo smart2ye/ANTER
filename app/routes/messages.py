@@ -111,7 +111,10 @@ def inbox():
     # لتبقى الصفحة خفيفة وسريعة على الهاتف، وتُفتح المحادثة مباشرة عند الضغط عليها.
     followed_users = (
         User.query.join(Follow, Follow.followed_id == User.id)
-        .filter(Follow.follower_id == current_user.id)
+        .filter(
+            Follow.follower_id == current_user.id,
+            User.is_deleted.is_(False),
+        )
         .order_by(User.last_seen.desc())
         .limit(30)
         .all()

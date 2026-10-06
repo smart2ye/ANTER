@@ -98,3 +98,7 @@ requirements.txt.pre_upgrade
 .env.pre_*
 *.pre_comments
 *.pre_*
+
+# ANTER: نسخ بيئة احتياطية — لا تُدفع
+.env.bak*
+.env.pre_turn

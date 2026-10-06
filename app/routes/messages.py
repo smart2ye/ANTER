@@ -6,7 +6,7 @@ import uuid
 from urllib.parse import quote
 from datetime import datetime, timedelta
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, Response
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, Response, abort
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_
@@ -77,7 +77,10 @@ def inbox():
             continue
         latest_by_user.setdefault(other_id, message)
 
-    users = User.query.filter(User.id.in_(latest_by_user.keys())).all()
+    users = User.query.filter(
+        User.id.in_(latest_by_user.keys()),
+        User.is_deleted.is_(False),
+    ).all()
     users_by_id = {user.id: user for user in users}
     muted_ids = {
         row.muted_user_id
@@ -132,6 +135,8 @@ def inbox():
 @login_required
 def chat(user_id):
     other = User.query.get_or_404(user_id)
+    if getattr(other, 'is_deleted', False):
+        abort(404)
     current_user_has_blocked = UserBlock.query.filter_by(
         blocker_id=current_user.id,
         blocked_id=other.id,

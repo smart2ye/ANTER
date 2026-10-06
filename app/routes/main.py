@@ -401,7 +401,10 @@ def sitemap():
     # أرشفة المستخدمين (أحدث 200 مستخدم)
     users = (
         User.query
-        .filter(User.profile_visibility == 'public')
+        .filter(
+            User.profile_visibility == 'public',
+            User.is_deleted.is_(False),
+        )
         .order_by(User.created_at.desc())
         .limit(200)
         .all()

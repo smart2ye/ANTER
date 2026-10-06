@@ -45,7 +45,10 @@ def search():
     if q:
         users = User.query.filter(
             (User.username.contains(q)) | (User.name.contains(q))
-        ).filter(User.id != current_user.id).limit(20).all()
+        ).filter(
+            User.id != current_user.id,
+            User.is_deleted.is_(False),
+        ).limit(20).all()
     else:
         users = []
     return jsonify([{

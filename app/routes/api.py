@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, url_for
+from flask import Blueprint, jsonify, request, url_for, abort
 from flask_login import login_required, current_user
 from app.models import Post, User, Video, Moment, MomentPost
 from app.extensions import db
@@ -37,6 +37,8 @@ def get_posts():
 def get_user(username):
     """جلب معلومات مستخدم (JSON)"""
     user = User.query.filter_by(username=username).first_or_404()
+    if getattr(user, 'is_deleted', False):
+        abort(404)
     return jsonify({
         'id': user.id,
         'username': user.username,

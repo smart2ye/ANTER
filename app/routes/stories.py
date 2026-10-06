@@ -114,7 +114,9 @@ def get_user_stories(user_id):
     ).order_by(Story.created_at.asc()).all()
 
     user = User.query.get_or_404(user_id)
-    
+    if getattr(user, 'is_deleted', False):
+        return jsonify({'error': 'not found'}), 404
+
     return jsonify({
         'user': {
             'id': user.id,

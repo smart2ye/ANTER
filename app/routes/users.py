@@ -80,7 +80,7 @@ def api_search():
         
     users_query = User.query.filter(
         (User.username.ilike(f'%{query}%')) | (User.name.ilike(f'%{query}%'))
-    )
+    ).filter(User.is_deleted.is_(False))
     if request.args.get('following_only') == '1':
         # تستخدم إعادة توجيه الرسائل هذا الخيار حتى لا تعرض إلا الحسابات التي يتابعها المستخدم الحالي.
         users_query = users_query.join(Follow, Follow.followed_id == User.id).filter(
@@ -279,6 +279,8 @@ def report_user(username):
     """بلاغ عن مستخدم — يُخزَّن في Report بنمط user-report:<reason>."""
     target = User.query.filter_by(username=username).first_or_404()
 
+    if getattr(target, 'is_deleted', False):
+        abort(404)
     if target.id == current_user.id:
         flash('لا يمكنك الإبلاغ عن نفسك.', 'warning')
         return redirect(url_for('users.profile', username=username))
@@ -391,7 +393,11 @@ def find_friends():
     # مطابقة
     from app.routes.mobile_api import _normalize_phone
     matches = []
-    for other in User.query.filter(User.phone.isnot(None), User.phone != '').all():
+    for other in User.query.filter(
+        User.phone.isnot(None),
+        User.phone != '',
+        User.is_deleted.is_(False),
+    ).all():
         if other.id == user.id or other.id in blocked_ids:
             continue
         normalized = _normalize_phone(other.phone)
@@ -686,6 +692,8 @@ def request_verification():
 @csrf.exempt
 def follow(user_id):
     user = User.query.get_or_404(user_id)
+    if getattr(user, 'is_deleted', False):
+        return jsonify({'success': False, 'message': 'الحساب غير موجود'}), 404
     if user.id == current_user.id:
         return jsonify({'success': False, 'message': 'لا يمكن متابعة نفسك'}), 400
     current_user.follow(user)

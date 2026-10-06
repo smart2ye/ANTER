@@ -174,7 +174,7 @@ def parse_mentions(text):
     def replace_mention(match):
         username = match.group(1)
         user = User.query.filter_by(username=username).first()
-        if user:
+        if user and not getattr(user, 'is_deleted', False):
             # نُظهر الاسم الحقيقي بدل @username.
             display = (user.name or user.username).strip() or user.username
             href = url_for("users.profile", username=username)
@@ -381,7 +381,7 @@ def _render_plain_segment(text):
     def replace_mention(match):
         username = match.group(1)
         user = User.query.filter_by(username=username).first()
-        if user:
+        if user and not getattr(user, 'is_deleted', False):
             display = (user.name or user.username).strip() or user.username
             href = url_for("users.profile", username=username)
             return (

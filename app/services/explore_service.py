@@ -135,7 +135,10 @@ def trending_users(viewer, limit=20):
         mutual_counts = {row[0]: 0 for row in active_users}
 
     users_by_id = {
-        u.id: u for u in User.query.filter(User.id.in_(suggested_ids)).all()
+        u.id: u for u in User.query.filter(
+            User.id.in_(suggested_ids),
+            User.is_deleted.is_(False),
+        ).all()
     }
 
     def _score(uid):
@@ -184,7 +187,10 @@ def search_users(viewer, query, limit=20):
 
     # نجلب كل المستخدمين الآخرين ثم نُصفّي في Python (يدعم العربية بشكل صحيح)
     # مع 17 مستخدم على Aiven، هذا فعّال. لو كبر المشروع نُضيف عمود search_text مُطبّع.
-    all_users = User.query.filter(User.id != viewer.id).limit(500).all()
+    all_users = User.query.filter(
+        User.id != viewer.id,
+        User.is_deleted.is_(False),
+    ).limit(500).all()
 
     matched = []
     for u in all_users:

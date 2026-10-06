@@ -38,7 +38,10 @@ def reels():
         if followed_ids:
             share_users = (
                 User.query
-                .filter(User.id.in_(followed_ids))
+                .filter(
+                    User.id.in_(followed_ids),
+                    User.is_deleted.is_(False),
+                )
                 .order_by(User.name.asc(), User.username.asc())
                 .all()
             )

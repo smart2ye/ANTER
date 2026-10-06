@@ -176,6 +176,9 @@ def like(post_id):
         user = User.query.get(item.user_id)
         if not user:
             continue
+        # ANTER: لا نُظهر المتفاعلين المحذوفين.
+        if getattr(user, 'is_deleted', False):
+            continue
 
         # اختيار اسم العرض المتاح في نموذج المستخدم
         name = user.name or user.username or 'مستخدم'

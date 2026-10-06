@@ -46,6 +46,11 @@ def _user_from_token(token):
     user = db.session.get(User, user_id)
     if not user:
         return None
+    # ANTER: لا يُسمح بالتبديل إلى حساب محذوف أو معطّل.
+    if getattr(user, 'is_deleted', False):
+        return None
+    if not getattr(user, 'is_active', True):
+        return None
     if (user.password_hash or '')[-20:] != ph_suffix:
         return None  # كلمة السر تغيّرت → الرمز لاغٍ
     return user

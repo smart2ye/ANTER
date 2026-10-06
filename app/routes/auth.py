@@ -256,13 +256,16 @@ def accounts_switch():
     user = vault_resolve(token)
     if not user:
         flash('الرمز منتهي الصلاحية. يرجى تسجيل الدخول من جديد.', 'warning')
-        # نُزيل هذا الحساب من القائمة
-        resp = redirect(url_for('auth.login'))
-        try:
-            vault_remove_by_token_fallback = getattr(__import__('app.services.account_vault', fromlist=['remove_account']), 'remove_account')
-        except Exception:
-            pass
-        return resp
+        return redirect(url_for('auth.login'))
+
+    # ANTER: حماية مزدوجة — لا تبديل لحساب محذوف أو معطّل.
+    if getattr(user, 'is_deleted', False) or not getattr(user, 'is_active', True):
+        flash('هذا الحساب محذوف أو معطّل.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    # ANTER: منع open redirect — نقبل المسارات الداخلية فقط.
+    if not next_url.startswith('/') or next_url.startswith('//'):
+        next_url = url_for('main.index')
 
     # نُسجّل الدخول
     logout_user()

@@ -1,6 +1,6 @@
 # مرجع النماذج (Models)
 
-**آخر تحديث:** 2026-10-05
+**آخر تحديث:** 2026-10-06
 **المجموع:** 34 موديل
 
 ## AssistantDailyPublication
@@ -446,6 +446,8 @@
 | `theme_preference` | VARCHAR(20) | ✓ |  |
 | `terms_agreed` | BOOLEAN | ✓ |  |
 | `wall_visibility` | VARCHAR(20) |  |  |
+| `is_deleted` | BOOLEAN |  |  |
+| `deleted_at` | TIMESTAMP | ✓ |  |
 
 ## UserActivity
 

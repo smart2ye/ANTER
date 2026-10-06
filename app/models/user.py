@@ -44,15 +44,16 @@ class User(UserMixin, db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
-    country_code = db.Column(db.String(10), default=+966)
-    phone = db.Column(db.String(20), unique=True, nullable=True, index=True)
-    phone_verified = db.Column(db.Boolean, default=False)
-    country_code = db.Column(db.String(10), default=+966)
+    country_code = db.Column(db.String(10), default='+966')
     phone = db.Column(db.String(20), unique=True, nullable=True, index=True)
     phone_verified = db.Column(db.Boolean, default=False)
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     theme_preference = db.Column(db.String(20), default='light')
     terms_agreed = db.Column(db.Boolean, default=False)
+
+    # ANTER: الحذف المنطقي — لا نحذف صفوف المستخدم فعلياً (لتجنّب كسر العلاقات).
+    is_deleted = db.Column(db.Boolean, nullable=False, default=False, server_default='false', index=True)
+    deleted_at = db.Column(db.DateTime, nullable=True)
 
     # العلاقات
     posts = db.relationship(

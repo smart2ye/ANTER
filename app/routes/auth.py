@@ -81,6 +81,9 @@ def login():
             (User.phone == form.username.data)
         ).first()
         if user and user.check_password(form.password.data):
+            if getattr(user, 'is_deleted', False):
+                flash('هذا الحساب محذوف. للاعتراض تواصل مع إدارة ANTER.', 'danger')
+                return render_template('auth/login.html', form=form, saved_accounts=saved_accounts)
             login_user(user, remember=True)
             log_user_activity(user.id, "login")
             next_page = request.args.get('next')

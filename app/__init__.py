@@ -362,9 +362,6 @@ def create_app(test_config=None):
         )
         # إزالة هيدر Render الذي يكشف المنصة (2026-09-27)
         response.headers.pop('X-Render-Origin-Server', None)
-        # تشخيص مؤقت — يُحذف بعد الفحص
-        response.headers['X-Client-Hash'] = str(hash(_client_ip()) % 10000)
-        response.headers['X-Worker-Id'] = str(id(_rate_buckets))
 
         # HSTS: على HTTPS فقط (Render / Cloudflare)
         if request.is_secure:

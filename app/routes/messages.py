@@ -534,6 +534,11 @@ def send(user_id):
         if not allowed_audio_file(uploaded_audio.filename):
             flash('صيغة الرسالة الصوتية غير مدعومة.', 'danger')
             return redirect(url_for('messages.chat', user_id=user_id))
+        # ANTER: فحص magic bytes — يرفض الملفات المموّهة بامتداد صوتي.
+        from app.utils.helpers import verify_audio_magic
+        if not verify_audio_magic(uploaded_audio.stream):
+            flash('ملف الصوت غير صالح.', 'danger')
+            return redirect(url_for('messages.chat', user_id=user_id))
         try:
             audio_data = uploaded_audio.read()
         except Exception:

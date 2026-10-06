@@ -35,15 +35,41 @@ def create_story():
         return jsonify({'error': 'صيغة الملف غير مدعومة'}), 400
 
     ext = media.filename.rsplit('.', 1)[1].lower()
-    media_type = 'video' if ext in {'mp4', 'webm', 'mov'} else 'image'
-    
-    filename = f"story_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
+    is_video = ext in {'mp4', 'webm', 'mov'}
+    media_type = 'video' if is_video else 'image'
+
     upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'stories')
     os.makedirs(upload_folder, exist_ok=True)
-    filepath = os.path.join(upload_folder, filename)
-    media.save(filepath)
 
-    media_url = f"/static/uploads/stories/{filename}"
+    if is_video:
+        # ANTER: فحص magic bytes للفيديو + حد الحجم.
+        head = media.stream.read(16)
+        media.stream.seek(0)
+        VIDEO_SIGS = (b'\x00\x00\x00', b'\x1aE\xdf\xa3')
+        if not any(head.startswith(sig) for sig in VIDEO_SIGS):
+            return jsonify({'error': 'ملف الفيديو غير صالح'}), 400
+        max_bytes = current_app.config.get('MAX_VIDEO_UPLOAD_BYTES', 50 * 1024 * 1024)
+        media.stream.seek(0, os.SEEK_END)
+        size = media.stream.tell()
+        media.stream.seek(0)
+        if size > max_bytes:
+            return jsonify({'error': f'حجم الفيديو أكبر من {max_bytes // (1024*1024)} MB'}), 400
+        filename = f"story_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
+        filepath = os.path.join(upload_folder, filename)
+        media.save(filepath)
+        media_url = f"/static/uploads/stories/{filename}"
+    else:
+        # ANTER: للصور — التحقق الكامل عبر prepare_image_data.
+        from app.utils.image_storage import prepare_image_data
+        image_bytes, image_mime = prepare_image_data(media)
+        if not image_bytes:
+            return jsonify({'error': 'ملف الصورة غير صالح'}), 400
+        ext_out = 'webp' if image_mime == 'image/webp' else 'png'
+        filename = f"story_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext_out}"
+        filepath = os.path.join(upload_folder, filename)
+        with open(filepath, 'wb') as fh:
+            fh.write(image_bytes)
+        media_url = f"/static/uploads/stories/{filename}"
 
     story = Story(
         user_id=current_user.id,

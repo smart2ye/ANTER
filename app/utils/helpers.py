@@ -124,23 +124,23 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
 def save_uploaded_image(file, subfolder=''):
+    """حفظ صورة مرفوعة بعد التحقق الكامل (verify + حد أبعاد) عبر prepare_image_data."""
     if not file or not hasattr(file, 'filename') or not file.filename:
         return ''
     if not allowed_file(file.filename):
         return ''
-    ext = file.filename.rsplit('.', 1)[1].lower()
-    new_name = str(uuid.uuid4()) + '.' + ext
+    # ANTER: نستخدم نفس المسار الآمن للصور في كل المشروع (verify + WebP).
+    from app.utils.image_storage import prepare_image_data
+    image_bytes, image_mime = prepare_image_data(file)
+    if not image_bytes:
+        return ''
+    ext_out = 'webp' if image_mime == 'image/webp' else 'png'
+    new_name = str(uuid.uuid4()) + '.' + ext_out
     upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], subfolder)
     os.makedirs(upload_path, exist_ok=True)
     filepath = os.path.join(upload_path, new_name)
-    file.save(filepath)
-    try:
-        from PIL import Image
-        img = Image.open(filepath)
-        img.thumbnail((800, 800))
-        img.save(filepath, optimize=True, quality=85)
-    except (ImportError, Exception):
-        pass
+    with open(filepath, 'wb') as fh:
+        fh.write(image_bytes)
     return os.path.join(subfolder, new_name) if subfolder else new_name
 
 
@@ -152,11 +152,38 @@ def allowed_audio_file(filename):
     )
 
 
+# ANTER: بصمات ملفات صوتية شائعة — لرفض الملفات المموّهة.
+_AUDIO_MAGIC = (
+    b'\x1aE\xdf\xa3',  # webm / mkv
+    b'OggS',             # ogg / opus
+    b'RIFF',             # wav (RIFF....WAVE)
+    b'ID3',              # mp3 (ID3v2)
+    b'\xff\xfb', b'\xff\xf3', b'\xff\xf2', b'\xff\xfa',  # mp3 frames
+    b'fLaC',             # flac
+    b'\x00\x00\x00',  # mp4 / m4a (ftyp atom)
+)
+
+
+def verify_audio_magic(stream):
+    """فحص البايتات الأولى لملف صوتي (لا يمكن تزويرها بالامتداد)."""
+    try:
+        pos = stream.tell()
+        head = stream.read(16)
+        stream.seek(pos)
+    except Exception:
+        return False
+    if not head or len(head) < 4:
+        return False
+    return any(head.startswith(sig) for sig in _AUDIO_MAGIC)
+
+
 def save_audio_file(file):
-    """حفظ رسالة صوتية مرفوعة وإرجاع مسارها النسبي."""
+    """حفظ رسالة صوتية مرفوعة وإرجاع مسارها النسبي (بعد التحقق الكامل)."""
     if not file or not hasattr(file, 'filename') or not file.filename:
         return ''
     if not allowed_audio_file(file.filename):
+        return ''
+    if not verify_audio_magic(file.stream):
         return ''
 
     ext = file.filename.rsplit('.', 1)[1].lower()

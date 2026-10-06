@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from app import db, csrf
 from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag, Video
 from app.forms.post import PostForm
-from app.utils.helpers import extract_hashtags, allowed_audio_file, extract_link_metadata as extract_safe_link_metadata, log_user_activity, save_video_file, create_thumbnail, allowed_video_file
+from app.utils.helpers import extract_hashtags, allowed_audio_file, verify_audio_magic, extract_link_metadata as extract_safe_link_metadata, log_user_activity, save_video_file, create_thumbnail, allowed_video_file
 from app.utils.image_storage import prepare_image_data
 from app.services.anter_user_messages import send_report_receipt
 from app.services.privacy import POST_VISIBILITIES, can_view_post
@@ -278,7 +278,7 @@ def comment(post_id):
     uploaded_audio = request.files.get('audio')
     audio_url = None
     if uploaded_audio and uploaded_audio.filename:
-        if allowed_audio_file(uploaded_audio.filename):
+        if allowed_audio_file(uploaded_audio.filename) and verify_audio_magic(uploaded_audio.stream):
             try:
                 audio_bytes = uploaded_audio.read()
                 max_size = current_app.config['MAX_AUDIO_MESSAGE_BYTES']

@@ -17,6 +17,7 @@ from .sse import sse_bp
 from .reactions import reactions_bp
 from .stories import stories_bp
 from .moments import moments_bp
+from .year_in_review import year_in_review_bp
 
 def register_blueprints(app: Flask):
     app.register_blueprint(stories_bp, url_prefix="/api")
@@ -37,3 +38,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(sse_bp, url_prefix='/sse')
     app.register_blueprint(reactions_bp)
     app.register_blueprint(moments_bp)
+    app.register_blueprint(year_in_review_bp)

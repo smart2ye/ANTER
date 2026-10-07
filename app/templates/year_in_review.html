@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block page_title %}حصاد {{ year }} — {{ payload.user_info.name }} | ANTER{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 600px;">
+
+    <div class="text-center mb-4">
+        <h1 class="h3 fw-bold mb-1">حصادك السنوي في ANTER</h1>
+        <p class="text-muted mb-0">عام {{ year }}</p>
+    </div>
+
+    <!-- البطاقة -->
+    <div class="text-center mb-4">
+        <img src="{{ url_for('year_in_review.card', year=year) }}"
+             alt="بطاقة حصاد {{ year }}"
+             class="img-fluid rounded-4 shadow-lg"
+             style="max-width: 100%; height: auto; border: 1px solid var(--border-color);">
+    </div>
+
+    <!-- أزرار -->
+    <div class="d-flex flex-wrap gap-2 justify-content-center mb-4">
+        <a href="{{ url_for('year_in_review.card', year=year) }}"
+           download="anter-{{ payload.user_info.username }}-{{ year }}.png"
+           class="btn btn-primary rounded-pill px-4">
+            <i class="fas fa-download me-1"></i> تحميل البطاقة
+        </a>
+        <button type="button"
+                class="btn btn-outline-primary rounded-pill px-4"
+                onclick="shareYearCard()">
+            <i class="fas fa-share-alt me-1"></i> مشاركة
+        </button>
+    </div>
+
+    <!-- ملخص نصي -->
+    <div class="card border-0 rounded-4 mb-4" style="background: var(--fb-bg);">
+        <div class="card-body p-4">
+            <h2 class="h6 text-muted mb-3">ملخص سريع</h2>
+            <ul class="list-unstyled mb-0">
+                <li class="d-flex justify-content-between py-2 border-bottom">
+                    <span>المنشورات</span>
+                    <strong>{{ payload.stats.total_posts }}</strong>
+                </li>
+                <li class="d-flex justify-content-between py-2 border-bottom">
+                    <span>الإعجابات المستلمة</span>
+                    <strong>{{ payload.stats.likes_received }}</strong>
+                </li>
+                <li class="d-flex justify-content-between py-2 border-bottom">
+                    <span>التعليقات المستلمة</span>
+                    <strong>{{ payload.stats.comments_received }}</strong>
+                </li>
+                <li class="d-flex justify-content-between py-2 border-bottom">
+                    <span>المتابعون</span>
+                    <strong>{{ payload.stats.followers }}</strong>
+                </li>
+                <li class="d-flex justify-content-between py-2">
+                    <span>إجمالي التفاعلات</span>
+                    <strong>{{ payload.stats.total_interactions }}</strong>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    {% if payload.top_interactors %}
+    <div class="card border-0 rounded-4 mb-4" style="background: var(--fb-bg);">
+        <div class="card-body p-4">
+            <h2 class="h6 text-muted mb-3">أكثر من تفاعل معك</h2>
+            <ul class="list-unstyled mb-0">
+                {% for f in payload.top_interactors %}
+                <li class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+                    <a href="{{ url_for('users.profile', username=f.username) }}"
+                       class="text-decoration-none text-dark">
+                        <strong>{{ f.name }}</strong>
+                        <span class="text-muted small">@{{ f.username }}</span>
+                    </a>
+                    <span class="badge rounded-pill bg-primary">{{ f.interactions }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="text-center">
+        <a href="{{ url_for('main.index') }}" class="text-muted small">
+            <i class="fas fa-arrow-right me-1"></i> العودة للرئيسية
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function shareYearCard() {
+    try {
+        const url = "{{ url_for('year_in_review.card', year=year, _external=True) }}";
+        const resp = await fetch(url);
+        const blob = await resp.blob();
+        const file = new File([blob], "anter-{{ year }}.png", { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: 'حصادي في ANTER {{ year }}',
+                text: 'شاهد حصادي في ANTER {{ year }}!'
+            });
+        } else {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'anter-{{ year }}.png';
+            a.click();
+        }
+    } catch (e) {
+        console.error(e);
+        alert('تعذر المشاركة. جرّب التحميل مباشرة.');
+    }
+}
+</script>
+{% endblock %}

@@ -1,7 +1,7 @@
 # مرجع الخدمات (Services)
 
-**آخر تحديث:** 2026-10-06
-**المجموع:** 18 خدمة
+**آخر تحديث:** 2026-10-07
+**المجموع:** 20 خدمة
 
 ## account_vault.py
 
@@ -194,3 +194,24 @@
 **دوال مستقلة:**
 - `should_run_schema_upgrades()`
 - `run_startup_schema_upgrades()`
+
+## year_card.py
+
+**دوال مستقلة:**
+- `_font()`
+- `_ar()`
+- `_strip_nontext()`
+- `_paste_logo()`
+- `_gradient_bg()`
+- `_center()`
+- `_rounded()`
+- `render()`
+- `_center_in_box()`
+- `_wrap_text()`
+
+## year_in_review.py
+
+**دوال مستقلة:**
+- `_top_post_for_year()`
+- `_top_interactors()`
+- `collect()`

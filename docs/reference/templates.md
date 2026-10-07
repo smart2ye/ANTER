@@ -1,7 +1,7 @@
 # مرجع القوالب (Templates)
 
-**آخر تحديث:** 2026-10-06
-**المجموع:** 48 قالب
+**آخر تحديث:** 2026-10-07
+**المجموع:** 49 قالب
 
 | المسار | يمتد من |
 |---|---|
@@ -53,3 +53,4 @@
 | `videos/_reel_stream.html` | — |
 | `videos/reels.html` | base.html |
 | `videos/upload.html` | base.html |
+| `year_in_review.html` | base.html |

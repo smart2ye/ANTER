@@ -1,7 +1,7 @@
 # مرجع المسارات (Routes)
 
-**آخر تحديث:** 2026-10-06
-**المجموع:** 194 route · 18 blueprint
+**آخر تحديث:** 2026-10-07
+**المجموع:** 197 route · 19 blueprint
 
 ## admin — `/admin`
 
@@ -250,3 +250,9 @@
 - `GET,POST` `/videos/upload` — _videos.py_
 - `POST` `/videos/view/<public_id>` — _videos.py_
 - `GET` `/videos/watch/<int:video_id>` — _videos.py_
+
+## year_in_review
+
+- `GET` `/year-in-review` — _year_in_review.py_
+- `GET` `/year-in-review/<int:year>` — _year_in_review.py_
+- `GET` `/year-in-review/<int:year>/card.png` — _year_in_review.py_

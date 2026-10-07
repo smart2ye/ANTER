@@ -1,6 +1,7 @@
 """معالجة الصور الكبيرة في قاعدة البيانات (migration لمرة واحدة).
 
 - يحوّل كل صورة > 500 KB إلى WebP بحجم أقصى 1600px.
+- يشمل: Post.image_data + User.avatar_data.
 - يعمل على قاعدة الإنتاج Aiven (أو أي قاعدة عبر DATABASE_URL).
 - يقبل معامل --dry-run لمعاينة النتائج دون كتابة.
 
@@ -86,7 +87,7 @@ def main():
 
     from app import create_app
     from app.extensions import db
-    from app.models import Post
+    from app.models import Post, User
 
     app = create_app()
     with app.app_context():
@@ -133,6 +134,40 @@ def main():
                     print(f"    [حفظ الدفعة — {processed} معالجة]")
 
         if args.apply and processed:
+            db.session.commit()
+
+        # ============ معالجة صور الأفاتار ============
+        print("\n=== الأفاتار ===")
+        avatar_total = User.query.filter(User.avatar_data.isnot(None)).count()
+        print(f"إجمالي المستخدمين بأفاتار: {avatar_total}")
+
+        for user in User.query.filter(User.avatar_data.isnot(None)).order_by(User.id).yield_per(args.batch):
+            orig = user.avatar_data
+            if not orig or len(orig) < SIZE_THRESHOLD:
+                continue
+
+            result = _process(orig, user.avatar_mime)
+            if result is None:
+                continue
+
+            new_data, new_mime = result
+            old_size = len(orig) / 1024
+            new_size = len(new_data) / 1024
+            diff = old_size - new_size
+            saved_bytes += len(orig) - len(new_data)
+
+            print(f"  @{user.username}: {old_size:.0f} KB → {new_size:.0f} KB "
+                  f"(-{diff:.0f} KB, -{diff/old_size*100:.0f}%)")
+
+            if args.apply:
+                user.avatar_data = new_data
+                user.avatar_mime = new_mime
+                processed += 1
+                if processed % 10 == 0:
+                    db.session.commit()
+                    print(f"    [حفظ الدفعة — {processed} معالجة]")
+
+        if args.apply:
             db.session.commit()
 
         print("=" * 60)

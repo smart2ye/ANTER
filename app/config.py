@@ -147,15 +147,15 @@ class Config:
     # إصدار Android المنشور من ANTER Messenger؛ يمكن استبداله في بيئة الإنتاج عند إصدار نسخة أحدث.
     ANTER_MESSENGER_APK_URL = os.environ.get(
         'ANTER_MESSENGER_APK_URL',
-        'https://files.manuscdn.com/user_upload_by_module/session_file/310519663194595954/tUwimvKdwnQPBUdy.apk',
+        'https://github.com/smart2ye/plus-messenger-android/releases/latest/download/PlusMessenger.apk',
     ).strip()
     ANTER_MESSENGER_APK_SHA256 = os.environ.get(
         'ANTER_MESSENGER_APK_SHA256',
-        '67abc0d424e971f0429687e5f495411346ba950c6cf957f2ccafe6558614e071',
+        'f88c2285ca21c916d61b463efffe9c3d05bff42400f1cbd9008152c18c067a23',
     ).strip().lower()
-    ANTER_MESSENGER_VERSION = os.environ.get('ANTER_MESSENGER_VERSION', '1.1.0').strip() or '1.1.0'
+    ANTER_MESSENGER_VERSION = os.environ.get('ANTER_MESSENGER_VERSION', '1.0.0').strip() or '1.0.0'
     ANTER_MESSENGER_RELEASE_NOTES = os.environ.get(
-        'ANTER_MESSENGER_RELEASE_NOTES', 'إصدار رسمي: دخول عبر موقع ANTER، واجهة مراسلة موحّدة، وتحسينات في التحديثات.'
+        'ANTER_MESSENGER_RELEASE_NOTES', 'تطبيق ANTER Messenger لأجهزة Android: دخول موثوق عبر موقع ANTER، واجهة مراسلة موحّدة، وتزامن مع حسابات الشبكة.'
     ).strip()
     # حساب المؤسس الوحيد المسموح له بتبديل الجلسة إلى حساب مساعد أنتر.
     ANTER_ASSISTANT_SWITCH_OWNER_USERNAME = os.environ.get(

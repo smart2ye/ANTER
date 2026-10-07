@@ -5,7 +5,7 @@
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import func
 
@@ -13,10 +13,20 @@ from app.extensions import db
 from app.models import User, Post, Like, Comment, Follow
 
 
+# ANTER: توقيت الجزيرة العربية (+03:00) — حدود السنة تُحسب بتوقيتنا.
+ARABIA_OFFSET = timedelta(hours=3)
+
+
+def _year_bounds_utc(year: int):
+    """حدود السنة بتوقيت +03 مُحوّلة إلى UTC (كما يُخزَّن في DB)."""
+    start_local = datetime(year, 1, 1)
+    end_local = datetime(year + 1, 1, 1)
+    return start_local - ARABIA_OFFSET, end_local - ARABIA_OFFSET
+
+
 def _top_post_for_year(user_id: int, year: int):
     """أفضل منشور للسنة بعدد الإعجابات (ثم التعليقات كتعادل)."""
-    start = datetime(year, 1, 1)
-    end = datetime(year + 1, 1, 1)
+    start, end = _year_bounds_utc(year)
 
     posts = (
         Post.query
@@ -46,8 +56,7 @@ def _top_post_for_year(user_id: int, year: int):
 
 def _top_interactors(user_id: int, year: int, limit: int = 5):
     """أكثر من تفاعل مع المستخدم خلال السنة (إعجابات + تعليقات على منشوراته)."""
-    start = datetime(year, 1, 1)
-    end = datetime(year + 1, 1, 1)
+    start, end = _year_bounds_utc(year)
 
     post_ids = [
         row[0] for row in
@@ -93,8 +102,7 @@ def collect(user_id: int, year: int) -> dict:
     if not user:
         raise ValueError('user not found')
 
-    start = datetime(year, 1, 1)
-    end = datetime(year + 1, 1, 1)
+    start, end = _year_bounds_utc(year)
 
     post_ids = [
         row[0] for row in

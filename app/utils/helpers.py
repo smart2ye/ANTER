@@ -399,11 +399,39 @@ _CODE_BLOCK_RE = re.compile(
 
 
 def _render_plain_segment(text):
-    """يطبّق hashtags و mentions على نص مُهرَّب من HTML."""
+    """يطبّق hashtags و mentions و **تنسيق النص** على نص مُهرَّب من HTML.
+
+    يدعم:
+      **نص** → عريض
+      *نص* أو _نص_ → مائل
+      ~~نص~~ → شطب
+      `نص` → كود (بلا تنسيق داخلي)
+    """
     from markupsafe import escape
     from app.models import User
 
     escaped = str(escape(text))
+
+    # 1) استخراج محتوى الكود أولاً — لا يُطبَّق عليه أي تنسيق آخر.
+    code_store = {}
+    counter = [0]
+
+    def _stash_code(m):
+        key = f'\x00ANTERC{counter[0]}\x00'
+        counter[0] += 1
+        code_store[key] = m.group(1)
+        return key
+
+    escaped = re.sub(r'`([^`\n]+?)`', _stash_code, escaped)
+
+    # 2) عريض **...**
+    escaped = re.sub(r'\*\*((?:[^*]|\*(?!\*))+?)\*\*', r'<strong>\1</strong>', escaped)
+    # 3) مائل *...* (ليس جزءاً من **)
+    escaped = re.sub(r'(?<!\*)\*([^\*\n]+?)\*(?!\*)', r'<em>\1</em>', escaped)
+    # 4) مائل _..._ (حدود الكلمة)
+    escaped = re.sub(r'(?<!\w)_([^_\n]+?)_(?!\w)', r'<em>\1</em>', escaped)
+    # 5) شطب ~~...~~
+    escaped = re.sub(r'~~([^~\n]+?)~~', r'<del>\1</del>', escaped)
 
     def replace_mention(match):
         username = match.group(1)
@@ -425,6 +453,10 @@ def _render_plain_segment(text):
         return f'<a href="{escape(tag_url)}" class="hashtag-link">#{escape(tag)}</a>'
 
     escaped = re.sub(r'(?<!&)#([\w\u0600-\u06FF]+)', replace_tag, escaped)
+
+    # 6) أعِد محتوى الكود (مُهرَّباً مسبقاً) داخل <code>
+    for key, raw in code_store.items():
+        escaped = escaped.replace(key, f'<code>{raw}</code>')
 
     return escaped
 

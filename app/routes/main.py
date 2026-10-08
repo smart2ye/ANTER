@@ -197,6 +197,14 @@ def index():
     all_posts, top_suggested = build_feed(current_user)
     page_size = current_app.config['FEED_PAGE_SIZE']
 
+    # ANTER: pin مؤقت — المنشور المذكور في ?new=<id> يظهر في الأعلى مرة واحدة.
+    # عند إعادة التحميل بدون query param، يعود الترتيب الطبيعي.
+    pinned_post_id = request.args.get('new', type=int)
+    if pinned_post_id:
+        pinned = next((p for p in all_posts if p.id == pinned_post_id), None)
+        if pinned:
+            all_posts = [pinned] + [p for p in all_posts if p.id != pinned_post_id]
+
     # ANTER: كتلة ريلز مقترحة داخل الـFeed (مرة واحدة فقط).
     # نستخدم نفس خوارزمية reels_ranker ولا نلمس feed_ranker.
     feed_reels = []

@@ -490,4 +490,47 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+{% if request.args.get('new') %}
+<script>
+/* ANTER: نغمة نجاح عند العودة من نشر منشور جديد.
+   تُولَّد في المتصفح بلا ملف صوتي. */
+(function() {
+    function playSuccessChime() {
+        try {
+            var Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            var ctx = new Ctx();
+            var now = ctx.currentTime;
+
+            function tone(freq, start, dur, gainPeak) {
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0, now + start);
+                gain.gain.linearRampToValueAtTime(gainPeak, now + start + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
+                osc.connect(gain).connect(ctx.destination);
+                osc.start(now + start);
+                osc.stop(now + start + dur + 0.05);
+            }
+
+            // C5 → E5 → G5 (نغمة صاعدة خفيفة)
+            tone(523.25, 0.00, 0.18, 0.12);
+            tone(659.25, 0.12, 0.18, 0.12);
+            tone(783.99, 0.24, 0.28, 0.14);
+        } catch (e) {
+            /* لا شيء — الصوت مجرد تجميل */
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', playSuccessChime);
+    } else {
+        playSuccessChime();
+    }
+})();
+</script>
+{% endif %}
+
 {% endblock %}

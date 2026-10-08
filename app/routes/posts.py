@@ -712,7 +712,8 @@ def create():
             current_app.logger.exception('log_user_activity failed (non-fatal)')
 
         flash('تم نشر المنشور بنجاح!', 'success')
-        return redirect(url_for('main.index'))
+        # ANTER: تمرير new=<id> لعرض المنشور في أعلى الـ feed مرة واحدة.
+        return redirect(url_for('main.index', new=post.id))
 
     except Exception:
         db.session.rollback()

@@ -192,7 +192,13 @@ def build_feed(user):
 def index():
     # الزائر غير المسجّل → صفحة هبوط تسويقية عامة (لعرض ANTER لمحركات البحث والزوار).
     if not current_user.is_authenticated:
-        return render_template('landing.html')
+        return render_template(
+            'landing.html',
+            anter_apk_url=current_app.config.get('ANTER_APK_URL', ''),
+            anter_apk_version=current_app.config.get('ANTER_APK_VERSION', ''),
+            anter_apk_size=current_app.config.get('ANTER_APK_SIZE', ''),
+            anter_apk_date=current_app.config.get('ANTER_APK_DATE', ''),
+        )
 
     all_posts, top_suggested = build_feed(current_user)
     page_size = current_app.config['FEED_PAGE_SIZE']

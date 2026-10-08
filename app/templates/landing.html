@@ -117,6 +117,143 @@
     </section>
 
     <!-- دعوة أخيرة -->
+    <section class="anter-app-download container" id="app-download">
+        <div class="anter-app-download__card">
+            <div class="anter-app-download__text">
+                <span class="anter-app-download__badge">
+                    <i class="fab fa-android" aria-hidden="true"></i>
+                    تطبيق Android
+                </span>
+                <h2>ANTER في جيبك</h2>
+                <p>
+                    حمّل تطبيق ANTER Messenger الأصلي لأندرويد 7.0 فما فوق.
+                    دخول موثوق عبر موقع ANTER، وإشعارات فورية، وتزامن كامل مع حسابك.
+                </p>
+                <div class="anter-app-download__actions">
+                    <a href="{{ anter_apk_url }}"
+                       class="anter-btn anter-btn--primary"
+                       download
+                       rel="noopener">
+                        <i class="fas fa-download" aria-hidden="true"></i>
+                        حمّل APK
+                    </a>
+                    <a href="{{ url_for('main.about') }}"
+                       class="anter-btn anter-btn--ghost anter-btn--dark">
+                        تفاصيل الإصدار
+                    </a>
+                </div>
+                {% if anter_apk_version or anter_apk_size %}
+                <p class="anter-app-download__meta">
+                    {% if anter_apk_version %}الإصدار {{ anter_apk_version }}{% endif %}
+                    {% if anter_apk_size %} · {{ anter_apk_size }}{% endif %}
+                    {% if anter_apk_date %} · {{ anter_apk_date }}{% endif %}
+                </p>
+                {% endif %}
+            </div>
+            <div class="anter-app-download__visual" aria-hidden="true">
+                <div class="anter-app-download__phone">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <style>
+    .anter-app-download {
+        margin-top: 40px;
+        margin-bottom: 40px;
+    }
+    .anter-app-download__card {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 30px;
+        align-items: center;
+        padding: 32px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #eef4ff 0%, #f5f2ff 100%);
+        border: 1px solid #dbe7ff;
+    }
+    .anter-app-download__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: rgba(0, 58, 171, 0.1);
+        color: #003AAB;
+        font-size: 0.78rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+    .anter-app-download__text h2 {
+        font-size: clamp(1.3rem, 3vw, 1.75rem);
+        font-weight: 900;
+        margin: 0 0 10px;
+        color: #031E64;
+    }
+    .anter-app-download__text p {
+        font-size: 0.95rem;
+        line-height: 1.7;
+        color: #4b5563;
+        margin: 0 0 18px;
+        max-width: 540px;
+    }
+    .anter-app-download__actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    .anter-btn--dark {
+        background: transparent !important;
+        border: 1.5px solid #003AAB !important;
+        color: #003AAB !important;
+    }
+    .anter-app-download__meta {
+        font-size: 0.82rem;
+        color: #6b7280;
+        margin: 0 !important;
+    }
+    .anter-app-download__visual {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .anter-app-download__phone {
+        width: 120px;
+        height: 200px;
+        border-radius: 20px;
+        background: linear-gradient(160deg, #031E64 0%, #003AAB 60%, #00C8F8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 42px;
+        box-shadow: 0 20px 50px rgba(3, 30, 100, 0.25);
+    }
+    @media (max-width: 860px) {
+        .anter-app-download__card {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+        .anter-app-download__actions {
+            justify-content: center;
+        }
+        .anter-app-download__visual {
+            order: -1;
+        }
+        .anter-app-download__phone {
+            width: 90px;
+            height: 150px;
+            font-size: 32px;
+        }
+        .anter-app-download__text p {
+            margin-left: auto;
+            margin-right: auto;
+        }
+    }
+    </style>
+
     <section class="anter-final">
         <div class="container anter-final__inner">
             <h2>جاهز تبدأ؟</h2>

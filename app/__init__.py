@@ -479,4 +479,13 @@ def create_app(test_config=None):
         except Exception:
             db.session.rollback()
 
+    # ANTER: نغمة ترحيب بعد تسجيل الدخول/التسجيل/التبديل — تُقرأ مرة واحدة فقط.
+    @app.context_processor
+    def _inject_welcome_chime():
+        try:
+            play = session.pop('play_welcome_chime', False)
+        except Exception:
+            play = False
+        return {'play_welcome_chime': bool(play)}
+
     return app

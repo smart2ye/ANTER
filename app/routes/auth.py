@@ -86,6 +86,7 @@ def login():
                 return render_template('auth/login.html', form=form, saved_accounts=saved_accounts)
             login_user(user, remember=True)
             log_user_activity(user.id, "login")
+            session['play_welcome_chime'] = True
             next_page = request.args.get('next')
             flash('✅ تم تسجيل الدخول بنجاح!', 'success')
             resp = redirect(next_page or url_for('main.index'))
@@ -160,6 +161,7 @@ def register():
         db.session.commit()
         log_user_activity(user.id, 'registration')
         login_user(user, remember=True)
+        session['play_welcome_chime'] = True
 
         # طلب تأكيد البريد تلقائياً عند التسجيل، حتى للأرقام بلا بريد حقيقي.
         # الأدمن سيولّد الرابط ويرسله للمستخدم عبر الوسيلة المتاحة (بريد، واتساب، ...).
@@ -271,6 +273,7 @@ def accounts_switch():
     logout_user()
     login_user(user, remember=True, force=True)
     log_user_activity(user.id, 'switch_account')
+    session['play_welcome_chime'] = True
     flash(f'✅ تم التبديل إلى {user.name or user.username}.', 'success')
     return redirect(next_url)
 

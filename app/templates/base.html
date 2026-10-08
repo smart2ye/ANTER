@@ -969,5 +969,49 @@
     });
 })();
 </script>
+
+{% if play_welcome_chime %}
+<script>
+/* ANTER: نغمة ترحيب بعد تسجيل الدخول/التسجيل/التبديل.
+   تُولَّد في المتصفح بلا ملف صوتي. */
+(function() {
+    function playWelcomeChime() {
+        try {
+            var Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            var ctx = new Ctx();
+            var now = ctx.currentTime;
+
+            function tone(freq, start, dur, gainPeak) {
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0, now + start);
+                gain.gain.linearRampToValueAtTime(gainPeak, now + start + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
+                osc.connect(gain).connect(ctx.destination);
+                osc.start(now + start);
+                osc.stop(now + start + dur + 0.05);
+            }
+
+            // G4 → C5 → E5 → G5 (نغمة ترحيب صاعدة، أطول قليلًا من نغمة النشر)
+            tone(392.00, 0.00, 0.20, 0.10);
+            tone(523.25, 0.15, 0.20, 0.11);
+            tone(659.25, 0.30, 0.22, 0.12);
+            tone(783.99, 0.48, 0.35, 0.13);
+        } catch (e) {
+            /* الصوت تجميلي */
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', playWelcomeChime);
+    } else {
+        playWelcomeChime();
+    }
+})();
+</script>
+{% endif %}
 </body>
 </html>

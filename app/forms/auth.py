@@ -79,30 +79,10 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(FlaskForm):
     name = StringField('الاسم الكامل', validators=[DataRequired(), Length(min=2, max=100)])
-    gender = SelectField('الجنس', choices=GENDER_CHOICES, validators=[DataRequired(message='اختر الجنس لتحديد الأيقونة الافتراضية.')])
-    birth_date = DateField('تاريخ الميلاد', format='%d/%m/%Y', validators=[DataRequired(message='تاريخ الميلاد مطلوب.')])
-    def validate_birth_date(self, birth_date):
-        if not birth_date.data:
-            return
-
-        today = date.today()
-        birth = birth_date.data
-
-        if birth > today:
-            raise ValidationError('تاريخ الميلاد لا يمكن أن يكون في المستقبل.')
-
-        age = today.year - birth.year - (
-            (today.month, today.day) < (birth.month, birth.day)
-        )
-
-        if age < 13:
-            raise ValidationError('يجب أن يكون عمرك 13 سنة أو أكثر.')
-
-    country_code = SelectField('مفتاح الدولة', choices=COUNTRY_CODES, default='+967')
+    country_code = SelectField('مفتاح الدولة', choices=COUNTRY_CODES, default='+967', validators=[Optional()])
     phone = StringField('رقم الجوال', validators=[Optional(), Length(min=6, max=15, message='رقم الجوال يجب أن يكون بين 6 و15 رقماً.')])
     email = StringField('البريد الإلكتروني', validators=[Optional(), Email(message='اكتب بريداً إلكترونياً صحيحاً.')])
-    password = PasswordField('كلمة المرور', validators=[DataRequired(), Length(min=4, message='اكتب كلمة مرور من 4 أحرف أو أرقام على الأقل.')])
-    confirm_password = PasswordField('إعادة تأكيد كلمة المرور', validators=[DataRequired(), EqualTo('password', message='كلمتا المرور غير متطابقتين.')])
+    password = PasswordField('كلمة المرور', validators=[DataRequired(), Length(min=8, message='كلمة المرور يجب أن تكون 8 أحرف على الأقل.')])
     submit = SubmitField('إنشاء الحساب')
 
     def validate(self, extra_validators=None):
@@ -179,6 +159,16 @@ class RegistrationForm(FlaskForm):
             if getattr(existing, 'is_deleted', False):
                 raise ValidationError('هذا الحساب محذوف. لا يمكن التسجيل بنفس الرقم.')
             raise ValidationError('رقم الجوال مستخدم بالفعل.')
+
+    def validate_password(self, password):
+        value = password.data or ''
+        if not value:
+            return
+        # ANTER: كلمة المرور يجب أن تحتوي حرفاً ورقماً على الأقل.
+        has_letter = re.search(r'[a-zA-Z\u0600-\u06FF]', value) is not None
+        has_digit = re.search(r'\d', value) is not None
+        if not has_letter or not has_digit:
+            raise ValidationError('كلمة المرور يجب أن تحتوي على حرف ورقم على الأقل.')
 
 
 # ============================================

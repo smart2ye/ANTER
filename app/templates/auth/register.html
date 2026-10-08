@@ -28,21 +28,6 @@
                 {% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
             </div>
 
-            <div class="row g-2 mb-3">
-                <div class="col-6">
-                    <label class="form-label fw-semibold small">{{ form.gender.label.text }}</label>
-                    {{ form.gender(class="form-select" + (" is-invalid" if form.gender.errors else "")) }}
-                    <small class="form-text">يحدد الأيقونة الافتراضية للحساب.</small>
-                    {% for error in form.gender.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-semibold small">{{ form.birth_date.label.text }} <span class="text-muted fw-normal">(مطلوب)</span></label>
-                    {{ form.birth_date(type="text", class="form-control" + (" is-invalid" if form.birth_date.errors else ""), autocomplete="bday", inputmode="numeric", placeholder="DD/MM/YYYY", maxlength="10", id="birthDateInput") }}
-                    <small class="form-text text-muted">اكتب تاريخ ميلادك بهذا الشكل: 22/05/1999</small>
-                    {% for error in form.birth_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
-                </div>
-            </div>
-
             <div class="mb-3">
                 <label class="form-label fw-semibold small">{{ form.phone.label.text }}</label>
                 <div class="input-group">
@@ -71,21 +56,11 @@
                     <button class="btn btn-outline-secondary password-toggle" type="button" data-toggle-password="passwordInput" aria-label="إظهار كلمة المرور" title="إظهار كلمة المرور"><i class="fas fa-eye"></i></button>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-1 gap-2">
-                    <small class="text-muted">تُقبل كلمة بسيطة من 4 أحرف أو أرقام، والأطول أكثر أماناً.</small>
+                    <small class="text-muted">8 أحرف على الأقل، مع حرف ورقم.</small>
                     <span id="passwordStrength" class="badge bg-secondary">لم تُكتب بعد</span>
                 </div>
                 <small id="passwordWarning" class="d-block mt-1" aria-live="polite"></small>
                 {% for error in form.password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-semibold small">{{ form.confirm_password.label.text }}</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-check-double text-muted"></i></span>
-                    {{ form.confirm_password(class="form-control border-start-0 border-end-0" + (" is-invalid" if form.confirm_password.errors else ""), id="confirmPasswordInput", placeholder="أعد كتابة كلمة المرور", autocomplete="new-password") }}
-                    <button class="btn btn-outline-secondary password-toggle" type="button" data-toggle-password="confirmPasswordInput" aria-label="إظهار تأكيد كلمة المرور" title="إظهار كلمة المرور"><i class="fas fa-eye"></i></button>
-                </div>
-                {% for error in form.confirm_password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
             </div>
 
             <div class="mb-3 text-muted small text-center">
@@ -119,22 +94,6 @@
 </style>
 
 <script>
-    const birthDateInput = document.getElementById('birthDateInput');
-
-    if (birthDateInput) {
-        birthDateInput.addEventListener('input', () => {
-            let value = birthDateInput.value.replace(/\D/g, '').slice(0, 8);
-
-            if (value.length > 4) {
-                value = value.slice(0, 2) + '/' + value.slice(2, 4) + '/' + value.slice(4);
-            } else if (value.length > 2) {
-                value = value.slice(0, 2) + '/' + value.slice(2);
-            }
-
-            birthDateInput.value = value;
-        });
-    }
-
     const passwordInput = document.getElementById('passwordInput');
     const strengthBadge = document.getElementById('passwordStrength');
     const passwordWarning = document.getElementById('passwordWarning');

@@ -180,6 +180,17 @@ def edit_profile():
             changed_fields.append('السيرة الذاتية')
         current_user.name = form.name.data
         current_user.bio = normalized_bio
+
+        # ANTER: حقول إكمال الملف (كانت في التسجيل سابقاً).
+        if form.gender.data and form.gender.data != current_user.gender:
+            current_user.gender = form.gender.data
+            changed_fields.append('الجنس')
+        if form.birth_date.data and form.birth_date.data != current_user.birth_date:
+            current_user.birth_date = form.birth_date.data
+            changed_fields.append('تاريخ الميلاد')
+        if form.country_code.data and form.country_code.data != current_user.country_code:
+            current_user.country_code = form.country_code.data
+            changed_fields.append('مفتاح الدولة')
         if form.avatar.data:
             avatar_data, avatar_mime = prepare_image_data(form.avatar.data)
             if avatar_data:
@@ -196,6 +207,9 @@ def edit_profile():
             if 'صورة الملف الشخصي' in changed_fields:
                 log_user_activity(current_user.id, 'avatar_change')
         flash('تم تحديث الملف الشخصي بنجاح.', 'success')
+        # ANTER: بعد إكمال الملف الشخصي لأول مرة → الرئيسية مع كتلة الترحيب.
+        if session.pop('onboarding', False):
+            return redirect(url_for('main.index', welcome='1'))
         return redirect(url_for('users.profile', username=current_user.username))
     return render_template('profile_edit.html', form=form)
 

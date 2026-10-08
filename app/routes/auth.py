@@ -112,8 +112,6 @@ def register():
             form.errors,
             {
                 "name": form.name.data,
-                "gender": form.gender.data,
-                "birth_date": form.birth_date.data,
                 "country_code": form.country_code.data,
                 "phone": form.phone.data,
                 "email": form.email.data,
@@ -135,20 +133,15 @@ def register():
             email = f'{username}@phone-only.anter.local'
 
         phone = (form.phone.data or '').strip()
-        default_avatar = (
-            'img/default_avatar_female.png'
-            if form.gender.data == 'female'
-            else 'img/default_avatar_male.png'
-        )
+        country_code = (form.country_code.data or '+967').strip()
+        # ANTER: الجنس وتاريخ الميلاد ينتقلان لصفحة إكمال الملف بعد التسجيل.
         user = User(
             username=username,
             email=email,
             name=form.name.data.strip(),
-            avatar=default_avatar,
-            gender=form.gender.data or '',
-            birth_date=form.birth_date.data,
-            country_code=form.country_code.data,
-            phone=form.country_code.data + phone if phone else None,
+            avatar='img/default_avatar_male.png',
+            country_code=country_code,
+            phone=country_code + phone if phone else None,
             phone_verified=False,
             terms_agreed=True
         )
@@ -189,8 +182,12 @@ def register():
 
         # البريد خدمة إضافية ولا يجب أن يمنع إنشاء الحساب
         send_welcome_email(user)
-        flash('✅ تم إنشاء الحساب وتسجيل دخولك بنجاح.', 'success')
-        return redirect(url_for('main.index'))
+        # ANTER: علامة onboarding — بعد حفظ الملف الشخصي ننتقل لكتلة الترحيب.
+        session['onboarding'] = True
+        # ANTER: علامة onboarding — بعد حفظ الملف الشخصي ننتقل لكتلة الترحيب.
+        session['onboarding'] = True
+        flash('✅ تم إنشاء الحساب. أكمل ملفك الشخصي لتجربة أفضل.', 'success')
+        return redirect(url_for('users.edit_profile'))
     return render_template('auth/register.html', form=form)
 
 @auth_bp.route('/switch-to-assistant', methods=['POST'])

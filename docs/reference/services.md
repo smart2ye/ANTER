@@ -1,6 +1,6 @@
 # مرجع الخدمات (Services)
 
-**آخر تحديث:** 2026-10-07
+**آخر تحديث:** 2026-10-08
 **المجموع:** 20 خدمة
 
 ## account_vault.py
@@ -212,6 +212,7 @@
 ## year_in_review.py
 
 **دوال مستقلة:**
+- `_year_bounds_utc()`
 - `_top_post_for_year()`
 - `_top_interactors()`
 - `collect()`

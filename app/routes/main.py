@@ -245,12 +245,22 @@ def index():
     except Exception:
         share_users = []
 
+    # ANTER: كتلة ترحيب للمستخدم الجديد — تُعرض مرة واحدة عبر ?welcome=1.
+    onboarding_users = []
+    if request.args.get('welcome') == '1':
+        try:
+            from app.services.explore_service import trending_users
+            onboarding_users = trending_users(current_user, limit=5)
+        except Exception:
+            onboarding_users = []
+
     return render_template(
         'index.html',
         posts=all_posts[:page_size],
         suggested_posts=top_suggested,
         feed_reels=feed_reels,
-        share_users=share_users
+        share_users=share_users,
+        onboarding_users=onboarding_users,
     )
 
 @main_bp.route('/login')

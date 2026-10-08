@@ -47,12 +47,15 @@
         {% for notif in notifications %}
             {% set actor = notif.actor %}
             {% set link = '#' %}
-            {% if notif.action in ['like', 'comment', 'reply'] and notif.post %}
+            {% if notif.action in ['like', 'comment', 'reply', 'wall_post', 'mention', 'repost', 'like_comment'] and notif.post %}
                 {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
             {% elif notif.action == 'follow' and actor %}
                 {% set link = url_for('users.profile', username=actor.username) %}
-            {% elif notif.action in ['message', 'voice_message', 'voice_call'] and actor %}
+            {% elif notif.action in ['message', 'voice_message', 'voice_call', 'file_message'] and actor %}
                 {% set link = url_for('messages.chat', user_id=actor.id) %}
+            {% elif notif.action in ['like_video', 'comment_video', 'reply_video'] and actor %}
+                {# لا يوجد video_id في Notification — نوجّه لملف الفاعل #}
+                {% set link = url_for('users.profile', username=actor.username) %}
             {% elif notif.action in ['report_resolved', 'report_rejected'] and notif.report_id %}
                 {% set link = url_for('users.settings') + '?report=' + (notif.report_id|string) + '#support' %}
             {% elif notif.action == 'verification_approved' %}
@@ -93,21 +96,28 @@
 
                         <span class="anter-notif-item__action-icon
                             {% if notif.action == 'like' %}anter-notif-icon--like
+                            {% elif notif.action == 'like_comment' %}anter-notif-icon--like
+                            {% elif notif.action == 'like_video' %}anter-notif-icon--like
                             {% elif notif.action == 'comment' %}anter-notif-icon--comment
+                            {% elif notif.action == 'comment_video' %}anter-notif-icon--comment
                             {% elif notif.action == 'reply' %}anter-notif-icon--reply
+                            {% elif notif.action == 'reply_video' %}anter-notif-icon--reply
                             {% elif notif.action == 'follow' %}anter-notif-icon--follow
-                            {% elif notif.action in ['message', 'voice_message'] %}anter-notif-icon--message
+                            {% elif notif.action in ['message', 'voice_message', 'file_message'] %}anter-notif-icon--message
                             {% elif notif.action == 'voice_call' %}anter-notif-icon--call
+                            {% elif notif.action == 'wall_post' %}anter-notif-icon--comment
+                            {% elif notif.action == 'mention' %}anter-notif-icon--comment
+                            {% elif notif.action == 'repost' %}anter-notif-icon--reply
                             {% elif notif.action == 'verification_approved' %}anter-notif-icon--verified
                             {% elif notif.action == 'report_resolved' %}anter-notif-icon--verified
                             {% elif notif.action == 'report_rejected' %}anter-notif-icon--default
                             {% else %}anter-notif-icon--default{% endif %}">
                             <i class="fas
-                                {% if notif.action == 'like' %}fa-heart
-                                {% elif notif.action == 'comment' %}fa-comment
-                                {% elif notif.action == 'reply' %}fa-reply
+                                {% if notif.action in ['like', 'like_comment', 'like_video'] %}fa-heart
+                                {% elif notif.action in ['comment', 'comment_video', 'wall_post', 'mention'] %}fa-comment
+                                {% elif notif.action in ['reply', 'reply_video', 'repost'] %}fa-reply
                                 {% elif notif.action == 'follow' %}fa-user-plus
-                                {% elif notif.action == 'message' %}fa-envelope
+                                {% elif notif.action in ['message', 'file_message'] %}fa-envelope
                                 {% elif notif.action == 'voice_message' %}fa-microphone
                                 {% elif notif.action == 'voice_call' %}fa-phone
                                 {% elif notif.action == 'verification_approved' %}fa-check
@@ -129,12 +139,20 @@
 
                             <span class="anter-notif-item__action">
                                 {% if notif.action == 'like' %}أعجب بمنشورك
+                                {% elif notif.action == 'like_comment' %}أعجب بتعليقك
+                                {% elif notif.action == 'like_video' %}أعجب بمقطعك
                                 {% elif notif.action == 'comment' %}علّق على منشورك
+                                {% elif notif.action == 'comment_video' %}علّق على مقطعك
                                 {% elif notif.action == 'reply' %}رد على تعليقك
+                                {% elif notif.action == 'reply_video' %}رد على تعليقك في مقطع
                                 {% elif notif.action == 'follow' %}بدأ متابعتك
                                 {% elif notif.action == 'message' %}أرسل لك رسالة
                                 {% elif notif.action == 'voice_message' %}أرسل لك رسالة صوتية
+                                {% elif notif.action == 'file_message' %}أرسل لك ملفًا
                                 {% elif notif.action == 'voice_call' %}اتصل بك صوتيًا
+                                {% elif notif.action == 'wall_post' %}كتب على حائطك
+                                {% elif notif.action == 'mention' %}أشار إليك
+                                {% elif notif.action == 'repost' %}أعاد نشر منشورك
                                 {% elif notif.action == 'verification_approved' %}تم توثيق حسابك ✓
                                 {% elif notif.action == 'verification_rejected' %}لم يُقبل طلب التوثيق
                                 {% elif notif.action == 'report_resolved' %}تمت مراجعة بلاغك

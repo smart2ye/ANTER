@@ -142,7 +142,17 @@
                             {% endif %}
 
                             <span class="anter-notif-item__action">
-                                {% if notif.action == 'like' %}أعجب بمنشورك
+                                {% if notif.action == 'like' %}
+                                    {% set extras = notification_extras(notif) %}
+                                    {% if extras|length == 0 %}
+                                        أعجب بمنشورك
+                                    {% elif extras|length == 1 %}
+                                        و <strong>{{ extras[0].name or extras[0].username }}</strong> أعجبا بمنشورك
+                                    {% else %}
+                                        و <strong>{{ extras[0].name or extras[0].username }}</strong>
+                                        <span class="text-muted">و{{ extras|length - 1 }} آخرون</span>
+                                        أعجبوا بمنشورك
+                                    {% endif %}
                                 {% elif notif.action == 'like_comment' %}أعجب بتعليقك
                                 {% elif notif.action == 'like_video' %}أعجب بمقطعك
                                 {% elif notif.action == 'comment' %}علّق على منشورك
@@ -167,7 +177,7 @@
                             </span>
                         </p>
 
-                        {% if notif.extra_text %}
+                        {% if notif.extra_text and notif.action not in ['like', 'like_comment', 'like_video'] %}
                         <p class="anter-notif-item__preview">
                             <i class="fas fa-info-circle text-muted"></i> {{ notif.extra_text }}
                         </p>

@@ -117,15 +117,42 @@ def like(post_id):
         db.session.add(like)
         liked = True
 
-        # إشعار
+        # ANTER: إشعار مجمّع — واحد لكل منشور، يُحدَّث عند كل إعجاب جديد.
         if post.author_id != current_user.id:
-            notification = Notification(
+            import json as _json
+            existing = Notification.query.filter_by(
                 user_id=post.author_id,
-                actor_id=current_user.id,
                 action='like',
                 post_id=post_id,
-            )
-            db.session.add(notification)
+            ).order_by(Notification.created_at.desc()).first()
+
+            if existing is None:
+                # لا يوجد إشعار سابق → أنشئ واحدًا.
+                db.session.add(Notification(
+                    user_id=post.author_id,
+                    actor_id=current_user.id,
+                    action='like',
+                    post_id=post_id,
+                    extra_text='[]',
+                ))
+            elif existing.actor_id != current_user.id:
+                # يوجد إشعار سابق → أضف الحالي إلى القائمة، وحدّث التوقيت.
+                try:
+                    extras = _json.loads(existing.extra_text or '[]')
+                    if not isinstance(extras, list):
+                        extras = []
+                except Exception:
+                    extras = []
+                if current_user.id not in extras:
+                    extras.append(current_user.id)
+                # ANTER: احفظ الـ actor السابق في القائمة قبل التحديث.
+                if existing.actor_id != current_user.id:
+                    if existing.actor_id not in extras:
+                        extras.insert(0, existing.actor_id)
+                    existing.actor_id = current_user.id
+                existing.extra_text = _json.dumps(extras)
+                existing.is_read = False
+                existing.created_at = datetime.utcnow()
 
     db.session.commit()
     log_user_activity(

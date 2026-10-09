@@ -208,6 +208,27 @@ def create_app(test_config=None):
     from markupsafe import Markup, escape
     import re
 
+    def notification_extras(notif):
+        """ANTER: يعيد قائمة ببيانات الإضافيين من extra_text (IDs → Users)."""
+        import json as _json
+        from app.models import User as _U
+        try:
+            ids = _json.loads(getattr(notif, 'extra_text', None) or '[]')
+        except Exception:
+            return []
+        if not isinstance(ids, list):
+            return []
+        result = []
+        for uid in ids:
+            u = db.session.get(_U, uid)
+            if u and not getattr(u, 'is_deleted', False):
+                result.append(u)
+        return result
+
+    def notification_total_actors(notif):
+        """ANTER: العدد الإجمالي للمتفاعلين (الأصلي + الإضافيون)."""
+        return 1 + len(notification_extras(notif))
+
     def verified_badge(user):
         """شارة ثابتة وآمنة تظهر فقط للحسابات الموثقة فعلياً."""
         if not getattr(user, 'is_verified', False):
@@ -297,6 +318,8 @@ def create_app(test_config=None):
 
     app.add_template_filter(_anter_date_label, name='date_label')
     app.add_template_global(verified_badge, name='verified_badge')
+    app.add_template_global(notification_extras, name='notification_extras')
+    app.add_template_global(notification_total_actors, name='notification_total_actors')
     app.add_template_global(founder_badge, name='founder_badge')
     app.add_template_global(early_member_badge, name='early_member_badge')
 

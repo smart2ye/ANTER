@@ -190,12 +190,14 @@
                         </p>
                         {% endif %}
 
+                        {% if notif.created_at %}
                         <time class="anter-notif-item__time"
                               datetime="{{ notif.created_at.isoformat() }}"
                               data-relative-time
                               data-timestamp="{{ notif.created_at.isoformat() }}Z">
                             {{ notif.created_at.strftime('%H:%M · %d/%m') }}
                         </time>
+                        {% endif %}
                     </div>
                 </a>
 

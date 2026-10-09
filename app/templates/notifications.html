@@ -113,6 +113,7 @@
                             {% elif notif.action == 'verification_approved' %}anter-notif-icon--verified
                             {% elif notif.action == 'report_resolved' %}anter-notif-icon--verified
                             {% elif notif.action == 'report_rejected' %}anter-notif-icon--default
+                            {% elif notif.action == 'story_issue_fixed' %}anter-notif-icon--verified
                             {% else %}anter-notif-icon--default{% endif %}">
                             <i class="fas
                                 {% if notif.action in ['like', 'like_comment', 'like_video'] %}fa-heart
@@ -128,6 +129,7 @@
                                 {% elif notif.action == 'verification_rejected' %}fa-times
                                 {% elif notif.action == 'report_resolved' %}fa-check-circle
                                 {% elif notif.action == 'report_rejected' %}fa-times-circle
+                                {% elif notif.action == 'story_issue_fixed' %}fa-camera
                                 {% else %}fa-bell{% endif %}"
                                aria-hidden="true"></i>
                         </span>
@@ -173,6 +175,7 @@
                                 {% elif notif.action == 'verification_rejected' %}لم يُقبل طلب التوثيق
                                 {% elif notif.action == 'report_resolved' %}تمت مراجعة بلاغك
                                 {% elif notif.action == 'report_rejected' %}تم رفض بلاغك
+                                {% elif notif.action == 'story_issue_fixed' %}إصلاح مشكلة تقنية في القصة
                                 {% else %}لديك إشعار{% endif %}
                             </span>
                         </p>

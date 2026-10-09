@@ -41,6 +41,8 @@ class User(UserMixin, db.Model):
     # 🔹 إضافة عمود is_admin
     is_admin = db.Column(db.Boolean, default=False)
     is_verified = db.Column(db.Boolean, default=False)
+    # ANTER: شارة المؤسس — خاصة بحساب واحد فقط.
+    is_founder = db.Column(db.Boolean, nullable=False, default=False, server_default='false', index=True)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)

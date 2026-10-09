@@ -217,6 +217,20 @@ def create_app(test_config=None):
             'title="حساب موثق" aria-label="حساب موثق" role="img"></i>'
         )
 
+    def founder_badge(user):
+        """ANTER: شارة المؤسس — تظهر فقط لحساب المؤسس."""
+        if not getattr(user, 'is_founder', False):
+            return Markup('')
+        return Markup(
+            '<span class="founder-badge" '
+            'tabindex="0" role="button" '
+            'data-founder-tooltip="مؤسس ANTER — صاحب الرؤية والمشروع" '
+            'aria-label="مؤسس ANTER">'
+            '<i class="fas fa-certificate" aria-hidden="true"></i>'
+            '<span class="founder-badge__text">مؤسس</span>'
+            '</span>'
+        )
+
     def linkify_hashtags(content):
         escaped_content = str(escape(unescape(content or '')))
 
@@ -271,6 +285,7 @@ def create_app(test_config=None):
 
     app.add_template_filter(_anter_date_label, name='date_label')
     app.add_template_global(verified_badge, name='verified_badge')
+    app.add_template_global(founder_badge, name='founder_badge')
 
     # ============================================
     # تحديث آخر ظهور للمستخدم عند كل طلب

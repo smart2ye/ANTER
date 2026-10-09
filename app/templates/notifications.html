@@ -132,7 +132,7 @@
                     <div class="anter-notif-item__body">
                         <p class="anter-notif-item__text">
                             {% if actor %}
-                                <strong class="anter-notif-item__actor">{{ actor.name or actor.username }}{{ verified_badge(actor) }}</strong>
+                                <strong class="anter-notif-item__actor">{{ actor.name or actor.username }}{{ verified_badge(actor) }}{{ founder_badge(actor) }}</strong>
                             {% else %}
                                 <strong class="anter-notif-item__actor text-muted">حساب غير متاح</strong>
                             {% endif %}

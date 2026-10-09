@@ -54,6 +54,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'email_verified': 'BOOLEAN NOT NULL DEFAULT FALSE',
             'is_deleted': 'BOOLEAN NOT NULL DEFAULT FALSE',
             'deleted_at': 'TIMESTAMP',
+            'is_founder': 'BOOLEAN NOT NULL DEFAULT FALSE',
         },
         'posts': {
             'image_data': binary_type,

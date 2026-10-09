@@ -59,7 +59,7 @@
                 <div class="reel-stream-author-row">
                     <a href="{{ url_for('users.profile', username=video.author.username) }}" class="reel-stream-author">
                         <img src="{{ avatar_url(video.author) }}" alt="{{ video.author.name }}">
-                        <span>@{{ video.author.username }} {{ verified_badge(video.author) }}</span>
+                        <span>@{{ video.author.username }} {{ verified_badge(video.author) }}{{ founder_badge(video.author) }}</span>
                     </a>
 
                     {% if _anter_is_auth and video.author.id != _anter_uid %}

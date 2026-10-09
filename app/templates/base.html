@@ -193,7 +193,7 @@
                     <div class="card shadow-sm border-0">
                         <div class="card-body text-center">
                             <img src="{{ avatar_url(current_user) }}" class="fb-avatar-lg mb-2">
-                            <h6 class="fw-bold">{{ current_user.name }} {{ verified_badge(current_user) }}</h6>
+                            <h6 class="fw-bold">{{ current_user.name }} {{ verified_badge(current_user) }}{{ founder_badge(current_user) }}</h6>
                                     <div class="post-status mt-1">
                                         {{ get_status_icon(current_user)|safe }}
                                     </div>
@@ -1013,5 +1013,135 @@
 })();
 </script>
 {% endif %}
+
+<!-- ============================================================
+     ANTER: بطاقة المؤسس المنبثقة
+     ============================================================ -->
+<style>
+.founder-badge {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.founder-badge:hover,
+.founder-badge:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 165, 0, 0.5);
+    outline: none;
+}
+.founder-card-pop {
+    position: absolute;
+    z-index: 9999;
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+    border: 1.5px solid rgba(255, 215, 0, 0.5);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 215, 0, 0.15);
+    color: #fff;
+    font-size: 0.85rem;
+    max-width: 260px;
+    text-align: center;
+    line-height: 1.5;
+    animation: founderCardIn 0.2s ease-out;
+}
+.founder-card-pop::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    right: 20px;
+    width: 12px;
+    height: 12px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #1a1a2e 100%);
+    border-top: 1.5px solid rgba(255, 215, 0, 0.5);
+    border-left: 1.5px solid rgba(255, 215, 0, 0.5);
+    transform: rotate(45deg);
+}
+.founder-card-pop__icon {
+    font-size: 1.6rem;
+    color: #FFD700;
+    margin-bottom: 6px;
+    display: block;
+}
+.founder-card-pop__title {
+    font-weight: 800;
+    color: #FFD700;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+.founder-card-pop__desc {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.78rem;
+}
+@keyframes founderCardIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<script>
+(function () {
+    'use strict';
+    let currentPop = null;
+    let currentBadge = null;
+
+    function closePop() {
+        if (currentPop && currentPop.parentNode) {
+            currentPop.parentNode.removeChild(currentPop);
+        }
+        currentPop = null;
+        currentBadge = null;
+    }
+
+    function openPop(badge) {
+        closePop();
+        const pop = document.createElement('div');
+        pop.className = 'founder-card-pop';
+        pop.innerHTML =
+            '<i class="fas fa-certificate founder-card-pop__icon" aria-hidden="true"></i>' +
+            '<div class="founder-card-pop__title">مؤسس ANTER</div>' +
+            '<div class="founder-card-pop__desc">عبدالقادر مهدلي — صاحب الرؤية والمشروع</div>';
+
+        document.body.appendChild(pop);
+
+        // موضع البطاقة أسفل الشارة
+        const rect = badge.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+        pop.style.top = (rect.bottom + scrollTop + 8) + 'px';
+        // محاولة محاذاة يمين الشارة
+        let left = rect.left + scrollLeft - 100; // إزاحة لليسار قليلًا
+        if (left < 8) left = 8;
+        const maxLeft = window.innerWidth - pop.offsetWidth - 8;
+        if (left > maxLeft) left = maxLeft;
+        pop.style.left = left + 'px';
+
+        currentPop = pop;
+        currentBadge = badge;
+    }
+
+    document.addEventListener('click', function (e) {
+        const badge = e.target.closest('.founder-badge');
+        if (badge) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (currentBadge === badge) {
+                closePop();
+            } else {
+                openPop(badge);
+            }
+            return;
+        }
+        // click خارج البطاقة → أغلق
+        if (currentPop && !e.target.closest('.founder-card-pop')) {
+            closePop();
+        }
+    }, true);
+
+    // Escape → أغلق
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && currentPop) closePop();
+    });
+})();
+</script>
 </body>
 </html>

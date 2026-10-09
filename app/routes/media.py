@@ -210,3 +210,18 @@ def post_image_public(public_id):
         post.image_mime,
         cache_seconds=31536000,
     )
+
+@media_bp.route('/story/<int:story_id>')
+def story_image(story_id):
+    """ANTER: يخدم صورة القصة من BLOB (القرص ephemeral على Render)."""
+    from app.models import Story
+    story = Story.query.get_or_404(story_id)
+    if not story.media_data:
+        return redirect(url_for('static', filename='img/default_story.png'))
+    # القصة تنتهي بعد 24 ساعة → cache قصير نسبيًا.
+    return _image_response(
+        story.media_data,
+        story.media_mime,
+        cache_seconds=3600,
+    )
+

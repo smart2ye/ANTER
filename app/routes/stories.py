@@ -59,17 +59,24 @@ def create_story():
         media.save(filepath)
         media_url = f"/static/uploads/stories/{filename}"
     else:
-        # ANTER: للصور — التحقق الكامل عبر prepare_image_data.
+        # ANTER: للصور — نحفظ BLOB في القاعدة (القرص ephemeral على Render).
         from app.utils.image_storage import prepare_image_data
         image_bytes, image_mime = prepare_image_data(media)
         if not image_bytes:
             return jsonify({'error': 'ملف الصورة غير صالح'}), 400
-        ext_out = 'webp' if image_mime == 'image/webp' else 'png'
-        filename = f"story_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext_out}"
-        filepath = os.path.join(upload_folder, filename)
-        with open(filepath, 'wb') as fh:
-            fh.write(image_bytes)
-        media_url = f"/static/uploads/stories/{filename}"
+        story = Story(
+            user_id=current_user.id,
+            media_url=None,
+            media_data=image_bytes,
+            media_mime=image_mime,
+            media_type=media_type,
+            caption=caption,
+            expires_at=datetime.utcnow() + timedelta(hours=24)
+        )
+        db.session.add(story)
+        db.session.commit()
+        log_user_activity(current_user.id, 'story_create', {'story_id': story.id, 'attachment': media_type})
+        return jsonify({'message': 'تم نشر القصة بنجاح', 'story': story.to_dict(current_user.id)}), 201
 
     story = Story(
         user_id=current_user.id,

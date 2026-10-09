@@ -48,10 +48,16 @@ class Story(db.Model):
             if ur:
                 user_reaction = ur.reaction_type
 
+        # ANTER: صور BLOB تُخدَّم من endpoint خاص؛ الفيديو من static.
+        if self.media_data:
+            media_url = f'/media/story/{self.id}'
+        else:
+            media_url = self.media_url or ''
+
         return {
             'id': self.id,
             'user_id': self.user_id,
-            'media_url': self.media_url,
+            'media_url': media_url,
             'media_type': self.media_type,
             'caption': self.caption or '',
             'created_at': self.created_at.isoformat() + 'Z',

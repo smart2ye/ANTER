@@ -125,9 +125,9 @@ function renderStoriesBar(users) {
                         <div class="anter-story-dropzone__ring">
                             <i class="fas fa-image"></i>
                         </div>
-                        <strong>أضف صورة أو فيديو</strong>
+                        <strong>أضف صورة</strong>
                         <small>اسحب الملف هنا أو اضغط للاختيار</small>
-                        <span class="anter-story-dropzone__hint">JPG · PNG · MP4 · WEBM — حتى 50MB</span>
+                        <span class="anter-story-dropzone__hint">JPG · PNG · WebP — حتى 5MB</span>
                     </label>
 
                     <!-- معاينة الملف (تظهر بعد الاختيار) -->
@@ -140,7 +140,7 @@ function renderStoriesBar(users) {
                         </button>
                     </div>
 
-                    <input type="file" id="storyMediaInput" accept="image/*,video/*" hidden>
+                    <input type="file" id="storyMediaInput" accept="image/*" hidden>
 
                     <!-- حقل التعليق يطفو فوق المعاينة -->
                     <div class="anter-story-caption-wrap" id="storyCaptionWrap">
@@ -236,18 +236,15 @@ function _handleStoryFile(file) {
     if (_anterStoryObjectUrl) URL.revokeObjectURL(_anterStoryObjectUrl);
     _anterStoryObjectUrl = URL.createObjectURL(file);
 
-    const isVideo = file.type.startsWith('video/');
-    if (isVideo) {
-        previewImg.hidden = true;
-        previewVideo.src = _anterStoryObjectUrl;
-        previewVideo.hidden = false;
-        previewVideo.play().catch(() => {});
-    } else {
-        previewVideo.pause();
-        previewVideo.hidden = true;
-        previewImg.src = _anterStoryObjectUrl;
-        previewImg.hidden = false;
+    // ANTER: القصص صور فقط.
+    if (file.type.startsWith('video/')) {
+        alert('القصص تقبل الصور فقط حاليًا. الفيديو غير مدعوم.');
+        return;
     }
+    previewVideo.pause();
+    previewVideo.hidden = true;
+    previewImg.src = _anterStoryObjectUrl;
+    previewImg.hidden = false;
     dropzone.hidden = true;
     preview.hidden = false;
     publishBtn.disabled = false;
@@ -358,9 +355,10 @@ function submitStory(e) {
             stage.addEventListener('drop', (e) => {
                 const file = e.dataTransfer?.files?.[0];
                 if (!file) return;
-                const isImage = file.type.startsWith('image/');
-                const isVideo = file.type.startsWith('video/');
-                if (!isImage && !isVideo) return;
+                if (!file.type.startsWith('image/')) {
+                    alert('القصص تقبل الصور فقط حاليًا.');
+                    return;
+                }
                 // استخدم DataTransfer لتحديد الملف في input
                 const dt = new DataTransfer();
                 dt.items.add(file);

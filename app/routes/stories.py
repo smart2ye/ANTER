@@ -13,7 +13,8 @@ from app.utils.helpers import log_user_activity
 stories_bp = Blueprint('stories', __name__)
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm', 'mov'}
+    # ANTER: القصص صور فقط — الفيديو أُوقف (مشكلة BLOB + حجم).
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 @stories_bp.route('/stories', methods=['POST'])
 @csrf.exempt
@@ -35,13 +36,14 @@ def create_story():
         return jsonify({'error': 'صيغة الملف غير مدعومة'}), 400
 
     ext = media.filename.rsplit('.', 1)[1].lower()
-    is_video = ext in {'mp4', 'webm', 'mov'}
-    media_type = 'video' if is_video else 'image'
-
+    # ANTER: نرفض الفيديو — القصص صور فقط.
+    if ext in {'mp4', 'webm', 'mov', 'avi', 'mkv'}:
+        return jsonify({'error': 'القصص تقبل الصور فقط حاليًا. الفيديو غير مدعوم.'}), 400
+    media_type = 'image'
     upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'stories')
     os.makedirs(upload_folder, exist_ok=True)
 
-    if is_video:
+    if False:
         # ANTER: فحص magic bytes للفيديو + حد الحجم.
         head = media.stream.read(16)
         media.stream.seek(0)

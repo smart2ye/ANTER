@@ -77,6 +77,7 @@ def run_startup_schema_upgrades(app) -> bool:
         'notifications': {
             'extra_text': 'VARCHAR(500)',
             'report_id': 'INTEGER',
+            'created_at': 'TIMESTAMP DEFAULT NOW()',
         },
         'videos': {
             'public_id': 'VARCHAR(40)',

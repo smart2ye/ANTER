@@ -18,7 +18,7 @@
         <small class="text-muted ms-auto"><time data-local-time="{{ post.created_at.isoformat() }}" data-time-style="datetime">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</time></small>
     </div>
     <p>{{ post.content }}</p>
-    {% if post.image_data or post.image %}
+    {% if post.image_mime or post.image %}
         <img src="{{ post_image_url(post) }}" class="img-fluid rounded" style="max-height: 300px;">
     {% endif %}
     <div class="mt-2">

@@ -14,13 +14,15 @@ def _legacy_static_url(path, default='default.png'):
 
 
 def avatar_url(user):
-    if getattr(user, 'avatar_data', None):
+    # ANTER: نفحص avatar_mime بدل avatar_data — يعمل حتى لو لم يُحمَّل الـ BLOB.
+    if getattr(user, 'avatar_mime', None):
         return url_for('media.avatar', user_id=user.id)
     return _legacy_static_url(getattr(user, 'avatar', None) or 'default.png')
 
 
 def post_image_url(post):
-    if getattr(post, 'image_data', None):
+    # ANTER: نفحص image_mime بدل image_data — يعمل حتى لو لم يُحمَّل الـ BLOB.
+    if getattr(post, 'image_mime', None):
         return url_for('media.post_image_public', public_id=post.public_id)
     image = getattr(post, 'image', None)
     return _legacy_static_url(image) if image else ''

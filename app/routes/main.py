@@ -5,7 +5,7 @@ from app.models import Post, Video, Like, Comment, Follow, HiddenPost, Report, U
 from app.extensions import db
 from app.forms.support import SupportRequestForm
 from sqlalchemy import func, or_, and_
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, defer
 from datetime import datetime, timedelta
 from app.services.privacy import visible_posts
 from app.services.feed_ranker import rank_post
@@ -115,7 +115,11 @@ def build_feed(user):
     candidate_limit = current_app.config['FEED_CANDIDATE_LIMIT']
     following_ids = [follow.followed_id for follow in user.following] + [user.id]
     interests = get_user_interests(user.id)
-    post_query = Post.query.options(joinedload(Post.author))
+    # ANTER: نستبعد BLOB الصور من الـ feed (يوفّر ~100MB في الذاكرة عند 60 منشورًا).
+    post_query = Post.query.options(
+        joinedload(Post.author),
+        defer(Post.image_data),
+    )
 
     followed_posts = post_query.filter(Post.author_id.in_(following_ids)) \
         .order_by(Post.id.desc()).limit(candidate_limit).all()

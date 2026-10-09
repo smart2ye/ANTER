@@ -8,20 +8,22 @@ from app.models import Post, User
 media_bp = Blueprint('media', __name__, url_prefix='/media')
 
 
-def _image_response(data, mime_type):
+def _image_response(data, mime_type, cache_seconds=300):
     if not data:
         return redirect(url_for('static', filename='uploads/default.png'))
 
     # ETag بسيط من حجم البيانات — يتغير تلقائيًا عند تبديل الصورة.
-    # نُخزّن الصورة في المتصفح 5 دقائق → يقلل الطلبات على Flask بنسبة ~90%
-    # مع بقاء ظهور الصورة الجديدة فوريًا تقريبًا (خلال 5 دقائق كحد أقصى).
     etag = '"%d-%d"' % (len(data), hash(data[:512]) & 0xffffffff)
+
+    cache_header = f'public, max-age={cache_seconds}'
+    if cache_seconds >= 31536000:
+        cache_header += ', immutable'
 
     return Response(
         data,
         mimetype=mime_type or 'image/png',
         headers={
-            'Cache-Control': 'public, max-age=300',
+            'Cache-Control': cache_header,
             'ETag': etag,
             'Content-Length': str(len(data)),
         },
@@ -202,4 +204,9 @@ def post_image(post_id):
 @media_bp.route('/p/<public_id>')
 def post_image_public(public_id):
     post = Post.query.filter_by(public_id=public_id).first_or_404()
-    return _image_response(post.image_data, post.image_mime)
+    # ANTER: public_id فريد ولا يتغير → cache سنة كاملة + immutable.
+    return _image_response(
+        post.image_data,
+        post.image_mime,
+        cache_seconds=31536000,
+    )

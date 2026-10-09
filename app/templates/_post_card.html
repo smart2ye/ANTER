@@ -163,7 +163,7 @@
     </a>
     {% endif %}
 
-    {% if post.image_data or post.image %}
+    {% if post.image_mime or post.image %}
     <div class="post-image-wrapper" data-post-id="{{ post.id }}">
         <img src="{{ post_image_url(post) }}"
              class="post-image js-lightbox"

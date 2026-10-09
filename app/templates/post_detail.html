@@ -17,16 +17,16 @@
 {% block og_url %}{{ _url }}{% endblock %}
 {% block og_title %}{{ _author }} على ANTER{% endblock %}
 {% block og_description %}{{ _excerpt }}{% endblock %}
-{% block og_image %}{% if post.image_data or post.image %}{{ post_image_url(post) }}{% else %}{{ url_for('static', filename='img/logo-og.png', _external=True) }}{% endif %}{% endblock %}
+{% block og_image %}{% if post.image_mime or post.image %}{{ post_image_url(post) }}{% else %}{{ url_for('static', filename='img/logo-og.png', _external=True) }}{% endif %}{% endblock %}
 
 {% block twitter_url %}{{ _url }}{% endblock %}
 {% block twitter_title %}{{ _author }} على ANTER{% endblock %}
 {% block twitter_description %}{{ _excerpt }}{% endblock %}
-{% block twitter_image %}{% if post.image_data or post.image %}{{ post_image_url(post) }}{% else %}{{ url_for('static', filename='img/logo-og.png', _external=True) }}{% endif %}{% endblock %}
+{% block twitter_image %}{% if post.image_mime or post.image %}{{ post_image_url(post) }}{% else %}{{ url_for('static', filename='img/logo-og.png', _external=True) }}{% endif %}{% endblock %}
 
 {% block json_ld %}
 {% set _full_text = (post.content or _excerpt or '') %}
-{% set _has_image = (post.image_data or post.image) %}
+{% set _has_image = (post.image_mime or post.image) %}
 {% set _has_video = post.shared_video %}
 {% if _has_video and _has_video.thumbnail_path %}
   {% set _thumb_url = url_for('static', filename='uploads/' + _has_video.thumbnail_path, _external=True) %}

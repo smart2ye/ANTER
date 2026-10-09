@@ -119,7 +119,7 @@
                 <td>{{ user.id }}</td>
                 <td>
                     <img src="{{ avatar_url(user) }}" width="30" height="30" class="rounded-circle me-1">
-                    {{ user.name }} {{ verified_badge(user) }}<br><small class="text-muted">@{{ user.username }}</small>
+                    {{ user.name }} {{ verified_badge(user) }}{{ founder_badge(user) }}{{ early_member_badge(user) }}<br><small class="text-muted">@{{ user.username }}</small>
                 </td>
                 <td>{{ user.email }}</td>
                 <td>
@@ -156,6 +156,11 @@
                             data-url="{{ url_for('admin.toggle_user_verification', user_id=user.id) }}"
                             data-verified="{{ 'true' if user.is_verified else 'false' }}">
                         <i class="fas fa-check-circle"></i> {% if user.is_verified %}إزالة التوثيق{% else %}توثيق{% endif %}
+                    </button>
+                    <button class="btn btn-sm btn-outline-info toggle-early-member"
+                            data-url="{{ url_for('admin.toggle_early_member', user_id=user.id) }}"
+                            data-early="{{ 'true' if user.is_early_member else 'false' }}">
+                        <i class="fas fa-star"></i> {% if user.is_early_member %}إزالة المبكّر{% else %}مبكّر{% endif %}
                     </button>
                     <button class="btn btn-sm btn-outline-success gen-verify-link"
                             data-url="{{ url_for('admin.generate_email_verification_link', user_id=user.id) }}"
@@ -219,6 +224,22 @@
         btn.addEventListener('click', function() {
             const wasVerified = this.dataset.verified === 'true';
             const action = wasVerified ? 'إزالة التوثيق من' : 'توثيق';
+            if (!confirm(`هل تريد ${action} هذا الحساب؟`)) return;
+            fetch(this.dataset.url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) location.reload();
+                });
+        });
+    });
+
+    document.querySelectorAll('.toggle-early-member').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const wasEarly = this.dataset.early === 'true';
+            const action = wasEarly ? 'إزالة شارة المبكّر من' : 'منح شارة العضو المبكّر لـ';
             if (!confirm(`هل تريد ${action} هذا الحساب؟`)) return;
             fetch(this.dataset.url, {
                 method: 'POST',

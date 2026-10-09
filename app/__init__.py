@@ -218,15 +218,14 @@ def create_app(test_config=None):
         )
 
     def early_member_badge(user):
-        """ANTER: شارة العضو المبكّر — لأول من آمن بالمنصة."""
+        """ANTER: شارة العضو المبكّر — نجمة ذهبية مع بطاقة منبثقة."""
         if not getattr(user, 'is_early_member', False):
             return Markup('')
         return Markup(
             '<span class="early-member-badge" '
-            'title="من أوائل أعضاء ANTER" '
+            'tabindex="0" role="button" '
             'aria-label="عضو مبكّر">'
-            '<i class="fas fa-star" aria-hidden="true"></i>'
-            '<span class="early-member-badge__text">مبكّر</span>'
+            '<span class="early-member-badge__star" aria-hidden="true">★</span>'
             '</span>'
         )
 

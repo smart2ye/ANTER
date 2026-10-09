@@ -187,6 +187,17 @@ def toggle_user_verification(user_id):
     return jsonify({'success': True, 'is_verified': user.is_verified})
 
 
+@admin_bp.route('/users/early-member/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def toggle_early_member(user_id):
+    """ANTER: منح/إزالة شارة العضو المبكّر."""
+    user = User.query.get_or_404(user_id)
+    user.is_early_member = not user.is_early_member
+    db.session.commit()
+    return jsonify({'success': True, 'is_early_member': user.is_early_member})
+
+
 @admin_bp.route('/users/send-email/<int:user_id>', methods=['POST'])
 @login_required
 @admin_required

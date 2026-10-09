@@ -454,44 +454,78 @@ function playCurrentStory() {
     // تحديث أشرطة التقدم
     renderProgressBars(userObj.stories.length, currentStoryIndex);
 
-    // عرض الوسائط
+    // ANTER: ابدأ المؤقّت فقط بعد تحميل الوسائط (كان يبدأ قبل التحميل → الصورة تُتخطى).
     const mediaContainer = document.getElementById('storyMediaContainer');
-    if (story.media_type === 'video') {
-        mediaContainer.innerHTML = `<video src="${story.media_url}" autoplay playsinline onended="nextStoryItem()"></video>`;
-    } else {
-        mediaContainer.innerHTML = `<img src="${story.media_url}" alt="Story">`;
-    updateStoryInteractions(story);
+    const fillBar = document.getElementById('progressFill_' + currentStoryIndex);
+
+    function startStoryTimer(durationMs) {
+        clearInterval(progressTimer);
+        clearTimeout(storyTimer);
+        const dur = durationMs || STORY_DURATION;
+        const startTime = Date.now();
+        progressTimer = setInterval(function() {
+            const elapsed = Date.now() - startTime;
+            const pct = Math.min(100, (elapsed / dur) * 100);
+            if (fillBar) fillBar.style.width = pct + '%';
+        }, 50);
+        storyTimer = setTimeout(function() {
+            nextStoryItem();
+        }, dur);
     }
 
+    // عرض الوسائط
+    mediaContainer.innerHTML = '';
 
-    // تسجيل المشاهدة وتحديث العدد بعد نجاح الطلب
-    fetch(`/api/stories/${story.id}/view`, {
+    if (story.media_type === 'video') {
+        const video = document.createElement('video');
+        video.src = story.media_url;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.muted = false;
+        mediaContainer.appendChild(video);
+
+        // ابدأ المؤقّت عند بدء التشغيل الفعلي
+        video.addEventListener('playing', function() {
+            const dur = Math.max(STORY_DURATION, (video.duration || 5) * 1000);
+            startStoryTimer(dur);
+        }, { once: true });
+        video.addEventListener('ended', nextStoryItem, { once: true });
+        video.addEventListener('error', function() { startStoryTimer(); }, { once: true });
+
+        // احتياطي: لو لم يبدأ خلال 4 ثوانٍ
+        setTimeout(function() {
+            if (!progressTimer) startStoryTimer();
+        }, 4000);
+    } else {
+        const img = document.createElement('img');
+        img.alt = 'Story';
+        img.onload = function() { startStoryTimer(); };
+        img.onerror = function() { startStoryTimer(); };
+        img.src = story.media_url;
+        mediaContainer.appendChild(img);
+
+        // احتياطي: لو تأخر التحميل أكثر من 8 ثوانٍ
+        setTimeout(function() {
+            if (!progressTimer) startStoryTimer();
+        }, 8000);
+    }
+
+    updateStoryInteractions(story);
+
+    // تسجيل المشاهدة
+    fetch('/api/stories/' + story.id + '/view', {
         method: 'POST',
         headers: {
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
         }
     })
-    .then(res => res.json().then(data => ({ok: res.ok, data})))
-    .then(result => {
+    .then(function(res) { return res.json().then(function(data) { return {ok: res.ok, data: data}; }); })
+    .then(function(result) {
         if (result.ok && result.data.story) {
             Object.assign(story, result.data.story);
         }
     })
-    .catch(() => {});
-
-    // تشغيل العداد التلقائي
-    let startTime = Date.now();
-    const fillBar = document.getElementById(`progressFill_${currentStoryIndex}`);
-    
-    progressTimer = setInterval(() => {
-        let elapsed = Date.now() - startTime;
-        let pct = Math.min(100, (elapsed / STORY_DURATION) * 100);
-        if (fillBar) fillBar.style.width = pct + '%';
-    }, 50);
-
-    storyTimer = setTimeout(() => {
-        nextStoryItem();
-    }, STORY_DURATION);
+    .catch(function() {});
 }
 
 function getCurrentStory() {

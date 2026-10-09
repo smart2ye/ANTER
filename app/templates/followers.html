@@ -11,7 +11,7 @@
                 <a href="{{ url_for('users.profile', username=user.username) }}" class="text-decoration-none text-dark">
                     {{ user.name }}
                 </a>
-                {{ verified_badge(user) }}{{ founder_badge(user) }}
+                {{ verified_badge(user) }}{{ founder_badge(user) }}{{ early_member_badge(user) }}
             </h5>
             <small class="text-muted">@{{ user.username }}</small>
         </div>
@@ -45,7 +45,7 @@
             <div class="flex-grow-1">
                 <a href="{{ url_for('users.profile', username=u.username) }}" class="text-decoration-none text-dark">
                     <strong>{{ u.name }}</strong>
-                    {{ verified_badge(u) }}{{ founder_badge(u) }}
+                    {{ verified_badge(u) }}{{ founder_badge(u) }}{{ early_member_badge(u) }}
                 </a>
                 <br>
                 <small class="text-muted">@{{ u.username }}</small>

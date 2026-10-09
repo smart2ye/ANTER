@@ -44,7 +44,7 @@
                                  class="anter-user-card__avatar"
                                  loading="lazy">
                             <div class="anter-user-card__name">
-                                {{ user.name }} {{ verified_badge(user) }}{{ founder_badge(user) }}
+                                {{ user.name }} {{ verified_badge(user) }}{{ founder_badge(user) }}{{ early_member_badge(user) }}
                             </div>
                             <div class="anter-user-card__username">@{{ user.username }}</div>
                             <div class="anter-user-card__meta">👥 {{ user.follower_count() }} متابع</div>

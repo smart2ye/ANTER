@@ -449,6 +449,7 @@
 | `is_deleted` | BOOLEAN |  |  |
 | `deleted_at` | TIMESTAMP | ✓ |  |
 | `is_founder` | BOOLEAN |  |  |
+| `is_early_member` | BOOLEAN |  |  |
 
 ## UserActivity
 

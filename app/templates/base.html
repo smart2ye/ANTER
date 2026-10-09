@@ -193,7 +193,7 @@
                     <div class="card shadow-sm border-0">
                         <div class="card-body text-center">
                             <img src="{{ avatar_url(current_user) }}" class="fb-avatar-lg mb-2">
-                            <h6 class="fw-bold">{{ current_user.name }} {{ verified_badge(current_user) }}{{ founder_badge(current_user) }}</h6>
+                            <h6 class="fw-bold">{{ current_user.name }} {{ verified_badge(current_user) }}{{ founder_badge(current_user) }}{{ early_member_badge(current_user) }}</h6>
                                     <div class="post-status mt-1">
                                         {{ get_status_icon(current_user)|safe }}
                                     </div>

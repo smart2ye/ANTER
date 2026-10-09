@@ -43,6 +43,8 @@ class User(UserMixin, db.Model):
     is_verified = db.Column(db.Boolean, default=False)
     # ANTER: شارة المؤسس — خاصة بحساب واحد فقط.
     is_founder = db.Column(db.Boolean, nullable=False, default=False, server_default='false', index=True)
+    # ANTER: عضو مبكّر — أول من آمن بالمنصة.
+    is_early_member = db.Column(db.Boolean, nullable=False, default=False, server_default='false', index=True)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)

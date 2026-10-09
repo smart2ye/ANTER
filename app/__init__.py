@@ -217,6 +217,19 @@ def create_app(test_config=None):
             'title="حساب موثق" aria-label="حساب موثق" role="img"></i>'
         )
 
+    def early_member_badge(user):
+        """ANTER: شارة العضو المبكّر — لأول من آمن بالمنصة."""
+        if not getattr(user, 'is_early_member', False):
+            return Markup('')
+        return Markup(
+            '<span class="early-member-badge" '
+            'title="من أوائل أعضاء ANTER" '
+            'aria-label="عضو مبكّر">'
+            '<i class="fas fa-star" aria-hidden="true"></i>'
+            '<span class="early-member-badge__text">مبكّر</span>'
+            '</span>'
+        )
+
     def founder_badge(user):
         """ANTER: شارة المؤسس — تظهر فقط لحساب المؤسس."""
         if not getattr(user, 'is_founder', False):
@@ -286,6 +299,7 @@ def create_app(test_config=None):
     app.add_template_filter(_anter_date_label, name='date_label')
     app.add_template_global(verified_badge, name='verified_badge')
     app.add_template_global(founder_badge, name='founder_badge')
+    app.add_template_global(early_member_badge, name='early_member_badge')
 
     # ============================================
     # تحديث آخر ظهور للمستخدم عند كل طلب

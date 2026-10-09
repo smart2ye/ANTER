@@ -47,7 +47,7 @@
         {% for notif in notifications %}
             {% set actor = notif.actor %}
             {% set link = '#' %}
-            {% if notif.action in ['like', 'comment', 'reply', 'wall_post', 'mention', 'repost', 'like_comment'] and notif.post %}
+            {% if notif.action in ['like', 'comment', 'reply', 'wall_post', 'mention', 'repost', 'like_comment', 'founder_post'] and notif.post %}
                 {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
             {% elif notif.action == 'follow' and actor %}
                 {% set link = url_for('users.profile', username=actor.username) %}
@@ -106,6 +106,7 @@
                             {% elif notif.action in ['message', 'voice_message', 'file_message'] %}anter-notif-icon--message
                             {% elif notif.action == 'voice_call' %}anter-notif-icon--call
                             {% elif notif.action == 'wall_post' %}anter-notif-icon--comment
+                            {% elif notif.action == 'founder_post' %}anter-notif-icon--verified
                             {% elif notif.action == 'mention' %}anter-notif-icon--comment
                             {% elif notif.action == 'repost' %}anter-notif-icon--reply
                             {% elif notif.action == 'verification_approved' %}anter-notif-icon--verified
@@ -115,6 +116,7 @@
                             <i class="fas
                                 {% if notif.action in ['like', 'like_comment', 'like_video'] %}fa-heart
                                 {% elif notif.action in ['comment', 'comment_video', 'wall_post', 'mention'] %}fa-comment
+                                {% elif notif.action == 'founder_post' %}fa-bullhorn
                                 {% elif notif.action in ['reply', 'reply_video', 'repost'] %}fa-reply
                                 {% elif notif.action == 'follow' %}fa-user-plus
                                 {% elif notif.action in ['message', 'file_message'] %}fa-envelope
@@ -151,6 +153,7 @@
                                 {% elif notif.action == 'file_message' %}أرسل لك ملفًا
                                 {% elif notif.action == 'voice_call' %}اتصل بك صوتيًا
                                 {% elif notif.action == 'wall_post' %}كتب على حائطك
+                                {% elif notif.action == 'founder_post' %}رسالة جديدة من المؤسس
                                 {% elif notif.action == 'mention' %}أشار إليك
                                 {% elif notif.action == 'repost' %}أعاد نشر منشورك
                                 {% elif notif.action == 'verification_approved' %}تم توثيق حسابك ✓

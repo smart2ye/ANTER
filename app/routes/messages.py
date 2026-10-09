@@ -612,6 +612,8 @@ def send(user_id):
                             parent_id=message.id,
                             is_ai=True,
                         ))
+                        # ANTER: المساعد لا يقرأ صندوقه يدويًا — نُعلّم رسالة المستخدم مقروءة بعد الرد.
+                        message.is_read = True
                         db.session.commit()
                         remember_assistant_reply(current_user, other, assistant_reply)
                 except Exception:

@@ -78,8 +78,10 @@
                      data-category="{{ category }}"
                      data-read="{{ 'true' if notif.is_read else 'false' }}">
 
+                {% set _has_fulltext = notif.extra_text and link == '#' %}
                 <a href="{{ link }}"
                    class="anter-notif-item__link"
+                   {% if _has_fulltext %}data-notif-fulltext="{{ notif.extra_text|e }}" data-notif-title="{{ (actor.name or actor.username) if actor else 'إشعار' }}"{% endif %}
                    onclick="anterMarkRead({{ notif.id }}, event)">
 
                     <div class="anter-notif-item__avatar-wrap">
@@ -260,5 +262,126 @@
 </div>
 
 <div class="anter-img-toast" id="anterNotifToast"></div>
+
+
+<style>
+.notif-fulltext-pop {
+    position: fixed;
+    z-index: 9999;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: min(90vw, 420px);
+    padding: 22px 20px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+    border: 1.5px solid rgba(255, 215, 0, 0.35);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+    color: #fff;
+    text-align: right;
+    line-height: 1.7;
+    animation: notifPopIn 0.2s ease-out;
+}
+@keyframes notifPopIn {
+    from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.notif-fulltext-pop__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #1a1a2e;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+.notif-fulltext-pop__title {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #FFD700;
+    margin: 0 0 8px;
+}
+.notif-fulltext-pop__body {
+    font-size: 0.92rem;
+    color: rgba(255, 255, 255, 0.92);
+    margin: 0 0 16px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+.notif-fulltext-pop__close {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #003AAB, #00C8F8);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+.notif-fulltext-pop-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+    animation: notifFadeIn 0.15s ease-out;
+}
+@keyframes notifFadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+
+<script>
+(function () {
+    'use strict';
+    let currentPop = null;
+    let currentBackdrop = null;
+
+    function closePopup() {
+        if (currentPop && currentPop.parentNode) currentPop.parentNode.removeChild(currentPop);
+        if (currentBackdrop && currentBackdrop.parentNode) currentBackdrop.parentNode.removeChild(currentBackdrop);
+        currentPop = null;
+        currentBackdrop = null;
+    }
+
+    function openPopup(title, text) {
+        closePopup();
+        const bd = document.createElement('div');
+        bd.className = 'notif-fulltext-pop-backdrop';
+        bd.addEventListener('click', closePopup);
+        document.body.appendChild(bd);
+
+        const pop = document.createElement('div');
+        pop.className = 'notif-fulltext-pop';
+        pop.innerHTML =
+            '<div class="notif-fulltext-pop__icon"><i class="fas fa-bell"></i></div>' +
+            '<div class="notif-fulltext-pop__title"></div>' +
+            '<div class="notif-fulltext-pop__body"></div>' +
+            '<button type="button" class="notif-fulltext-pop__close">تم</button>';
+        pop.querySelector('.notif-fulltext-pop__title').textContent = title;
+        pop.querySelector('.notif-fulltext-pop__body').textContent = text;
+        pop.querySelector('.notif-fulltext-pop__close').addEventListener('click', closePopup);
+        document.body.appendChild(pop);
+
+        currentPop = pop;
+        currentBackdrop = bd;
+    }
+
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('[data-notif-fulltext]');
+        if (!link) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openPopup(link.dataset.notifTitle || 'إشعار', link.dataset.notifFulltext || '');
+    }, true);
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && currentPop) closePopup();
+    });
+})();
+</script>
 
 {% endblock %}

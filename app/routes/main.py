@@ -189,7 +189,29 @@ def build_feed(user):
             country_score=geo_score_for_post(post, user),
         )
 
-    all_posts.sort(key=feed_score, reverse=True)
+    # ANTER (أ): عشوائية خفيفة (±15%) لكسر ثبات الترتيب بين الزيارات.
+    # نحسب كل الدرجات أولًا، ثم نُطبّق الـ jitter، ثم نُرتّب.
+    import random as _random
+    _scored = []
+    for _p in all_posts:
+        _base = feed_score(_p)
+        _jitter = _random.uniform(0.85, 1.15)
+        _scored.append((_p, _base * _jitter))
+    _scored.sort(key=lambda x: x[1], reverse=True)
+    all_posts = [p for p, _ in _scored]
+
+    # ANTER (ج): حقن منشورين عشوائيين من القاع في مواضع أعلى — لكشف منشورات لا تُعرض.
+    if len(all_posts) >= 12:
+        tail = all_posts[10:]
+        if len(tail) >= 2:
+            injected = _random.sample(tail, 2)
+            injected_ids = {p.id for p in injected}
+            all_posts = [p for p in all_posts if p.id not in injected_ids]
+            # مواضع الإدراج: 3 و 8 (إن كان الطول يسمح).
+            positions = sorted([min(3, len(all_posts)), min(8, len(all_posts))], reverse=True)
+            for _pos, _p in zip(positions, injected):
+                all_posts.insert(_pos, _p)
+
     return all_posts, top_suggested
 
 @main_bp.route('/')

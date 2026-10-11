@@ -4,27 +4,52 @@
 {% set admin_back_url = back_url %}
 {% set admin_back_label = back_label %}
 {% include 'admin/_navigation.html' %}
-<div class="card shadow-sm p-3">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5><i class="fas fa-file-alt"></i> تفاصيل المنشور #{{ post.id }}</h5>
-        <a href="{{ back_url }}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-right"></i> {{ back_label }}</a>
-    </div>
-    <div class="d-flex align-items-center mb-2">
-        <img src="{{ avatar_url(post.author) }}" width="40" height="40" class="rounded-circle me-2">
-        <div>
-            <strong>{{ post.author.name }} {{ verified_badge(post.author) }}</strong>
-            <small class="text-muted d-block">@{{ post.author.username }}</small>
+
+{# ============ شريط أزرار الأدمن ============ #}
+<div class="card shadow-sm p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+        <h5 class="mb-0">
+            <i class="fas fa-shield-halved"></i>
+            عرض إداري — منشور #{{ post.id }}
+        </h5>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('posts.view_post', public_id=post.public_id) }}"
+               target="_blank" rel="noopener"
+               class="btn btn-sm btn-primary">
+                <i class="fas fa-external-link-alt"></i> عرض المنشور العام
+            </a>
+            <a href="{{ back_url }}" class="btn btn-sm btn-secondary">
+                <i class="fas fa-arrow-right"></i> {{ back_label }}
+            </a>
         </div>
-        <small class="text-muted ms-auto"><time data-local-time="{{ post.created_at.isoformat() }}" data-time-style="datetime">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</time></small>
     </div>
-    <p>{{ post.content }}</p>
-    {% if post.image_mime or post.image %}
-        <img src="{{ post_image_url(post) }}" class="img-fluid rounded" style="max-height: 300px;">
-    {% endif %}
-    <div class="mt-2">
-        <span class="badge bg-primary"><i class="fas fa-heart"></i> {{ post.like_count() }}</span>
-        <span class="badge bg-secondary"><i class="fas fa-comment"></i> {{ post.comment_count() }}</span>
-        <span class="badge bg-danger"><i class="fas fa-flag"></i> {{ post.reports|selectattr('status', 'equalto', 'pending')|list|length }} بلاغات</span>
+
+    {# معلومات سريعة للأدمن #}
+    <div class="d-flex gap-2 flex-wrap align-items-center small text-muted">
+        <span>
+            <i class="fas fa-user"></i>
+            <a href="{{ url_for('users.profile', username=post.author.username) }}"
+               target="_blank" rel="noopener"
+               class="text-decoration-none">
+                @{{ post.author.username }}
+            </a>
+        </span>
+        <span>·</span>
+        <span><i class="fas fa-eye"></i> {{ post.visibility or 'public' }}</span>
+        <span>·</span>
+        <span class="text-danger">
+            <i class="fas fa-flag"></i>
+            {{ post.reports|selectattr('status', 'equalto', 'pending')|list|length }} بلاغات معلّقة
+        </span>
+        <span>·</span>
+        <a href="{{ url_for('admin.posts') }}" class="text-decoration-none">
+            إدارة كل المنشورات
+        </a>
     </div>
 </div>
+
+{# ============ البطاقة الموحّدة ============ #}
+{% set post_url = url_for('posts.view_post', public_id=post.public_id, _external=true) %}
+{% include '_post_card.html' %}
+
 {% endblock %}

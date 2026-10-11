@@ -1,7 +1,7 @@
 # مرجع المسارات (Routes)
 
-**آخر تحديث:** 2026-10-09
-**المجموع:** 197 route · 19 blueprint
+**آخر تحديث:** 2026-10-11
+**المجموع:** 199 route · 19 blueprint
 
 ## admin — `/admin`
 
@@ -19,6 +19,7 @@
 - `GET` `/admin/support-requests` — _admin.py_
 - `GET` `/admin/users` — _admin.py_
 - `POST` `/admin/users/delete/<int:user_id>` — _admin.py_
+- `POST` `/admin/users/early-member/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/email-verify-link/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/make_admin/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/password-reset-link/<int:user_id>` — _admin.py_
@@ -96,6 +97,7 @@
 - `GET` `/media/avatar/<int:user_id>` — _media.py_
 - `GET` `/media/p/<public_id>` — _media.py_
 - `GET` `/media/post/<int:post_id>` — _media.py_
+- `GET` `/media/story/<int:story_id>` — _media.py_
 - `GET` `/media/video-thumb/<public_id>` — _media.py_
 - `GET` `/media/video/<public_id>` — _media.py_
 

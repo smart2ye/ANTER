@@ -191,9 +191,16 @@ def toggle_user_verification(user_id):
 @login_required
 @admin_required
 def toggle_early_member(user_id):
-    """ANTER: منح/إزالة شارة العضو المبكّر."""
+    """ANTER: منح/إزالة شارة العضو المبكّر (مع إشعار في كلتا الحالتين)."""
     user = User.query.get_or_404(user_id)
     user.is_early_member = not user.is_early_member
+
+    action = 'early_member' if user.is_early_member else 'early_member_revoked'
+    db.session.add(Notification(
+        user_id=user.id,
+        actor_id=current_user.id,
+        action=action,
+    ))
     db.session.commit()
     return jsonify({'success': True, 'is_early_member': user.is_early_member})
 

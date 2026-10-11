@@ -30,6 +30,13 @@ REPORT_TOPICS = {
     'terrorism': 'المحتوى الإرهابي',
     'other': 'سبب آخر',
     'support': 'طلب مساعدة',
+    # أنواع طلبات النظام (غير بلاغات محتوى) — مفاتيح صريحة أوّلاً
+    'password-reset-request': 'إعادة تعيين كلمة السر',
+    'password-reset': 'إعادة تعيين كلمة السر',
+    'verification:email': 'تأكيد البريد الإلكتروني',
+    'verification:account': 'توثيق الحساب',
+    'login': 'المساعدة في تسجيل الدخول',
+    'verification': 'التوثيق',
 }
 
 

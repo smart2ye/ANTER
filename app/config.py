@@ -96,15 +96,15 @@ class Config:
     # ANTER mobile app (WebView APK via GitHub Releases)
     ANTER_APK_URL = os.environ.get(
         'ANTER_APK_URL',
-        'https://github.com/smart2ye/anter-webview-apk/releases/download/v1.0.3/ANTER_app.apk',
+        'https://github.com/smart2ye/anter-webview-apk/releases/latest/download/ANTER_app.apk',
     )
     ANTER_APK_SHA256 = os.environ.get(
         'ANTER_APK_SHA256',
-        '2507268fa582194e5a485f96a84424fb34b7078f5e77b95cb0beeb394172bf0c',
+        '5e34aac8bbb87016470df5a06c336aafaada8b42b1b0e00593d1833bd0b9a911',
     )
-    ANTER_APK_VERSION = os.environ.get('ANTER_APK_VERSION', '1.0.3')
-    ANTER_APK_SIZE = os.environ.get('ANTER_APK_SIZE', '3.62 MB')
-    ANTER_APK_DATE = os.environ.get('ANTER_APK_DATE', '23 سبتمبر 2026')
+    ANTER_APK_VERSION = os.environ.get('ANTER_APK_VERSION', '1.0.8')
+    ANTER_APK_SIZE = os.environ.get('ANTER_APK_SIZE', '0.91 MB')
+    ANTER_APK_DATE = os.environ.get('ANTER_APK_DATE', '11 أكتوبر 2026')
     WEBRTC_TURN_URL = os.environ.get('WEBRTC_TURN_URL', '')
     WEBRTC_TURN_URLS = os.environ.get('WEBRTC_TURN_URLS', '')
     WEBRTC_TURN_USERNAME = os.environ.get('WEBRTC_TURN_USERNAME', '')

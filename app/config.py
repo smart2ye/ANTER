@@ -100,9 +100,9 @@ class Config:
     )
     ANTER_APK_SHA256 = os.environ.get(
         'ANTER_APK_SHA256',
-        '4d3a96baafa4d059901050201bb493d9b3ce7f3ca5b3da06552035d2164c8ad3',
+        '7158cd82fadef9665c7446ca1ba7b93aff49dabda9d00f6aa8f4ec5f0ceaf50e',
     )
-    ANTER_APK_VERSION = os.environ.get('ANTER_APK_VERSION', '1.0.9')
+    ANTER_APK_VERSION = os.environ.get('ANTER_APK_VERSION', '1.0.10')
     ANTER_APK_SIZE = os.environ.get('ANTER_APK_SIZE', '0.91 MB')
     ANTER_APK_DATE = os.environ.get('ANTER_APK_DATE', '11 أكتوبر 2026')
     WEBRTC_TURN_URL = os.environ.get('WEBRTC_TURN_URL', '')

@@ -253,7 +253,7 @@ def accounts_switch():
 
     user = vault_resolve(token)
     if not user:
-        flash('الرمز منتهي الصلاحية. يرجى تسجيل الدخول من جديد.', 'warning')
+        flash('انتهت الجلسة. حاول تسجيل الدخول مرة أخرى.', 'warning')
         return redirect(url_for('auth.login'))
 
     # ANTER: حماية مزدوجة — لا تبديل لحساب محذوف أو معطّل.

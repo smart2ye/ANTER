@@ -116,7 +116,6 @@ def register():
                 "phone": form.phone.data,
                 "email": form.email.data,
                 "password_present": bool(form.password.data),
-                "confirm_password_present": bool(form.confirm_password.data),
             },
         )
 

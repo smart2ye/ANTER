@@ -112,9 +112,9 @@
                                        aria-label="مشاهدة الريل: {{ msg.shared_video.title or 'ريل جديد' }}">
 
                                         <div class="anter-chat-shared-reel-media">
-                                            {% if msg.shared_video.thumbnail_path %}
+                                            {% if msg.shared_video.thumbnail_data or msg.shared_video.thumbnail_path %}
                                                 <img
-                                                    src="{{ url_for('static', filename='uploads/' + msg.shared_video.thumbnail_path) }}"
+                                                    src="{{ url_for('media.video_thumbnail', public_id=msg.shared_video.public_id) }}"
                                                     alt="{{ msg.shared_video.title or 'ريل جديد' }}"
                                                     loading="lazy">
                                             {% endif %}

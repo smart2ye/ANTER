@@ -133,7 +133,7 @@
     <div class="col-6 col-md-4 col-lg-3">
         <a href="{{ url_for('videos.watch', public_id=video.public_id) }}" class="text-decoration-none">
             <div class="card shadow-sm position-relative" style="aspect-ratio: 9/16; overflow: hidden; border-radius: 12px;">
-                <img src="{{ url_for('static', filename='uploads/' + video.thumbnail_path) }}"
+                <img src="{{ url_for('media.video_thumbnail', public_id=video.public_id) }}"
                      class="card-img-top"
                      style="height: 100%; object-fit: cover;"
                      onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'" loading="lazy" decoding="async">

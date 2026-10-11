@@ -105,7 +105,7 @@
                     {% for reel in reels %}
                     <a href="{{ url_for('videos.watch', public_id=reel.public_id) }}" class="anter-reel-card">
                         <div class="anter-reel-card__media">
-                            {% if reel.thumbnail_path and reel.thumbnail_path != 'default_thumb.png' %}
+                            {% if reel.thumbnail_data or (reel.thumbnail_path and reel.thumbnail_path != 'default_thumb.png') %}
                             <img src="{{ url_for('media.video_thumbnail', public_id=reel.public_id) }}"
                                  alt="{{ reel.title }}"
                                  loading="lazy">

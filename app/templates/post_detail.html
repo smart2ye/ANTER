@@ -28,8 +28,8 @@
 {% set _full_text = (post.content or _excerpt or '') %}
 {% set _has_image = (post.image_mime or post.image) %}
 {% set _has_video = post.shared_video %}
-{% if _has_video and _has_video.thumbnail_path %}
-  {% set _thumb_url = url_for('static', filename='uploads/' + _has_video.thumbnail_path, _external=True) %}
+{% if _has_video and (_has_video.thumbnail_data or _has_video.thumbnail_path) %}
+  {% set _thumb_url = url_for('media.video_thumbnail', public_id=_has_video.public_id) %}
 {% elif _has_image %}
   {% set _thumb_url = post_image_url(post) %}
 {% else %}

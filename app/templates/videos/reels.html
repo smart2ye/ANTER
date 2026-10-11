@@ -12,7 +12,7 @@
     {% set _author_name = _v.author.name or _v.author.username %}
     {% set _author_url = url_for('users.profile', username=_v.author.username, _external=True) %}
     {% if _v.thumbnail_path %}
-        {% set _thumb = url_for('static', filename='uploads/' + _v.thumbnail_path, _external=True) %}
+        {% set _thumb = url_for('media.video_thumbnail', public_id=_v.public_id, _external=True) %}
     {% else %}
         {% set _thumb = url_for('static', filename='img/logo-og.png', _external=True) %}
     {% endif %}

@@ -46,6 +46,7 @@ ANTER منصة اجتماعية عربية RTL تتيح للمستخدم إنش�
 
 ```text
 /users/<username>
+```
 
 ### الخصوصية في الملف
 
@@ -88,17 +89,6 @@ ANTER منصة اجتماعية عربية RTL تتيح للمستخدم إنش�
 - BLOB فيديو + صورة مصغّرة
 - `/media/video-thumb/<public_id>`
 - توحيد URL عبر `media.video_thumbnail`
-الملف الآن 90 سطرًا نظيفًا (بدون > زائدة). لنكمل — الجزء القادم.
-
-الأمر:
-
-```
-cat >> ~/ANTER/README.md
-```
-
-الصق (بزر نسخ من الشات، لا يدويًا):
-
-```
 
 ---
 
@@ -157,12 +147,11 @@ cat >> ~/ANTER/README.md
 https://github.com/smart2ye/anter-webview-apk/releases/latest/download/ANTER_app.apk
 ```
 
-2. Plus Messenger
+### 2. Plus Messenger
 
-· المستودع: smart2ye/plus-messenger-android
-· Kotlin + Compose + Hilt + Room
-· v1.0.0 · REST API (MOBILE_API_TOKEN_TTL_SECONDS = 43200)
-
+- المستودع: `smart2ye/plus-messenger-android`
+- Kotlin + Compose + Hilt + Room
+- v1.0.0 · REST API (`MOBILE_API_TOKEN_TTL_SECONDS = 43200`)
 
 ---
 

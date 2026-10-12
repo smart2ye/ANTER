@@ -309,7 +309,20 @@
                     badge.style.display = data.count > 0 ? 'block' : 'none';
                 }
                 if (previousNotifCount !== null && data.count > previousNotifCount) {
-                    showNotifBanner('إشعار جديد', 'لديك إشعار جديد في ANTER');
+                    fetch('/notifications/latest', {
+                        headers: {'Accept': 'application/json'},
+                        credentials: 'same-origin',
+                        cache: 'no-store'
+                    })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d && d.ok) {
+                            showNotifBanner(d.actor_name || 'إشعار جديد', d.text || 'لديك إشعار جديد');
+                        } else {
+                            showNotifBanner('إشعار جديد', 'لديك إشعار جديد في ANTER');
+                        }
+                    })
+                    .catch(() => showNotifBanner('إشعار جديد', 'لديك إشعار جديد في ANTER'));
                     window.dispatchEvent(new CustomEvent('anter:notification-count', { detail: { count: data.count } }));
                 }
                 previousNotifCount = data.count;

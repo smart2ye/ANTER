@@ -1,5 +1,3 @@
-
-```
 # ANTER — دليل المشروع
 
 > **ANTER** شبكة اجتماعية عربية تجمع بين التواصل الإنساني والمساعدة الذكية داخل تجربة واحدة، وتُبنى لتكون سهلة الاستخدام على الهاتف، وقريبة من احتياجات المجتمع العربي.
@@ -48,101 +46,112 @@ ANTER منصة اجتماعية عربية RTL تتيح للمستخدم إنش�
 
 ```text
 /users/<username>
+
+### الخصوصية في الملف
+
+- `profile_visibility`: عام / خاص
+- `wall_visibility`: عام / خاص
+- `message_privacy`: everyone / followers / nobody
+- `show_email`, `show_online_status`, `hide_followers`
+
+---
+
+## ميزات التواصل
+
+### المنشورات
+
+- نصوص + صور (WebP، حد 1600px)
+- `defer(Post.image_data)` في feed للأداء
+
+### التعليقات والردود
+
+- إعجابات + إشعارات `comment`, `reply`, `like_comment`
+- عند حذف صاحب الإشعار يبقى الإشعار آمنًا
+
+### الرسائل
+
+- محادثات فردية · شريط المتصلين
+- رسائل صوتية (`voice_message`) · مرفقات (`file_message`)
+- **مكالمات صوتية WebRTC** (Google STUN + Metered TURN)
+- مؤشر «يكتب الآن» · إشعارات قراءة
+
+### القصص (Stories)
+
+- صور فقط (الفيديو موقوف)
+- BLOB في `media_data`
+- `/media/story/<id>`
+- مؤقّت لا يتخطى قبل التحميل
+- `story_view` + `story_reaction`
+
+### الريلز (Reels)
+
+- BLOB فيديو + صورة مصغّرة
+- `/media/video-thumb/<public_id>`
+- توحيد URL عبر `media.video_thumbnail`
+الملف الآن 90 سطرًا نظيفًا (بدون > زائدة). لنكمل — الجزء القادم.
+
+الأمر:
+
+```
+cat >> ~/ANTER/README.md
 ```
 
-الخصوصية في الملف
+الصق (بزر نسخ من الشات، لا يدويًا):
 
-· profile_visibility: عام / خاص
-· wall_visibility: عام / خاص
-· message_privacy: everyone / followers / nobody
-· show_email, show_online_status, hide_followers
+```
 
 ---
 
-ميزات التواصل
+## مساعد أنتر — mini-llm Arabic
 
-المنشورات
+محرّك Groq (`qwen/qwen3.8-27b`)، تحت الاسم التسويقي **mini-llm Arabic**.
 
-· نصوص + صور (WebP، حد 1600px)
-· كتل كود  ```lang ``` 
-· تنسيق inline: عريض · مائل · ~~شطب~~ · كود
-· defer(Post.image_data) في feed للأداء
+### القدرات
 
-التعليقات والردود
+- فهم المنصة والردّ عن ميزاتها
+- صياغة محتوى وردود
+- إجابات تقنية (Python / Flask / PostgreSQL)
+- ذاكرة لكل مستخدم: اسم + username + 24 رسالة × 800 حرف
+- فلترة ضوضاء · anti-hallucination
+- يعلّم رسائله مقروءة تلقائيًا
 
-· إعجابات + إشعارات comment, reply, like_comment
-· عند حذف صاحب الإشعار يبقى الإشعار آمنًا
+### الهوية
 
-الرسائل
+- `anter_assistant` · متابَع تلقائيًا · متصل دائمًا
+- يرسل رسائل النظام (ترحيب، بلاغات، رد آلي)
 
-· محادثات فردية · شريط المتصلين
-· رسائل صوتية (voice_message) · مرفقات (file_message)
-· مكالمات صوتية WebRTC (Google STUN + Metered TURN)
-· مؤشر «يكتب الآن» · إشعارات قراءة
+### الذاكرة
 
-القصص (Stories)
+- محلية في `assistant_memories`
+- ترفض كلمات المرور والمفاتيح والبطاقات
+- يُرسل السياق القصير (حتى ~3000 حرف) إلى Groq API عند الحاجة لإجابة عامة — خدمة خارجية
+- يمكن للمستخدم طلب مسح الذاكرة
 
-· صور فقط (الفيديو موقوف)
-· BLOB في media_data
-· /media/story/<id>
-· مؤقّت لا يتخطى قبل التحميل
-· story_view + story_reaction
-
-الريلز (Reels)
-
-· BLOB فيديو + صورة مصغّرة
-· /media/video-thumb/<public_id>
-· توحيد URL عبر media.video_thumbnail
+**ميزانية Groq:** ~3000 حرف · 24 رسالة · تقليل تلقائي عند 413/429.
 
 ---
 
-مساعد أنتر — mini-llm Arabic
+## الشارات
 
-محرّك Groq (qwen/qwen3.8-27b)، تحت الاسم التسويقي mini-llm Arabic.
-
-القدرات:
-
-· فهم المنصة والردّ عن ميزاتها
-· صياغة محتوى وردود
-· إجابات تقنية (Python / Flask / PostgreSQL)
-· ذاكرة لكل مستخدم: اسم + username + 24 رسالة × 800 حرف
-· فلترة ضوضاء · anti-hallucination
-· يعلّم رسائله مقروءة تلقائيًا
-
-الهوية:
-
-· anter_assistant · متابَع تلقائيًا · متصل دائمًا
-· يرسل رسائل النظام (ترحيب، بلاغات، رد آلي)
-
-الذاكرة:
-
-· محلية في assistant_memories
-· ترفض كلمات المرور والمفاتيح والبطاقات
-· يُرسل السياق القصير (حتى ~3000 حرف) إلى Groq API عند الحاجة لإجابة عامة — خدمة خارجية
-· يمكن للمستخدم طلب مسح الذاكرة
-
-ميزانية Groq: ~3000 حرف · 24 رسالة · تقليل تلقائي عند 413/429.
+| الشارة | الرمز | المنح | الإشعار |
+|---|---|---|---|
+| موثّق | ✅ | `/admin/users` | `verification_approved` / `rejected` |
+| مؤسس | ✴️ | مؤسس واحد فقط | — |
+| عضو مبكّر | 🌟 | تلقائي لأول 100 / يدوي | `early_member` / `early_member_revoked` |
 
 ---
 
-الشارات
+## تطبيقات الجوال
 
-الشارة الرمز المنح الإشعار
-موثّق ✅ /admin/users verification_approved / rejected
-مؤسس ✴️ مؤسس واحد فقط —
-عضو مبكّر 🌟 تلقائي لأول 100 / يدوي early_member / early_member_revoked
+### 1. ANTER WebView APK
 
----
+- المستودع: `smart2ye/anter-webview-apk`
+- الإصدار: **v1.0.10** · ~0.91 MB
+- Android 7.0+ · UA: `ANTERApp/1.0.10`
+- كاميرا · ميكروفون · موقع · ملفات · جهات اتصال
+- فتح روابط `anter-1.onrender.com` داخل التطبيق (intent-filter)
 
-تطبيقات الجوال
-
-1. ANTER WebView APK
-
-· المستودع: smart2ye/anter-webview-apk
-· الإصدار: v1.0.10 · ~0.91 MB
-· Android 7.0+ · UA: ANTERApp/1.0.10
-· كاميرا · ميكروفون · موقع · ملفات · جهات اتصال
-· فتح روابط anter-1.onrender.com داخل التطبيق (intent-filter)
+رابط التحميل:
 
 ```text
 https://github.com/smart2ye/anter-webview-apk/releases/latest/download/ANTER_app.apk
@@ -154,148 +163,126 @@ https://github.com/smart2ye/anter-webview-apk/releases/latest/download/ANTER_app
 · Kotlin + Compose + Hilt + Room
 · v1.0.0 · REST API (MOBILE_API_TOKEN_TTL_SECONDS = 43200)
 
----
-
-الحصاد السنوي (Year in Review)
-
-· services/year_in_review.py
-· بطاقة PNG 1080×1920: services/year_card.py
-· خط Cairo مضمّن: app/static/fonts/Cairo.ttf
-· RTL عبر Pillow 12 (direction='rtl')
-· Route: /year-in-review
 
 ---
 
-الإشعارات
+## الحصاد السنوي (Year in Review)
 
-الأنواع (24+):
+- `services/year_in_review.py`
+- بطاقة PNG 1080×1920: `services/year_card.py`
+- خط Cairo مضمّن: `app/static/fonts/Cairo.ttf`
+- RTL عبر Pillow 12
+- Route: `/year-in-review`
 
-```text
+---
+
+## الإشعارات
+
+الأنواع المدعومة (24+):
+
 like, comment, reply, follow, message, voice_message, voice_call,
 file_message, wall_post, mention, repost, like_comment, like_video,
 comment_video, reply_video, verification_approved, verification_rejected,
 report_resolved, report_rejected, founder_post, early_member,
 early_member_revoked, story_issue_fixed, video_lost
-```
 
-Push: pywebpush + VAPID · جدول push_subscriptions · SW v5 (clear caches + SKIP_WAITING).
+Push: pywebpush + VAPID · جدول push_subscriptions · SW v5.
 
 ---
 
-الخصوصية والأمان
+## الخصوصية والأمان
 
-القاعدة الممارسة
-المفاتيح .env فقط — لا Git، لا DB
-SECRET_KEY 43–64 حرفًا عشوائيًا
-كلمات المرور scrypt (32768:8:1)
-كوكي الجلسة HttpOnly + Secure + SameSite
-CSRF Flask-WTF + X-CSRFToken
-Rate Limiting على المسارات الحساسة
-Security Headers 5 + COOP + CORP + CSP + block-all-mixed-content
+| القاعدة | الممارسة |
+|---|---|
+| المفاتيح | `.env` فقط — لا Git، لا DB |
+| SECRET_KEY | 43–64 حرفًا عشوائيًا |
+| كلمات المرور | scrypt (32768:8:1) |
+| كوكي الجلسة | HttpOnly + Secure + SameSite |
+| CSRF | Flask-WTF + `X-CSRFToken` |
+| Rate Limiting | على المسارات الحساسة |
+| Security Headers | 5 + COOP + CORP + CSP + block-all-mixed-content |
 
 الحماية: Blocklist 30+ نطاق مزيّف · reset token مرتبط بـ password_hash · Path Traversal مُصلح · Open Redirect مُصلح · magic bytes للرفع · منع تسجيل ببريد/هاتف محذوف · GA4 anonymize.
 
-Soft Delete
+### Soft Delete
 
-· User.is_deleted + User.deleted_at
-· 23 نقطة إخفاء عبر 15+ ملفًا
-· البريد والهاتف محجوزان
-· تسجيل الدخول مرفوض
-· التفاصيل: docs/reference/soft-delete.md
+- `User.is_deleted` + `User.deleted_at`
+- 23 نقطة إخفاء عبر 15+ ملفًا
+- البريد والهاتف محجوزان
+- تسجيل الدخول مرفوض
+- التفاصيل: `docs/reference/soft-delete.md`
 
-تعدد الحسابات
+### تعدد الحسابات
 
-account_vault.py — كوكي anter_accounts موقّع بـ password_hash.
-
----
-
-الأداء
-
-· Brotli + gzip · Cache-Control سنة
-· FontAwesome subset (~3 KB)
-· Bootstrap + Cairo + FontAwesome محليًا
-· 96 فهرس
-· WebP (حد 1600px)
-· Render: gunicorn --workers=1 --threads=2 --worker-class=gthread --timeout=120 --max-requests=200 --max-requests-jitter=30
+`account_vault.py` — كوكي `anter_accounts` موقّع بـ `password_hash`.
 
 ---
 
-SEO
+## الأداء
 
-· title / description ديناميكيان
-· OpenGraph + Twitter Card
-· Canonical + JSON-LD (SocialMediaPosting / ProfilePage / VideoObject)
-· sitemap + robots
-· IndexNow
+- Brotli + gzip · Cache-Control سنة
+- FontAwesome subset (~3 KB)
+- Bootstrap + Cairo + FontAwesome محليًا
+- 96 فهرس
+- WebP (حد 1600px)
+- gunicorn --workers=1 --threads=2 --worker-class=gthread --timeout=120 --max-requests=200 --max-requests-jitter=30
 
 ---
 
-التشغيل المحلي (Termux)
+## SEO
 
-```bash
-cd ~/ANTER
-git pull --ff-only origin main
-set -a; . ./.env; set +a
-python run.py
-```
+- `title` / `description` ديناميكيان
+- OpenGraph + Twitter Card
+- Canonical + JSON-LD (SocialMediaPosting / ProfilePage / VideoObject)
+- sitemap + robots
+- IndexNow
 
-الرابط: http://127.0.0.1:5050
+---
+
+## التشغيل المحلي (Termux)
+
+التشغيل:
+
+    cd ~/ANTER
+    git pull --ff-only origin main
+    set -a; . ./.env; set +a
+    python run.py
+
+الرابط: `http://127.0.0.1:5050`
 
 إيقاف:
 
-```bash
-pkill -f "python3 run.py"
-```
+    pkill -f "python3 run.py"
 
 خلفي + مراقبة:
 
-```bash
-nohup python3 run.py > ~/anter.log 2>&1 &
-tail -f ~/anter.log
-```
+    nohup python3 run.py > ~/anter.log 2>&1 &
+    tail -f ~/anter.log
 
 SQLite محلي:
 
-```bash
-unset DATABASE_URL
-```
+    unset DATABASE_URL
 
 بيئة افتراضية:
 
-```bash
-source venv-termux/bin/activate
-```
-
-Aiven (إنتاج):
-
-```bash
-export DATABASE_URL="$(python3 -c "
-from pathlib import Path
-l = Path('.env').read_text().splitlines()[22]
-l = l.lstrip('#').strip().split('DATABASE_URL=',1)[1].split('#')[0].strip()
-print(l)
-")"
-```
+    source venv-termux/bin/activate
 
 توليد الوثائق:
 
-```bash
-unset DATABASE_URL
-export SECRET_KEY="temp"
-python3 scripts/generate_reference.py
-```
+    unset DATABASE_URL
+    export SECRET_KEY="temp"
+    python3 scripts/generate_reference.py
 
 ---
 
-النشر على Render
+## النشر على Render
 
-الخطة: Free (Oregon) · CDN: Cloudflare
-RAM: 512 MB · ينام بعد 15 دقيقة · Cold start 30–60s
-قيود: Aiven Free → كل ALTER مستقلة · TIMESTAMP NULL غير صالح · SMTP محجوب.
+**الخطة:** Free (Oregon) · CDN: Cloudflare
+**RAM:** 512 MB · ينام بعد 15 دقيقة · Cold start 30–60s
+**قيود:** Aiven Free → كل ALTER مستقلة · TIMESTAMP NULL غير صالح · SMTP محجوب.
 
-متغيرات البيئة
+### متغيرات البيئة
 
-```text
 SECRET_KEY=<43-64 حرفًا عشوائيًا>
 DATABASE_URL=<Aiven PostgreSQL URL>
 MINI_LLM_ARABIC_API_KEY=<Groq API Key>
@@ -316,42 +303,44 @@ MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=465
 MAIL_USERNAME=support.anter@gmail.com
 MAIL_PASSWORD=<App Password>
-```
 
-لا تُنسخ هذه القيم إلى قاعدة البيانات، ولا تُنشر في صور الشاشة أو المستودع أو المحادثات العامة.
-
----
-
-الوثائق المرجعية
-
-الملف الغرض
-routes.md جميع المسارات (199 route · 19 blueprint)
-models.md الجداول (34 model)
-services.md الخدمات (20 service)
-templates.md القوالب (49 template)
-INVENTORY.md جرد: إعدادات، بيئة، أمان، نشر، أولويات
-soft-delete.md نظام الحذف المنطقي
-integrations.md تكاملات خارجية (AI · WebRTC · Push · Email)
-identity.md الهوية البصرية
-
-يُولَّد جزء منها آليًا عبر scripts/generate_reference.py.
+**لا تُنسخ هذه القيم إلى قاعدة البيانات، ولا تُنشر في صور الشاشة أو المستودع أو المحادثات العامة.**
 
 ---
 
-الهوية البصرية
+## الوثائق المرجعية
 
-اللون الكود
-ANTER Navy #031E64
-ANTER Blue #003AAB (الأساسي)
-ANTER Cyan #00C8F8
-ANTER Purple #160B8E
+| الملف | الغرض |
+|---|---|
+| `routes.md` | جميع المسارات (199 route · 19 blueprint) |
+| `models.md` | الجداول (34 model) |
+| `services.md` | الخدمات (20 service) |
+| `templates.md` | القوالب (49 template) |
+| `INVENTORY.md` | جرد: إعدادات، بيئة، أمان، نشر، أولويات |
+| `soft-delete.md` | نظام الحذف المنطقي |
+| `integrations.md` | تكاملات خارجية (AI · WebRTC · Push · Email) |
+| `identity.md` | الهوية البصرية |
 
-التدرّج: #031E64 → #003AAB → #00C8F8 → #160B8E
-الخطوط: Cairo (افتراضي) + Tajawal
+يُولَّد جزء منها آليًا عبر `scripts/generate_reference.py`.
 
 ---
 
-مساهمة المجتمع
+## الهوية البصرية
+
+| اللون | الكود |
+|---|---|
+| ANTER Navy | `#031E64` |
+| ANTER Blue | `#003AAB` (الأساسي) |
+| ANTER Cyan | `#00C8F8` |
+| ANTER Purple | `#160B8E` |
+
+**التدرّج:** `#031E64` → `#003AAB` → `#00C8F8` → `#160B8E`
+
+**الخطوط:** Cairo (افتراضي) + Tajawal
+
+---
+
+## مساهمة المجتمع
 
 تركيز مقترح: تجربة الهاتف · سهولة التسجيل · تحسين المحتوى والوصولية · حماية الخصوصية · اختبار الميزات الجديدة.
 
@@ -359,27 +348,25 @@ ANTER Purple #160B8E
 
 ---
 
-كلمة المؤسس
+## كلمة المؤسس
 
-ANTER مشروع ينمو من الفضول والتعلّم والتجربة. غايته بناء مجتمع عربي قريب من المستخدم، يجمع بين التواصل الإنساني والمساعدة الذكية.
+> ANTER مشروع ينمو من الفضول والتعلّم والتجربة. غايته بناء مجتمع عربي قريب من المستخدم، يجمع بين التواصل الإنساني والمساعدة الذكية.
 
-عبدالقادر مهدلي — مؤسس ANTER وصاحب رؤيتها.
-
----
-
-آخر تحديث: 12 أكتوبر 2026
-
-هذا الملف دليل خاص بمشروع ANTER، ولا ينسب إلى أي مشروع أو شركة أخرى.
+**عبدالقادر مهدلي** — مؤسس ANTER وصاحب رؤيتها.
 
 ---
 
-الترخيص
+*آخر تحديث: 12 أكتوبر 2026*
 
-هذا المشروع مملوك بالكامل لـ عبدالقادر مهدلي. جميع الحقوق محفوظة © 2026.
+*هذا الملف دليل خاص بمشروع ANTER، ولا ينسب إلى أي مشروع أو شركة أخرى.*
 
-غير مرخّص للنسخ أو إعادة التوزيع أو التعديل أو الاستخدام التجاري دون إذن كتابي مسبق.
+---
 
-للتفاصيل: LICENSE
+## الترخيص
+
+هذا المشروع مملوك بالكامل لـ **عبدالقادر مهدلي**. جميع الحقوق محفوظة © 2026.
+
+**غير مرخّص** للنسخ أو إعادة التوزيع أو التعديل أو الاستخدام التجاري دون إذن كتابي مسبق.
+
+للتفاصيل: [LICENSE](LICENSE)
 للاستفسارات: smart2ye@gmail.com
-
-```

@@ -309,7 +309,7 @@
                     badge.style.display = data.count > 0 ? 'block' : 'none';
                 }
                 if (previousNotifCount !== null && data.count > previousNotifCount) {
-                    showToast('لديك إشعار جديد!', 'info');
+                    showNotifBanner('إشعار جديد', 'لديك إشعار جديد في ANTER');
                     window.dispatchEvent(new CustomEvent('anter:notification-count', { detail: { count: data.count } }));
                 }
                 previousNotifCount = data.count;
@@ -357,13 +357,54 @@
                 </div>
             `;
             container.appendChild(toast);
+
+            // إخفاء تلقائي بعد 5 ثوانٍ
             setTimeout(() => {
-                toast.style.animation = 'fadeOut 0.3s ease';
-                setTimeout(() => toast.remove(), 3005);
-            }, 4000);
+                toast.style.transition = 'opacity 0.3s ease';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // بطاقة إشعار منبثقة من الأعلى
+        function showNotifBanner(title, text) {
+            // تشغيل النغمة (SoundManager معرّف في main.js)
+            try { if (typeof sounds !== 'undefined') sounds.notification(); } catch (_) {}
+
+            const banner = document.createElement('div');
+            banner.className = 'anter-notif-banner';
+            banner.innerHTML = `
+                <div class="anter-notif-banner__icon"><i class="fas fa-bell"></i></div>
+                <div class="anter-notif-banner__body">
+                    <strong class="anter-notif-banner__title">${title}</strong>
+                    <span class="anter-notif-banner__text">${text}</span>
+                </div>
+                <button type="button" class="anter-notif-banner__close" aria-label="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            document.body.appendChild(banner);
+            requestAnimationFrame(() => banner.classList.add('is-visible'));
+
+            function hide() {
+                banner.classList.remove('is-visible');
+                setTimeout(() => banner.remove(), 400);
+            }
+
+            banner.querySelector('.anter-notif-banner__close').addEventListener('click', hide);
+
+            // إخفاء تلقائي بعد 5 ثوانٍ
+            setTimeout(hide, 5000);
+
+            // الضغط على البطاقة → صفحة الإشعارات
+            banner.addEventListener('click', (e) => {
+                if (e.target.closest('.anter-notif-banner__close')) return;
+                window.location.href = '/notifications';
+            });
         }
 
         {% if current_user.is_authenticated %}
+        setTimeout(() => showNotifBanner('إشعار جديد', 'لديك إشعار جديد في ANTER'), 2000);
         updateBadges();
         setInterval(updateBadges, 15000);
 

@@ -702,6 +702,7 @@ class SoundManager {
 }
 
 const sounds = new SoundManager();
+if (typeof window !== 'undefined') window.sounds = sounds;
 
 document.addEventListener('click', function(e) {
     if (e.target.closest('.like-btn, .reaction-option, .comment-like-btn')) sounds.reaction();

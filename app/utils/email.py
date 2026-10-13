@@ -56,7 +56,7 @@ def send_reset_email(user, token):
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
         <h2 style="color: #003AAB;">إعادة تعيين كلمة السر</h2>
         <p>مرحباً {user.username}،</p>
-        <p>اضغط على الرابط أدناه لتغيير كلمة السر (صالح لمدة ساعة):</p>
+        <p>اضغط على الرابط أدناه لتغيير كلمة السر (صالح لمدة 48 ساعة):</p>
         <a href="{reset_link}" style="background: #003AAB; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">تغيير كلمة السر</a>
         <p style="margin-top: 20px; color: #888; font-size: 12px;">إذا لم تطلب إعادة التعيين، يمكنك تجاهل هذا البريد.</p>
         <p style="color: #888; font-size: 12px;">فريق دعم ANTER</p>

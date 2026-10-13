@@ -15,7 +15,7 @@ from app.models import User
 
 
 SALT = 'password-reset'
-MAX_AGE = 3600  # ساعة واحدة
+MAX_AGE = 48 * 60 * 60  # 48 ساعة
 
 
 def _serializer():

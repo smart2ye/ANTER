@@ -417,7 +417,6 @@
         }
 
         {% if current_user.is_authenticated %}
-        setTimeout(() => showNotifBanner('إشعار جديد', 'لديك إشعار جديد في ANTER'), 2000);
         updateBadges();
         setInterval(updateBadges, 15000);
 

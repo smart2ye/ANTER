@@ -81,14 +81,6 @@
             <div class="d-flex align-items-center">
                 {% if current_user.is_authenticated %}
                 <div class="d-flex align-items-center gap-2">
-                    <a href="{{ url_for('notifications.index') }}" class="text-white position-relative">
-                        <i class="fas fa-bell fa-lg"></i>
-                        <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">0</span>
-                    </a>
-                    <a href="{{ url_for('messages.inbox') }}" class="text-white position-relative">
-                        <i class="fas fa-comment-dots fa-lg"></i>
-                        <span id="msg-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; display: none;">0</span>
-                    </a>
                     <div class="dropdown">
                         <a href="#" class="text-white dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown">
                             <img src="{{ avatar_url(current_user) }}" class="fb-avatar-sm">
@@ -227,12 +219,14 @@
                 <span>تريندات</span>
             </a>
             </a>
-            <a href="{{ url_for('notifications.index') }}" class="text-center nav-link {% if request.endpoint == 'notifications.index' %}active{% endif %}">
+            <a href="{{ url_for('notifications.index') }}" class="text-center nav-link position-relative {% if request.endpoint == 'notifications.index' %}active{% endif %}">
                 <i class="fas fa-bell fa-lg"></i>
+                <span id="notif-badge" class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.6rem; top: 2px; right: 12%; display: none;">0</span>
                 <span>إشعارات</span>
             </a>
-            <a href="{{ url_for('messages.inbox') }}" class="text-center nav-link {% if request.endpoint.startswith('messages') %}active{% endif %}">
+            <a href="{{ url_for('messages.inbox') }}" class="text-center nav-link position-relative {% if request.endpoint.startswith('messages') %}active{% endif %}">
                 <i class="fas fa-envelope fa-lg"></i>
+                <span id="msg-badge" class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.6rem; top: 2px; right: 12%; display: none;">0</span>
                 <span>رسائل</span>
             </a>
             <a href="{{ url_for('users.profile', username=current_user.username) }}" class="text-center nav-link {% if request.endpoint == 'users.profile' %}active{% endif %}">

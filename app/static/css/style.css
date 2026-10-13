@@ -9415,3 +9415,18 @@ a.anter-profile-stat:hover {
     background: linear-gradient(135deg, #160B8E, #6d28d9) !important;
     box-shadow: 0 2px 8px rgba(22, 11, 142, 0.35);
 }
+
+
+/* تباعد قائمة المستخدم المنسدلة */
+#userDropdown {
+    padding: 4px 8px;
+    display: inline-flex;
+    align-items: center;
+}
+#userDropdown::after {
+    margin-right: 6px;
+}
+#userDropdown + .dropdown-menu,
+.dropdown-menu.dropdown-menu-end {
+    margin-top: 12px;
+}

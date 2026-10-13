@@ -1,7 +1,7 @@
 # مرجع المسارات (Routes)
 
-**آخر تحديث:** 2026-10-11
-**المجموع:** 199 route · 19 blueprint
+**آخر تحديث:** 2026-10-13
+**المجموع:** 200 route · 19 blueprint
 
 ## admin — `/admin`
 
@@ -165,6 +165,7 @@
 
 - `GET` `/notifications` — _notifications.py_
 - `POST` `/notifications/delete/<int:notification_id>` — _notifications.py_
+- `GET` `/notifications/latest` — _notifications.py_
 - `POST` `/notifications/mark_all_read` — _notifications.py_
 - `POST` `/notifications/mark_read/<int:notification_id>` — _notifications.py_
 - `POST` `/notifications/mark_unread/<int:notification_id>` — _notifications.py_

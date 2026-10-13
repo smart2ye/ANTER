@@ -62,6 +62,10 @@
                 {% set link = url_for('users.settings') + '#verification' %}
             {% elif notif.action == 'verification_rejected' %}
                 {% set link = url_for('users.settings') + '#verification' %}
+            {% elif notif.action == 'terms_update' %}
+                {% set link = url_for('main.terms') %}
+            {% elif notif.action == 'username_suggestion' %}
+                {% set link = url_for('users.settings') + '#username-section' %}
             {% endif %}
 
             {# تحديد الفئة #}
@@ -114,6 +118,8 @@
                             {% elif notif.action == 'mention' %}anter-notif-icon--comment
                             {% elif notif.action == 'repost' %}anter-notif-icon--reply
                             {% elif notif.action == 'verification_approved' %}anter-notif-icon--verified
+                            {% elif notif.action == 'terms_update' %}anter-notif-icon--verified
+                            {% elif notif.action == 'username_suggestion' %}anter-notif-icon--comment
                             {% elif notif.action == 'report_resolved' %}anter-notif-icon--verified
                             {% elif notif.action == 'report_rejected' %}anter-notif-icon--default
                             {% elif notif.action == 'story_issue_fixed' %}anter-notif-icon--verified
@@ -131,6 +137,8 @@
                                 {% elif notif.action == 'voice_message' %}fa-microphone
                                 {% elif notif.action == 'voice_call' %}fa-phone
                                 {% elif notif.action == 'verification_approved' %}fa-check
+                                {% elif notif.action == 'terms_update' %}fa-file-contract
+                                {% elif notif.action == 'username_suggestion' %}fa-at
                                 {% elif notif.action == 'verification_rejected' %}fa-times
                                 {% elif notif.action == 'report_resolved' %}fa-check-circle
                                 {% elif notif.action == 'report_rejected' %}fa-times-circle
@@ -180,6 +188,8 @@
                                 {% elif notif.action == 'repost' %}أعاد نشر منشورك
                                 {% elif notif.action == 'verification_approved' %}تم توثيق حسابك ✓
                                 {% elif notif.action == 'verification_rejected' %}لم يُقبل طلب التوثيق
+                                {% elif notif.action == 'terms_update' %}تم تحديث الشروط والأحكام
+                                {% elif notif.action == 'username_suggestion' %}اختر اسم مستخدم خاصًا بك
                                 {% elif notif.action == 'report_resolved' %}تمت مراجعة بلاغك
                                 {% elif notif.action == 'report_rejected' %}تم رفض بلاغك
                                 {% elif notif.action == 'story_issue_fixed' %}إصلاح مشكلة تقنية في القصة

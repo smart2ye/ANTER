@@ -56,6 +56,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'deleted_at': 'TIMESTAMP',
             'is_founder': 'BOOLEAN NOT NULL DEFAULT FALSE',
             'is_early_member': 'BOOLEAN NOT NULL DEFAULT FALSE',
+            'mention_privacy': "VARCHAR(20) NOT NULL DEFAULT 'followers_only'",
         },
         'posts': {
             'image_data': binary_type,
@@ -77,6 +78,7 @@ def run_startup_schema_upgrades(app) -> bool:
         'notifications': {
             'extra_text': 'VARCHAR(500)',
             'report_id': 'INTEGER',
+            'comment_id': 'INTEGER',
             'created_at': 'TIMESTAMP DEFAULT NOW()',
         },
         'videos': {

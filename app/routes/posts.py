@@ -331,20 +331,20 @@ def comment(post_id):
     db.session.add(comment)
     db.session.flush()
     
-    # معالجة الإشارات (@mention)
-    from app.utils.helpers import parse_mentions
-    import re
-    usernames = re.findall(r'@([\w.]+)', content)
-    for username in usernames:
-        mentioned_user = User.query.filter_by(username=username).first()
-        if mentioned_user and mentioned_user.id != current_user.id:
-            notif = Notification(
-                user_id=mentioned_user.id,
-                actor_id=current_user.id,
-                action='mention',
-                post_id=post_id
-            )
-            db.session.add(notif)
+    # معالجة الإشارات (@mention) — نظام موحّد
+    from app.services.mentions import process_mentions
+    reply_to_user_id = None
+    if parent_id:
+        pc = Comment.query.get(parent_id)
+        if pc:
+            reply_to_user_id = pc.author_id
+    process_mentions(
+        content,
+        actor=current_user,
+        post_id=post_id,
+        comment_id=comment.id,
+        reply_to_user_id=reply_to_user_id,
+    )
 
     # إشعار لصاحب المنشور إذا لم يكن هو المعلق
     if post.author_id != current_user.id:
@@ -708,18 +708,15 @@ def create():
                 )
                 moment.updated_at = datetime.utcnow()
 
-            import re
-            usernames = re.findall(r'@([\w.]+)', content)
-            for username in usernames:
-                mentioned_user = User.query.filter_by(username=username).first()
-                if mentioned_user and mentioned_user.id != current_user.id:
-                    notif = Notification(
-                        user_id=mentioned_user.id,
-                        actor_id=current_user.id,
-                        action='mention',
-                        post_id=post.id
-                    )
-                    db.session.add(notif)
+            # نظام الإشارات الموحّد (منشورات)
+            from app.services.mentions import process_mentions
+            process_mentions(
+                content,
+                actor=current_user,
+                post_id=post.id,
+                comment_id=None,
+                reply_to_user_id=None,
+            )
         except Exception:
             current_app.logger.exception('Ancillary post features failed (non-fatal)')
 

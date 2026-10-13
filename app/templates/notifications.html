@@ -66,6 +66,12 @@
                 {% set link = url_for('main.terms') %}
             {% elif notif.action == 'username_suggestion' %}
                 {% set link = url_for('users.settings') + '#username-section' %}
+            {% elif notif.action in ['mention_post', 'mention_group_post'] and notif.post %}
+                {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
+            {% elif notif.action in ['mention_comment', 'mention_group_comment'] and notif.post %}
+                {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
+            {% elif notif.action in ['mention_all_post', 'mention_all_comment'] and notif.post %}
+                {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
             {% endif %}
 
             {# تحديد الفئة #}
@@ -116,6 +122,8 @@
                             {% elif notif.action == 'early_member' %}anter-notif-icon--verified
                             {% elif notif.action == 'early_member_revoked' %}anter-notif-icon--default
                             {% elif notif.action == 'mention' %}anter-notif-icon--comment
+                            {% elif notif.action in ['mention_post', 'mention_group_post', 'mention_comment', 'mention_group_comment'] %}anter-notif-icon--comment
+                            {% elif notif.action in ['mention_all_post', 'mention_all_comment'] %}anter-notif-icon--verified
                             {% elif notif.action == 'repost' %}anter-notif-icon--reply
                             {% elif notif.action == 'verification_approved' %}anter-notif-icon--verified
                             {% elif notif.action == 'terms_update' %}anter-notif-icon--verified
@@ -128,6 +136,9 @@
                             <i class="fas
                                 {% if notif.action in ['like', 'like_comment', 'like_video'] %}fa-heart
                                 {% elif notif.action in ['comment', 'comment_video', 'wall_post', 'mention'] %}fa-comment
+                                {% elif notif.action in ['mention_post', 'mention_comment'] %}fa-at
+                                {% elif notif.action in ['mention_group_post', 'mention_group_comment'] %}fa-users
+                                {% elif notif.action in ['mention_all_post', 'mention_all_comment'] %}fa-bullhorn
                                 {% elif notif.action == 'founder_post' %}fa-bullhorn
                                 {% elif notif.action == 'early_member' %}fa-star
                                 {% elif notif.action == 'early_member_revoked' %}fa-star-half-alt
@@ -185,6 +196,12 @@
                                 {% elif notif.action == 'early_member' %}تم تكريمك كعضو مبكّر في ANTER 🌟
                                 {% elif notif.action == 'early_member_revoked' %}تم إلغاء شارة العضو المبكّر من حسابك
                                 {% elif notif.action == 'mention' %}أشار إليك
+                                {% elif notif.action == 'mention_post' %}ذكرك في منشور
+                                {% elif notif.action == 'mention_comment' %}ذكرك في تعليق
+                                {% elif notif.action == 'mention_group_post' %}ذكر متابعيه في منشور
+                                {% elif notif.action == 'mention_group_comment' %}ذكر متابعيه في تعليق
+                                {% elif notif.action == 'mention_all_post' %}وجه رسالة للجميع في منشور
+                                {% elif notif.action == 'mention_all_comment' %}وجه رسالة للجميع في تعليق
                                 {% elif notif.action == 'repost' %}أعاد نشر منشورك
                                 {% elif notif.action == 'verification_approved' %}تم توثيق حسابك ✓
                                 {% elif notif.action == 'verification_rejected' %}لم يُقبل طلب التوثيق

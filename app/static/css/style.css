@@ -9395,3 +9395,23 @@ a.anter-profile-stat:hover {
         font-size: 1rem;
     }
 }
+
+
+/* إشارة جماعية @المتابعون */
+.mention--group {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #003AAB, #00C8F8);
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 0.92em;
+    text-decoration: none;
+}
+
+
+/* إشارة جماعية عامة @الجميع */
+.mention--group-all {
+    background: linear-gradient(135deg, #160B8E, #6d28d9) !important;
+    box-shadow: 0 2px 8px rgba(22, 11, 142, 0.35);
+}

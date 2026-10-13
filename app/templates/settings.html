@@ -257,6 +257,19 @@
                     </select>
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label">من يمكنه الإشارة إليك (@mention)</label>
+                    <select name="mention_privacy" class="form-control">
+                        <option value="everyone" {% if current_user.mention_privacy == 'everyone' %}selected{% endif %}>الجميع</option>
+                        <option value="followers_only" {% if current_user.mention_privacy == 'followers_only' %}selected{% endif %}>من أتابعهم فقط (موصى به)</option>
+                        <option value="nobody" {% if current_user.mention_privacy == 'nobody' %}selected{% endif %}>لا أحد</option>
+                    </select>
+                    <small class="form-text text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        للرد على تعليقاتك، يُستثنى صاحب التعليق الأصلي دائمًا.
+                    </small>
+                </div>
+
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" name="hide_followers" id="hide_followers" {% if current_user.hide_followers %}checked{% endif %}>
                     <label class="form-check-label" for="hide_followers">إخفاء قوائم المتابعين ومن أتابعهم</label>

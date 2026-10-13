@@ -578,6 +578,12 @@ def settings():
             if message_privacy in ['everyone', 'followers', 'none']:
                 current_user.message_privacy = message_privacy
 
+            mention_privacy = request.form.get('mention_privacy')
+            if mention_privacy in ['everyone', 'followers_only', 'nobody']:
+                if mention_privacy != current_user.mention_privacy:
+                    changed_fields.append('خصوصية الإشارات')
+                current_user.mention_privacy = mention_privacy
+
         # ---------- حفظ ----------
         db.session.commit()
         if changed_fields:

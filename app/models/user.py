@@ -37,6 +37,11 @@ class User(UserMixin, db.Model):
     show_online_status = db.Column(db.Boolean, default=True, nullable=False)
     show_email = db.Column(db.Boolean, default=False)
     message_privacy = db.Column(db.String(20), default='everyone')
+    # ANTER: من يستطيع الإشارة إليّ (@mention) — everyone / followers_only / nobody
+    mention_privacy = db.Column(
+        db.String(20), nullable=False, default='followers_only',
+        server_default='followers_only', index=True,
+    )
     
     # 🔹 إضافة عمود is_admin
     is_admin = db.Column(db.Boolean, default=False)

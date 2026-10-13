@@ -198,17 +198,24 @@ def parse_mentions(text):
     from app.models import User
     from markupsafe import escape
 
+    GROUP_ALIASES = {'متابعين', 'followers', 'المتابعين'}
+    GROUP_ALL_ALIASES = {'الجميع', 'everyone', 'all'}
+
     def replace_mention(match):
         username = match.group(1)
+        low = username.strip().lower()
+        # إشارة جماعية → شكل خاص (لا رابط)
+        if low in GROUP_ALIASES:
+            return '<span class="mention mention--group">@المتابعون</span>'
+        if low in GROUP_ALL_ALIASES:
+            return '<span class="mention mention--group mention--group-all">@الجميع</span>'
         user = User.query.filter_by(username=username).first()
         if user and not getattr(user, 'is_deleted', False):
-            # نُظهر الاسم الحقيقي بدل @username.
             display = (user.name or user.username).strip() or user.username
             href = url_for("users.profile", username=username)
             return f'<a href="{escape(href)}" class="mention">@{escape(display)}</a>'
         return f'@{escape(username)}'
 
-    # دعم الحروف العربية في الـ Regex للإشارات
     pattern = r'@([\w\u0600-\u06FF.]+)'
     return re.sub(pattern, replace_mention, text)
 

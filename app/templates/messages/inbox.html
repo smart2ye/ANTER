@@ -53,7 +53,7 @@
                             {% if unread_count > 0 %}
                                 <span class="conversation-unread-badge">{{ unread_count }}</span>
                             {% endif %}
-                            <span class="text-muted"><time data-local-time="{{ last_msg.created_at.isoformat() }}" data-time-style="time">{{ last_msg.created_at.strftime('%H:%M') }}</time></span>
+                            <span class="text-muted"><time data-local-time="{{ last_msg.created_at.isoformat() }}" data-time-style="time">--:--</time></span>
                         </small>
                     </div>
                     <p class="conversation-preview text-muted small mb-0 text-truncate">

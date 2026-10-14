@@ -996,10 +996,10 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (diffHours < 24) {
                 el.textContent = `منذ ${diffHours} ساعة`;
             } else if (diffDays === 1) {
-                el.textContent = 'أمس في ' + utcDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                el.textContent = 'أمس في ' + utcDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
             } else {
                 // عرض التاريخ المحلي بالتنسيق المناسب لجوال المستخدم
-                const options = { hour: '2-digit', minute: '2-digit', month: 'numeric', day: 'numeric' };
+                const options = { hour: '2-digit', minute: '2-digit', hour12: true, month: 'numeric', day: 'numeric' };
                 el.textContent = utcDate.toLocaleDateString([], options);
             }
         } catch (e) {

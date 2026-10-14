@@ -212,7 +212,7 @@
                                         <span class="anter-ai-badge__label">AI</span>
                                     </span>
                                 {% endif %}
-                                <time class="message-time" datetime="{{ msg.created_at.isoformat() }}" data-local-time="{{ msg.created_at.isoformat() }}" data-time-style="time">{{ msg.created_at.strftime('%H:%M') }}</time>
+                                <time class="message-time" datetime="{{ msg.created_at.isoformat() }}" data-local-time="{{ msg.created_at.isoformat() }}" data-time-style="time">--:--</time>
                                 {% if msg.sender_id == current_user.id and not msg.is_deleted_everyone %}
                                     <span class="read-receipt" title="{{ 'تمت القراءة' if msg.is_read else 'تم الإرسال' }}">
                                         <i class="fas {{ 'fa-check-double' if msg.is_read else 'fa-check' }}"></i>
@@ -255,7 +255,7 @@
                                 </strong>
                                 {% if call.call_type == 'video' %}<span class="call-log-kind"><i class="fas fa-video"></i> فيديو</span>{% endif %}
                                 <small>
-                                    <time data-local-time="{{ call.started_at.isoformat() }}" data-time-style="time">{{ call.started_at.strftime('%H:%M') }}</time>
+                                    <time data-local-time="{{ call.started_at.isoformat() }}" data-time-style="time">--:--</time>
                                     {% if call.duration_seconds is not none and call.duration_seconds > 0 %}
                                         · {{ call.duration_seconds // 60 }} د {{ call.duration_seconds % 60 }} ث
                                     {% endif %}
@@ -275,7 +275,7 @@
             <div class="anter-seen-marker" data-seen-for="{{ last_read_id }}">
                 <i class="fas fa-check-double" aria-hidden="true"></i>
                 <span>شوهدت</span>
-                <time data-local-time="{{ last_read_at.isoformat() }}Z" data-time-style="time">{{ last_read_at.strftime('%H:%M') }}</time>
+                <time data-local-time="{{ last_read_at.isoformat() }}Z" data-time-style="time">--:--</time>
             </div>
             {% endif %}
         {% else %}

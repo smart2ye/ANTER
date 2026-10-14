@@ -268,16 +268,16 @@
                 const hours = Math.floor(minutes / 60);
                 if (hours < 24) return `منذ ${hours} ساعة`;
                 const days = Math.floor(hours / 24);
-                if (days === 1) return `أمس ${date.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'})}`;
-                return date.toLocaleDateString(undefined, {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'});
+                if (days === 1) return `أمس ${date.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit', hour12: true})}`;
+                return date.toLocaleDateString(undefined, {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true});
             };
             document.querySelectorAll('[data-local-time]').forEach((element) => {
                 const date = parseUtc(element.dataset.localTime);
                 if (!date) return;
                 const style = element.dataset.timeStyle || 'datetime';
                 if (style === 'relative') element.textContent = relative(date);
-                else if (style === 'time') element.textContent = date.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
-                else element.textContent = date.toLocaleDateString(undefined, {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+                else if (style === 'time') element.textContent = date.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit', hour12: true});
+                else element.textContent = date.toLocaleDateString(undefined, {year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true});
                 element.title = date.toLocaleString();
             });
         };

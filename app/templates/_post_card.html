@@ -23,7 +23,7 @@
                 <div class="post-meta-row">
                     <span class="post-username">@{{ post.author.username }}</span>
                     <span class="post-time-separator">·</span>
-                    <time class="post-time-text" data-local-time="{{ post.created_at.isoformat() }}" data-time-style="relative">{{ post.created_at.strftime('%H:%M · %d/%m') }}</time>
+                    <time class="post-time-text" data-local-time="{{ post.created_at.isoformat() }}" data-time-style="relative">--:--</time>
                     {% if post.visibility != 'public' %}
                     <span class="post-time-separator">·</span>
                     <span class="post-username" title="خصوصية المنشور"><i class="fas {{ 'fa-user-friends' if post.visibility == 'followers' else 'fa-lock' }}"></i> {{ 'المتابعون' if post.visibility == 'followers' else 'أنا فقط' }}</span>

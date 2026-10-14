@@ -22,8 +22,10 @@
                             {{ verified_badge(comment.author) }}{{ founder_badge(comment.author) }}{{ early_member_badge(comment.author) }}
                         </a>
                         <div class="comment-header__right">
-                            <time class="comment-time text-muted small" datetime="{{ comment.created_at.isoformat() }}">
-                                {{ comment.created_at.strftime('%H:%M · %d/%m') }}
+                            <time class="comment-time text-muted small"
+                                  data-local-time="{{ comment.created_at.isoformat() }}"
+                                  data-time-style="relative">
+                                --:--
                             </time>
                             {% if comment.edited_at %}
                             <span class="comment-edited" title="تم التعديل">· تم التعديل</span>
@@ -133,8 +135,10 @@
                                             {{ verified_badge(reply.author) }}{{ founder_badge(reply.author) }}{{ early_member_badge(reply.author) }}
                                         </a>
                                         <div class="comment-header__right">
-                                            <time class="comment-time text-muted small" style="font-size: 0.75rem;" datetime="{{ reply.created_at.isoformat() }}">
-                                                {{ reply.created_at.strftime('%H:%M · %d/%m') }}
+                                            <time class="comment-time text-muted small" style="font-size: 0.75rem;"
+                                                  data-local-time="{{ reply.created_at.isoformat() }}"
+                                                  data-time-style="relative">
+                                                --:--
                                             </time>
                                             {% if reply.edited_at %}
                                             <span class="comment-edited" title="تم التعديل">· تم التعديل</span>

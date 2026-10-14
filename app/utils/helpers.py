@@ -440,8 +440,17 @@ def _render_plain_segment(text):
     # 5) شطب ~~...~~
     escaped = re.sub(r'~~([^~\n]+?)~~', r'<del>\1</del>', escaped)
 
+    GROUP_ALIASES = {'متابعين', 'followers', 'المتابعين'}
+    GROUP_ALL_ALIASES = {'الجميع', 'everyone', 'all'}
+
     def replace_mention(match):
         username = match.group(1)
+        low = username.strip().lower()
+        # إشارة جماعية → زر ملوّن بلا رابط
+        if low in GROUP_ALIASES:
+            return '<span class="mention mention--group">@المتابعون</span>'
+        if low in GROUP_ALL_ALIASES:
+            return '<span class="mention mention--group mention--group-all">@الجميع</span>'
         user = User.query.filter_by(username=username).first()
         if user and not getattr(user, 'is_deleted', False):
             display = (user.name or user.username).strip() or user.username

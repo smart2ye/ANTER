@@ -546,6 +546,87 @@ const storyReactionEmojis = {
     fire: '🔥'
 };
 
+// ============================================================
+// الضغط المطوّل على القصة → إظهار أزرار التفاعل
+// ============================================================
+(function () {
+    let holdTimer = null;
+    let hideTimer = null;
+    const HOLD_MS = 450;
+    const HIDE_DELAY_MS = 4000;
+
+    function reactionsBar() {
+        return document.getElementById('storyReactionBar');
+    }
+
+    function showReactions() {
+        const bar = reactionsBar();
+        if (!bar) return;
+        clearTimeout(hideTimer);
+        bar.classList.add('is-visible');
+    }
+
+    function scheduleHide() {
+        const bar = reactionsBar();
+        if (!bar) return;
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => bar.classList.remove('is-visible'), HIDE_DELAY_MS);
+    }
+
+    function hideNow() {
+        const bar = reactionsBar();
+        if (!bar) return;
+        clearTimeout(hideTimer);
+        bar.classList.remove('is-visible');
+    }
+
+    function attach() {
+        const container = document.getElementById('storyMediaContainer');
+        if (!container || container.dataset.lpAttached === '1') return;
+        container.dataset.lpAttached = '1';
+
+        // pointerdown → ابدأ المؤقّت
+        container.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            clearTimeout(holdTimer);
+            holdTimer = setTimeout(() => {
+                showReactions();
+                if (navigator.vibrate) try { navigator.vibrate(15); } catch (_) {}
+            }, HOLD_MS);
+        });
+
+        // pointerup → أوقف المؤقّت (إن كان ضغط قصير)، وأخفِ بعد تأخير إن كانت الأزرار ظاهرة
+        container.addEventListener('pointerup', () => {
+            clearTimeout(holdTimer);
+            const bar = reactionsBar();
+            if (bar && bar.classList.contains('is-visible')) scheduleHide();
+        });
+
+        // pointercancel / pointerleave
+        container.addEventListener('pointercancel', () => {
+            clearTimeout(holdTimer);
+        });
+        container.addEventListener('pointerleave', () => {
+            clearTimeout(holdTimer);
+        });
+
+        // double-tap لا يفتح الأزرار
+        container.addEventListener('contextmenu', (e) => {
+            if (e.pointerType !== 'mouse') e.preventDefault();
+        });
+    }
+
+    // راقب فتح/إغلاق القصة
+    document.addEventListener('click', function () {
+        setTimeout(attach, 100);
+    }, true);
+
+    // إخفاء الأزرار عند إغلاق القصة
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hideNow();
+    });
+})();
+
 function updateStoryInteractions(story) {
     const viewersButton = document.getElementById('storyViewersToggle');
     const viewersCount = document.getElementById('storyViewsCount');

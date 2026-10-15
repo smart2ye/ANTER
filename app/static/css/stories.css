@@ -350,6 +350,19 @@
     justify-content: space-between;
     gap: 10px;
     pointer-events: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity .25s ease, transform .25s ease;
+}
+.story-reaction-bar.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.story-media-container {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
 }
 
 .story-reaction-buttons {

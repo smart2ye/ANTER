@@ -400,7 +400,7 @@ def get_status_icon(user, viewer=None):
 # ANTER: عرض المحتوى الغني — كتل كود + hashtags + mentions
 # ============================================================
 _CODE_BLOCK_RE = re.compile(
-    r'```([a-zA-Z0-9_+\-]{0,32})[ \t]*\r?\n(.*?)```',
+    r'```[ \t]*([a-zA-Z0-9_+\-]{0,32})[ \t]*\r?\n(.*?)```',
     re.DOTALL,
 )
 

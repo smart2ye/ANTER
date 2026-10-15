@@ -9420,13 +9420,42 @@ a.anter-profile-stat:hover {
 /* تباعد قائمة المستخدم المنسدلة */
 #userDropdown {
     padding: 4px 8px;
-    display: inline-flex;
+    display: inline-flex !important;
     align-items: center;
+    gap: 8px;
+    text-decoration: none;
 }
-#userDropdown::after {
-    margin-right: 6px;
+#userDropdown .fa-bars {
+    font-size: 1.15rem;
+    line-height: 1;
+    opacity: 0.9;
+    transition: opacity .2s ease, transform .2s ease;
+}
+#userDropdown:hover .fa-bars {
+    opacity: 1;
+    transform: scale(1.05);
 }
 #userDropdown + .dropdown-menu,
 .dropdown-menu.dropdown-menu-end {
     margin-top: 12px;
+}
+
+
+/* استبعاد code داخل كتل الكود من قواعد inline code */
+.anter-codeblock code,
+.anter-codeblock pre code,
+.anter-rich-text .anter-codeblock code {
+    background: transparent !important;
+    color: #cdd6f4 !important;
+    border: 0 !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+    display: block !important;
+}
+
+[data-theme="dark"] .anter-codeblock code,
+[data-theme="dark"] .anter-rich-text .anter-codeblock code {
+    background: transparent !important;
+    color: #cdd6f4 !important;
+    border: 0 !important;
 }

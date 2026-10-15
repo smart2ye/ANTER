@@ -425,7 +425,7 @@ def create_app(test_config=None):
         response.headers.setdefault(
             'Content-Security-Policy',
             "default-src 'self'; "
-            "img-src 'self' data: https:; "
+            "img-src 'self' data: blob: https:; "
             "media-src 'self' https: blob:; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; "
             "style-src 'self' 'unsafe-inline'; "

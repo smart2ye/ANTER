@@ -232,7 +232,7 @@ def send_push_notification(user_id, title, body, icon='/static/icons/anter-icon-
                     'body': body,
                     'icon': icon,
                     'badge': '/static/uploads/default.png'
-                }),
+                }, ensure_ascii=False),
                 vapid_private_key=vapid_private_key,
                 vapid_claims={'sub': 'mailto:smart2ye@gmail.com'}
             )

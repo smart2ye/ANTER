@@ -470,7 +470,27 @@ def _render_plain_segment(text):
 
     escaped = re.sub(r'(?<!&)#([\w\u0600-\u06FF]+)', replace_tag, escaped)
 
-    # 6) أعِد محتوى الكود (مُهرَّباً مسبقاً) داخل <code>
+    # 6) كشف الروابط (http/https/www) — بعد الإشارات والهاشتاقات
+    URL_RE = re.compile(r'(?<!["\'>=])(https?://[^\s<>"\']+|www\.[^\s<>"\']+)', re.IGNORECASE)
+
+    def replace_url(match):
+        url = match.group(1)
+        trailing = ''
+        while url and url[-1] in '.,;:!?)]}\'\"':
+            trailing = url[-1] + trailing
+            url = url[:-1]
+        if not url:
+            return match.group(0)
+        href = url if url.lower().startswith(('http://', 'https://')) else 'https://' + url
+        return (
+            f'<a href="{escape(href)}" target="_blank" '
+            f'rel="noopener noreferrer nofollow" class="anter-link">'
+            f'{escape(url)}</a>{trailing}'
+        )
+
+    escaped = URL_RE.sub(replace_url, escaped)
+
+    # 7) أعِد محتوى الكود (مُهرَّباً مسبقاً) داخل <code>
     for key, raw in code_store.items():
         escaped = escaped.replace(key, f'<code>{raw}</code>')
 

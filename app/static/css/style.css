@@ -9459,3 +9459,33 @@ a.anter-profile-stat:hover {
     color: #cdd6f4 !important;
     border: 0 !important;
 }
+
+
+/* ============================================================
+   ANTER: رابط قابل للضغط داخل النصوص
+   ============================================================ */
+.anter-link {
+    color: #003AAB;
+    text-decoration: none;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    direction: ltr;
+    unicode-bidi: embed;
+    font-weight: 500;
+}
+.anter-link:hover {
+    text-decoration: underline;
+    color: #00C8F8;
+}
+[data-theme="dark"] .anter-link {
+    color: #00C8F8;
+}
+[data-theme="dark"] .anter-link:hover {
+    color: #7fddff;
+}
+.is-sent .anter-link {
+    color: #a8dcff;
+}
+.is-sent .anter-link:hover {
+    color: #fff;
+}

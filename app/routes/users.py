@@ -100,14 +100,24 @@ def api_search():
     return jsonify(result)
 
 @users_bp.route('/<username>')
-@login_required
 def profile(username):
+    """الملف الشخصي — متاح للزوار غير المسجّلين لعرض الملفات العامة فقط."""
     user = User.query.filter_by(username=username).first_or_404()
+
+    is_authed = bool(getattr(current_user, 'is_authenticated', False))
+    viewer_is_admin = is_authed and bool(getattr(current_user, 'is_admin', False))
+
     # ANTER: الحسابات المحذوفة لا تُعرض لأي زائر (حتى الأدمن يراها كمرجع فقط).
-    if getattr(user, 'is_deleted', False) and not getattr(current_user, 'is_admin', False):
+    if getattr(user, 'is_deleted', False) and not viewer_is_admin:
         abort(404)
+
+    # can_view_profile تتعامل بأمان مع الزوار المجهولين (ترفض الملفات الخاصة).
     if not can_view_profile(current_user, user):
+        # للزوار غير المسجّلين: إعادة توجيه لتسجيل الدخول ثم العودة للملف.
+        if not is_authed:
+            return redirect(url_for('auth.login', next=request.path))
         abort(403)
+
     from sqlalchemy import or_, and_
     all_posts = (
         Post.query
@@ -121,7 +131,13 @@ def profile(username):
         .all()
     )
     posts = [post for post in all_posts if can_view_post(current_user, post)]
-    is_following = current_user.is_following(user)
+
+    is_following = False
+    if is_authed:
+        is_following = current_user.is_following(user)
+
+    can_write_on_wall = can_post_on_wall(current_user, user)
+
     return render_template(
         'profile.html',
         user=user,
@@ -129,7 +145,7 @@ def profile(username):
         is_following=is_following,
         get_status_icon=get_status_icon,
         is_anter_assistant=is_anter_assistant(user),
-        can_write_on_wall=can_post_on_wall(current_user, user),
+        can_write_on_wall=can_write_on_wall,
     )
 
 @users_bp.route('/<username>/followers')

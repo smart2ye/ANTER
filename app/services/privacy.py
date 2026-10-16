@@ -18,9 +18,15 @@ def is_owner_or_admin(viewer, subject):
 
 
 def follows(viewer, subject):
-    if not viewer or not subject or viewer.id == subject.id:
+    if not viewer or not subject:
         return False
-    return Follow.query.filter_by(follower_id=viewer.id, followed_id=subject.id).first() is not None
+    if not getattr(viewer, 'is_authenticated', False):
+        return False
+    viewer_id = getattr(viewer, 'id', None)
+    subject_id = getattr(subject, 'id', None)
+    if viewer_id is None or subject_id is None or viewer_id == subject_id:
+        return False
+    return Follow.query.filter_by(follower_id=viewer_id, followed_id=subject_id).first() is not None
 
 
 def can_view_profile(viewer, subject):

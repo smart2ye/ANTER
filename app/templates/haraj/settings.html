@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block page_title %}إعدادات الحراج — أنتر{% endblock %}
+
+{% block content %}
+<div class="haraj-container" style="max-width:680px;">
+    <a href="{{ url_for('haraj.index') }}" class="haraj-back-link">
+        <i class="fas fa-arrow-right"></i> العودة للحراج
+    </a>
+
+    <div class="haraj-form-card">
+        <h1 class="haraj-form-title"><i class="fas fa-cog"></i> إعدادات الحراج</h1>
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="haraj-form-group">
+                <label>رقم الواتساب الافتراضي</label>
+                <input type="tel"
+                       name="whatsapp_number"
+                       class="haraj-input"
+                       placeholder="+966501234567"
+                       value="{{ current_user.haraj_whatsapp_number or '' }}"
+                       dir="ltr"
+                       inputmode="tel">
+                <small class="haraj-hint">
+                    يظهر تلقائيًا في إعلاناتك عند تفعيل خيار الإظهار.
+                    اتركه فارغًا لإخفاء الواتساب.
+                </small>
+            </div>
+
+            <div class="haraj-form-group haraj-whatsapp-group">
+                <label class="haraj-checkbox-label">
+                    <input type="checkbox"
+                           name="show_whatsapp"
+                           {% if current_user.haraj_show_whatsapp %}checked{% endif %}>
+                    إظهار رقم الواتساب افتراضيًا في إعلاناتي
+                </label>
+                <small class="haraj-hint">
+                    يمكنك تغييره لكل إعلان على حدة عند النشر أو التعديل.
+                </small>
+            </div>
+
+            <div class="haraj-pledge-box" style="background:#f0f9ff;border-color:#7dd3fc;">
+                <div class="haraj-pledge-text">
+                    <strong style="color:#0369a1;">💡 ملاحظة</strong>
+                    <p style="color:#075985;">
+                        المشترون يفضّلون البائعين المتاحين عبر الواتساب.
+                        لكن إظهار رقمك ليس إلزاميًا — يمكنهم مراسلتك عبر الحراج.
+                    </p>
+                </div>
+            </div>
+
+            <button type="submit" class="haraj-submit-btn">
+                <i class="fas fa-save"></i> حفظ الإعدادات
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

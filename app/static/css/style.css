@@ -10341,3 +10341,24 @@ a.anter-profile-stat:hover {
     margin-top: 12px;
     font-weight: 700;
 }
+
+
+.haraj-settings-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    margin-right: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-radius: 50%;
+    text-decoration: none;
+    font-size: 1.1rem;
+    vertical-align: middle;
+    transition: background 0.2s;
+}
+.haraj-settings-link:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}

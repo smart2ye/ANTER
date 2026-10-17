@@ -708,3 +708,29 @@ def rate_seller(public_id):
     db.session.commit()
     flash('✅ تم حفظ تقييمك. شكرًا لك.', 'success')
     return redirect(url_for('haraj.listing_detail', public_id=public_id))
+
+
+
+# ============================================================
+# إعدادات الحراج (رقم الواتساب)
+# ============================================================
+@haraj_bp.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    if request.method == 'POST':
+        number = (request.form.get('whatsapp_number') or '').strip()
+        show = bool(request.form.get('show_whatsapp'))
+
+        # تحقق من الصيغة (يسمح بـ + و أرقام فقط، 6-20 حرفًا)
+        import re
+        cleaned = re.sub(r'[^0-9+]', '', number)
+        if cleaned and (len(cleaned) < 6 or len(cleaned) > 20):
+            flash('رقم الواتساب غير صالح. أمثلة: +966501234567', 'danger')
+        else:
+            current_user.haraj_whatsapp_number = cleaned or None
+            current_user.haraj_show_whatsapp = show
+            db.session.commit()
+            flash('✅ تم تحديث إعدادات الحراج.', 'success')
+        return redirect(url_for('haraj.settings'))
+
+    return render_template('haraj/settings.html')

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block page_title %}{{ seller.name or seller.username }} — حراج أنتر{% endblock %}
+{% block meta_description %}إعلانات {{ seller.name or seller.username }} في حراج أنتر{% endblock %}
+
+{% block content %}
+<div class="haraj-container" style="max-width:1080px;">
+    <a href="{{ url_for('haraj.index') }}" class="haraj-back-link">
+        <i class="fas fa-arrow-right"></i> العودة للحراج
+    </a>
+
+    <div class="haraj-seller-card">
+        <div class="haraj-seller-card__head">
+            <img src="{{ avatar_url(seller) }}" alt="{{ seller.name or seller.username }}" class="haraj-seller-card__avatar">
+            <div class="haraj-seller-card__info">
+                <h1 class="haraj-seller-card__name">
+                    {{ seller.name or seller.username }}
+                    {% if seller.is_verified %}<i class="fas fa-check-circle" style="color:#003AAB;font-size:1.1rem;"></i>{% endif %}
+                    {% if seller.is_founder %}<span title="مؤسس" style="color:#f59e0b;">✴️</span>{% endif %}
+                    {% if seller.is_early_member %}<span title="عضو مبكّر" style="color:#f59e0b;">🌟</span>{% endif %}
+                </h1>
+                <div class="haraj-seller-card__meta">
+                    <span><i class="fas fa-user"></i> @{{ seller.username }}</span>
+                    {% if seller_count > 0 %}
+                    <span class="haraj-seller-rating">
+                        ⭐ {{ seller_avg }} <small>({{ seller_count }} تقييم)</small>
+                    </span>
+                    {% else %}
+                    <span class="haraj-seller-rating haraj-seller-rating--empty">لا توجد تقييمات بعد</span>
+                    {% endif %}
+                    <span><i class="fas fa-tag"></i> {{ listings|length }} إعلان نشط</span>
+                </div>
+                {% if seller.bio %}
+                <p class="haraj-seller-card__bio">{{ seller.bio }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- الإعلانات النشطة -->
+    <h2 class="haraj-section-title"><i class="fas fa-tags"></i> إعلانات {{ seller.name or seller.username }}</h2>
+
+    {% if listings %}
+    <div class="haraj-listings">
+        {% for listing in listings %}
+        <a href="{{ url_for('haraj.listing_detail', public_id=listing.public_id) }}" class="haraj-card">
+            {% set img = listing.primary_image() %}
+            {% if img %}
+            <img src="{{ url_for('haraj.listing_image', image_id=img.id) }}" alt="{{ listing.title }}" class="haraj-card__image" loading="lazy">
+            {% else %}
+            <div class="haraj-card__image" style="display:flex;align-items:center;justify-content:center;color:#9ca3af;">
+                <i class="fas fa-image fa-2x"></i>
+            </div>
+            {% endif %}
+            <div class="haraj-card__body">
+                <div>
+                    {% if listing.condition == 'new' %}
+                    <span class="haraj-card__badge haraj-card__badge--new">جديد</span>
+                    {% else %}
+                    <span class="haraj-card__badge">مستعمل</span>
+                    {% endif %}
+                    <span class="haraj-card__badge">{{ listing.listing_type == 'sell' and 'للبيع' or 'مطلوب' }}</span>
+                </div>
+                <h3 class="haraj-card__title">{{ listing.title }}</h3>
+                {% if listing.price %}
+                <p class="haraj-card__price">{{ "{:,}".format(listing.price) }} ر.س</p>
+                {% else %}
+                <p class="haraj-card__price" style="font-size:.95rem;color:#6b7280;">سعر عند التواصل</p>
+                {% endif %}
+                <div class="haraj-card__meta">
+                    <span><i class="fas fa-map-marker-alt"></i> {{ listing.city }}</span>
+                    <span>{{ listing.created_at.strftime('%m/%d') }}</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="haraj-empty">
+        <i class="fas fa-box-open fa-3x"></i>
+        <p>لا توجد إعلانات نشطة حاليًا.</p>
+    </div>
+    {% endif %}
+
+    <!-- التقييمات -->
+    <h2 class="haraj-section-title"><i class="fas fa-star"></i> التقييمات ({{ seller_count }})</h2>
+
+    {% if seller_count > 0 %}
+    <div class="haraj-ratings-box">
+        <div class="haraj-ratings-summary">
+            <div class="haraj-ratings-average">
+                <div class="haraj-ratings-average__num">{{ seller_avg }}</div>
+                <div class="haraj-ratings-average__stars">
+                    {% for i in range(1, 6) %}
+                        {% if i <= seller_avg|round(0, 'floor')|int %}
+                        <i class="fas fa-star"></i>
+                        {% elif i - 0.5 <= seller_avg %}
+                        <i class="fas fa-star-half-alt"></i>
+                        {% else %}
+                        <i class="far fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="haraj-ratings-average__count">{{ seller_count }} تقييم</div>
+            </div>
+            <div class="haraj-ratings-dist">
+                {% for star in [5, 4, 3, 2, 1] %}
+                <div class="haraj-ratings-dist__row">
+                    <span>{{ star }} ★</span>
+                    <div class="haraj-ratings-dist__bar">
+                        {% set pct = (distribution[star] * 100 / seller_count) if seller_count else 0 %}
+                        <div class="haraj-ratings-dist__fill" style="width: {{ pct }}%;"></div>
+                    </div>
+                    <span class="haraj-ratings-dist__count">{{ distribution[star] }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="haraj-ratings-list">
+            {% for r in ratings %}
+            <div class="haraj-rating-item">
+                <img src="{{ avatar_url(r.rater) }}" alt="" class="haraj-rating-item__avatar">
+                <div class="haraj-rating-item__body">
+                    <div class="haraj-rating-item__head">
+                        <a href="{{ url_for('haraj.seller_profile', username=r.rater.username) }}" class="haraj-rating-item__name">
+                            {{ r.rater.name or r.rater.username }}
+                        </a>
+                        <span class="haraj-rating-item__stars">
+                            {% for i in range(1, 6) %}
+                            <i class="{% if i <= r.rating %}fas{% else %}far{% endif %} fa-star"></i>
+                            {% endfor %}
+                        </span>
+                        <span class="haraj-rating-item__time">{{ r.created_at.strftime('%Y-%m-%d') }}</span>
+                    </div>
+                    {% if r.comment %}
+                    <p class="haraj-rating-item__comment">{{ r.comment }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="haraj-empty">
+        <i class="fas fa-star fa-3x"></i>
+        <p>لا توجد تقييمات بعد. سيظهر هنا تقييم المشترين لهذا البائع.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

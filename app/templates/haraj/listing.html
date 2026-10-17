@@ -105,7 +105,7 @@ function selectRating(value) {
 
             <div class="haraj-detail__seller">
                 <strong>البائع:</strong>
-                <a href="{{ url_for('users.profile', username=listing.seller.username) }}" class="haraj-seller-link">
+                <a href="{{ url_for('haraj.seller_profile', username=listing.seller.username) }}" class="haraj-seller-link">
                     <i class="fas fa-user"></i> {{ listing.seller.name or listing.seller.username }}
                 </a>
                 {% if seller_count > 0 %}
@@ -222,7 +222,7 @@ function selectRating(value) {
                 <img src="{{ avatar_url(c.author) }}" alt="" class="haraj-comment__avatar">
                 <div class="haraj-comment__body">
                     <div class="haraj-comment__head">
-                        <a href="{{ url_for('users.profile', username=c.author.username) }}" class="haraj-comment__author">
+                        <a href="{{ url_for('haraj.seller_profile', username=c.author.username) }}" class="haraj-comment__author">
                             {{ c.author.name or c.author.username }}
                             {% if c.author.is_verified %}<i class="fas fa-check-circle" style="color:#003AAB;"></i>{% endif %}
                         </a>
@@ -258,7 +258,7 @@ function selectRating(value) {
                             <img src="{{ avatar_url(r.author) }}" alt="" class="haraj-comment__avatar">
                             <div class="haraj-comment__body">
                                 <div class="haraj-comment__head">
-                                    <a href="{{ url_for('users.profile', username=r.author.username) }}" class="haraj-comment__author">
+                                    <a href="{{ url_for('haraj.seller_profile', username=r.author.username) }}" class="haraj-comment__author">
                                         {{ r.author.name or r.author.username }}
                                     </a>
                                     <span class="haraj-comment__time">{{ r.created_at.strftime('%m/%d %H:%M') }}</span>

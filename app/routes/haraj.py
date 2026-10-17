@@ -734,3 +734,49 @@ def settings():
         return redirect(url_for('haraj.settings'))
 
     return render_template('haraj/settings.html')
+
+
+
+# ============================================================
+# ملف البائع داخل الحراج
+# ============================================================
+@haraj_bp.route('/seller/<username>')
+def seller_profile(username):
+    seller = User.query.filter_by(username=username).first_or_404()
+
+    if seller.is_deleted:
+        abort(404)
+
+    # إعلانات البائع النشطة
+    listings = (Listing.query
+                .filter_by(user_id=seller.id, status='active')
+                .order_by(Listing.created_at.desc()).all())
+
+    # إحصاءات التقييم
+    avg, count = seller_rating_stats(seller.id)
+
+    # قائمة التقييمات (آخر 30)
+    from sqlalchemy import desc
+    ratings = (SellerRating.query
+               .filter_by(seller_id=seller.id)
+               .order_by(desc(SellerRating.created_at))
+               .limit(30).all())
+
+    # توزيع النجوم (كم 5، 4، 3، 2، 1)
+    from sqlalchemy import func
+    dist_raw = db.session.query(
+        SellerRating.rating, func.count(SellerRating.id),
+    ).filter_by(seller_id=seller.id).group_by(SellerRating.rating).all()
+    distribution = {star: 0 for star in range(1, 6)}
+    for star, n in dist_raw:
+        distribution[star] = n
+
+    return render_template(
+        'haraj/seller.html',
+        seller=seller,
+        listings=listings,
+        seller_avg=avg,
+        seller_count=count,
+        ratings=ratings,
+        distribution=distribution,
+    )

@@ -1,5 +1,33 @@
 {% extends "base.html" %}
-{% block page_title %}حراج أنتر — أثاث وأجهزة منزلية{% endblock %}
+{% block page_title %}حراج أنتر — أثاث وأجهزة منزلية<script>
+function toggleHarajReaction(btn) {
+    var listing = btn.dataset.listing;
+    var type = btn.dataset.type;
+    var token = document.querySelector('meta[name="csrf-token"]');
+    if (!token) { alert('يجب تسجيل الدخول'); return; }
+    var formData = new URLSearchParams();
+    formData.append('type', type);
+    formData.append('csrf_token', token.getAttribute('content'));
+    fetch('/haraj/listing/' + listing + '/react', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': token.getAttribute('content')},
+        body: formData.toString(),
+    }).then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.ok) return;
+        btn.classList.toggle('is-active', data.active);
+        var icon = btn.querySelector('i');
+        if (icon) {
+            icon.className = (data.active ? 'fas ' : 'far ') + (type === 'like' ? 'fa-heart' : 'fa-bookmark');
+        }
+        var cnt = btn.querySelector('.haraj-reaction-count');
+        if (cnt) cnt.textContent = data.count;
+      })
+      .catch(function() {});
+}
+</script>
+{% endblock %}
 {% block meta_description %}سوق حراج أنتر لبيع وشراء الأثاث والأجهزة المنزلية في السعودية. نشر مجاني، تواصل مباشر.{% endblock %}
 
 {% block content %}
@@ -69,6 +97,34 @@
                     <div class="haraj-card__meta">
                         <span><i class="fas fa-map-marker-alt"></i> {{ listing.city }}</span>
                         <span>{{ listing.created_at.strftime('%m/%d') }}</span>
+                    </div>
+                    {% set rx = reactions_by_listing.get(listing.id, {}) %}
+                    <div class="haraj-card__reactions">
+                        {% if current_user.is_authenticated %}
+                        <button type="button"
+                                class="haraj-reaction-btn haraj-reaction-btn--sm {% if listing.id in user_liked %}is-active{% endif %}"
+                                data-listing="{{ listing.public_id }}"
+                                data-type="like"
+                                onclick="event.preventDefault(); event.stopPropagation(); toggleHarajReaction(this);">
+                            <i class="{% if listing.id in user_liked %}fas{% else %}far{% endif %} fa-heart"></i>
+                            <span class="haraj-reaction-count">{{ rx.get('like', 0) }}</span>
+                        </button>
+                        <button type="button"
+                                class="haraj-reaction-btn haraj-reaction-btn--sm {% if listing.id in user_saved %}is-active{% endif %}"
+                                data-listing="{{ listing.public_id }}"
+                                data-type="save"
+                                onclick="event.preventDefault(); event.stopPropagation(); toggleHarajReaction(this);">
+                            <i class="{% if listing.id in user_saved %}fas{% else %}far{% endif %} fa-bookmark"></i>
+                            <span class="haraj-reaction-count">{{ rx.get('save', 0) }}</span>
+                        </button>
+                        {% else %}
+                        <span class="haraj-reaction-static haraj-reaction-static--sm">
+                            <i class="fas fa-heart"></i> {{ rx.get('like', 0) }}
+                        </span>
+                        <span class="haraj-reaction-static haraj-reaction-static--sm">
+                            <i class="fas fa-bookmark"></i> {{ rx.get('save', 0) }}
+                        </span>
+                        {% endif %}
                     </div>
                 </div>
             </a>

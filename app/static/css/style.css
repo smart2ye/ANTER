@@ -10063,3 +10063,73 @@ a.anter-profile-stat:hover {
     transition: background 0.2s;
 }
 .haraj-chat-send:hover { background: #031E64; }
+
+
+/* أزرار تفاعل الإعلان */
+.haraj-detail__reactions {
+    display: flex;
+    gap: 10px;
+    margin: 8px 0;
+}
+.haraj-reaction-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #4b5563;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.haraj-reaction-btn:hover {
+    border-color: #003AAB;
+    color: #003AAB;
+}
+.haraj-reaction-btn.is-active {
+    background: #fee2e2;
+    border-color: #dc2626;
+    color: #dc2626;
+}
+.haraj-reaction-btn[data-type="save"].is-active {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #b45309;
+}
+.haraj-reaction-count {
+    font-weight: 800;
+}
+.haraj-reaction-static {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    background: #f3f4f6;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #4b5563;
+}
+
+
+/* أزرار التفاعل على البطاقة */
+.haraj-card__reactions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f3f4f6;
+}
+.haraj-reaction-btn--sm {
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    gap: 4px;
+}
+.haraj-reaction-static--sm {
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    gap: 4px;
+}

@@ -16,6 +16,7 @@ from app.models.listing import (
     LISTING_CONDITIONS, LISTING_STATUSES, default_expires_at,
 )
 from app.models.haraj_message import HarajMessage
+from app.models.listing_reaction import ListingReaction
 from app.forms.haraj import ListingForm
 from app.constants.saudi_locations import (
     SAUDI_REGIONS, all_regions, cities_for_region, region_of_city,
@@ -56,9 +57,38 @@ def index():
 
     listings = query.order_by(Listing.created_at.desc()).limit(100).all()
 
+    # جمع الإعجابات/الحفظ لكل إعلان
+    listing_ids = [l.id for l in listings]
+    reactions_by_listing = {}
+    user_liked = set()
+    user_saved = set()
+    if listing_ids:
+        from sqlalchemy import func
+        rows = db.session.query(
+            ListingReaction.listing_id,
+            ListingReaction.reaction_type,
+            func.count(ListingReaction.id),
+        ).filter(ListingReaction.listing_id.in_(listing_ids)) \
+         .group_by(ListingReaction.listing_id, ListingReaction.reaction_type).all()
+        for lid, rtype, cnt in rows:
+            reactions_by_listing.setdefault(lid, {})[rtype] = cnt
+        if current_user.is_authenticated:
+            u = ListingReaction.query.filter(
+                ListingReaction.listing_id.in_(listing_ids),
+                ListingReaction.user_id == current_user.id,
+            ).all()
+            for r in u:
+                if r.reaction_type == 'like':
+                    user_liked.add(r.listing_id)
+                elif r.reaction_type == 'save':
+                    user_saved.add(r.listing_id)
+
     return render_template(
         'haraj/index.html',
         listings=listings,
+        reactions_by_listing=reactions_by_listing,
+        user_liked=user_liked,
+        user_saved=user_saved,
         regions=all_regions(),
         categories=LISTING_CATEGORIES,
         listing_types=LISTING_TYPES,
@@ -100,6 +130,23 @@ def listing_detail(public_id):
 
     is_owner = current_user.is_authenticated and current_user.id == listing.user_id
 
+    likes_count = ListingReaction.query.filter_by(
+        listing_id=listing.id, reaction_type='like',
+    ).count()
+    saves_count = ListingReaction.query.filter_by(
+        listing_id=listing.id, reaction_type='save',
+    ).count()
+
+    user_liked = False
+    user_saved = False
+    if current_user.is_authenticated:
+        user_liked = ListingReaction.query.filter_by(
+            listing_id=listing.id, user_id=current_user.id, reaction_type='like',
+        ).first() is not None
+        user_saved = ListingReaction.query.filter_by(
+            listing_id=listing.id, user_id=current_user.id, reaction_type='save',
+        ).first() is not None
+
     return render_template(
         'haraj/listing.html',
         listing=listing,
@@ -108,6 +155,10 @@ def listing_detail(public_id):
         types=LISTING_TYPES,
         conditions=LISTING_CONDITIONS,
         statuses=LISTING_STATUSES,
+        likes_count=likes_count,
+        saves_count=saves_count,
+        user_liked=user_liked,
+        user_saved=user_saved,
     )
 
 
@@ -494,3 +545,43 @@ def messages_unread_count():
         receiver_id=current_user.id, is_read=False,
     ).count()
     return jsonify({'count': n})
+
+
+
+# ============================================================
+# إعجاب / حفظ إعلان
+# ============================================================
+@haraj_bp.route('/listing/<public_id>/react', methods=['POST'])
+@login_required
+def react_listing(public_id):
+    from flask import jsonify
+    listing = Listing.query.filter_by(public_id=public_id).first_or_404()
+    reaction_type = (request.form.get('type') or '').strip().lower()
+
+    if reaction_type not in {'like', 'save'}:
+        return jsonify({'ok': False, 'error': 'نوع غير صالح'}), 400
+
+    existing = ListingReaction.query.filter_by(
+        listing_id=listing.id,
+        user_id=current_user.id,
+        reaction_type=reaction_type,
+    ).first()
+
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        active = False
+    else:
+        db.session.add(ListingReaction(
+            listing_id=listing.id,
+            user_id=current_user.id,
+            reaction_type=reaction_type,
+        ))
+        db.session.commit()
+        active = True
+
+    count = ListingReaction.query.filter_by(
+        listing_id=listing.id, reaction_type=reaction_type,
+    ).count()
+
+    return jsonify({'ok': True, 'active': active, 'count': count})

@@ -1,7 +1,7 @@
 # مرجع النماذج (Models)
 
-**آخر تحديث:** 2026-10-13
-**المجموع:** 34 موديل
+**آخر تحديث:** 2026-10-17
+**المجموع:** 41 موديل
 
 ## AssistantDailyPublication
 
@@ -104,6 +104,21 @@
 | `followed_id` | INTEGER |  |  |
 | `created_at` | DATETIME | ✓ |  |
 
+## HarajMessage
+
+- **الجدول:** `haraj_messages`
+- **الملف:** `haraj_message.py`
+
+| العمود | النوع | Nullable | PK |
+|---|---|---|---|
+| `id` | INTEGER |  | ✓ |
+| `listing_id` | INTEGER |  |  |
+| `sender_id` | INTEGER |  |  |
+| `receiver_id` | INTEGER |  |  |
+| `content` | TEXT |  |  |
+| `is_read` | BOOLEAN |  |  |
+| `created_at` | DATETIME | ✓ |  |
+
 ## Hashtag
 
 - **الجدول:** `hashtags`
@@ -139,6 +154,95 @@
 | `post_id` | INTEGER |  |  |
 | `reaction_type` | VARCHAR(20) | ✓ |  |
 | `created_at` | DATETIME | ✓ |  |
+
+## Listing
+
+- **الجدول:** `haraj_listings`
+- **الملف:** `listing.py`
+
+| العمود | النوع | Nullable | PK |
+|---|---|---|---|
+| `id` | INTEGER |  | ✓ |
+| `public_id` | VARCHAR(40) |  |  |
+| `user_id` | INTEGER |  |  |
+| `category` | VARCHAR(30) |  |  |
+| `listing_type` | VARCHAR(10) |  |  |
+| `condition` | VARCHAR(10) |  |  |
+| `title` | VARCHAR(120) |  |  |
+| `description` | TEXT |  |  |
+| `price` | INTEGER | ✓ |  |
+| `negotiable` | BOOLEAN |  |  |
+| `region` | VARCHAR(50) |  |  |
+| `city` | VARCHAR(50) |  |  |
+| `status` | VARCHAR(20) |  |  |
+| `show_whatsapp` | BOOLEAN |  |  |
+| `whatsapp_number` | VARCHAR(20) | ✓ |  |
+| `views_count` | INTEGER |  |  |
+| `reports_count` | INTEGER |  |  |
+| `created_at` | DATETIME | ✓ |  |
+| `updated_at` | DATETIME | ✓ |  |
+| `expires_at` | DATETIME |  |  |
+| `pledge_accepted` | BOOLEAN |  |  |
+| `pledge_at` | TIMESTAMP | ✓ |  |
+
+## ListingComment
+
+- **الجدول:** `haraj_listing_comments`
+- **الملف:** `listing_comment.py`
+
+| العمود | النوع | Nullable | PK |
+|---|---|---|---|
+| `id` | INTEGER |  | ✓ |
+| `listing_id` | INTEGER |  |  |
+| `author_id` | INTEGER |  |  |
+| `parent_id` | INTEGER | ✓ |  |
+| `content` | TEXT |  |  |
+| `is_deleted` | BOOLEAN |  |  |
+| `created_at` | DATETIME | ✓ |  |
+
+## ListingImage
+
+- **الجدول:** `haraj_listing_images`
+- **الملف:** `listing.py`
+
+| العمود | النوع | Nullable | PK |
+|---|---|---|---|
+| `id` | INTEGER |  | ✓ |
+| `listing_id` | INTEGER |  |  |
+| `image_data` | BLOB |  |  |
+| `image_mime` | VARCHAR(100) |  |  |
+| `position` | INTEGER |  |  |
+| `created_at` | DATETIME | ✓ |  |
+
+## ListingReaction
+
+- **الجدول:** `haraj_listing_reactions`
+- **الملف:** `listing_reaction.py`
+
+| العمود | النوع | Nullable | PK |
+|---|---|---|---|
+| `id` | INTEGER |  | ✓ |
+| `listing_id` | INTEGER |  |  |
+| `user_id` | INTEGER |  |  |
+| `reaction_type` | VARCHAR(20) |  |  |
+| `created_at` | DATETIME | ✓ |  |
+
+## ListingReport
+
+- **الجدول:** `haraj_listing_reports`
+- **الملف:** `listing_report.py`
+
+| العمود | النوع | Nullable | PK |
+|---|---|---|---|
+| `id` | INTEGER |  | ✓ |
+| `listing_id` | INTEGER |  |  |
+| `reporter_id` | INTEGER |  |  |
+| `reason` | VARCHAR(50) |  |  |
+| `details` | TEXT | ✓ |  |
+| `status` | VARCHAR(20) |  |  |
+| `created_at` | DATETIME | ✓ |  |
+| `resolved_at` | DATETIME | ✓ |  |
+| `resolved_by` | INTEGER | ✓ |  |
 
 ## Message
 
@@ -257,6 +361,7 @@
 | `created_at` | DATETIME | ✓ |  |
 | `extra_text` | VARCHAR(500) | ✓ |  |
 | `report_id` | INTEGER | ✓ |  |
+| `comment_id` | INTEGER | ✓ |  |
 
 ## OwnerAdminBootstrap
 
@@ -355,6 +460,21 @@
 | `post_id` | INTEGER |  |  |
 | `created_at` | DATETIME | ✓ |  |
 
+## SellerRating
+
+- **الجدول:** `haraj_seller_ratings`
+- **الملف:** `seller_rating.py`
+
+| العمود | النوع | Nullable | PK |
+|---|---|---|---|
+| `id` | INTEGER |  | ✓ |
+| `listing_id` | INTEGER |  |  |
+| `rater_id` | INTEGER |  |  |
+| `seller_id` | INTEGER |  |  |
+| `rating` | SMALLINT |  |  |
+| `comment` | TEXT | ✓ |  |
+| `created_at` | DATETIME | ✓ |  |
+
 ## Story
 
 - **الجدول:** `story`
@@ -450,6 +570,9 @@
 | `deleted_at` | TIMESTAMP | ✓ |  |
 | `is_founder` | BOOLEAN |  |  |
 | `is_early_member` | BOOLEAN |  |  |
+| `mention_privacy` | VARCHAR(20) |  |  |
+| `haraj_whatsapp_number` | VARCHAR(20) | ✓ |  |
+| `haraj_show_whatsapp` | BOOLEAN |  |  |
 
 ## UserActivity
 

@@ -22,15 +22,15 @@ ANTER منصة اجتماعية عربية RTL تتيح للمستخدم إنش�
 
 ---
 
-## الأرقام التقنية (12 أكتوبر 2026)
+## الأرقام التقنية (17 أكتوبر 2026)
 
 | المقياس | العدد |
 |---|---|
-| Routes | 199 |
-| Blueprints | 19 |
-| Models | 34 |
-| Templates | 49 |
-| Services | 20 |
+| Routes | 219 |
+| Blueprints | 20 |
+| Models | 41 |
+| Templates | 57 |
+| Services | 21 |
 
 ---
 
@@ -89,6 +89,64 @@ ANTER منصة اجتماعية عربية RTL تتيح للمستخدم إنش�
 - BLOB فيديو + صورة مصغّرة
 - `/media/video-thumb/<public_id>`
 - توحيد URL عبر `media.video_thumbnail`
+
+---
+
+---
+
+## حراج أنتر (Haraj)
+
+سوق إعلانات مبوبة داخل ANTER لبيع وشراء **الأثاث والأجهزة المنزلية**، مع دعم كامل لسوق السعودية (156 مدينة).
+
+### الميزات الأساسية
+
+| الميزة | الوصف |
+|---|---|
+| نشر إعلان | 3 صور + عنوان + وصف + سعر + حالة (جديد/مستعمل) |
+| نوع الإعلان | «للبيع» أو «مطلوب» |
+| الفلترة | فئة · منطقة · مدينة · نوع · بحث نصي |
+| التواصل | مراسلة داخلية منفصلة + زر واتساب |
+| تعليقات وردود | نقاش عام على الإعلان |
+| إعجاب وحفظ | متابعة الإعلانات المفضلة |
+| تقييم البائع | ⭐ 1-5 نجوم بعد إتمام البيع |
+| ملف بائع منفصل | إعلاناته + تقييماته فقط (بدون متابعة) |
+| إدارة الإعلان | تعديل · حذف · تعليم كمباع |
+| إعدادات واتساب | رقم افتراضي + خيار الإظهار |
+
+### قواعد النشر
+
+- **تعهد 1%**: المُعلن يقسم بالله أن يدفع 1% من قيمة البيع لموقع أنتر عند إتمام الصفقة.
+- **تحذيرات صارمة** قبل النشر (checkbox إلزامي) + عند التصفح.
+- **صفحة شروط وبراءة ذمة** كاملة على `/haraj/terms`:
+  - حراج أنتر لا يضمن صحة السلعة أو السعر.
+  - لا يتدخل في الدفع أو التسليم.
+  - تحذير من أساليب الاحتيال الشائعة.
+
+### البنية التقنية
+
+| المكوّن | الملف |
+|---|---|
+| Blueprint | `app/routes/haraj.py` (`/haraj` prefix) |
+| النماذج | `app/models/listing.py` · `haraj_message.py` · `listing_comment.py` · `listing_reaction.py` · `seller_rating.py` |
+| النماذج (Forms) | `app/forms/haraj.py` |
+| المواقع (Locations) | `app/constants/saudi_locations.py` (13 منطقة · 156 مدينة) |
+| القوالب | `app/templates/haraj/` (7 قوالب) |
+| الجداول | `haraj_listings` · `haraj_listing_images` · `haraj_messages` · `haraj_listing_comments` · `haraj_listing_reactions` · `haraj_seller_ratings` · `haraj_listing_reports` |
+
+### الروابط
+
+| Route | الوصف |
+|---|---|
+| `/haraj/` | الصفحة الرئيسية (إعلانات + فلترة) |
+| `/haraj/new` | نشر إعلان |
+| `/haraj/listing/<public_id>` | تفاصيل إعلان |
+| `/haraj/listing/<public_id>/edit` | تعديل |
+| `/haraj/listing/<public_id>/sold` | تعليم كمباع |
+| `/haraj/messages` | قائمة محادثات الحراج |
+| `/haraj/messages/<pid>/<username>` | محادثة |
+| `/haraj/settings` | إعدادات رقم الواتساب |
+| `/haraj/seller/<username>` | ملف بائع منفصل |
+| `/haraj/terms` | الشروط وبراءة الذمة |
 
 ---
 
@@ -301,10 +359,10 @@ MAIL_PASSWORD=<App Password>
 
 | الملف | الغرض |
 |---|---|
-| `routes.md` | جميع المسارات (199 route · 19 blueprint) |
-| `models.md` | الجداول (34 model) |
-| `services.md` | الخدمات (20 service) |
-| `templates.md` | القوالب (49 template) |
+| `routes.md` | جميع المسارات (219 route · 20 blueprint) |
+| `models.md` | الجداول (41 model) |
+| `services.md` | الخدمات (21 service) |
+| `templates.md` | القوالب (57 template) |
 | `INVENTORY.md` | جرد: إعدادات، بيئة، أمان، نشر، أولويات |
 | `soft-delete.md` | نظام الحذف المنطقي |
 | `integrations.md` | تكاملات خارجية (AI · WebRTC · Push · Email) |

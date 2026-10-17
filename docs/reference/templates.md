@@ -1,7 +1,7 @@
 # مرجع القوالب (Templates)
 
-**آخر تحديث:** 2026-10-13
-**المجموع:** 49 قالب
+**آخر تحديث:** 2026-10-17
+**المجموع:** 57 قالب
 
 | المسار | يمتد من |
 |---|---|
@@ -31,6 +31,14 @@
 | `explore/hashtag.html` | base.html |
 | `explore.html` | base.html |
 | `followers.html` | base.html |
+| `haraj/chat.html` | base.html |
+| `haraj/index.html` | base.html |
+| `haraj/listing.html` | base.html |
+| `haraj/messages.html` | base.html |
+| `haraj/new.html` | base.html |
+| `haraj/seller.html` | base.html |
+| `haraj/settings.html` | base.html |
+| `haraj/terms.html` | base.html |
 | `help.html` | base.html |
 | `index.html` | base.html |
 | `landing.html` | base.html |

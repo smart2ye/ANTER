@@ -1,7 +1,7 @@
 # مرجع الخدمات (Services)
 
-**آخر تحديث:** 2026-10-13
-**المجموع:** 20 خدمة
+**آخر تحديث:** 2026-10-17
+**المجموع:** 21 خدمة
 
 ## account_vault.py
 
@@ -127,6 +127,20 @@
 - `country_score()`
 - `geo_score_for_post()`
 - `geo_score_for_user()`
+
+## mentions.py
+
+**دوال مستقلة:**
+- `_is_group_alias()`
+- `_is_group_all()`
+- `_extract_mentions()`
+- `_follows()`
+- `_can_mention()`
+- `_group_mentions_today()`
+- `_record_group_mention()`
+- `_already_notified()`
+- `process_mentions()`
+- `remaining_group_mentions()`
 
 ## message_safety.py
 

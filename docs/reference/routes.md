@@ -1,7 +1,7 @@
 # مرجع المسارات (Routes)
 
-**آخر تحديث:** 2026-10-13
-**المجموع:** 200 route · 19 blueprint
+**آخر تحديث:** 2026-10-17
+**المجموع:** 219 route · 20 blueprint
 
 ## admin — `/admin`
 
@@ -67,6 +67,28 @@
 - `GET` `/explore/hashtag/<string:tag>` — _explore.py_
 - `GET` `/explore/search` — _explore.py_
 - `GET` `/explore/search-all` — _explore.py_
+
+## haraj
+
+- `GET` `/` — _haraj.py_
+- `GET` `/api/cities` — _haraj.py_
+- `POST` `/comment/<int:comment_id>/delete` — _haraj.py_
+- `GET` `/listing/<public_id>` — _haraj.py_
+- `POST` `/listing/<public_id>/comment` — _haraj.py_
+- `POST` `/listing/<public_id>/contact` — _haraj.py_
+- `POST` `/listing/<public_id>/delete` — _haraj.py_
+- `GET,POST` `/listing/<public_id>/edit` — _haraj.py_
+- `POST` `/listing/<public_id>/rate` — _haraj.py_
+- `POST` `/listing/<public_id>/react` — _haraj.py_
+- `POST` `/listing/<public_id>/sold` — _haraj.py_
+- `GET` `/media/listing/<int:image_id>` — _haraj.py_
+- `GET` `/messages` — _haraj.py_
+- `GET,POST` `/messages/<listing_public_id>/<other_username>` — _haraj.py_
+- `GET` `/messages/unread_count` — _haraj.py_
+- `GET,POST` `/new` — _haraj.py_
+- `GET` `/seller/<username>` — _haraj.py_
+- `GET,POST` `/settings` — _haraj.py_
+- `GET` `/terms` — _haraj.py_
 
 ## main
 

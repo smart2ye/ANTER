@@ -217,7 +217,7 @@
                 <span>استكشاف</span>
             </a>
             <a href="{{ url_for('haraj.index') }}" class="text-center nav-link {% if request.endpoint and request.endpoint.startswith('haraj.') %}active{% endif %}">
-                <i class="fas fa-store fa-lg"></i>
+                <i class="fas fa-tag fa-lg"></i>
                 <span>حراج</span>
             </a>
             <a href="{{ url_for('notifications.index') }}" class="text-center nav-link position-relative {% if request.endpoint == 'notifications.index' %}active{% endif %}">

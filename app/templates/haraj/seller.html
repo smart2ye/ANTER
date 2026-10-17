@@ -14,9 +14,6 @@
             <div class="haraj-seller-card__info">
                 <h1 class="haraj-seller-card__name">
                     {{ seller.name or seller.username }}
-                    {% if seller.is_verified %}<i class="fas fa-check-circle" style="color:#003AAB;font-size:1.1rem;"></i>{% endif %}
-                    {% if seller.is_founder %}<span title="مؤسس" style="color:#f59e0b;">✴️</span>{% endif %}
-                    {% if seller.is_early_member %}<span title="عضو مبكّر" style="color:#f59e0b;">🌟</span>{% endif %}
                 </h1>
                 <div class="haraj-seller-card__meta">
                     <span><i class="fas fa-user"></i> @{{ seller.username }}</span>

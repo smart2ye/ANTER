@@ -224,7 +224,7 @@ function selectRating(value) {
                     <div class="haraj-comment__head">
                         <a href="{{ url_for('haraj.seller_profile', username=c.author.username) }}" class="haraj-comment__author">
                             {{ c.author.name or c.author.username }}
-                            {% if c.author.is_verified %}<i class="fas fa-check-circle" style="color:#003AAB;"></i>{% endif %}
+
                         </a>
                         <span class="haraj-comment__time">{{ c.created_at.strftime('%m/%d %H:%M') }}</span>
                     </div>

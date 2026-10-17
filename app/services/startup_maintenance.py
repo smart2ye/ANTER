@@ -57,6 +57,8 @@ def run_startup_schema_upgrades(app) -> bool:
             'is_founder': 'BOOLEAN NOT NULL DEFAULT FALSE',
             'is_early_member': 'BOOLEAN NOT NULL DEFAULT FALSE',
             'mention_privacy': "VARCHAR(20) NOT NULL DEFAULT 'followers_only'",
+            'haraj_whatsapp_number': 'VARCHAR(20)',
+            'haraj_show_whatsapp': 'BOOLEAN NOT NULL DEFAULT FALSE',
         },
         'posts': {
             'image_data': binary_type,

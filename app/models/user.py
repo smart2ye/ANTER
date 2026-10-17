@@ -44,6 +44,12 @@ class User(UserMixin, db.Model):
     )
     
     # 🔹 إضافة عمود is_admin
+    # ANTER Haraj: رقم واتساب افتراضي للحراج + خيار الإظهار
+    haraj_whatsapp_number = db.Column(db.String(20), nullable=True)
+    haraj_show_whatsapp = db.Column(
+        db.Boolean, nullable=False, default=False, server_default='false',
+    )
+
     is_admin = db.Column(db.Boolean, default=False)
     is_verified = db.Column(db.Boolean, default=False)
     # ANTER: شارة المؤسس — خاصة بحساب واحد فقط.

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block page_title %}حراج أنتر — أثاث وأجهزة منزلية{% endblock %}
+{% block meta_description %}سوق حراج أنتر لبيع وشراء الأثاث والأجهزة المنزلية في السعودية. نشر مجاني، تواصل مباشر.{% endblock %}
+
+{% block content %}
+<div class="haraj-container">
+    <header class="haraj-header">
+        <div class="haraj-hero">
+            <h1><i class="fas fa-store"></i> حراج أنتر</h1>
+            <p>سوقك الموثوق للأثاث والأجهزة المنزلية</p>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('haraj.new_listing') }}" class="haraj-publish-btn">
+                <i class="fas fa-plus-circle"></i> انشر إعلانًا
+            </a>
+            {% else %}
+            <a href="{{ url_for('auth.login', next=request.path) }}" class="haraj-publish-btn">
+                <i class="fas fa-sign-in-alt"></i> سجّل دخولك للنشر
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="haraj-filters">
+            <input type="search" placeholder="ابحث في الحراج..." class="haraj-search">
+            <select class="haraj-filter-select" onchange="window.location.href=this.value">
+                <option value="{{ url_for('haraj.index') }}">كل الفئات</option>
+                {% for key, label in categories.items() %}
+                <option value="{{ url_for('haraj.index', category=key) }}" {% if current_category == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <select class="haraj-filter-select" onchange="window.location.href=this.value">
+                <option value="{{ url_for('haraj.index') }}">كل المناطق</option>
+                {% for region in regions %}
+                <option value="{{ url_for('haraj.index', region=region) }}" {% if current_region == region %}selected{% endif %}>{{ region }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </header>
+
+    <div class="haraj-listings">
+        {% if listings %}
+            {% for listing in listings %}
+            <a href="{{ url_for('haraj.listing_detail', public_id=listing.public_id) }}" class="haraj-card">
+                {% set img = listing.primary_image() %}
+                {% if img %}
+                <img src="{{ url_for('haraj.listing_image', image_id=img.id) }}" alt="{{ listing.title }}" class="haraj-card__image" loading="lazy">
+                {% else %}
+                <div class="haraj-card__image" style="display:flex;align-items:center;justify-content:center;color:#9ca3af;">
+                    <i class="fas fa-image fa-2x"></i>
+                </div>
+                {% endif %}
+                <div class="haraj-card__body">
+                    <div>
+                        {% if listing.condition == 'new' %}
+                        <span class="haraj-card__badge haraj-card__badge--new">جديد</span>
+                        {% else %}
+                        <span class="haraj-card__badge">مستعمل</span>
+                        {% endif %}
+                        <span class="haraj-card__badge">{{ listing_types.get(listing.listing_type, '') }}</span>
+                        {% if listing.status == 'sold' %}
+                        <span class="haraj-card__badge haraj-card__badge--sold">مباع</span>
+                        {% endif %}
+                    </div>
+                    <h3 class="haraj-card__title">{{ listing.title }}</h3>
+                    {% if listing.price %}
+                    <p class="haraj-card__price">{{ "{:,}".format(listing.price) }} ر.س{% if listing.negotiable %} <small style="font-size:.7rem;color:#6b7280;">(قابل للتفاوض)</small>{% endif %}</p>
+                    {% else %}
+                    <p class="haraj-card__price" style="font-size:.95rem;color:#6b7280;">سعر عند التواصل</p>
+                    {% endif %}
+                    <div class="haraj-card__meta">
+                        <span><i class="fas fa-map-marker-alt"></i> {{ listing.city }}</span>
+                        <span>{{ listing.created_at.strftime('%m/%d') }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="haraj-empty">
+                <i class="fas fa-box-open fa-3x"></i>
+                <p>لا توجد إعلانات بعد. كن أول من ينشر!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

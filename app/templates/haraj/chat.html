@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block page_title %}محادثة بخصوص {{ listing.title }} — أنتر{% endblock %}
+
+{% block content %}
+<div class="haraj-container" style="max-width:820px;">
+    <a href="{{ url_for('haraj.messages') }}" class="haraj-back-link">
+        <i class="fas fa-arrow-right"></i> كل الرسائل
+    </a>
+
+    <div class="haraj-chat-card">
+        <div class="haraj-chat-header">
+            <div class="haraj-chat-header__listing">
+                {% set img = listing.primary_image() %}
+                {% if img %}
+                <img src="{{ url_for('haraj.listing_image', image_id=img.id) }}" alt="">
+                {% endif %}
+                <div>
+                    <a href="{{ url_for('haraj.listing_detail', public_id=listing.public_id) }}" class="haraj-chat-header__title">
+                        {{ listing.title }}
+                    </a>
+                    <div class="haraj-chat-header__other">
+                        مع: <strong>{{ other.name or other.username }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="haraj-chat-body" id="chatBody">
+            {% if messages %}
+                {% for m in messages %}
+                <div class="haraj-msg {% if m.sender_id == current_user.id %}haraj-msg--mine{% else %}haraj-msg--other{% endif %}">
+                    <div class="haraj-msg__bubble">
+                        <div class="haraj-msg__text">{{ m.content }}</div>
+                        <div class="haraj-msg__time">{{ m.created_at.strftime('%H:%M') }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="haraj-empty" style="padding:40px 20px;">
+                    <i class="fas fa-comment-dots fa-2x"></i>
+                    <p>ابدأ المحادثة بسؤال البائع عن الإعلان.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <form method="POST" class="haraj-chat-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea name="content" placeholder="اكتب رسالتك..." rows="2" maxlength="2000" class="haraj-chat-input"></textarea>
+            <button type="submit" class="haraj-chat-send">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    var body = document.getElementById('chatBody');
+    if (body) body.scrollTop = body.scrollHeight;
+})();
+</script>
+{% endblock %}

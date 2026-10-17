@@ -1,0 +1,496 @@
+"""ANTER Haraj — سوق الأثاث والأجهزة المنزلية."""
+
+from datetime import datetime
+
+from flask import (
+    Blueprint, render_template, redirect, url_for, flash,
+    request, abort, current_app,
+)
+from flask_login import login_required, current_user
+from sqlalchemy import or_
+
+from app.extensions import db
+from app.models import User
+from app.models.listing import (
+    Listing, ListingImage, LISTING_CATEGORIES, LISTING_TYPES,
+    LISTING_CONDITIONS, LISTING_STATUSES, default_expires_at,
+)
+from app.models.haraj_message import HarajMessage
+from app.forms.haraj import ListingForm
+from app.constants.saudi_locations import (
+    SAUDI_REGIONS, all_regions, cities_for_region, region_of_city,
+)
+from app.utils.image_storage import prepare_image_data
+
+haraj_bp = Blueprint('haraj', __name__, url_prefix='/haraj')
+
+
+# محافظات السعودية (للتوافق مع أي استيراد سابق)
+SAUDI_REGIONS_LIST = all_regions()
+
+
+# ============================================================
+# الصفحة الرئيسية
+# ============================================================
+@haraj_bp.route('/')
+def index():
+    category = request.args.get('category', '').strip()
+    region = request.args.get('region', '').strip()
+    city = request.args.get('city', '').strip()
+    q = request.args.get('q', '').strip()
+    listing_type = request.args.get('type', '').strip()
+
+    query = Listing.query.filter(Listing.status == 'active')
+
+    if category and category in LISTING_CATEGORIES:
+        query = query.filter(Listing.category == category)
+    if region and region in SAUDI_REGIONS:
+        query = query.filter(Listing.region == region)
+    if city and region:
+        query = query.filter(Listing.city == city)
+    if listing_type and listing_type in LISTING_TYPES:
+        query = query.filter(Listing.listing_type == listing_type)
+    if q:
+        like = f'%{q}%'
+        query = query.filter(or_(Listing.title.ilike(like), Listing.description.ilike(like)))
+
+    listings = query.order_by(Listing.created_at.desc()).limit(100).all()
+
+    return render_template(
+        'haraj/index.html',
+        listings=listings,
+        regions=all_regions(),
+        categories=LISTING_CATEGORIES,
+        listing_types=LISTING_TYPES,
+        current_category=category,
+        current_region=region,
+        current_city=city,
+        current_type=listing_type,
+        current_q=q,
+        cities=cities_for_region(region) if region else [],
+    )
+
+
+# ============================================================
+# API: مدن منطقة
+# ============================================================
+@haraj_bp.route('/api/cities')
+def api_cities():
+    from flask import jsonify
+    region = request.args.get('region', '').strip()
+    return jsonify({'cities': cities_for_region(region)})
+
+
+# ============================================================
+# صفحة إعلان مفرد
+# ============================================================
+@haraj_bp.route('/listing/<public_id>')
+def listing_detail(public_id):
+    listing = Listing.query.filter_by(public_id=public_id).first_or_404()
+
+    if listing.status == 'expired':
+        abort(404)
+
+    # زيادة العداد
+    try:
+        listing.views_count = (listing.views_count or 0) + 1
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    is_owner = current_user.is_authenticated and current_user.id == listing.user_id
+
+    return render_template(
+        'haraj/listing.html',
+        listing=listing,
+        is_owner=is_owner,
+        categories=LISTING_CATEGORIES,
+        types=LISTING_TYPES,
+        conditions=LISTING_CONDITIONS,
+        statuses=LISTING_STATUSES,
+    )
+
+
+# ============================================================
+# صورة إعلان
+# ============================================================
+@haraj_bp.route('/media/listing/<int:image_id>')
+def listing_image(image_id):
+    img = ListingImage.query.get_or_404(image_id)
+    from flask import Response
+    resp = Response(img.image_data, mimetype=img.image_mime or 'image/jpeg')
+    resp.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    return resp
+
+
+# ============================================================
+# نشر إعلان جديد
+# ============================================================
+@haraj_bp.route('/new', methods=['GET', 'POST'])
+@login_required
+def new_listing():
+    form = ListingForm()
+
+    if request.method == 'GET':
+        return render_template(
+            'haraj/new.html',
+            form=form,
+            categories=LISTING_CATEGORIES,
+            types=LISTING_TYPES,
+            conditions=LISTING_CONDITIONS,
+            regions=all_regions(),
+            saudi_regions=SAUDI_REGIONS,
+        )
+
+    if form.validate_on_submit():
+        # المدن تحتاج ملء قبل التحقق
+        if form.region.data and form.region.data in SAUDI_REGIONS:
+            form.city.choices = [('', 'اختر المدينة')] + [
+                (c, c) for c in SAUDI_REGIONS[form.region.data]
+            ]
+
+        if not form.city.data:
+            flash('اختر المدينة.', 'danger')
+            return render_template(
+                'haraj/new.html', form=form,
+                categories=LISTING_CATEGORIES, types=LISTING_TYPES,
+                conditions=LISTING_CONDITIONS, regions=all_regions(),
+                saudi_regions=SAUDI_REGIONS,
+            )
+
+        if not form.pledge_accepted.data:
+            flash('يجب الموافقة على التعهد بدفع 1% للنشر.', 'danger')
+            return render_template(
+                'haraj/new.html', form=form,
+                categories=LISTING_CATEGORIES, types=LISTING_TYPES,
+                conditions=LISTING_CONDITIONS, regions=all_regions(),
+                saudi_regions=SAUDI_REGIONS,
+            )
+
+        # معالجة الصور
+        uploaded = [f for f in request.files.getlist('images') if f and f.filename]
+        if len(uploaded) > 3:
+            flash('3 صور كحد أقصى.', 'danger')
+            return render_template(
+                'haraj/new.html', form=form,
+                categories=LISTING_CATEGORIES, types=LISTING_TYPES,
+                conditions=LISTING_CONDITIONS, regions=all_regions(),
+                saudi_regions=SAUDI_REGIONS,
+            )
+
+        prepared_images = []
+        for f in uploaded:
+            data, mime = prepare_image_data(f)
+            if data and mime:
+                prepared_images.append((data, mime))
+
+        if not prepared_images:
+            flash('أضف صورة واحدة على الأقل.', 'danger')
+            return render_template(
+                'haraj/new.html', form=form,
+                categories=LISTING_CATEGORIES, types=LISTING_TYPES,
+                conditions=LISTING_CONDITIONS, regions=all_regions(),
+                saudi_regions=SAUDI_REGIONS,
+            )
+
+        # خصم صورة
+        listing = Listing(
+            user_id=current_user.id,
+            category=form.category.data,
+            listing_type=form.listing_type.data,
+            condition=form.condition.data,
+            title=form.title.data.strip(),
+            description=form.description.data.strip(),
+            price=form.price.data,
+            negotiable=bool(form.negotiable.data),
+            region=form.region.data,
+            city=form.city.data,
+            show_whatsapp=bool(form.show_whatsapp.data),
+            whatsapp_number=(current_user.haraj_whatsapp_number or '').strip() or None,
+            pledge_accepted=True,
+            pledge_at=datetime.utcnow(),
+            status='active',
+            expires_at=default_expires_at(),
+        )
+        db.session.add(listing)
+        db.session.flush()
+
+        for i, (data, mime) in enumerate(prepared_images, 1):
+            db.session.add(ListingImage(
+                listing_id=listing.id,
+                image_data=data,
+                image_mime=mime,
+                position=i,
+            ))
+
+        db.session.commit()
+
+        flash('✅ تم نشر إعلانك.', 'success')
+        return redirect(url_for('haraj.listing_detail', public_id=listing.public_id))
+
+    # فشل التحقق
+    return render_template(
+        'haraj/new.html', form=form,
+        categories=LISTING_CATEGORIES, types=LISTING_TYPES,
+        conditions=LISTING_CONDITIONS, regions=all_regions(),
+        saudi_regions=SAUDI_REGIONS,
+    )
+
+
+# ============================================================
+# تعليم الإعلان كمباع
+# ============================================================
+@haraj_bp.route('/listing/<public_id>/sold', methods=['POST'])
+@login_required
+def mark_sold(public_id):
+    listing = Listing.query.filter_by(public_id=public_id).first_or_404()
+    if listing.user_id != current_user.id:
+        abort(403)
+    if listing.status == 'sold':
+        flash('هذا الإعلان مُعلَّم كمباع مسبقًا.', 'info')
+        return redirect(url_for('haraj.listing_detail', public_id=public_id))
+    listing.status = 'sold'
+    db.session.commit()
+    flash('✅ تم تعليم الإعلان كمباع. تذكّر تعهدك بدفع 1% من قيمة البيع.', 'success')
+    return redirect(url_for('haraj.listing_detail', public_id=public_id))
+
+
+# ============================================================
+# حذف الإعلان
+# ============================================================
+@haraj_bp.route('/listing/<public_id>/delete', methods=['POST'])
+@login_required
+def delete_listing(public_id):
+    listing = Listing.query.filter_by(public_id=public_id).first_or_404()
+    if listing.user_id != current_user.id and not getattr(current_user, 'is_admin', False):
+        abort(403)
+    db.session.delete(listing)
+    db.session.commit()
+    flash('تم حذف الإعلان.', 'success')
+    return redirect(url_for('haraj.index'))
+
+
+# ============================================================
+# تعديل الإعلان
+# ============================================================
+@haraj_bp.route('/listing/<public_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_listing(public_id):
+    listing = Listing.query.filter_by(public_id=public_id).first_or_404()
+    if listing.user_id != current_user.id:
+        abort(403)
+
+    form = ListingForm(obj=listing)
+
+    if request.method == 'GET':
+        form.category.data = listing.category
+        form.listing_type.data = listing.listing_type
+        form.condition.data = listing.condition
+        form.title.data = listing.title
+        form.description.data = listing.description
+        form.price.data = listing.price
+        form.negotiable.data = listing.negotiable
+        form.region.data = listing.region
+        form.show_whatsapp.data = listing.show_whatsapp
+        form.pledge_accepted.data = listing.pledge_accepted
+        if listing.region in SAUDI_REGIONS:
+            form.city.choices = [('', 'اختر المدينة')] + [(c, c) for c in SAUDI_REGIONS[listing.region]]
+        form.city.data = listing.city
+        return render_template(
+            'haraj/new.html',
+            form=form,
+            listing=listing,
+            categories=LISTING_CATEGORIES, types=LISTING_TYPES,
+            conditions=LISTING_CONDITIONS, regions=all_regions(),
+            saudi_regions=SAUDI_REGIONS,
+            is_edit=True,
+        )
+
+    # POST
+    if form.region.data and form.region.data in SAUDI_REGIONS:
+        form.city.choices = [('', 'اختر المدينة')] + [(c, c) for c in SAUDI_REGIONS[form.region.data]]
+
+    if form.validate_on_submit() and form.city.data and form.pledge_accepted.data:
+        listing.category = form.category.data
+        listing.listing_type = form.listing_type.data
+        listing.condition = form.condition.data
+        listing.title = form.title.data.strip()
+        listing.description = form.description.data.strip()
+        listing.price = form.price.data
+        listing.negotiable = bool(form.negotiable.data)
+        listing.region = form.region.data
+        listing.city = form.city.data
+        listing.show_whatsapp = bool(form.show_whatsapp.data)
+        if not listing.pledge_accepted:
+            listing.pledge_accepted = True
+            listing.pledge_at = datetime.utcnow()
+
+        uploaded = [f for f in request.files.getlist('images') if f and f.filename]
+        if uploaded:
+            prepared = []
+            for f in uploaded[:3]:
+                data, mime = prepare_image_data(f)
+                if data and mime:
+                    prepared.append((data, mime))
+            if prepared:
+                for old in listing.images.all():
+                    db.session.delete(old)
+                db.session.flush()
+                for i, (data, mime) in enumerate(prepared, 1):
+                    db.session.add(ListingImage(
+                        listing_id=listing.id,
+                        image_data=data, image_mime=mime, position=i,
+                    ))
+
+        db.session.commit()
+        flash('✅ تم تحديث الإعلان.', 'success')
+        return redirect(url_for('haraj.listing_detail', public_id=listing.public_id))
+
+    flash('تحقق من الحقول المطلوبة.', 'danger')
+    return render_template(
+        'haraj/new.html',
+        form=form, listing=listing,
+        categories=LISTING_CATEGORIES, types=LISTING_TYPES,
+        conditions=LISTING_CONDITIONS, regions=all_regions(),
+        saudi_regions=SAUDI_REGIONS,
+        is_edit=True,
+    )
+
+
+
+# ============================================================
+# الرسائل — بدء محادثة بخصوص إعلان
+# ============================================================
+@haraj_bp.route('/listing/<public_id>/contact', methods=['POST'])
+@login_required
+def contact_seller(public_id):
+    listing = Listing.query.filter_by(public_id=public_id).first_or_404()
+    if listing.user_id == current_user.id:
+        flash('لا يمكنك مراسلة نفسك.', 'info')
+        return redirect(url_for('haraj.listing_detail', public_id=public_id))
+    return redirect(url_for(
+        'haraj.chat',
+        listing_public_id=public_id,
+        other_username=listing.seller.username,
+    ))
+
+
+# ============================================================
+# قائمة المحادثات
+# ============================================================
+@haraj_bp.route('/messages')
+@login_required
+def messages():
+    from sqlalchemy import and_, or_, func
+    # نستخرج المحادثات الفريدة (listing_id + الطرف الآخر)
+    sub = db.session.query(
+        HarajMessage.listing_id,
+        func.max(HarajMessage.id).label('last_id'),
+    ).filter(
+        or_(HarajMessage.sender_id == current_user.id,
+            HarajMessage.receiver_id == current_user.id)
+    ).group_by(HarajMessage.listing_id).subquery()
+
+    last_msgs = (HarajMessage.query
+                 .join(sub, HarajMessage.id == sub.c.last_id)
+                 .order_by(HarajMessage.created_at.desc()).all())
+
+    threads = []
+    for m in last_msgs:
+        other_id = m.receiver_id if m.sender_id == current_user.id else m.sender_id
+        other = db.session.get(User, other_id)
+        listing = m.listing
+        unread = HarajMessage.query.filter_by(
+            listing_id=m.listing_id,
+            sender_id=other_id,
+            receiver_id=current_user.id,
+            is_read=False,
+        ).count()
+        threads.append({
+            'listing': listing,
+            'other': other,
+            'last_message': m,
+            'unread': unread,
+        })
+
+    return render_template('haraj/messages.html', threads=threads)
+
+
+# ============================================================
+# محادثة حول إعلان
+# ============================================================
+@haraj_bp.route('/messages/<listing_public_id>/<other_username>', methods=['GET', 'POST'])
+@login_required
+def chat(listing_public_id, other_username):
+    listing = Listing.query.filter_by(public_id=listing_public_id).first_or_404()
+    other = User.query.filter_by(username=other_username).first_or_404()
+
+    if other.id == current_user.id:
+        abort(400)
+
+    # يجب أن يكون أحدهما صاحب الإعلان
+    if current_user.id != listing.user_id and other.id != listing.user_id:
+        abort(403)
+
+    # تحقق أن الطرفين مرتبطان بالإعلان
+    if not (
+        (current_user.id == listing.user_id and other.id != listing.user_id)
+        or (current_user.id != listing.user_id and other.id == listing.user_id)
+    ):
+        abort(403)
+
+    if request.method == 'POST':
+        content = (request.form.get('content') or '').strip()
+        if content and len(content) <= 2000:
+            db.session.add(HarajMessage(
+                listing_id=listing.id,
+                sender_id=current_user.id,
+                receiver_id=other.id,
+                content=content,
+            ))
+            db.session.commit()
+        return redirect(url_for(
+            'haraj.chat',
+            listing_public_id=listing_public_id,
+            other_username=other_username,
+        ))
+
+    msgs = (HarajMessage.query
+            .filter_by(listing_id=listing.id)
+            .filter(
+                or_(
+                    (HarajMessage.sender_id == current_user.id) & (HarajMessage.receiver_id == other.id),
+                    (HarajMessage.sender_id == other.id) & (HarajMessage.receiver_id == current_user.id),
+                )
+            )
+            .order_by(HarajMessage.created_at.asc()).all())
+
+    # تعليم الرسائل الواردة كمقروءة
+    unread_q = HarajMessage.query.filter_by(
+        listing_id=listing.id,
+        sender_id=other.id,
+        receiver_id=current_user.id,
+        is_read=False,
+    )
+    unread_count = unread_q.count()
+    if unread_count:
+        unread_q.update({'is_read': True}, synchronize_session=False)
+        db.session.commit()
+
+    return render_template(
+        'haraj/chat.html',
+        listing=listing, other=other, messages=msgs,
+    )
+
+
+# ============================================================
+# عدد الرسائل غير المقروءة (للـ navbar)
+# ============================================================
+@haraj_bp.route('/messages/unread_count')
+@login_required
+def messages_unread_count():
+    from flask import jsonify
+    n = HarajMessage.query.filter_by(
+        receiver_id=current_user.id, is_read=False,
+    ).count()
+    return jsonify({'count': n})

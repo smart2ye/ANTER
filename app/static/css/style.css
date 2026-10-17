@@ -9489,3 +9489,577 @@ a.anter-profile-stat:hover {
 .is-sent .anter-link:hover {
     color: #fff;
 }
+
+
+/* ============================================================
+   ANTER Haraj — سوق الأثاث والأجهزة المنزلية
+   ============================================================ */
+.haraj-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.haraj-header {
+    margin-bottom: 24px;
+}
+
+.haraj-hero {
+    background: linear-gradient(135deg, #031E64 0%, #003AAB 100%);
+    color: #fff;
+    padding: 32px 24px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 12px 30px rgba(3, 30, 100, 0.25);
+}
+
+.haraj-hero h1 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 900;
+    margin: 0 0 8px;
+}
+
+.haraj-hero h1 i {
+    color: #00C8F8;
+}
+
+.haraj-hero p {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1rem;
+    margin: 0 0 20px;
+}
+
+.haraj-publish-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #00C8F8;
+    color: #031E64;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.haraj-publish-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 200, 248, 0.4);
+    color: #031E64;
+}
+
+.haraj-filters {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+    background: #fff;
+    padding: 12px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 768px) {
+    .haraj-filters {
+        grid-template-columns: 1fr;
+    }
+}
+
+.haraj-search,
+.haraj-filter-select {
+    padding: 10px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #f9fafb;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.haraj-search:focus,
+.haraj-filter-select:focus {
+    border-color: #003AAB;
+    background: #fff;
+}
+
+.haraj-listings {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.haraj-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #9ca3af;
+    background: #fff;
+    border-radius: 16px;
+    border: 2px dashed #e5e7eb;
+}
+
+.haraj-empty i {
+    color: #003AAB;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.haraj-empty p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* بطاقة الإعلان */
+.haraj-card {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.haraj-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    color: inherit;
+}
+
+.haraj-card__image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background: #f3f4f6;
+}
+
+.haraj-card__body {
+    padding: 12px 14px;
+}
+
+.haraj-card__title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #031E64;
+    margin: 0 0 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.haraj-card__price {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #003AAB;
+    margin: 0 0 6px;
+}
+
+.haraj-card__meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    color: #6b7280;
+}
+
+.haraj-card__badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: #e0f2fe;
+    color: #0369a1;
+    margin-bottom: 6px;
+}
+
+.haraj-card__badge--new {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.haraj-card__badge--sold {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+
+/* تفاصيل الإعلان */
+.haraj-back-link {
+    display: inline-block;
+    margin-bottom: 16px;
+    color: #003AAB;
+    text-decoration: none;
+    font-weight: 600;
+}
+.haraj-back-link:hover { color: #00C8F8; }
+
+.haraj-detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    background: #fff;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+@media (max-width: 768px) { .haraj-detail { grid-template-columns: 1fr; } }
+
+.haraj-detail__images { display: flex; flex-direction: column; gap: 10px; }
+.haraj-detail__main {
+    width: 100%;
+    max-height: 480px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: #f3f4f6;
+}
+.haraj-detail__thumbs { display: flex; gap: 8px; }
+.haraj-detail__thumb {
+    width: 70px; height: 70px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+}
+.haraj-detail__thumb:hover { border-color: #003AAB; }
+
+.haraj-detail__info { display: flex; flex-direction: column; gap: 14px; }
+.haraj-detail__info h1 {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #031E64;
+    margin: 0;
+}
+.haraj-detail__price {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #003AAB;
+}
+.haraj-detail__price small { font-size: 0.85rem; color: #6b7280; font-weight: 600; }
+
+.haraj-detail__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+.haraj-detail__meta i { color: #003AAB; margin-left: 4px; }
+
+.haraj-detail__desc h3 { font-size: 1rem; font-weight: 800; margin: 0 0 6px; color: #031E64; }
+.haraj-detail__desc p { white-space: pre-wrap; color: #374151; line-height: 1.7; margin: 0; }
+
+.haraj-detail__seller { font-size: 0.95rem; }
+.haraj-seller-link { color: #003AAB; text-decoration: none; font-weight: 700; }
+.haraj-seller-link:hover { color: #00C8F8; }
+
+.haraj-detail__actions,
+.haraj-detail__contact {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: auto;
+}
+
+.haraj-detail__guest {
+    text-align: center;
+    padding: 20px;
+    background: #eff6ff;
+    border-radius: 12px;
+}
+.haraj-detail__guest i { color: #003AAB; font-size: 1.5rem; margin-bottom: 8px; }
+.haraj-detail__guest p { margin: 0 0 12px; color: #1e40af; }
+
+.haraj-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-decoration: none;
+    border: 0;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.haraj-action-btn--primary { background: #003AAB; color: #fff; }
+.haraj-action-btn--primary:hover { background: #031E64; color: #fff; }
+.haraj-action-btn--wa { background: #25D366; color: #fff; }
+.haraj-action-btn--wa:hover { background: #128C7E; color: #fff; }
+.haraj-action-btn--outline { background: #fff; color: #003AAB; border: 1px solid #003AAB; }
+.haraj-action-btn--danger { background: #dc2626; color: #fff; }
+.haraj-action-btn--danger:hover { background: #991b1b; }
+
+/* نموذج النشر */
+.haraj-form-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+.haraj-form-title {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #031E64;
+    margin: 0 0 20px;
+}
+.haraj-form-title i { color: #00C8F8; }
+
+.haraj-form-group { margin-bottom: 16px; }
+.haraj-form-group label { display: block; font-weight: 700; font-size: 0.9rem; color: #1f2937; margin-bottom: 6px; }
+.haraj-hint { font-weight: 400; color: #9ca3af; font-size: 0.82rem; }
+.haraj-warn { color: #dc2626; }
+
+.haraj-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #f9fafb;
+    transition: border-color 0.2s, background 0.2s;
+    box-sizing: border-box;
+}
+.haraj-input:focus {
+    outline: none;
+    border-color: #003AAB;
+    background: #fff;
+}
+.haraj-textarea { resize: vertical; min-height: 100px; }
+
+.haraj-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+@media (max-width: 600px) { .haraj-form-row { grid-template-columns: 1fr; } }
+
+.haraj-checkbox-group { display: flex; align-items: flex-end; }
+.haraj-checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; }
+.haraj-checkbox-label input[type="checkbox"] { width: 18px; height: 18px; accent-color: #003AAB; }
+
+.haraj-error { color: #dc2626; font-size: 0.82rem; display: block; margin-top: 4px; }
+
+.haraj-preview { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.haraj-preview-img {
+    width: 80px; height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.haraj-whatsapp-group {
+    background: #f0fdf4;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid #bbf7d0;
+}
+
+.haraj-pledge-box {
+    background: linear-gradient(135deg, #fef9e7 0%, #fff7ed 100%);
+    border: 2px solid #fbbf24;
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin: 20px 0;
+}
+.haraj-pledge-text strong { display: block; color: #92400e; font-size: 1.05rem; margin-bottom: 6px; }
+.haraj-pledge-text p { margin: 0; color: #78350f; line-height: 1.7; font-size: 0.92rem; }
+.haraj-pledge-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #fbbf24;
+    font-weight: 800;
+    color: #92400e;
+    cursor: pointer;
+}
+.haraj-pledge-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #003AAB;
+}
+
+.haraj-submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #003AAB 0%, #031E64 100%);
+    color: #fff;
+    border: 0;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 10px;
+}
+.haraj-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 58, 171, 0.35);
+}
+
+
+/* ============================================================
+   ANTER Haraj — الرسائل
+   ============================================================ */
+.haraj-threads { display: flex; flex-direction: column; gap: 10px; }
+.haraj-thread {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+.haraj-thread:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-1px); color: inherit; }
+.haraj-thread--unread { border-right: 4px solid #00C8F8; }
+.haraj-thread__thumb {
+    flex: 0 0 64px;
+    width: 64px; height: 64px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f3f4f6;
+}
+.haraj-thread__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.haraj-thread__thumb-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    color: #9ca3af;
+}
+.haraj-thread__body { flex: 1; min-width: 0; }
+.haraj-thread__title {
+    font-weight: 800;
+    color: #031E64;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.haraj-thread__preview {
+    font-size: 0.85rem;
+    color: #4b5563;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 4px;
+}
+.haraj-thread__meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+.haraj-thread__badge {
+    background: #dc2626;
+    color: #fff;
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-weight: 700;
+    font-size: 0.7rem;
+}
+
+/* صفحة المحادثة */
+.haraj-chat-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 220px);
+    min-height: 420px;
+}
+.haraj-chat-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+.haraj-chat-header__listing { display: flex; gap: 12px; align-items: center; }
+.haraj-chat-header__listing img {
+    width: 48px; height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+.haraj-chat-header__title {
+    display: block;
+    font-weight: 800;
+    color: #031E64;
+    text-decoration: none;
+    margin-bottom: 2px;
+}
+.haraj-chat-header__other { font-size: 0.85rem; color: #6b7280; }
+
+.haraj-chat-body {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    background: #f3f4f6;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.haraj-msg { display: flex; }
+.haraj-msg--mine { justify-content: flex-start; }
+.haraj-msg--other { justify-content: flex-end; }
+.haraj-msg__bubble {
+    max-width: 78%;
+    padding: 8px 12px;
+    border-radius: 14px;
+    position: relative;
+}
+.haraj-msg--mine .haraj-msg__bubble {
+    background: #003AAB;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+.haraj-msg--other .haraj-msg__bubble {
+    background: #fff;
+    color: #111;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.haraj-msg__text { white-space: pre-wrap; word-break: break-word; line-height: 1.5; }
+.haraj-msg__time {
+    font-size: 0.68rem;
+    opacity: 0.7;
+    margin-top: 3px;
+    text-align: left;
+}
+
+.haraj-chat-form {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    border-top: 1px solid #e5e7eb;
+    background: #fff;
+}
+.haraj-chat-input {
+    flex: 1;
+    resize: none;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+}
+.haraj-chat-input:focus { border-color: #003AAB; }
+.haraj-chat-send {
+    background: #003AAB;
+    color: #fff;
+    border: 0;
+    border-radius: 50%;
+    width: 44px; height: 44px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+}
+.haraj-chat-send:hover { background: #031E64; }

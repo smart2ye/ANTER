@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block page_title %}رسائل الحراج — أنتر{% endblock %}
+
+{% block content %}
+<div class="haraj-container" style="max-width:820px;">
+    <a href="{{ url_for('haraj.index') }}" class="haraj-back-link">
+        <i class="fas fa-arrow-right"></i> العودة للحراج
+    </a>
+
+    <h1 class="haraj-form-title"><i class="fas fa-comments"></i> رسائل الحراج</h1>
+
+    {% if threads %}
+        <div class="haraj-threads">
+            {% for t in threads %}
+            <a href="{{ url_for('haraj.chat', listing_public_id=t.listing.public_id, other_username=t.other.username) }}"
+               class="haraj-thread {% if t.unread %}haraj-thread--unread{% endif %}">
+                <div class="haraj-thread__thumb">
+                    {% set img = t.listing.primary_image() %}
+                    {% if img %}
+                    <img src="{{ url_for('haraj.listing_image', image_id=img.id) }}" alt="">
+                    {% else %}
+                    <div class="haraj-thread__thumb-placeholder"><i class="fas fa-image"></i></div>
+                    {% endif %}
+                </div>
+                <div class="haraj-thread__body">
+                    <div class="haraj-thread__title">{{ t.listing.title }}</div>
+                    <div class="haraj-thread__preview">
+                        <strong>{{ t.last_message.sender.name or t.last_message.sender.username }}:</strong>
+                        {{ t.last_message.content[:80] }}{% if t.last_message.content|length > 80 %}…{% endif %}
+                    </div>
+                    <div class="haraj-thread__meta">
+                        <span>{{ t.last_message.created_at.strftime('%m/%d %H:%M') }}</span>
+                        {% if t.unread %}<span class="haraj-thread__badge">{{ t.unread }}</span>{% endif %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="haraj-empty">
+            <i class="fas fa-comments fa-3x"></i>
+            <p>لا توجد محادثات بعد. ابدأ بالتواصل مع بائع من صفحة الإعلان.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

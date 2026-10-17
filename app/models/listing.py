@@ -63,6 +63,12 @@ class Listing(db.Model):
     show_whatsapp = db.Column(db.Boolean, nullable=False, default=False)
     whatsapp_number = db.Column(db.String(20), nullable=True)
 
+    # تعهد بدفع 1% لموقع أنتر عند إتمام البيع
+    pledge_accepted = db.Column(
+        db.Boolean, nullable=False, default=False, server_default='false',
+    )
+    pledge_at = db.Column(db.DateTime, nullable=True)
+
     views_count = db.Column(db.Integer, nullable=False, default=0)
     reports_count = db.Column(db.Integer, nullable=False, default=0)
 

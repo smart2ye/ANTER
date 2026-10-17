@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block page_title %}{{ listing.title }} — حراج أنتر{% endblock %}
+
+{% block content %}
+<div class="haraj-container">
+    <a href="{{ url_for('haraj.index') }}" class="haraj-back-link">
+        <i class="fas fa-arrow-right"></i> العودة للحراج
+    </a>
+
+    <div class="haraj-detail">
+        <div class="haraj-detail__images">
+            {% set imgs = listing.images.all() %}
+            {% if imgs %}
+            <img id="mainImage" src="{{ url_for('haraj.listing_image', image_id=imgs[0].id) }}" alt="{{ listing.title }}" class="haraj-detail__main">
+            {% if imgs|length > 1 %}
+            <div class="haraj-detail__thumbs">
+                {% for img in imgs %}
+                <img src="{{ url_for('haraj.listing_image', image_id=img.id) }}" alt="" class="haraj-detail__thumb" onclick="document.getElementById('mainImage').src=this.src">
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="haraj-detail__info">
+            <div>
+                {% if listing.condition == 'new' %}
+                <span class="haraj-card__badge haraj-card__badge--new">جديد</span>
+                {% else %}
+                <span class="haraj-card__badge">مستعمل</span>
+                {% endif %}
+                <span class="haraj-card__badge">{{ types.get(listing.listing_type, '') }}</span>
+                <span class="haraj-card__badge">{{ categories.get(listing.category, '') }}</span>
+                {% if listing.status == 'sold' %}
+                <span class="haraj-card__badge haraj-card__badge--sold">مباع</span>
+                {% endif %}
+                {% if listing.pledge_accepted %}
+                <span class="haraj-card__badge" style="background:#dcfce7;color:#15803d;" title="تعهد بدفع 1% عند إتمام البيع">🤝 متعهد</span>
+                {% endif %}
+            </div>
+
+            <h1>{{ listing.title }}</h1>
+
+            {% if listing.price %}
+            <div class="haraj-detail__price">
+                {{ "{:,}".format(listing.price) }} ر.س
+                {% if listing.negotiable %}<small>(قابل للتفاوض)</small>{% endif %}
+            </div>
+            {% else %}
+            <div class="haraj-detail__price" style="font-size:1.1rem;">سعر عند التواصل</div>
+            {% endif %}
+
+            <div class="haraj-detail__meta">
+                <span><i class="fas fa-map-marker-alt"></i> {{ listing.region }} — {{ listing.city }}</span>
+                <span><i class="fas fa-eye"></i> {{ listing.views_count }} مشاهدة</span>
+                <span><i class="fas fa-clock"></i> {{ listing.created_at.strftime('%Y-%m-%d') }}</span>
+            </div>
+
+            <div class="haraj-detail__desc">
+                <h3>الوصف</h3>
+                <p>{{ listing.description }}</p>
+            </div>
+
+            <div class="haraj-detail__seller">
+                <strong>البائع:</strong>
+                <a href="{{ url_for('users.profile', username=listing.seller.username) }}" class="haraj-seller-link">
+                    <i class="fas fa-user"></i> {{ listing.seller.name or listing.seller.username }}
+                </a>
+            </div>
+
+            {% if listing.status == 'active' %}
+                {% if current_user.is_authenticated %}
+                    {% if is_owner %}
+                    <div class="haraj-detail__actions">
+                        <a href="{{ url_for('haraj.edit_listing', public_id=listing.public_id) }}" class="haraj-action-btn haraj-action-btn--outline"><i class="fas fa-edit"></i> تعديل</a>
+                        <form method="POST" action="{{ url_for('haraj.mark_sold', public_id=listing.public_id) }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="haraj-action-btn haraj-action-btn--danger" onclick="return confirm('هل تريد تعليم الإعلان كمباع؟')">
+                                <i class="fas fa-check"></i> تم البيع
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('haraj.delete_listing', public_id=listing.public_id) }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="haraj-action-btn haraj-action-btn--outline" style="color:#dc2626;border-color:#dc2626;" onclick="return confirm('هل تريد حذف الإعلان نهائيًا؟')">
+                                <i class="fas fa-trash"></i> حذف
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="haraj-detail__contact">
+                        <form method="POST" action="{{ url_for('haraj.contact_seller', public_id=listing.public_id) }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="haraj-action-btn haraj-action-btn--primary">
+                                <i class="fas fa-comment"></i> تواصل مع البائع
+                            </button>
+                        </form>
+                        {% if listing.show_whatsapp and listing.whatsapp_number %}
+                        <a href="https://wa.me/{{ listing.whatsapp_number|replace('+','')|replace(' ','') }}" target="_blank" rel="noopener" class="haraj-action-btn haraj-action-btn--wa">
+                            <i class="fab fa-whatsapp"></i> واتساب
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                {% else %}
+                <div class="haraj-detail__guest">
+                    <i class="fas fa-lock"></i>
+                    <p>سجّل دخولك للتواصل مع البائع</p>
+                    <a href="{{ url_for('auth.login', next=request.path) }}" class="haraj-action-btn haraj-action-btn--primary">
+                        <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                    </a>
+                </div>
+                {% endif %}
+            {% else %}
+            <div class="haraj-detail__guest">
+                <p>هذا الإعلان لم يعد نشطًا.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -60,6 +60,10 @@ def run_startup_schema_upgrades(app) -> bool:
             'haraj_whatsapp_number': 'VARCHAR(20)',
             'haraj_show_whatsapp': 'BOOLEAN NOT NULL DEFAULT FALSE',
         },
+        'haraj_listings': {
+            'pledge_accepted': 'BOOLEAN NOT NULL DEFAULT FALSE',
+            'pledge_at': 'TIMESTAMP',
+        },
         'posts': {
             'image_data': binary_type,
             'image_mime': 'VARCHAR(100)',

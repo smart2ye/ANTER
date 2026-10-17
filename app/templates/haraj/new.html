@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block page_title %}نشر إعلان — حراج أنتر{% endblock %}
+
+{% block content %}
+<div class="haraj-container" style="max-width:780px;">
+    <a href="{{ url_for('haraj.index') }}" class="haraj-back-link">
+        <i class="fas fa-arrow-right"></i> العودة للحراج
+    </a>
+
+    <div class="haraj-form-card">
+        <h1 class="haraj-form-title"><i class="fas fa-{% if is_edit %}edit{% else %}plus-circle{% endif %}"></i> {% if is_edit %}تعديل الإعلان{% else %}نشر إعلان جديد{% endif %}</h1>
+
+        <form method="POST" enctype="multipart/form-data" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="haraj-form-group">
+                <label>الفئة</label>
+                {{ form.category(class="haraj-input") }}
+                {% for e in form.category.errors %}<small class="haraj-error">{{ e }}</small>{% endfor %}
+            </div>
+
+            <div class="haraj-form-row">
+                <div class="haraj-form-group">
+                    <label>نوع الإعلان</label>
+                    {{ form.listing_type(class="haraj-input") }}
+                </div>
+                <div class="haraj-form-group">
+                    <label>الحالة</label>
+                    {{ form.condition(class="haraj-input") }}
+                </div>
+            </div>
+
+            <div class="haraj-form-group">
+                <label>العنوان <span class="haraj-hint">(5-120 حرفًا)</span></label>
+                {{ form.title(class="haraj-input", placeholder="مثال: كنبة 3 مقاعد — حالة ممتازة") }}
+                {% for e in form.title.errors %}<small class="haraj-error">{{ e }}</small>{% endfor %}
+            </div>
+
+            <div class="haraj-form-group">
+                <label>الوصف</label>
+                {{ form.description(class="haraj-input haraj-textarea", rows=5, placeholder="اذكر التفاصيل: الحالة، العمر، سبب البيع، إلخ.") }}
+                {% for e in form.description.errors %}<small class="haraj-error">{{ e }}</small>{% endfor %}
+            </div>
+
+            <div class="haraj-form-row">
+                <div class="haraj-form-group">
+                    <label>السعر (ريال)</label>
+                    {{ form.price(class="haraj-input", placeholder="اتركه فارغًا للتفاوض") }}
+                </div>
+                <div class="haraj-form-group haraj-checkbox-group">
+                    <label class="haraj-checkbox-label">
+                        {{ form.negotiable() }} قابل للتفاوض
+                    </label>
+                </div>
+            </div>
+
+            <div class="haraj-form-row">
+                <div class="haraj-form-group">
+                    <label>المنطقة</label>
+                    {{ form.region(class="haraj-input", id="regionSelect") }}
+                </div>
+                <div class="haraj-form-group">
+                    <label>المدينة</label>
+                    {{ form.city(class="haraj-input", id="citySelect") }}
+                </div>
+            </div>
+
+            <div class="haraj-form-group">
+                <label>الصور <span class="haraj-hint">(3 كحد أقصى){% if is_edit %} — اتركه فارغًا للاحتفاظ بالصور الحالية{% endif %}</span></label>
+                {{ form.images(class="haraj-input", accept="image/*", multiple=true, id="imageInput") }}
+                <div id="imagePreview" class="haraj-preview"></div>
+            </div>
+
+            <div class="haraj-form-group haraj-whatsapp-group">
+                <label class="haraj-checkbox-label">
+                    {{ form.show_whatsapp() }} إظهار رقم الواتساب للتواصل
+                </label>
+                {% if current_user.haraj_whatsapp_number %}
+                <small class="haraj-hint">سيظهر: {{ current_user.haraj_whatsapp_number }}</small>
+                {% else %}
+                <small class="haraj-hint haraj-warn">لم تضبط رقم واتساب في الإعدادات بعد.</small>
+                {% endif %}
+            </div>
+
+            <div class="haraj-pledge-box">
+                <div class="haraj-pledge-text">
+                    <strong>🤝 تعهد بالدفع</strong>
+                    <p>
+                        أقسم بالله العظيم أن ألتزم بدفع <strong>1%</strong>
+                        من قيمة البيع لموقع أنتر في حال إتمام هذه الصفقة،
+                        ولا أحلّ نفسي من هذا التعهد.
+                    </p>
+                </div>
+                <label class="haraj-pledge-checkbox">
+                    {{ form.pledge_accepted() }}
+                    <span>أوافق على هذا التعهد</span>
+                </label>
+                {% for e in form.pledge_accepted.errors %}
+                <small class="haraj-error">{{ e }}</small>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="haraj-submit-btn">
+                <i class="fas fa-{% if is_edit %}save{% else %}paper-plane{% endif %}"></i> {% if is_edit %}حفظ التعديلات{% else %}نشر الإعلان{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    var regionEl = document.getElementById('regionSelect');
+    var cityEl = document.getElementById('citySelect');
+    var imagesEl = document.getElementById('imageInput');
+    var previewEl = document.getElementById('imagePreview');
+
+    if (regionEl && cityEl) {
+        regionEl.addEventListener('change', function () {
+            var r = regionEl.value;
+            cityEl.innerHTML = '<option value="">جارٍ التحميل...</option>';
+            fetch('/haraj/api/cities?region=' + encodeURIComponent(r))
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    cityEl.innerHTML = '<option value="">اختر المدينة</option>';
+                    (data.cities || []).forEach(function(c) {
+                        var o = document.createElement('option');
+                        o.value = c;
+                        o.textContent = c;
+                        cityEl.appendChild(o);
+                    });
+                })
+                .catch(function () {
+                    cityEl.innerHTML = '<option value="">تعذر التحميل</option>';
+                });
+        });
+    }
+
+    if (imagesEl && previewEl) {
+        imagesEl.addEventListener('change', function () {
+            previewEl.innerHTML = '';
+            var files = imagesEl.files;
+            var max = Math.min(files.length, 3);
+            for (var i = 0; i < max; i++) {
+                var img = document.createElement('img');
+                img.src = URL.createObjectURL(files[i]);
+                img.className = 'haraj-preview-img';
+                previewEl.appendChild(img);
+            }
+            if (files.length > 3) {
+                var warn = document.createElement('small');
+                warn.className = 'haraj-error';
+                warn.textContent = 'اخترت أكثر من 3 صور — سيتم أخذ 3 فقط.';
+                previewEl.appendChild(warn);
+            }
+        });
+    }
+})();
+</script>
+{% endblock %}

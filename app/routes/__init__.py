@@ -18,6 +18,7 @@ from .reactions import reactions_bp
 from .stories import stories_bp
 from .moments import moments_bp
 from .year_in_review import year_in_review_bp
+from .haraj import haraj_bp
 
 def register_blueprints(app: Flask):
     app.register_blueprint(stories_bp, url_prefix="/api")
@@ -39,3 +40,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(reactions_bp)
     app.register_blueprint(moments_bp)
     app.register_blueprint(year_in_review_bp)
+    app.register_blueprint(haraj_bp)

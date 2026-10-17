@@ -17,6 +17,7 @@ from app.models.listing import (
 )
 from app.models.haraj_message import HarajMessage
 from app.models.listing_reaction import ListingReaction
+from app.models.listing_comment import ListingComment
 from app.forms.haraj import ListingForm
 from app.constants.saudi_locations import (
     SAUDI_REGIONS, all_regions, cities_for_region, region_of_city,
@@ -147,6 +148,11 @@ def listing_detail(public_id):
             listing_id=listing.id, user_id=current_user.id, reaction_type='save',
         ).first() is not None
 
+    # التعليقات (الرئيسية فقط، والردود تُحمّل عبر relationship)
+    comments = (ListingComment.query
+                .filter_by(listing_id=listing.id, parent_id=None, is_deleted=False)
+                .order_by(ListingComment.created_at.desc()).all())
+
     return render_template(
         'haraj/listing.html',
         listing=listing,
@@ -159,6 +165,7 @@ def listing_detail(public_id):
         saves_count=saves_count,
         user_liked=user_liked,
         user_saved=user_saved,
+        comments=comments,
     )
 
 
@@ -585,3 +592,53 @@ def react_listing(public_id):
     ).count()
 
     return jsonify({'ok': True, 'active': active, 'count': count})
+
+
+
+# ============================================================
+# إضافة تعليق
+# ============================================================
+@haraj_bp.route('/listing/<public_id>/comment', methods=['POST'])
+@login_required
+def add_comment(public_id):
+    listing = Listing.query.filter_by(public_id=public_id).first_or_404()
+
+    content = (request.form.get('content') or '').strip()
+    parent_id = request.form.get('parent_id', type=int)
+
+    if not content or len(content) > 1000:
+        flash('تعليق فارغ أو طويل جدًا.', 'danger')
+        return redirect(url_for('haraj.listing_detail', public_id=public_id) + '#comments')
+
+    if parent_id:
+        parent = ListingComment.query.filter_by(
+            id=parent_id, listing_id=listing.id, parent_id=None,
+        ).first()
+        if not parent:
+            parent_id = None
+
+    db.session.add(ListingComment(
+        listing_id=listing.id,
+        author_id=current_user.id,
+        parent_id=parent_id,
+        content=content,
+    ))
+    db.session.commit()
+    flash('✅ تم إضافة تعليقك.', 'success')
+    return redirect(url_for('haraj.listing_detail', public_id=public_id) + '#comments')
+
+
+# ============================================================
+# حذف تعليق (صاحبه فقط أو الأدمن)
+# ============================================================
+@haraj_bp.route('/comment/<int:comment_id>/delete', methods=['POST'])
+@login_required
+def delete_comment(comment_id):
+    comment = ListingComment.query.get_or_404(comment_id)
+    listing = comment.listing
+    if comment.author_id != current_user.id and not getattr(current_user, 'is_admin', False):
+        abort(403)
+    comment.is_deleted = True
+    db.session.commit()
+    flash('تم حذف التعليق.', 'success')
+    return redirect(url_for('haraj.listing_detail', public_id=listing.public_id) + '#comments')

@@ -143,6 +143,92 @@
             {% endif %}
         </div>
     </div>
+
+    <div id="comments" class="haraj-comments">
+        <h2 class="haraj-comments__title">
+            <i class="fas fa-comments"></i> التعليقات ({{ comments|length if comments else 0 }})
+        </h2>
+
+        {% if current_user.is_authenticated %}
+        <form method="POST" action="{{ url_for('haraj.add_comment', public_id=listing.public_id) }}" class="haraj-comment-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea name="content" placeholder="اكتب تعليقًا أو اسأل البائع..." rows="2" maxlength="1000" class="haraj-comment-input" required></textarea>
+            <button type="submit" class="haraj-comment-submit">
+                <i class="fas fa-paper-plane"></i> إرسال
+            </button>
+        </form>
+        {% else %}
+        <div class="haraj-comments__guest">
+            <i class="fas fa-lock"></i>
+            <p>سجّل دخولك للتعليق على هذا الإعلان</p>
+            <a href="{{ url_for('auth.login', next=request.path) }}" class="haraj-action-btn haraj-action-btn--primary">
+                <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+            </a>
+        </div>
+        {% endif %}
+
+        {% if comments %}
+        <div class="haraj-comment-list">
+            {% for c in comments %}
+            <div class="haraj-comment">
+                <img src="{{ avatar_url(c.author) }}" alt="" class="haraj-comment__avatar">
+                <div class="haraj-comment__body">
+                    <div class="haraj-comment__head">
+                        <a href="{{ url_for('users.profile', username=c.author.username) }}" class="haraj-comment__author">
+                            {{ c.author.name or c.author.username }}
+                            {% if c.author.is_verified %}<i class="fas fa-check-circle" style="color:#003AAB;"></i>{% endif %}
+                        </a>
+                        <span class="haraj-comment__time">{{ c.created_at.strftime('%m/%d %H:%M') }}</span>
+                    </div>
+                    <div class="haraj-comment__text">{{ c.content }}</div>
+                    <div class="haraj-comment__actions">
+                        {% if current_user.is_authenticated %}
+                        <button type="button" class="haraj-comment__reply" onclick="document.getElementById('replyBox{{ c.id }}').style.display='block'; this.style.display='none';">رد</button>
+                        {% endif %}
+                        {% if c.author_id == current_user.id or current_user.is_admin %}
+                        <form method="POST" action="{{ url_for('haraj.delete_comment', comment_id=c.id) }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="haraj-comment__delete" onclick="return confirm('حذف التعليق؟')">حذف</button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    {% if current_user.is_authenticated %}
+                    <form method="POST" action="{{ url_for('haraj.add_comment', public_id=listing.public_id) }}" class="haraj-reply-form" id="replyBox{{ c.id }}" style="display:none;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="parent_id" value="{{ c.id }}">
+                        <textarea name="content" placeholder="اكتب ردك..." rows="2" maxlength="1000" required></textarea>
+                        <button type="submit">إرسال</button>
+                    </form>
+                    {% endif %}
+
+                    {% set replies = c.replies.filter_by(is_deleted=False).order_by('created_at').all() %}
+                    {% if replies %}
+                    <div class="haraj-replies">
+                        {% for r in replies %}
+                        <div class="haraj-comment haraj-comment--reply">
+                            <img src="{{ avatar_url(r.author) }}" alt="" class="haraj-comment__avatar">
+                            <div class="haraj-comment__body">
+                                <div class="haraj-comment__head">
+                                    <a href="{{ url_for('users.profile', username=r.author.username) }}" class="haraj-comment__author">
+                                        {{ r.author.name or r.author.username }}
+                                    </a>
+                                    <span class="haraj-comment__time">{{ r.created_at.strftime('%m/%d %H:%M') }}</span>
+                                </div>
+                                <div class="haraj-comment__text">{{ r.content }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="haraj-comments__empty">لا توجد تعليقات بعد. كن أول من يعلّق.</p>
+        {% endif %}
+    </div>
 </div>
 <script>
 function toggleHarajReaction(btn) {

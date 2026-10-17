@@ -38,3 +38,4 @@ from .haraj_message import HarajMessage
 from .listing_report import ListingReport
 from .listing_reaction import ListingReaction
 from .listing_comment import ListingComment
+from .seller_rating import SellerRating, seller_rating_stats

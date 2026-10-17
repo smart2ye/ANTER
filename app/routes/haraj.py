@@ -18,6 +18,7 @@ from app.models.listing import (
 from app.models.haraj_message import HarajMessage
 from app.models.listing_reaction import ListingReaction
 from app.models.listing_comment import ListingComment
+from app.models.seller_rating import SellerRating, seller_rating_stats
 from app.forms.haraj import ListingForm
 from app.constants.saudi_locations import (
     SAUDI_REGIONS, all_regions, cities_for_region, region_of_city,
@@ -153,6 +154,18 @@ def listing_detail(public_id):
                 .filter_by(listing_id=listing.id, parent_id=None, is_deleted=False)
                 .order_by(ListingComment.created_at.desc()).all())
 
+    # إحصاءات تقييم البائع
+    seller_avg, seller_count = seller_rating_stats(listing.user_id)
+
+    # هل قيّم المستخدم الحالي هذا الإعلان؟
+    user_rated = False
+    can_rate = False
+    if current_user.is_authenticated and not is_owner and listing.status == 'sold':
+        user_rated = SellerRating.query.filter_by(
+            listing_id=listing.id, rater_id=current_user.id,
+        ).first() is not None
+        can_rate = not user_rated
+
     return render_template(
         'haraj/listing.html',
         listing=listing,
@@ -166,6 +179,10 @@ def listing_detail(public_id):
         user_liked=user_liked,
         user_saved=user_saved,
         comments=comments,
+        seller_avg=seller_avg,
+        seller_count=seller_count,
+        user_rated=user_rated,
+        can_rate=can_rate,
     )
 
 
@@ -642,3 +659,52 @@ def delete_comment(comment_id):
     db.session.commit()
     flash('تم حذف التعليق.', 'success')
     return redirect(url_for('haraj.listing_detail', public_id=listing.public_id) + '#comments')
+
+
+
+# ============================================================
+# تقييم البائع (بعد البيع)
+# ============================================================
+@haraj_bp.route('/listing/<public_id>/rate', methods=['POST'])
+@login_required
+def rate_seller(public_id):
+    listing = Listing.query.filter_by(public_id=public_id).first_or_404()
+
+    # لا يمكن تقييم إعلانك
+    if listing.user_id == current_user.id:
+        flash('لا يمكنك تقييم نفسك.', 'info')
+        return redirect(url_for('haraj.listing_detail', public_id=public_id))
+
+    # لا تقييم إلا بعد البيع
+    if listing.status != 'sold':
+        flash('يمكن التقييم بعد إتمام البيع فقط.', 'info')
+        return redirect(url_for('haraj.listing_detail', public_id=public_id))
+
+    # تقييم واحد فقط لكل مستخدم
+    existing = SellerRating.query.filter_by(
+        listing_id=listing.id, rater_id=current_user.id,
+    ).first()
+    if existing:
+        flash('لقد قمت بتقييم هذا البائع مسبقًا.', 'info')
+        return redirect(url_for('haraj.listing_detail', public_id=public_id))
+
+    try:
+        rating = int(request.form.get('rating', 0))
+    except (ValueError, TypeError):
+        rating = 0
+    if not 1 <= rating <= 5:
+        flash('اختر تقييمًا من 1 إلى 5.', 'danger')
+        return redirect(url_for('haraj.listing_detail', public_id=public_id))
+
+    comment = (request.form.get('comment') or '').strip()[:1000] or None
+
+    db.session.add(SellerRating(
+        listing_id=listing.id,
+        rater_id=current_user.id,
+        seller_id=listing.user_id,
+        rating=rating,
+        comment=comment,
+    ))
+    db.session.commit()
+    flash('✅ تم حفظ تقييمك. شكرًا لك.', 'success')
+    return redirect(url_for('haraj.listing_detail', public_id=public_id))

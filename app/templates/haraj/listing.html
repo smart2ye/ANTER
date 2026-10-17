@@ -1,5 +1,21 @@
 {% extends "base.html" %}
-{% block page_title %}{{ listing.title }} — حراج أنتر{% endblock %}
+{% block page_title %}{{ listing.title }} — حراج أنتر<script>
+function selectRating(value) {
+    document.getElementById('ratingValue').value = value;
+    var stars = document.querySelectorAll('#ratingStars .haraj-star');
+    stars.forEach(function(s, i) {
+        var icon = s.querySelector('i');
+        if (i < value) {
+            icon.className = 'fas fa-star';
+            s.classList.add('is-active');
+        } else {
+            icon.className = 'far fa-star';
+            s.classList.remove('is-active');
+        }
+    });
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="haraj-container">
@@ -92,7 +108,39 @@
                 <a href="{{ url_for('users.profile', username=listing.seller.username) }}" class="haraj-seller-link">
                     <i class="fas fa-user"></i> {{ listing.seller.name or listing.seller.username }}
                 </a>
+                {% if seller_count > 0 %}
+                <span class="haraj-seller-rating" title="{{ seller_avg }} من 5 نجوم">
+                    ⭐ {{ seller_avg }} ({{ seller_count }} تقييم)
+                </span>
+                {% else %}
+                <span class="haraj-seller-rating haraj-seller-rating--empty">
+                    لا توجد تقييمات بعد
+                </span>
+                {% endif %}
             </div>
+
+            {% if can_rate %}
+            <div class="haraj-rating-box">
+                <h3><i class="fas fa-star"></i> قيّم البائع</h3>
+                <form method="POST" action="{{ url_for('haraj.rate_seller', public_id=listing.public_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="haraj-stars" id="ratingStars">
+                        {% for i in range(1, 6) %}
+                        <button type="button" class="haraj-star" data-value="{{ i }}" onclick="selectRating({{ i }})">
+                            <i class="far fa-star"></i>
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="rating" id="ratingValue" value="0" required>
+                    <textarea name="comment" placeholder="اكتب ملاحظاتك عن تجربتك مع البائع (اختياري)..." rows="2" maxlength="1000" class="haraj-comment-input" style="margin-top:10px;"></textarea>
+                    <button type="submit" class="haraj-action-btn haraj-action-btn--primary" style="margin-top:10px;">إرسال التقييم</button>
+                </form>
+            </div>
+            {% elif user_rated %}
+            <div class="haraj-rating-done">
+                ✅ لقد قيّمت هذا البائع — شكرًا لك.
+            </div>
+            {% endif %}
 
             {% if listing.status == 'active' %}
                 {% if current_user.is_authenticated %}

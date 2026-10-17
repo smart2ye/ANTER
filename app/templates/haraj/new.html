@@ -82,6 +82,26 @@
                 {% endif %}
             </div>
 
+            <div class="haraj-warning-box">
+                <strong>⚠️ تنبيهات مهمة قبل النشر</strong>
+                <ul>
+                    <li>أنت <strong>المسؤول الوحيد</strong> عن صحة إعلانك (السعر، الحالة، الوصف، الصور).</li>
+                    <li>يُمنع نشر إعلانات مزيّفة أو مكررة أو مضللة.</li>
+                    <li>يُمنع نشر سلع محرّمة شرعًا أو قانونًا.</li>
+                    <li>حراج أنتر <strong>لا يتدخل</strong> في الدفع أو التسليم ولا يضمن جودة السلعة.</li>
+                    <li>أي احتيال أو نزاع = مسؤوليتك القانونية وحدك.</li>
+                </ul>
+                <p style="margin:8px 0 0;">
+                    <a href="{{ url_for('haraj.terms') }}" target="_blank" style="color:#92400e;text-decoration:underline;font-weight:700;">
+                        اقرأ الشروط وبراءة الذمة كاملة →
+                    </a>
+                </p>
+                <label class="haraj-pledge-checkbox" style="margin-top:12px;padding-top:12px;border-top:1px dashed #fbbf24;">
+                    <input type="checkbox" name="terms_accepted" required>
+                    <span>أقرّ بأنني قرأت التحذيرات وأتحمل كامل المسؤولية عن إعلاني</span>
+                </label>
+            </div>
+
             <div class="haraj-pledge-box">
                 <div class="haraj-pledge-text">
                     <strong>🤝 تعهد بالدفع</strong>

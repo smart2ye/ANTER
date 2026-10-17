@@ -119,6 +119,25 @@ function selectRating(value) {
                 {% endif %}
             </div>
 
+            <div class="haraj-safety-notice">
+                <strong>🛡️ تنبيه أمني</strong>
+                <p>
+                    حراج أنتر منصة إعلانات فقط. <strong>لا نتحقق</strong> من صحة السلعة أو السعر،
+                    ولا نتدخل في الدفع أو التسليم.
+                </p>
+                <ul>
+                    <li>افحص السلعة شخصيًا قبل الدفع.</li>
+                    <li>لا تحوّل أي مبلغ مسبقًا.</li>
+                    <li>لا تشارك بياناتك البنكية أو رموز التحقق.</li>
+                    <li>أبلغ عن أي إعلان مشبوه.</li>
+                </ul>
+                <p style="margin:6px 0 0;">
+                    <a href="{{ url_for('haraj.terms') }}" target="_blank" style="color:#92400e;text-decoration:underline;font-weight:700;">
+                        اقرأ الشروط وبراءة الذمة →
+                    </a>
+                </p>
+            </div>
+
             {% if can_rate %}
             <div class="haraj-rating-box">
                 <h3><i class="fas fa-star"></i> قيّم البائع</h3>

@@ -233,6 +233,15 @@ def new_listing():
                 saudi_regions=SAUDI_REGIONS,
             )
 
+        if not request.form.get('terms_accepted'):
+            flash('يجب الموافقة على التحذيرات وبراءة الذمة.', 'danger')
+            return render_template(
+                'haraj/new.html', form=form,
+                categories=LISTING_CATEGORIES, types=LISTING_TYPES,
+                conditions=LISTING_CONDITIONS, regions=all_regions(),
+                saudi_regions=SAUDI_REGIONS,
+            )
+
         if not form.pledge_accepted.data:
             flash('يجب الموافقة على التعهد بدفع 1% للنشر.', 'danger')
             return render_template(
@@ -780,3 +789,12 @@ def seller_profile(username):
         ratings=ratings,
         distribution=distribution,
     )
+
+
+
+# ============================================================
+# الشروط وبراءة الذمة
+# ============================================================
+@haraj_bp.route('/terms')
+def terms():
+    return render_template('haraj/terms.html')

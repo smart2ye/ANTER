@@ -10519,3 +10519,114 @@ a.anter-profile-stat:hover {
     font-size: 0.9rem;
     white-space: pre-wrap;
 }
+
+
+/* صناديق التحذير */
+.haraj-warning-box {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin: 20px 0;
+    color: #78350f;
+}
+.haraj-warning-box strong {
+    display: block;
+    color: #92400e;
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+}
+.haraj-warning-box ul {
+    margin: 0;
+    padding-right: 20px;
+}
+.haraj-warning-box ul li {
+    margin-bottom: 6px;
+    line-height: 1.6;
+    font-size: 0.92rem;
+}
+
+.haraj-safety-notice {
+    background: #fef3c7;
+    border-right: 4px solid #f59e0b;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 16px 0;
+    color: #78350f;
+}
+.haraj-safety-notice strong {
+    display: block;
+    color: #92400e;
+    font-size: 1rem;
+    margin-bottom: 6px;
+}
+.haraj-safety-notice p {
+    margin: 0 0 8px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+.haraj-safety-notice ul {
+    margin: 0 0 8px;
+    padding-right: 18px;
+    font-size: 0.88rem;
+    line-height: 1.7;
+}
+
+/* الصفحة الكبيرة (terms) */
+.haraj-warning-big {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    border-radius: 14px;
+    padding: 20px;
+    margin: 20px 0;
+}
+.haraj-warning-big strong {
+    display: block;
+    color: #92400e;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+.haraj-warning-big p,
+.haraj-warning-big ul {
+    margin: 0;
+    color: #78350f;
+    line-height: 1.7;
+}
+.haraj-warning-big ul { padding-right: 20px; }
+
+.haraj-form-card h2 {
+    color: #031E64;
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin: 24px 0 10px;
+    padding-top: 16px;
+    border-top: 1px solid #f3f4f6;
+}
+.haraj-form-card h2:first-of-type { border-top: 0; padding-top: 0; }
+.haraj-form-card p,
+.haraj-form-card ul {
+    color: #374151;
+    line-height: 1.8;
+    font-size: 0.95rem;
+}
+.haraj-form-card ul {
+    padding-right: 22px;
+    margin: 8px 0 12px;
+}
+.haraj-form-card ul li { margin-bottom: 6px; }
+
+
+.haraj-footer {
+    text-align: center;
+    padding: 20px 0 40px;
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+.haraj-footer i { color: #f59e0b; }
+.haraj-footer a {
+    color: #003AAB;
+    text-decoration: underline;
+    font-weight: 700;
+    margin-right: 4px;
+}
+.haraj-footer a:hover { color: #00C8F8; }

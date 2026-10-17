@@ -32,7 +32,7 @@ class ListingComment(db.Model):
     listing = db.relationship('Listing', foreign_keys=[listing_id])
     parent = db.relationship(
         'ListingComment', remote_side=[id], foreign_keys=[parent_id],
-        backref=db.backref('replies', cascade='all, delete-orphan'),
+        backref=db.backref('replies', cascade='all, delete-orphan', lazy='dynamic'),
     )
 
     def __repr__(self):

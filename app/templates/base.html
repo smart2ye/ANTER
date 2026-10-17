@@ -215,10 +215,10 @@
             <a href="{{ url_for('explore.explore') }}" class="text-center nav-link {% if request.endpoint == 'explore.explore' %}active{% endif %}">
                 <i class="fas fa-search fa-lg"></i>
                 <span>استكشاف</span>
-            <a href="{{ url_for('trends.index') }}" class="text-center nav-link {% if request.endpoint == 'trends.index' %}active{% endif %}">
-                <i class="fas fa-fire fa-lg"></i>
-                <span>تريندات</span>
             </a>
+            <a href="{{ url_for('haraj.index') }}" class="text-center nav-link {% if request.endpoint and request.endpoint.startswith('haraj.') %}active{% endif %}">
+                <i class="fas fa-store fa-lg"></i>
+                <span>حراج</span>
             </a>
             <a href="{{ url_for('notifications.index') }}" class="text-center nav-link position-relative {% if request.endpoint == 'notifications.index' %}active{% endif %}">
                 <i class="fas fa-bell fa-lg"></i>

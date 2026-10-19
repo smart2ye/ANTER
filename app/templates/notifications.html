@@ -72,6 +72,10 @@
                 {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
             {% elif notif.action in ['mention_all_post', 'mention_all_comment'] and notif.post %}
                 {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
+            {% elif notif.action == 'haraj_message' %}
+                {% set link = url_for('haraj.messages') %}
+            {% elif notif.action in ['haraj_comment', 'haraj_rating'] %}
+                {% set link = url_for('haraj.messages') %}
             {% endif %}
 
             {# تحديد الفئة #}
@@ -124,6 +128,9 @@
                             {% elif notif.action == 'mention' %}anter-notif-icon--comment
                             {% elif notif.action in ['mention_post', 'mention_group_post', 'mention_comment', 'mention_group_comment'] %}anter-notif-icon--comment
                             {% elif notif.action in ['mention_all_post', 'mention_all_comment'] %}anter-notif-icon--verified
+                            {% elif notif.action == 'haraj_message' %}anter-notif-icon--message
+                            {% elif notif.action == 'haraj_comment' %}anter-notif-icon--comment
+                            {% elif notif.action == 'haraj_rating' %}anter-notif-icon--verified
                             {% elif notif.action == 'repost' %}anter-notif-icon--reply
                             {% elif notif.action == 'verification_approved' %}anter-notif-icon--verified
                             {% elif notif.action == 'terms_update' %}anter-notif-icon--verified
@@ -139,6 +146,9 @@
                                 {% elif notif.action in ['mention_post', 'mention_comment'] %}fa-at
                                 {% elif notif.action in ['mention_group_post', 'mention_group_comment'] %}fa-users
                                 {% elif notif.action in ['mention_all_post', 'mention_all_comment'] %}fa-bullhorn
+                                {% elif notif.action == 'haraj_message' %}fa-tag
+                                {% elif notif.action == 'haraj_comment' %}fa-comment
+                                {% elif notif.action == 'haraj_rating' %}fa-star
                                 {% elif notif.action == 'founder_post' %}fa-bullhorn
                                 {% elif notif.action == 'early_member' %}fa-star
                                 {% elif notif.action == 'early_member_revoked' %}fa-star-half-alt
@@ -202,6 +212,9 @@
                                 {% elif notif.action == 'mention_group_comment' %}ذكر متابعيه في تعليق
                                 {% elif notif.action == 'mention_all_post' %}وجه رسالة للجميع في منشور
                                 {% elif notif.action == 'mention_all_comment' %}وجه رسالة للجميع في تعليق
+                                {% elif notif.action == 'haraj_message' %}أرسل لك رسالة في الحراج
+                                {% elif notif.action == 'haraj_comment' %}علّق على إعلانك في الحراج
+                                {% elif notif.action == 'haraj_rating' %}قيّمك في الحراج
                                 {% elif notif.action == 'repost' %}أعاد نشر منشورك
                                 {% elif notif.action == 'verification_approved' %}تم توثيق حسابك ✓
                                 {% elif notif.action == 'verification_rejected' %}لم يُقبل طلب التوثيق

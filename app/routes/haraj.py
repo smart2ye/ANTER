@@ -19,6 +19,7 @@ from app.models.haraj_message import HarajMessage
 from app.models.listing_reaction import ListingReaction
 from app.models.listing_comment import ListingComment
 from app.models.seller_rating import SellerRating, seller_rating_stats
+from app.models.notification import Notification
 from app.forms.haraj import ListingForm
 from app.constants.saudi_locations import (
     SAUDI_REGIONS, all_regions, cities_for_region, region_of_city,
@@ -532,6 +533,16 @@ def chat(listing_public_id, other_username):
                 receiver_id=other.id,
                 content=content,
             ))
+            # إشعار المستلم
+            try:
+                db.session.add(Notification(
+                    user_id=other.id,
+                    actor_id=current_user.id,
+                    action='haraj_message',
+                    extra_text=f'رسالة جديدة بخصوص «{listing.title[:60]}»',
+                ))
+            except Exception:
+                pass
             db.session.commit()
         return redirect(url_for(
             'haraj.chat',
@@ -649,6 +660,29 @@ def add_comment(public_id):
         parent_id=parent_id,
         content=content,
     ))
+
+    # إشعار صاحب الإعلان (إن لم يكن هو المعلّق)
+    try:
+        if listing.user_id != current_user.id:
+            db.session.add(Notification(
+                user_id=listing.user_id,
+                actor_id=current_user.id,
+                action='haraj_comment',
+                extra_text=f'علّق على إعلانك «{listing.title[:60]}»',
+            ))
+        # إشعار صاحب التعليق الأصلي (في حالة الرد)
+        if parent_id:
+            parent_c = ListingComment.query.get(parent_id)
+            if parent_c and parent_c.author_id not in (current_user.id, listing.user_id):
+                db.session.add(Notification(
+                    user_id=parent_c.author_id,
+                    actor_id=current_user.id,
+                    action='haraj_comment',
+                    extra_text=f'ردّ على تعليقك في «{listing.title[:60]}»',
+                ))
+    except Exception:
+        pass
+
     db.session.commit()
     flash('✅ تم إضافة تعليقك.', 'success')
     return redirect(url_for('haraj.listing_detail', public_id=public_id) + '#comments')
@@ -714,6 +748,17 @@ def rate_seller(public_id):
         rating=rating,
         comment=comment,
     ))
+    # إشعار البائع
+    try:
+        stars = '⭐' * rating
+        db.session.add(Notification(
+            user_id=listing.user_id,
+            actor_id=current_user.id,
+            action='haraj_rating',
+            extra_text=f'قيّمك {stars} ({rating}/5) على «{listing.title[:50]}»',
+        ))
+    except Exception:
+        pass
     db.session.commit()
     flash('✅ تم حفظ تقييمك. شكرًا لك.', 'success')
     return redirect(url_for('haraj.listing_detail', public_id=public_id))

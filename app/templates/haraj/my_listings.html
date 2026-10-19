@@ -72,7 +72,7 @@
                     <form method="POST" action="{{ url_for('haraj.renew_listing', public_id=listing.public_id) }}" style="display:inline;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="haraj-my-btn haraj-my-btn--renew" title="تجديد 30 يومًا">
-                            <i class="fas fa-redo"></i>
+                            <i class="fas fa-clock-rotate-left"></i>
                         </button>
                     </form>
                     {% endif %}

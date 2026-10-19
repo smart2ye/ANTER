@@ -40,6 +40,14 @@ function toggleHarajReaction(btn) {
             <a href="{{ url_for('haraj.new_listing') }}" class="haraj-publish-btn">
                 <i class="fas fa-plus-circle"></i> انشر إعلانًا
             </a>
+            <a href="{{ url_for('haraj.messages') }}" class="haraj-settings-link" title="رسائل الحراج" style="position:relative;">
+                <i class="fas fa-envelope"></i>
+                <span id="haraj-msg-count" class="haraj-inline-badge" style="display:none;">0</span>
+            </a>
+            <a href="{{ url_for('haraj.notifications') }}" class="haraj-settings-link" title="إشعارات الحراج" style="position:relative;">
+                <i class="fas fa-bell"></i>
+                <span id="haraj-notif-count" class="haraj-inline-badge" style="display:none;">0</span>
+            </a>
             <a href="{{ url_for('haraj.settings') }}" class="haraj-settings-link" title="إعدادات الحراج">
                 <i class="fas fa-cog"></i>
             </a>

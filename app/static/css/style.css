@@ -10630,3 +10630,93 @@ a.anter-profile-stat:hover {
     margin-right: 4px;
 }
 .haraj-footer a:hover { color: #00C8F8; }
+
+
+/* شارات inline داخل صفحة الحراج */
+.haraj-inline-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 999px;
+    min-width: 16px;
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* صفحة إشعارات الحراج */
+.haraj-notif-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.haraj-notif-head .haraj-form-title { margin: 0; }
+.haraj-notif-markread {
+    background: #003AAB;
+    color: #fff;
+    border: 0;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.haraj-notif-markread:hover { background: #031E64; }
+
+.haraj-notif-list { display: flex; flex-direction: column; gap: 8px; }
+.haraj-notif-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    transition: background 0.15s;
+}
+.haraj-notif-item:hover { background: #f3f4f6; color: inherit; }
+.haraj-notif-item.is-unread {
+    background: #eff6ff;
+    border-right: 3px solid #003AAB;
+}
+.haraj-notif-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.haraj-notif-body { flex: 1; min-width: 0; }
+.haraj-notif-title {
+    font-size: 0.92rem;
+    color: #031E64;
+    margin-bottom: 3px;
+}
+.haraj-notif-title strong { font-weight: 800; }
+.haraj-notif-text {
+    font-size: 0.85rem;
+    color: #4b5563;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.haraj-notif-time {
+    font-size: 0.72rem;
+    color: #9ca3af;
+}
+.haraj-notif-dot {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    width: 8px; height: 8px;
+    background: #003AAB;
+    border-radius: 50%;
+}

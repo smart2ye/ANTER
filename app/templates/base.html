@@ -324,8 +324,8 @@
                 previousNotifCount = data.count;
             }).catch(() => {});
 
-            // تحديث عداد رسائل الحراج
-            fetch('/haraj/messages/unread_count', {
+            // تحديث عداد الحراج الموحّد (رسائل + إشعارات)
+            fetch('/haraj/unread_total', {
                 headers: {'Accept': 'application/json'},
                 credentials: 'same-origin',
                 cache: 'no-store'
@@ -336,6 +336,16 @@
                 if (hbadge) {
                     hbadge.textContent = data.count;
                     hbadge.style.display = data.count > 0 ? 'block' : 'none';
+                }
+                var m = document.getElementById('haraj-msg-count');
+                if (m) {
+                    m.textContent = data.messages;
+                    m.style.display = data.messages > 0 ? 'block' : 'none';
+                }
+                var n = document.getElementById('haraj-notif-count');
+                if (n) {
+                    n.textContent = data.notifications;
+                    n.style.display = data.notifications > 0 ? 'block' : 'none';
                 }
             }).catch(() => {});
 

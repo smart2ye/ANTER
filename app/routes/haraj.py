@@ -843,3 +843,71 @@ def seller_profile(username):
 @haraj_bp.route('/terms')
 def terms():
     return render_template('haraj/terms.html')
+
+
+
+# ============================================================
+# إشعارات الحراج فقط
+# ============================================================
+HARAJ_ACTIONS = ['haraj_message', 'haraj_comment', 'haraj_rating']
+
+
+@haraj_bp.route('/notifications')
+@login_required
+def notifications():
+    notifs = (Notification.query
+              .filter(
+                  Notification.user_id == current_user.id,
+                  Notification.action.in_(HARAJ_ACTIONS),
+              )
+              .order_by(Notification.created_at.desc())
+              .limit(200).all())
+
+    unread = sum(1 for n in notifs if not n.is_read)
+
+    return render_template(
+        'haraj/notifications.html',
+        notifications=notifs,
+        unread_count=unread,
+    )
+
+
+@haraj_bp.route('/notifications/mark_all_read', methods=['POST'])
+@login_required
+def notifications_mark_all_read():
+    from flask import jsonify
+    Notification.query.filter(
+        Notification.user_id == current_user.id,
+        Notification.action.in_(HARAJ_ACTIONS),
+        Notification.is_read.is_(False),
+    ).update({'is_read': True}, synchronize_session=False)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@haraj_bp.route('/notifications/unread_count')
+@login_required
+def notifications_unread_count():
+    from flask import jsonify
+    n = Notification.query.filter(
+        Notification.user_id == current_user.id,
+        Notification.action.in_(HARAJ_ACTIONS),
+        Notification.is_read.is_(False),
+    ).count()
+    return jsonify({'count': n})
+
+
+@haraj_bp.route('/unread_total')
+@login_required
+def unread_total():
+    """مجموع (رسائل الحراج + إشعارات الحراج) — للـ badge الموحّد."""
+    from flask import jsonify
+    msg_n = HarajMessage.query.filter_by(
+        receiver_id=current_user.id, is_read=False,
+    ).count()
+    notif_n = Notification.query.filter(
+        Notification.user_id == current_user.id,
+        Notification.action.in_(HARAJ_ACTIONS),
+        Notification.is_read.is_(False),
+    ).count()
+    return jsonify({'count': msg_n + notif_n, 'messages': msg_n, 'notifications': notif_n})

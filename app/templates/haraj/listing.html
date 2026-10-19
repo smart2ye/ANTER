@@ -1,5 +1,29 @@
 {% extends "base.html" %}
-{% block page_title %}{{ listing.title }} — حراج أنتر{% endblock %}
+{% set _listing_url = url_for('haraj.listing_detail', public_id=listing.public_id, _external=True) %}
+{% set _listing_img = url_for('haraj.listing_image', image_id=listing.primary_image().id, _external=True) if listing.primary_image() else url_for('static', filename='img/logo-og.png', _external=True) %}
+{% set _price_text = 'السعر: {:,} ريال'.format(listing.price) if listing.price else 'السعر عند التواصل' %}
+{% set _cat_label = categories.get(listing.category, '') %}
+{% set _type_label = types.get(listing.listing_type, '') %}
+{% set _cond_label = conditions.get(listing.condition, '') %}
+
+{% block page_title %}{{ listing.title }} — {{ _price_text }} — حراج أنتر{% endblock %}
+
+{% block meta_description %}{{ listing.title }} — {{ _type_label }} {{ _cat_label }} {{ _cond_label }} في {{ listing.city }}، {{ listing.region }}. {{ _price_text }}. {{ listing.description[:120] if listing.description else '' }}...{% endblock %}
+
+{% block meta_keywords %}{{ listing.title }}, {{ _cat_label }}, {{ _type_label }}, {{ _cond_label }}, {{ listing.city }}, {{ listing.region }}, حراج أنتر, أثاث مستعمل, أجهزة منزلية, محلات شراء اثاث مستعمل, مكيفات مستعمله, غسالات, غرف النوم, مطابخ{% endblock %}
+
+{% block canonical %}<link rel="canonical" href="{{ _listing_url }}">{% endblock %}
+
+{% block og_type %}product{% endblock %}
+{% block og_url %}{{ _listing_url }}{% endblock %}
+{% block og_title %}{{ listing.title }} — {{ _price_text }}{% endblock %}
+{% block og_description %}{{ _cat_label }} {{ _cond_label }} في {{ listing.city }} — {{ _price_text }}. تواصل مع البائع مباشرة عبر حراج أنتر.{% endblock %}
+{% block og_image %}{{ _listing_img }}{% endblock %}
+
+{% block twitter_url %}{{ _listing_url }}{% endblock %}
+{% block twitter_title %}{{ listing.title }} — {{ _price_text }}{% endblock %}
+{% block twitter_description %}{{ _cat_label }} {{ _cond_label }} في {{ listing.city }} — {{ _price_text }}{% endblock %}
+{% block twitter_image %}{{ _listing_img }}{% endblock %}
 
 {% block content %}
 <div class="haraj-container">

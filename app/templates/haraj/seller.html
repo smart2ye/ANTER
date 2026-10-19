@@ -1,6 +1,23 @@
 {% extends "base.html" %}
-{% block page_title %}{{ seller.name or seller.username }} — حراج أنتر{% endblock %}
-{% block meta_description %}إعلانات {{ seller.name or seller.username }} في حراج أنتر{% endblock %}
+{% set _seller_url = url_for('haraj.seller_profile', username=seller.username, _external=True) %}
+{% set _seller_name = seller.name or seller.username %}
+
+{% block page_title %}{{ _seller_name }} — حراج أنتر{% endblock %}
+{% block meta_description %}إعلانات {{ _seller_name }} في حراج أنتر — {{ listings|length }} إعلان نشط{% if seller_count > 0 %}، {{ seller_avg }}/5 نجوم ({{ seller_count }} تقييم){% endif %}.{{ ' أسعار وأثاث مستعمل.' if listings else '' }}{% endblock %}
+{% block meta_keywords %}{{ _seller_name }}, حراج أنتر, {{ seller.username }}, بيع أثاث مستعمل, أجهزة منزلية, {{ listings|length }} إعلان, محلات شراء اثاث مستعمل{% endblock %}
+
+{% block canonical %}<link rel="canonical" href="{{ _seller_url }}">{% endblock %}
+
+{% block og_type %}profile{% endblock %}
+{% block og_url %}{{ _seller_url }}{% endblock %}
+{% block og_title %}{{ _seller_name }} — حراج أنتر{% endblock %}
+{% block og_description %}إعلانات {{ _seller_name }} في حراج أنتر — تواصل مباشر بدون وسيط.{% endblock %}
+{% block og_image %}{{ avatar_url(seller) }}{% endblock %}
+
+{% block twitter_url %}{{ _seller_url }}{% endblock %}
+{% block twitter_title %}{{ _seller_name }} — حراج أنتر{% endblock %}
+{% block twitter_description %}إعلانات {{ _seller_name }} في حراج أنتر{% endblock %}
+{% block twitter_image %}{{ avatar_url(seller) }}{% endblock %}
 
 {% block content %}
 <div class="haraj-container" style="max-width:1080px;">

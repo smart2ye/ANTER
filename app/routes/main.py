@@ -451,6 +451,51 @@ def sitemap():
         {'loc': url_for('videos.reels', _external=True), 'priority': 0.8, 'changefreq': 'always'},
     ]
     
+    # Haraj — الصفحة الرئيسية
+    try:
+        from app.models import Listing
+        pages.append({
+            'loc': url_for('haraj.index', _external=True),
+            'priority': 0.9,
+            'changefreq': 'daily',
+        })
+        pages.append({
+            'loc': url_for('haraj.terms', _external=True),
+            'priority': 0.4,
+            'changefreq': 'monthly',
+        })
+
+        # إعلانات Haraj النشطة (أحدث 500)
+        haraj_listings = (Listing.query
+                          .filter(
+                              Listing.status == 'active',
+                              Listing.expires_at > datetime.utcnow(),
+                          )
+                          .order_by(Listing.created_at.desc())
+                          .limit(500).all())
+        for hl in haraj_listings:
+            pages.append({
+                'loc': url_for('haraj.listing_detail', public_id=hl.public_id, _external=True),
+                'priority': 0.8,
+                'lastmod': (hl.updated_at or hl.created_at or datetime.now()).strftime('%Y-%m-%d'),
+                'changefreq': 'weekly',
+            })
+
+        # ملفات البائعين (أحدث 100)
+        haraj_sellers = (db.session.query(Listing.user_id)
+                         .distinct()
+                         .limit(100).all())
+        for (seller_id,) in haraj_sellers:
+            seller_user = User.query.get(seller_id)
+            if seller_user and not seller_user.is_deleted:
+                pages.append({
+                    'loc': url_for('haraj.seller_profile', username=seller_user.username, _external=True),
+                    'priority': 0.6,
+                    'changefreq': 'weekly',
+                })
+    except Exception:
+        pass
+
     # أرشفة المستخدمين (أحدث 200 مستخدم)
     users = (
         User.query

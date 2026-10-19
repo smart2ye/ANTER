@@ -1,6 +1,22 @@
 {% extends "base.html" %}
-{% block page_title %}حراج أنتر — أثاث وأجهزة منزلية{% endblock %}
-{% block meta_description %}سوق حراج أنتر لبيع وشراء الأثاث والأجهزة المنزلية في السعودية. نشر مجاني، تواصل مباشر.{% endblock %}
+{% block page_title %}حراج أنتر — شراء وبيع الأثاث المستعمل والأجهزة المنزلية في السعودية{% endblock %}
+
+{% block meta_description %}حراج أنتر لبيع وشراء الأثاث المستعمل والأجهزة المنزلية في السعودية. مكيفات، غسالات، ثلاجات، غرف نوم، مطابخ — بأفضل الأسعار في جدة والرياض ومكة. تواصل مباشر مع البائع بدون وسيط.{% endblock %}
+
+{% block meta_keywords %}محلات شراء اثاث مستعمل, افضل محلات شراء الاثاث المستعمل في جدة, ارقام شراء الاثاث المستعمل والأجهزة الكهربائية في جده, مكيفات مستعمله, غسالات, غرف النوم, مطابخ, حراج, حراج أنتر, بيع أثاث مستعمل, شراء أثاث مستعمل, أثاث منزلي, أجهزة منزلية, سوق الأثاث, حراج السعودية{% endblock %}
+
+{% block canonical %}<link rel="canonical" href="{{ url_for('haraj.index', _external=True) }}">{% endblock %}
+
+{% block og_type %}website{% endblock %}
+{% block og_url %}{{ url_for('haraj.index', _external=True) }}{% endblock %}
+{% block og_title %}حراج أنتر — شراء وبيع الأثاث والأجهزة المنزلية{% endblock %}
+{% block og_description %}سوقك الموثوق للأثاث المستعمل والأجهزة المنزلية في السعودية. مكيفات، غسالات، غرف نوم، مطابخ — تواصل مباشر مع البائع.{% endblock %}
+{% block og_image %}{{ url_for('static', filename='img/logo-og.png', _external=True) }}{% endblock %}
+
+{% block twitter_url %}{{ url_for('haraj.index', _external=True) }}{% endblock %}
+{% block twitter_title %}حراج أنتر — سوق الأثاث والأجهزة المنزلية{% endblock %}
+{% block twitter_description %}بيع وشراء الأثاث المستعمل والأجهزة المنزلية في السعودية — مباشرة بدون وسيط.{% endblock %}
+{% block twitter_image %}{{ url_for('static', filename='img/logo-og.png', _external=True) }}{% endblock %}
 
 {% block content %}
 <div class="haraj-container">

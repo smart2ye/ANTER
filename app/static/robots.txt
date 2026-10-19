@@ -17,4 +17,13 @@ Disallow: /api/
 Disallow: /auth/reset_password
 Disallow: /auth/forgot
 
+# حراج — صفحات خاصة لا تُفهرس
+Disallow: /haraj/messages
+Disallow: /haraj/notifications
+Disallow: /haraj/my-listings
+Disallow: /haraj/settings
+Disallow: /haraj/new
+Disallow: /haraj/listing/*/edit
+Disallow: /haraj/listing/*/rate
+
 Sitemap: https://anter-1.onrender.com/sitemap.xml

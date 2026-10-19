@@ -28,6 +28,13 @@ from app.utils.image_storage import prepare_image_data
 
 haraj_bp = Blueprint('haraj', __name__, url_prefix='/haraj')
 
+ASSISTANT_ID = 4  # مساعد أنتر — لا يشارك في الحراج (لا إعلانات ولا مراسلة)
+
+
+def _blocked_haraj_user():
+    """هل المستخدم الحالي هو مساعد أنتر (ممنوع من الحراج)؟"""
+    return current_user.is_authenticated and current_user.id == ASSISTANT_ID
+
 
 # محافظات السعودية (للتوافق مع أي استيراد سابق)
 SAUDI_REGIONS_LIST = all_regions()
@@ -205,6 +212,8 @@ def listing_image(image_id):
 @haraj_bp.route('/new', methods=['GET', 'POST'])
 @login_required
 def new_listing():
+    if _blocked_haraj_user():
+        abort(403)
     form = ListingForm()
 
     if request.method == 'GET':
@@ -449,6 +458,8 @@ def edit_listing(public_id):
 @haraj_bp.route('/listing/<public_id>/contact', methods=['POST'])
 @login_required
 def contact_seller(public_id):
+    if _blocked_haraj_user():
+        abort(403)
     listing = Listing.query.filter_by(public_id=public_id).first_or_404()
     if listing.user_id == current_user.id:
         flash('لا يمكنك مراسلة نفسك.', 'info')
@@ -525,6 +536,8 @@ def chat(listing_public_id, other_username):
         abort(403)
 
     if request.method == 'POST':
+        if _blocked_haraj_user():
+            abort(403)
         content = (request.form.get('content') or '').strip()
         if content and len(content) <= 2000:
             db.session.add(HarajMessage(
@@ -600,6 +613,8 @@ def messages_unread_count():
 @login_required
 def react_listing(public_id):
     from flask import jsonify
+    if _blocked_haraj_user():
+        return jsonify({'ok': False, 'error': 'غير مسموح'}), 403
     listing = Listing.query.filter_by(public_id=public_id).first_or_404()
     reaction_type = (request.form.get('type') or '').strip().lower()
 
@@ -639,6 +654,8 @@ def react_listing(public_id):
 @haraj_bp.route('/listing/<public_id>/comment', methods=['POST'])
 @login_required
 def add_comment(public_id):
+    if _blocked_haraj_user():
+        abort(403)
     listing = Listing.query.filter_by(public_id=public_id).first_or_404()
 
     content = (request.form.get('content') or '').strip()
@@ -714,6 +731,8 @@ def delete_comment(comment_id):
 @haraj_bp.route('/listing/<public_id>/rate', methods=['POST'])
 @login_required
 def rate_seller(public_id):
+    if _blocked_haraj_user():
+        abort(403)
     listing = Listing.query.filter_by(public_id=public_id).first_or_404()
 
     # لا يمكن تقييم إعلانك

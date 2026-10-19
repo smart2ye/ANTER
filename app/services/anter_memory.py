@@ -17,6 +17,33 @@ from app.models import AssistantMemory, User
 
 MAX_CONTEXT_ITEMS = 24
 MAX_CONTEXT_CHARS = 800
+
+# ANTER: رسائل النظام الإدارية — لا تُمرَّر إلى المساعد
+# (بلاغات، طلبات مساعدة، طلبات إعادة تعيين، طلبات توثيق)
+SYSTEM_MESSAGE_PREFIXES = (
+    'بلاغ جديد رقم',
+    'طلب مساعدة',
+    'طلب إعادة تعيين',
+    'طلب تأكيد البريد',
+    'طلب توثيق',
+    'user-report:',
+    'verification:',
+    'support:',
+    'password-reset',
+    'تحديث جديد لتطبيق ANTER',
+    'تم استلام بلاغك',
+    'شكراً لك — تم اتخاذ إجراء بشأن بلاغك',
+)
+
+
+def _is_system_message(text: str) -> bool:
+    """هل هذه رسالة نظام إدارية؟"""
+    if not text:
+        return False
+    stripped = text.strip()
+    return any(stripped.startswith(p) for p in SYSTEM_MESSAGE_PREFIXES)
+
+
 MAX_PREFERENCE_ITEMS = 6
 MAX_PREFERENCE_CHARS = 180
 
@@ -205,6 +232,9 @@ def conversation_for_ai(
         role = item.get("role")
         text = _clean_text(item.get("text"), MAX_CONTEXT_CHARS)
         if role not in {"user", "assistant"} or not text:
+            continue
+        # ANTER: تجاهل رسائل النظام الإدارية (بلاغات، طلبات) — ليست حواراً.
+        if _is_system_message(text):
             continue
         # تجاهل الرسائل القصيرة جدًا (حرف أو رمز) لأنها تشوّش السياق.
         if len(text.strip()) < 3:

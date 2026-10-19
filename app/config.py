@@ -179,7 +179,7 @@ class Config:
         'ANTER_ASSISTANT_MINI_LLM_ARABIC_TIMEOUT_SECONDS', 40.0, 5.0, 60.0
     )
     ANTER_ASSISTANT_MINI_LLM_ARABIC_MAX_TOKENS = env_int(
-        'ANTER_ASSISTANT_MINI_LLM_ARABIC_MAX_TOKENS', 420, 120
+        'ANTER_ASSISTANT_MINI_LLM_ARABIC_MAX_TOKENS', 800, 120
     )
 
     # تفويض Messenger عبر متصفح ANTER: لا تصل كلمة المرور إلى التطبيق.

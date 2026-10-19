@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}تأكيد الجوال - ANTER{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-7 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-md-5 text-center">
+
+                    <div class="mb-4">
+                        <i class="fas fa-mobile-alt text-primary"
+                           style="font-size: 3rem;"></i>
+                    </div>
+
+                    <h2 class="fw-bold mb-3">تأكيد جوالك</h2>
+
+                    <p class="text-muted mb-3">
+                        أنت على وشك تأكيد رقم الجوال المرتبط بحسابك في ANTER.
+                    </p>
+
+                    <div class="bg-light rounded-3 p-3 mb-4" dir="ltr">
+                        <strong>{{ verification_phone }}</strong>
+                    </div>
+
+                    <form method="POST"
+                          action="{{ url_for('users.confirm_phone', token=verification_token) }}">
+                        <input type="hidden"
+                               name="csrf_token"
+                               value="{{ csrf_token() }}">
+
+                        <button type="submit"
+                                class="btn btn-primary w-100 py-2 fw-bold rounded-pill">
+                            <i class="fas fa-check-circle me-1"></i>
+                            تأكيد الجوال
+                        </button>
+                    </form>
+
+                    <a href="{{ url_for('auth.login') }}"
+                       class="btn btn-link text-muted mt-3">
+                        العودة إلى تسجيل الدخول
+                    </a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

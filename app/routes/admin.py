@@ -264,6 +264,29 @@ def generate_password_reset_link(user_id):
     link = _public_link(url_for('auth.reset_password', token=token, _external=True))
     return jsonify({'success': True, 'link': link, 'email': user.email})
 
+
+@admin_bp.route('/users/phone-verify-link/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def generate_phone_verification_link(user_id):
+    """توليد رابط تأكيد الجوال لمستخدم معيّن."""
+    from app.routes.users import create_phone_verification_token
+
+    user = User.query.get_or_404(user_id)
+    if not user.phone:
+        return jsonify({'success': False, 'message': 'لا يوجد رقم جوال لهذا المستخدم.'})
+
+    if getattr(user, 'phone_verified', False):
+        return jsonify({'success': False, 'message': 'الجوال مؤكد بالفعل.'})
+
+    token = create_phone_verification_token(user)
+    link = _public_link(url_for('users.confirm_phone', token=token, _external=True))
+    return jsonify({
+        'success': True,
+        'link': link,
+        'phone': (user.country_code or '') + (user.phone or ''),
+    })
+
 # ============================================
 # إدارة المنشورات (مع CSRF حماية)
 # ============================================

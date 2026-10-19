@@ -179,6 +179,13 @@
                             data-name="{{ user.username }}">
                         <i class="fas fa-envelope"></i> بريد
                     </button>
+                    <button class="btn btn-sm btn-outline-primary gen-phone-verify"
+                            data-url="{{ url_for('admin.generate_phone_verification_link', user_id=user.id) }}"
+                            data-name="{{ user.username }}"
+                            {% if user.phone_verified %}disabled title="الجوال مؤكد"{% endif %}
+                            {% if not user.phone %}disabled title="لا يوجد جوال"{% endif %}>
+                        <i class="fas fa-mobile-alt"></i> جوال
+                    </button>
                     <button class="btn btn-sm btn-outline-danger delete-user" 
                             data-url="{{ url_for('admin.delete_user', user_id=user.id) }}"
                             {% if user.id == current_user.id %}disabled{% endif %}>
@@ -285,6 +292,7 @@
 
     handleLinkButton('gen-verify-link');
     handleLinkButton('gen-reset-link');
+    handleLinkButton('gen-phone-verify');
 
     document.querySelectorAll('.send-email').forEach(btn => {
         btn.addEventListener('click', function() {

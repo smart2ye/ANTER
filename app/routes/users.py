@@ -20,6 +20,8 @@ VERIFICATION_REQUEST_REASON = 'verification:account'
 
 EMAIL_VERIFICATION_SALT = 'email-verification'
 EMAIL_VERIFICATION_MAX_AGE = 24 * 60 * 60
+PHONE_VERIFICATION_SALT = 'phone-verification'
+PHONE_VERIFICATION_MAX_AGE = 7 * 24 * 60 * 60  # 7 أيام
 
 
 def create_email_verification_token(user):
@@ -62,6 +64,50 @@ def load_email_verification_token(token):
         return None
 
     if (user.email or '').strip().lower() != str(token_email).strip().lower():
+        return None
+
+    return user
+
+
+
+def create_phone_verification_token(user):
+    """إنشاء توكن آمن لتأكيد الجوال."""
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    return serializer.dumps(
+        {
+            'user_id': user.id,
+            'phone': user.phone,
+        },
+        salt=PHONE_VERIFICATION_SALT,
+    )
+
+
+def load_phone_verification_token(token):
+    """فك توكن تأكيد الجوال والتحقق من صلاحيته."""
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+
+    try:
+        data = serializer.loads(
+            token,
+            salt=PHONE_VERIFICATION_SALT,
+            max_age=PHONE_VERIFICATION_MAX_AGE,
+        )
+    except Exception:
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    user_id = data.get('user_id')
+    token_phone = data.get('phone')
+    if not user_id or not token_phone:
+        return None
+
+    user = User.query.get(user_id)
+    if not user or getattr(user, 'is_deleted', False):
+        return None
+
+    if (user.phone or '') != token_phone:
         return None
 
     return user
@@ -299,6 +345,52 @@ def confirm_email(token):
         return redirect(url_for('users.settings'))
 
     flash('تم تأكيد بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول إلى حسابك.', 'success')
+    return redirect(url_for('auth.login'))
+
+
+@users_bp.route('/settings/phone/verify/<token>', methods=['GET', 'POST'])
+def confirm_phone(token):
+    """عرض صفحة تأكيد الجوال وتنفيذ التأكيد بعد POST محمي بـ CSRF."""
+    user = load_phone_verification_token(token)
+
+    if not user:
+        flash('رابط تأكيد الجوال غير صالح أو انتهت صلاحيته.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    if user.phone_verified:
+        flash('تم تأكيد جوالك بالفعل.', 'info')
+        if current_user.is_authenticated and current_user.id == user.id:
+            return redirect(url_for('users.settings'))
+        return redirect(url_for('auth.login'))
+
+    if request.method == 'GET':
+        return render_template(
+            'auth/confirm_phone.html',
+            verification_token=token,
+            verification_phone=(user.country_code or '') + (user.phone or ''),
+        )
+
+    user.phone_verified = True
+    db.session.commit()
+    log_user_activity(user.id, 'phone_verification')
+
+    # إشعار داخلي
+    try:
+        db.session.add(Notification(
+            user_id=user.id,
+            actor_id=user.id,
+            action='phone_verified',
+            extra_text='تم تأكيد رقم جوالك بنجاح ✅',
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    if current_user.is_authenticated and current_user.id == user.id:
+        flash('تم تأكيد جوالك بنجاح.', 'success')
+        return redirect(url_for('users.settings'))
+
+    flash('تم تأكيد جوالك بنجاح. يمكنك الآن تسجيل الدخول.', 'success')
     return redirect(url_for('auth.login'))
 
 

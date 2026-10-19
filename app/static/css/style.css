@@ -10781,3 +10781,116 @@ a.anter-profile-stat:hover {
     background: #003AAB;
     border-radius: 50%;
 }
+
+
+/* صفحة إعلاناتي */
+.haraj-my-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.haraj-my-head .haraj-form-title { margin: 0; }
+.haraj-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 2px;
+    overflow-x: auto;
+}
+.haraj-tab {
+    padding: 10px 16px;
+    color: #6b7280;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: 10px 10px 0 0;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.haraj-tab:hover { background: #f3f4f6; color: #003AAB; }
+.haraj-tab.is-active {
+    background: #003AAB;
+    color: #fff;
+}
+
+.haraj-my-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+.haraj-my-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+.haraj-my-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+.haraj-my-card__link { text-decoration: none; color: inherit; display: block; }
+.haraj-my-card__img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    background: #f3f4f6;
+    display: block;
+}
+.haraj-my-card__img--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+}
+.haraj-my-card__body { padding: 12px 14px; }
+.haraj-my-card__title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #031E64;
+    margin: 0 0 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.haraj-my-card__price {
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: #003AAB;
+    margin: 0 0 6px;
+}
+.haraj-my-card__meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: #6b7280;
+}
+.haraj-my-card__actions {
+    display: flex;
+    gap: 4px;
+    padding: 8px 10px;
+    background: #f9fafb;
+    border-top: 1px solid #f3f4f6;
+    justify-content: space-around;
+}
+.haraj-my-btn {
+    flex: 1;
+    padding: 8px;
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    color: #003AAB;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    text-decoration: none;
+    text-align: center;
+}
+.haraj-my-btn:hover { background: #fff; border-color: #003AAB; }
+.haraj-my-btn--success { color: #15803d; border-color: #86efac; }
+.haraj-my-btn--success:hover { background: #dcfce7; }
+.haraj-my-btn--renew { color: #b45309; border-color: #fcd34d; }
+.haraj-my-btn--renew:hover { background: #fef3c7; }
+.haraj-my-btn--danger { color: #dc2626; border-color: #fecaca; }
+.haraj-my-btn--danger:hover { background: #fee2e2; }

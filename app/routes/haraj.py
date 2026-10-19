@@ -1,6 +1,6 @@
 """ANTER Haraj — سوق الأثاث والأجهزة المنزلية."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import (
     Blueprint, render_template, redirect, url_for, flash,
@@ -934,3 +934,57 @@ def unread_total():
         Notification.is_read.is_(False),
     ).count()
     return jsonify({'count': msg_n + notif_n, 'messages': msg_n, 'notifications': notif_n})
+
+
+
+# ============================================================
+# إعلاناتي
+# ============================================================
+@haraj_bp.route('/my-listings')
+@login_required
+def my_listings():
+    tab = (request.args.get('tab') or 'active').strip()
+    if tab not in {'active', 'sold', 'expired'}:
+        tab = 'active'
+
+    base_q = Listing.query.filter_by(user_id=current_user.id)
+
+    active = (base_q.filter(Listing.status == 'active')
+              .filter(Listing.expires_at > datetime.utcnow())
+              .order_by(Listing.created_at.desc()).all())
+    sold = (base_q.filter(Listing.status == 'sold')
+            .order_by(Listing.created_at.desc()).all())
+    expired = (base_q.filter(
+        (Listing.status == 'expired') |
+        ((Listing.status == 'active') & (Listing.expires_at <= datetime.utcnow()))
+    ).order_by(Listing.created_at.desc()).all())
+
+    current_list = {'active': active, 'sold': sold, 'expired': expired}[tab]
+
+    return render_template(
+        'haraj/my_listings.html',
+        tab=tab,
+        listings=current_list,
+        counts={'active': len(active), 'sold': len(sold), 'expired': len(expired)},
+    )
+
+
+# ============================================================
+# تجديد الإعلان (30 يومًا إضافية)
+# ============================================================
+@haraj_bp.route('/listing/<public_id>/renew', methods=['POST'])
+@login_required
+def renew_listing(public_id):
+    listing = Listing.query.filter_by(public_id=public_id).first_or_404()
+    if listing.user_id != current_user.id:
+        abort(403)
+
+    if listing.status not in ('active', 'expired'):
+        flash('لا يمكن تجديد هذا الإعلان في حالته الحالية.', 'info')
+        return redirect(url_for('haraj.my_listings'))
+
+    listing.status = 'active'
+    listing.expires_at = datetime.utcnow() + timedelta(days=30)
+    db.session.commit()
+    flash('✅ تم تجديد الإعلان لمدة 30 يومًا.', 'success')
+    return redirect(url_for('haraj.listing_detail', public_id=public_id))

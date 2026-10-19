@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block page_title %}إعلاناتي — حراج أنتر{% endblock %}
+
+{% block content %}
+<div class="haraj-container" style="max-width:1080px;">
+    <a href="{{ url_for('haraj.index') }}" class="haraj-back-link">
+        <i class="fas fa-arrow-right"></i> العودة للحراج
+    </a>
+
+    <div class="haraj-form-card">
+        <div class="haraj-my-head">
+            <h1 class="haraj-form-title"><i class="fas fa-tags"></i> إعلاناتي</h1>
+            <a href="{{ url_for('haraj.new_listing') }}" class="haraj-publish-btn">
+                <i class="fas fa-plus-circle"></i> إعلان جديد
+            </a>
+        </div>
+
+        <div class="haraj-tabs">
+            <a href="{{ url_for('haraj.my_listings', tab='active') }}"
+               class="haraj-tab {% if tab == 'active' %}is-active{% endif %}">
+                <i class="fas fa-circle-check"></i> نشطة ({{ counts.active }})
+            </a>
+            <a href="{{ url_for('haraj.my_listings', tab='sold') }}"
+               class="haraj-tab {% if tab == 'sold' %}is-active{% endif %}">
+                <i class="fas fa-check"></i> مبيعة ({{ counts.sold }})
+            </a>
+            <a href="{{ url_for('haraj.my_listings', tab='expired') }}"
+               class="haraj-tab {% if tab == 'expired' %}is-active{% endif %}">
+                <i class="fas fa-clock"></i> منتهية ({{ counts.expired }})
+            </a>
+        </div>
+
+        {% if listings %}
+        <div class="haraj-my-grid">
+            {% for listing in listings %}
+            <div class="haraj-my-card">
+                <a href="{{ url_for('haraj.listing_detail', public_id=listing.public_id) }}" class="haraj-my-card__link">
+                    {% set img = listing.primary_image() %}
+                    {% if img %}
+                    <img src="{{ url_for('haraj.listing_image', image_id=img.id) }}" alt="{{ listing.title }}" class="haraj-my-card__img" loading="lazy">
+                    {% else %}
+                    <div class="haraj-my-card__img haraj-my-card__img--empty"><i class="fas fa-image fa-2x"></i></div>
+                    {% endif %}
+                    <div class="haraj-my-card__body">
+                        <h3 class="haraj-my-card__title">{{ listing.title }}</h3>
+                        {% if listing.price %}
+                        <p class="haraj-my-card__price">{{ "{:,}".format(listing.price) }} ر.س</p>
+                        {% else %}
+                        <p class="haraj-my-card__price" style="color:#6b7280;">سعر عند التواصل</p>
+                        {% endif %}
+                        <div class="haraj-my-card__meta">
+                            <span><i class="fas fa-map-marker-alt"></i> {{ listing.city }}</span>
+                            <span><i class="fas fa-calendar"></i> ينتهي {{ listing.expires_at.strftime('%m/%d') }}</span>
+                        </div>
+                    </div>
+                </a>
+                <div class="haraj-my-card__actions">
+                    <a href="{{ url_for('haraj.edit_listing', public_id=listing.public_id) }}"
+                       class="haraj-my-btn" title="تعديل">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    {% if listing.status == 'active' %}
+                    <form method="POST" action="{{ url_for('haraj.mark_sold', public_id=listing.public_id) }}" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="haraj-my-btn haraj-my-btn--success" title="تم البيع"
+                                onclick="return confirm('هل تريد تعليم الإعلان كمباع؟')">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if listing.status in ['active', 'expired'] %}
+                    <form method="POST" action="{{ url_for('haraj.renew_listing', public_id=listing.public_id) }}" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="haraj-my-btn haraj-my-btn--renew" title="تجديد 30 يومًا">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('haraj.delete_listing', public_id=listing.public_id) }}" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="haraj-my-btn haraj-my-btn--danger" title="حذف"
+                                onclick="return confirm('حذف الإعلان نهائيًا؟')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="haraj-empty">
+            <i class="fas fa-box-open fa-3x"></i>
+            <p>
+                {% if tab == 'active' %}لا توجد إعلانات نشطة.
+                {% elif tab == 'sold' %}لا توجد إعلانات مبيعة.
+                {% else %}لا توجد إعلانات منتهية.
+                {% endif %}
+            </p>
+            {% if tab == 'active' %}
+            <a href="{{ url_for('haraj.new_listing') }}" class="haraj-publish-btn" style="margin-top:12px;">
+                <i class="fas fa-plus-circle"></i> انشر إعلانك الأول
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

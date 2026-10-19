@@ -58,21 +58,72 @@ function toggleHarajReaction(btn) {
             {% endif %}
         </div>
 
-        <div class="haraj-filters">
-            <input type="search" placeholder="ابحث في الحراج..." class="haraj-search">
-            <select class="haraj-filter-select" onchange="window.location.href=this.value">
-                <option value="{{ url_for('haraj.index') }}">كل الفئات</option>
-                {% for key, label in categories.items() %}
-                <option value="{{ url_for('haraj.index', category=key) }}" {% if current_category == key %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-            <select class="haraj-filter-select" onchange="window.location.href=this.value">
-                <option value="{{ url_for('haraj.index') }}">كل المناطق</option>
-                {% for region in regions %}
-                <option value="{{ url_for('haraj.index', region=region) }}" {% if current_region == region %}selected{% endif %}>{{ region }}</option>
-                {% endfor %}
-            </select>
-        </div>
+        <form method="GET" action="{{ url_for('haraj.index') }}" class="haraj-filters" id="harajFilterForm">
+            <div class="haraj-filter-row">
+                <input type="search"
+                       name="q"
+                       placeholder="ابحث في حراج أنتر..."
+                       class="haraj-search"
+                       value="{{ current_q or '' }}">
+                <select name="category" class="haraj-filter-select">
+                    <option value="">كل الفئات</option>
+                    {% for key, label in categories.items() %}
+                    <option value="{{ key }}" {% if current_category == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <select name="region" id="harajFilterRegion" class="haraj-filter-select">
+                    <option value="">كل المناطق</option>
+                    {% for region in regions %}
+                    <option value="{{ region }}" {% if current_region == region %}selected{% endif %}>{{ region }}</option>
+                    {% endfor %}
+                </select>
+                <select name="city" id="harajFilterCity" class="haraj-filter-select" data-current="{{ current_city or '' }}">
+                    <option value="">كل المدن</option>
+                    {% for c in cities %}
+                    <option value="{{ c }}" {% if current_city == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="haraj-filter-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+                {% if current_q or current_category or current_region or current_city %}
+                <a href="{{ url_for('haraj.index') }}" class="haraj-filter-clear" title="مسح الفلاتر">
+                    <i class="fas fa-times"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+
+        <script>
+        (function() {
+            var regionSel = document.getElementById('harajFilterRegion');
+            var citySel = document.getElementById('harajFilterCity');
+            if (!regionSel || !citySel) return;
+
+            regionSel.addEventListener('change', function() {
+                var r = regionSel.value;
+                citySel.innerHTML = '<option value="">جارٍ التحميل...</option>';
+                if (!r) {
+                    citySel.innerHTML = '<option value="">كل المدن</option>';
+                    return;
+                }
+                fetch('/haraj/api/cities?region=' + encodeURIComponent(r))
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        citySel.innerHTML = '<option value="">كل المدن</option>';
+                        (data.cities || []).forEach(function(c) {
+                            var o = document.createElement('option');
+                            o.value = c;
+                            o.textContent = c;
+                            citySel.appendChild(o);
+                        });
+                    })
+                    .catch(function() {
+                        citySel.innerHTML = '<option value="">كل المدن</option>';
+                    });
+            });
+        })();
+        </script>
     </header>
 
     <div class="haraj-listings">

@@ -1913,3 +1913,58 @@ document.addEventListener('click', function(e) {
     }, true);
 })();
 
+
+
+// ============================================================
+// ANTER: tooltip لشارة المؤسس
+// ============================================================
+(function() {
+    'use strict';
+    var tooltip = null;
+    var timeout = null;
+
+    function show(anchor, text) {
+        hide();
+        tooltip = document.createElement('div');
+        tooltip.className = 'founder-tooltip-pop';
+        tooltip.textContent = text;
+        document.body.appendChild(tooltip);
+
+        if (window.innerWidth > 768) {
+            var rect = anchor.getBoundingClientRect();
+            var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+            tooltip.style.left = (rect.left + scrollLeft) + 'px';
+            tooltip.style.top = (rect.bottom + scrollTop + 8) + 'px';
+        }
+
+        requestAnimationFrame(function() { tooltip.classList.add('is-visible'); });
+
+        timeout = setTimeout(hide, 3000);
+    }
+
+    function hide() {
+        if (timeout) { clearTimeout(timeout); timeout = null; }
+        if (tooltip) {
+            tooltip.classList.remove('is-visible');
+            var t = tooltip;
+            setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 220);
+            tooltip = null;
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        var badge = e.target.closest('[data-founder-tooltip]');
+        if (badge) {
+            e.preventDefault();
+            e.stopPropagation();
+            show(badge, badge.getAttribute('data-founder-tooltip'));
+            return;
+        }
+        // النقر خارج الشارة يخفي tooltip
+        if (tooltip) hide();
+    }, true);
+
+    // إخفاء عند التمرير
+    window.addEventListener('scroll', function() { if (tooltip) hide(); }, { passive: true });
+})();

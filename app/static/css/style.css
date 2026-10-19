@@ -9223,33 +9223,75 @@ a.anter-profile-stat:hover {
 .founder-badge {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    padding: 1px 8px;
+    gap: 4px;
+    padding: 2px 10px;
     margin-inline-start: 6px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-    color: #4a2c00;
-    font-size: 0.68rem;
-    font-weight: 800;
+    background: linear-gradient(135deg, #003AAB 0%, #00C8F8 100%);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 900;
     line-height: 1.5;
     vertical-align: middle;
-    box-shadow: 0 2px 6px rgba(255, 165, 0, 0.35);
-    letter-spacing: 0.2px;
+    box-shadow: 0 2px 10px rgba(0, 200, 248, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    letter-spacing: 0.3px;
+    position: relative;
+    overflow: hidden;
+    animation: founderPulse 2.6s ease-in-out infinite;
+}
+
+@keyframes founderPulse {
+    0%, 100% {
+        box-shadow: 0 2px 10px rgba(0, 200, 248, 0.45),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+    50% {
+        box-shadow: 0 2px 18px rgba(0, 200, 248, 0.75),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+}
+
+.founder-badge::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 40%;
+    height: 200%;
+    background: linear-gradient(120deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        transparent 100%);
+    transform: skewX(-20deg);
+    animation: founderShine 3.5s ease-in-out infinite;
+}
+
+@keyframes founderShine {
+    0%, 100% { left: -60%; }
+    50% { left: 130%; }
 }
 
 .founder-badge i {
-    font-size: 0.72rem;
-    color: #4a2c00;
+    font-size: 0.75rem;
+    color: #fff;
+    filter: drop-shadow(0 0 2px rgba(0, 200, 248, 0.8));
+    position: relative;
+    z-index: 1;
 }
 
 .founder-badge__text {
     font-family: inherit;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 [data-theme="dark"] .founder-badge {
-    background: linear-gradient(135deg, #FFD700 0%, #E89B00 100%);
-    color: #2b1a00;
-    box-shadow: 0 2px 8px rgba(255, 200, 0, 0.35);
+    background: linear-gradient(135deg, #00C8F8 0%, #003AAB 100%);
+    color: #fff;
+    box-shadow: 0 2px 14px rgba(0, 200, 248, 0.55),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 @media (max-width: 420px) {
@@ -10894,3 +10936,56 @@ a.anter-profile-stat:hover {
 .haraj-my-btn--renew:hover { background: #fef3c7; }
 .haraj-my-btn--danger { color: #dc2626; border-color: #fecaca; }
 .haraj-my-btn--danger:hover { background: #fee2e2; }
+
+
+/* Tooltip لشارة المؤسس */
+.founder-tooltip-pop {
+    position: absolute;
+    z-index: 9999;
+    background: #031E64;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(3, 30, 100, 0.4);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.2s, transform 0.2s;
+    border: 1px solid rgba(0, 200, 248, 0.4);
+}
+.founder-tooltip-pop.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.founder-tooltip-pop::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 20px;
+    border: 6px solid transparent;
+    border-top-color: #031E64;
+}
+
+/* على الجوال: ثابت أسفل الشاشة لسهولة القراءة */
+@media (max-width: 768px) {
+    .founder-tooltip-pop {
+        position: fixed;
+        top: auto;
+        bottom: 90px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%) translateY(6px);
+        white-space: normal;
+        max-width: 90vw;
+        text-align: center;
+    }
+    .founder-tooltip-pop.is-visible {
+        transform: translateX(-50%) translateY(0);
+    }
+    .founder-tooltip-pop::after {
+        display: none;
+    }
+}

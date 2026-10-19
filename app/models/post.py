@@ -31,6 +31,15 @@ class Post(db.Model):
     )
     visibility = db.Column(db.String(20), default='public', nullable=False, index=True)
 
+    # ANTER: حالة المراجعة الآلية (مساعد أنتر)
+    # clean (افتراضي) · under_review (مخفي حتى المراجعة) · approved · removed
+    moderation_status = db.Column(
+        db.String(20), nullable=False, default='clean',
+        server_default='clean', index=True,
+    )
+    moderation_reason = db.Column(db.String(500), nullable=True)
+    moderation_at = db.Column(db.DateTime, nullable=True)
+
     shared_video_id = db.Column(
         db.Integer,
         db.ForeignKey('videos.id'),

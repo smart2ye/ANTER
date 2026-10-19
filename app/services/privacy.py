@@ -39,6 +39,11 @@ def can_view_profile(viewer, subject):
 
 
 def can_view_post(viewer, post):
+    # ANTER: المنشورات تحت المراجعة أو المحذوفة — تظهر فقط للمؤلف والإدارة.
+    status = getattr(post, 'moderation_status', 'clean') or 'clean'
+    if status in ('under_review', 'removed'):
+        if not is_owner_or_admin(viewer, post.author):
+            return False
     if is_owner_or_admin(viewer, post.author):
         return True
     if not can_view_profile(viewer, post.author):

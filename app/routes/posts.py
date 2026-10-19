@@ -9,6 +9,7 @@ from app.utils.image_storage import prepare_image_data
 from app.services.anter_user_messages import send_report_receipt
 from app.services.privacy import POST_VISIBILITIES, can_view_post
 from app.services.moment_detector import detect_for_post
+from app.services.moderation import classify_post, should_hide, CATEGORY_LABELS
 from app.models.moment import Moment, MomentPost
 
 from datetime import datetime
@@ -548,9 +549,35 @@ def report(post_id=None):
     )
     db.session.add(report)
     db.session.flush()
+
+    # ANTER: مراقبة آلية — مساعد أنتر يقرأ المنشور ويُقرر
+    moderation_triggered = False
+    try:
+        if (post.moderation_status or 'clean') == 'clean':
+            cls = classify_post(
+                content=post.content or '',
+                report_reason=report.reason or '',
+                report_details=report.details or '',
+            )
+            if should_hide(cls):
+                post.moderation_status = 'under_review'
+                post.moderation_reason = cls.get('reason') or CATEGORY_LABELS.get(cls.get('category', ''), 'مخالفة محتملة')
+                post.moderation_at = datetime.utcnow()
+                moderation_triggered = True
+                # إشعار لصاحب المنشور
+                db.session.add(Notification(
+                    user_id=post.author_id,
+                    actor_id=current_user.id,
+                    action='content_under_review',
+                    post_id=post.id,
+                    extra_text=f'السبب: {post.moderation_reason}',
+                ))
+    except Exception:
+        current_app.logger.exception('فشل التحليل الآلي للبلاغ (غير حرج)')
+
     send_report_receipt(current_user, report, post)
     db.session.commit()
-    log_user_activity(current_user.id, 'report_create', {'post_id': post.id})
+    log_user_activity(current_user.id, 'report_create', {'post_id': post.id, 'auto_hidden': moderation_triggered})
 
     message = 'تم استلام البلاغ وإحالته للمراجعة البشرية.'
     if is_json_request:

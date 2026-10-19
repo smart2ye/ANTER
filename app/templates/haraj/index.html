@@ -1,33 +1,5 @@
 {% extends "base.html" %}
-{% block page_title %}حراج أنتر — أثاث وأجهزة منزلية<script>
-function toggleHarajReaction(btn) {
-    var listing = btn.dataset.listing;
-    var type = btn.dataset.type;
-    var token = document.querySelector('meta[name="csrf-token"]');
-    if (!token) { alert('يجب تسجيل الدخول'); return; }
-    var formData = new URLSearchParams();
-    formData.append('type', type);
-    formData.append('csrf_token', token.getAttribute('content'));
-    fetch('/haraj/listing/' + listing + '/react', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': token.getAttribute('content')},
-        body: formData.toString(),
-    }).then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (!data.ok) return;
-        btn.classList.toggle('is-active', data.active);
-        var icon = btn.querySelector('i');
-        if (icon) {
-            icon.className = (data.active ? 'fas ' : 'far ') + (type === 'like' ? 'fa-heart' : 'fa-bookmark');
-        }
-        var cnt = btn.querySelector('.haraj-reaction-count');
-        if (cnt) cnt.textContent = data.count;
-      })
-      .catch(function() {});
-}
-</script>
-{% endblock %}
+{% block page_title %}حراج أنتر — أثاث وأجهزة منزلية{% endblock %}
 {% block meta_description %}سوق حراج أنتر لبيع وشراء الأثاث والأجهزة المنزلية في السعودية. نشر مجاني، تواصل مباشر.{% endblock %}
 
 {% block content %}

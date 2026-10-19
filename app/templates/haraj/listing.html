@@ -1,21 +1,5 @@
 {% extends "base.html" %}
-{% block page_title %}{{ listing.title }} — حراج أنتر<script>
-function selectRating(value) {
-    document.getElementById('ratingValue').value = value;
-    var stars = document.querySelectorAll('#ratingStars .haraj-star');
-    stars.forEach(function(s, i) {
-        var icon = s.querySelector('i');
-        if (i < value) {
-            icon.className = 'fas fa-star';
-            s.classList.add('is-active');
-        } else {
-            icon.className = 'far fa-star';
-            s.classList.remove('is-active');
-        }
-    });
-}
-</script>
-{% endblock %}
+{% block page_title %}{{ listing.title }} — حراج أنتر{% endblock %}
 
 {% block content %}
 <div class="haraj-container">

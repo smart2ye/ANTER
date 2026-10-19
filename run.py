@@ -14,12 +14,17 @@ try:
 except Exception:
     app.logger.exception('story_cleanup failed at startup (non-fatal)')
 
+# ANTER: منشور مساعد أنتر اليومي — مرة واحدة عند الإقلاع، لا في كل /health.
+try:
+    with app.app_context():
+        ensure_daily_assistant_post()
+except Exception:
+    app.logger.exception('daily_assistant_post failed at startup (non-fatal)')
+
 @app.route('/health')
 def health_check():
-    # يعمل بشكل آمن ومحدود: ينشئ منشوراً واحداً فقط في اليوم عند أول فحص صحة.
-    ensure_daily_assistant_post()
-    response = make_response('OK', 200)
-    return response
+    # فوري — لا استعلامات، لا أعمال. Render يستعلمه كل 5 ثوانٍ.
+    return make_response('OK', 200)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5050))

@@ -12,6 +12,7 @@ from flask_wtf.file import FileAllowed
 
 from app.models.listing import (
     LISTING_CATEGORIES, LISTING_TYPES, LISTING_CONDITIONS,
+    LISTING_SUBCATEGORIES,
 )
 from app.constants.saudi_locations import SAUDI_REGIONS, all_regions
 
@@ -22,6 +23,12 @@ class ListingForm(FlaskForm):
         choices=[(k, v) for k, v in LISTING_CATEGORIES.items()],
         validators=[DataRequired('اختر الفئة')],
     )
+    subcategory = SelectField(
+        'الفئة الفرعية',
+        choices=[('', 'اختر الفئة الفرعية')],
+        validators=[DataRequired('اختر الفئة الفرعية')],
+    )
+
     listing_type = SelectField(
         'نوع الإعلان',
         choices=[(k, v) for k, v in LISTING_TYPES.items()],
@@ -82,6 +89,11 @@ class ListingForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # تعبئة الفئات الفرعية حسب الفئة
+        if self.category.data and self.category.data in LISTING_SUBCATEGORIES:
+            subs = LISTING_SUBCATEGORIES[self.category.data]
+            self.subcategory.choices = [('', 'اختر الفئة الفرعية')] + [(k, v) for k, v in subs.items()]
+        # تعبئة المدن حسب المنطقة
         if self.region.data and self.region.data in SAUDI_REGIONS:
             cities = [(c, c) for c in SAUDI_REGIONS[self.region.data]]
             self.city.choices = [('', 'اختر المدينة')] + cities

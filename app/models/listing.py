@@ -10,6 +10,31 @@ LISTING_CATEGORIES = {
     'home_appliances': 'أجهزة منزلية',
 }
 
+# الفئات الفرعية لكل فئة رئيسية
+LISTING_SUBCATEGORIES = {
+    'furniture': {
+        'bedrooms': 'غرف نوم',
+        'living_rooms': 'جلسات ومجالس',
+        'sofas': 'كنبات ومقاعد',
+        'dining': 'سفرة وطاولات طعام',
+        'kitchens': 'مطابخ',
+        'office': 'مكاتب وكراسي عمل',
+        'decor': 'ديكور وإكسسوارات',
+        'outdoor': 'أثاث خارجي',
+        'other_furniture': 'أثاث آخر',
+    },
+    'home_appliances': {
+        'ac': 'مكيفات',
+        'washers': 'غسالات',
+        'fridges': 'ثلاجات وفريزرات',
+        'ovens': 'أفران وبوتاجازات',
+        'microwaves': 'ميكروويف',
+        'vacuum': 'مكانس كهربائية',
+        'small_appliances': 'أجهزة صغيرة',
+        'other_appliances': 'أجهزة أخرى',
+    },
+}
+
 LISTING_TYPES = {
     'sell': 'للبيع',
     'buy': 'مطلوب',
@@ -44,6 +69,7 @@ class Listing(db.Model):
     )
 
     category = db.Column(db.String(30), nullable=False, index=True)
+    subcategory = db.Column(db.String(50), nullable=True, index=True)
     listing_type = db.Column(db.String(10), nullable=False, default='sell')
     condition = db.Column(db.String(10), nullable=False, default='used')
 

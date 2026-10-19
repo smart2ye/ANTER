@@ -14,6 +14,7 @@ from app.models import User
 from app.models.listing import (
     Listing, ListingImage, LISTING_CATEGORIES, LISTING_TYPES,
     LISTING_CONDITIONS, LISTING_STATUSES, default_expires_at,
+    LISTING_SUBCATEGORIES,
 )
 from app.models.haraj_message import HarajMessage
 from app.models.listing_reaction import ListingReaction
@@ -46,6 +47,7 @@ SAUDI_REGIONS_LIST = all_regions()
 @haraj_bp.route('/')
 def index():
     category = request.args.get('category', '').strip()
+    subcategory = request.args.get('subcategory', '').strip()
     region = request.args.get('region', '').strip()
     city = request.args.get('city', '').strip()
     q = request.args.get('q', '').strip()
@@ -55,6 +57,9 @@ def index():
 
     if category and category in LISTING_CATEGORIES:
         query = query.filter(Listing.category == category)
+    if subcategory and category:
+        if subcategory in LISTING_SUBCATEGORIES.get(category, {}):
+            query = query.filter(Listing.subcategory == subcategory)
     if region and region in SAUDI_REGIONS:
         query = query.filter(Listing.region == region)
     if city and region:
@@ -101,8 +106,10 @@ def index():
         user_saved=user_saved,
         regions=all_regions(),
         categories=LISTING_CATEGORIES,
+        subcategories=LISTING_SUBCATEGORIES,
         listing_types=LISTING_TYPES,
         current_category=category,
+        current_subcategory=subcategory,
         current_region=region,
         current_city=city,
         current_type=listing_type,
@@ -179,6 +186,7 @@ def listing_detail(public_id):
         listing=listing,
         is_owner=is_owner,
         categories=LISTING_CATEGORIES,
+        subcategories=LISTING_SUBCATEGORIES,
         types=LISTING_TYPES,
         conditions=LISTING_CONDITIONS,
         statuses=LISTING_STATUSES,
@@ -220,6 +228,7 @@ def new_listing():
         return render_template(
             'haraj/new.html',
             form=form,
+            subcategories=LISTING_SUBCATEGORIES,
             categories=LISTING_CATEGORIES,
             types=LISTING_TYPES,
             conditions=LISTING_CONDITIONS,
@@ -237,7 +246,7 @@ def new_listing():
         if not form.city.data:
             flash('اختر المدينة.', 'danger')
             return render_template(
-                'haraj/new.html', form=form,
+                'haraj/new.html', form=form, subcategories=LISTING_SUBCATEGORIES,
                 categories=LISTING_CATEGORIES, types=LISTING_TYPES,
                 conditions=LISTING_CONDITIONS, regions=all_regions(),
                 saudi_regions=SAUDI_REGIONS,
@@ -246,7 +255,7 @@ def new_listing():
         if not request.form.get('terms_accepted'):
             flash('يجب الموافقة على التحذيرات وبراءة الذمة.', 'danger')
             return render_template(
-                'haraj/new.html', form=form,
+                'haraj/new.html', form=form, subcategories=LISTING_SUBCATEGORIES,
                 categories=LISTING_CATEGORIES, types=LISTING_TYPES,
                 conditions=LISTING_CONDITIONS, regions=all_regions(),
                 saudi_regions=SAUDI_REGIONS,
@@ -255,7 +264,7 @@ def new_listing():
         if not form.pledge_accepted.data:
             flash('يجب الموافقة على التعهد بدفع 1% للنشر.', 'danger')
             return render_template(
-                'haraj/new.html', form=form,
+                'haraj/new.html', form=form, subcategories=LISTING_SUBCATEGORIES,
                 categories=LISTING_CATEGORIES, types=LISTING_TYPES,
                 conditions=LISTING_CONDITIONS, regions=all_regions(),
                 saudi_regions=SAUDI_REGIONS,
@@ -266,7 +275,7 @@ def new_listing():
         if len(uploaded) > 3:
             flash('3 صور كحد أقصى.', 'danger')
             return render_template(
-                'haraj/new.html', form=form,
+                'haraj/new.html', form=form, subcategories=LISTING_SUBCATEGORIES,
                 categories=LISTING_CATEGORIES, types=LISTING_TYPES,
                 conditions=LISTING_CONDITIONS, regions=all_regions(),
                 saudi_regions=SAUDI_REGIONS,
@@ -281,7 +290,7 @@ def new_listing():
         if not prepared_images:
             flash('أضف صورة واحدة على الأقل.', 'danger')
             return render_template(
-                'haraj/new.html', form=form,
+                'haraj/new.html', form=form, subcategories=LISTING_SUBCATEGORIES,
                 categories=LISTING_CATEGORIES, types=LISTING_TYPES,
                 conditions=LISTING_CONDITIONS, regions=all_regions(),
                 saudi_regions=SAUDI_REGIONS,
@@ -291,6 +300,7 @@ def new_listing():
         listing = Listing(
             user_id=current_user.id,
             category=form.category.data,
+            subcategory=(form.subcategory.data or None),
             listing_type=form.listing_type.data,
             condition=form.condition.data,
             title=form.title.data.strip(),
@@ -324,7 +334,7 @@ def new_listing():
 
     # فشل التحقق
     return render_template(
-        'haraj/new.html', form=form,
+        'haraj/new.html', form=form, subcategories=LISTING_SUBCATEGORIES,
         categories=LISTING_CATEGORIES, types=LISTING_TYPES,
         conditions=LISTING_CONDITIONS, regions=all_regions(),
         saudi_regions=SAUDI_REGIONS,
@@ -394,8 +404,11 @@ def edit_listing(public_id):
             'haraj/new.html',
             form=form,
             listing=listing,
-            categories=LISTING_CATEGORIES, types=LISTING_TYPES,
-            conditions=LISTING_CONDITIONS, regions=all_regions(),
+            categories=LISTING_CATEGORIES,
+            subcategories=LISTING_SUBCATEGORIES,
+            types=LISTING_TYPES,
+            conditions=LISTING_CONDITIONS,
+            regions=all_regions(),
             saudi_regions=SAUDI_REGIONS,
             is_edit=True,
         )
@@ -406,6 +419,7 @@ def edit_listing(public_id):
 
     if form.validate_on_submit() and form.city.data and form.pledge_accepted.data:
         listing.category = form.category.data
+        listing.subcategory = (form.subcategory.data or None)
         listing.listing_type = form.listing_type.data
         listing.condition = form.condition.data
         listing.title = form.title.data.strip()
@@ -443,7 +457,7 @@ def edit_listing(public_id):
     flash('تحقق من الحقول المطلوبة.', 'danger')
     return render_template(
         'haraj/new.html',
-        form=form, listing=listing,
+        form=form, listing=listing, subcategories=LISTING_SUBCATEGORIES,
         categories=LISTING_CATEGORIES, types=LISTING_TYPES,
         conditions=LISTING_CONDITIONS, regions=all_regions(),
         saudi_regions=SAUDI_REGIONS,

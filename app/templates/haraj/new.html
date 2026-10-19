@@ -16,8 +16,14 @@
 
             <div class="haraj-form-group">
                 <label>الفئة</label>
-                {{ form.category(class="haraj-input") }}
+                {{ form.category(class="haraj-input", id="categorySelect") }}
                 {% for e in form.category.errors %}<small class="haraj-error">{{ e }}</small>{% endfor %}
+            </div>
+
+            <div class="haraj-form-group">
+                <label>الفئة الفرعية</label>
+                {{ form.subcategory(class="haraj-input", id="subcategorySelect") }}
+                {% for e in form.subcategory.errors %}<small class="haraj-error">{{ e }}</small>{% endfor %}
             </div>
 
             <div class="haraj-form-row">
@@ -174,6 +180,37 @@
                 previewEl.appendChild(warn);
             }
         });
+    }
+})();
+</script>
+<script>
+(function() {
+    var categorySel = document.getElementById('categorySelect');
+    var subSel = document.getElementById('subcategorySelect');
+    if (!categorySel || !subSel) return;
+
+    var SUBCATS = {{ subcategories|tojson }};
+    var currentSub = subSel.value;
+
+    function updateSubcategories(preserve) {
+        var cat = categorySel.value;
+        var list = SUBCATS[cat] || {};
+        subSel.innerHTML = '<option value="">اختر الفئة الفرعية</option>';
+        Object.keys(list).forEach(function(key) {
+            var o = document.createElement('option');
+            o.value = key;
+            o.textContent = list[key];
+            if (preserve && key === currentSub) o.selected = true;
+            subSel.appendChild(o);
+        });
+    }
+
+    categorySel.addEventListener('change', function() {
+        updateSubcategories(false);
+    });
+
+    if (categorySel.value) {
+        updateSubcategories(true);
     }
 })();
 </script>

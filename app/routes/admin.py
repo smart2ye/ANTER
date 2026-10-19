@@ -527,6 +527,22 @@ def resolve_report(report_id):
     report.resolved_at = datetime.utcnow()
     report.resolved_by = current_user.id
 
+    # ANTER: مراقبة آلية — قبول البلاغ يزيل المنشور نهائيًا ويُشعر المؤلف
+    try:
+        if report.post and getattr(report.post, 'moderation_status', 'clean') in ('under_review', 'clean'):
+            report.post.moderation_status = 'removed'
+            report.post.moderation_at = datetime.utcnow()
+            if report.post.author_id and report.post.author_id != current_user.id:
+                db.session.add(Notification(
+                    user_id=report.post.author_id,
+                    actor_id=current_user.id,
+                    action='content_removed',
+                    post_id=report.post.id,
+                    extra_text=f'تمت إزالة منشورك بعد مراجعة البلاغ. السبب: {report.reason or "مخالفة"}',
+                ))
+    except Exception:
+        current_app.logger.warning('تعذر تحديث حالة المنشور (resolve)', exc_info=True)
+
     # إشعار للمُبلِّغ بأن البلاغ حُلّ (نتجاهل بلاغات النظام أو بلاغات المستخدم عن نفسه)
     try:
         if report.reporter_id and report.reporter_id != current_user.id:
@@ -559,6 +575,22 @@ def reject_report(report_id):
     report.resolved_at = datetime.utcnow()
     report.resolved_by = current_user.id
     report.rejection_reason = rejection_reason or None
+
+    # ANTER: رفض البلاغ يستعيد المنشور ويُشعر المؤلف
+    try:
+        if report.post and getattr(report.post, 'moderation_status', 'clean') == 'under_review':
+            report.post.moderation_status = 'approved'
+            report.post.moderation_at = datetime.utcnow()
+            if report.post.author_id and report.post.author_id != current_user.id:
+                db.session.add(Notification(
+                    user_id=report.post.author_id,
+                    actor_id=current_user.id,
+                    action='content_restored',
+                    post_id=report.post.id,
+                    extra_text='تمت مراجعة البلاغ وتبيّن أن منشورك لا يخالف القواعد. نعتذر عن الإخفاء المؤقت.',
+                ))
+    except Exception:
+        current_app.logger.warning('تعذر تحديث حالة المنشور (reject)', exc_info=True)
 
     # إشعار للمُبلِّغ بسبب الرفض
     try:

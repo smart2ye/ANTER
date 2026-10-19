@@ -19,6 +19,7 @@ from app.models.listing import (
 from app.models.haraj_message import HarajMessage
 from app.models.listing_reaction import ListingReaction
 from app.models.listing_comment import ListingComment
+from app.models.listing_report import ListingReport, LISTING_REPORT_REASONS
 from app.models.seller_rating import SellerRating, seller_rating_stats
 from app.models.notification import Notification
 from app.forms.haraj import ListingForm
@@ -195,6 +196,7 @@ def listing_detail(public_id):
         user_liked=user_liked,
         user_saved=user_saved,
         comments=comments,
+        reasons=LISTING_REPORT_REASONS,
         seller_avg=seller_avg,
         seller_count=seller_count,
         user_rated=user_rated,
@@ -1002,3 +1004,115 @@ def renew_listing(public_id):
     db.session.commit()
     flash('✅ تم تجديد الإعلان لمدة 30 يومًا.', 'success')
     return redirect(url_for('haraj.listing_detail', public_id=public_id))
+
+
+
+# ============================================================
+# الإبلاغ عن إعلان
+# ============================================================
+@haraj_bp.route('/listing/<public_id>/report', methods=['POST'])
+@login_required
+def report_listing(public_id):
+    if _blocked_haraj_user():
+        abort(403)
+
+    listing = Listing.query.filter_by(public_id=public_id).first_or_404()
+
+    if listing.user_id == current_user.id:
+        flash('لا يمكنك الإبلاغ عن إعلانك.', 'info')
+        return redirect(url_for('haraj.listing_detail', public_id=public_id))
+
+    reason = (request.form.get('reason') or '').strip()
+    details = (request.form.get('details') or '').strip()[:1000] or None
+
+    if reason not in LISTING_REPORT_REASONS:
+        flash('اختر سببًا صالحًا للبلاغ.', 'danger')
+        return redirect(url_for('haraj.listing_detail', public_id=public_id))
+
+    # منع التكرار
+    existing = ListingReport.query.filter_by(
+        listing_id=listing.id,
+        reporter_id=current_user.id,
+        status='pending',
+    ).first()
+    if existing:
+        flash('لديك بلاغ قيد المراجعة على هذا الإعلان.', 'info')
+        return redirect(url_for('haraj.listing_detail', public_id=public_id))
+
+    report = ListingReport(
+        listing_id=listing.id,
+        reporter_id=current_user.id,
+        reason=reason,
+        details=details,
+    )
+    db.session.add(report)
+
+    # زيادة عداد البلاغات
+    listing.reports_count = (listing.reports_count or 0) + 1
+
+    # إخفاء الإعلان تلقائيًا عند 5 بلاغات (اختياري)
+    if listing.reports_count >= 5 and listing.status == 'active':
+        listing.status = 'expired'
+
+    db.session.commit()
+
+    flash('✅ تم إرسال بلاغك. شكرًا لمساعدتنا في حفظ مجتمع آمن.', 'success')
+    return redirect(url_for('haraj.index'))
+
+
+# ============================================================
+# صفحة إدارة البلاغات (للأدمن)
+# ============================================================
+@haraj_bp.route('/admin/reports')
+@login_required
+def admin_reports():
+    if not getattr(current_user, 'is_admin', False) and current_user.id != 1:
+        abort(403)
+
+    status_filter = (request.args.get('status') or 'pending').strip()
+    if status_filter not in {'pending', 'resolved', 'rejected', 'all'}:
+        status_filter = 'pending'
+
+    query = ListingReport.query
+    if status_filter != 'all':
+        query = query.filter_by(status=status_filter)
+
+    reports = query.order_by(ListingReport.created_at.desc()).limit(200).all()
+
+    return render_template(
+        'haraj/admin_reports.html',
+        reports=reports,
+        status_filter=status_filter,
+        reasons=LISTING_REPORT_REASONS,
+    )
+
+
+# ============================================================
+# قبول / رفض البلاغ
+# ============================================================
+@haraj_bp.route('/admin/reports/<int:report_id>/<action>', methods=['POST'])
+@login_required
+def admin_report_action(report_id, action):
+    if not getattr(current_user, 'is_admin', False) and current_user.id != 1:
+        abort(403)
+
+    if action not in {'resolve', 'reject'}:
+        abort(400)
+
+    report = ListingReport.query.get_or_404(report_id)
+
+    if report.status != 'pending':
+        flash('هذا البلاغ تمت معالجته مسبقًا.', 'info')
+        return redirect(url_for('haraj.admin_reports'))
+
+    report.status = 'resolved' if action == 'resolve' else 'rejected'
+    report.resolved_at = datetime.utcnow()
+    report.resolved_by = current_user.id
+
+    # عند القبول: نخفي الإعلان
+    if action == 'resolve' and report.listing:
+        report.listing.status = 'expired'
+
+    db.session.commit()
+    flash(f'✅ تم {"قبول" if action == "resolve" else "رفض"} البلاغ.', 'success')
+    return redirect(url_for('haraj.admin_reports'))

@@ -203,11 +203,9 @@
                     </div>
                     {% endif %}
                 {% else %}
-                <div class="haraj-detail__guest">
-                    <i class="fas fa-lock"></i>
-                    <p>سجّل دخولك للتواصل مع البائع</p>
-                    <a href="{{ url_for('auth.login', next=request.path) }}" class="haraj-action-btn haraj-action-btn--primary">
-                        <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                <div class="haraj-detail__contact">
+                    <a href="#" class="haraj-action-btn haraj-action-btn--outline" onclick="document.getElementById('harajReportModal').style.display='flex'; return false;">
+                        <i class="fas fa-flag"></i> إبلاغ عن الإعلان
                     </a>
                 </div>
                 {% endif %}
@@ -333,4 +331,34 @@ function toggleHarajReaction(btn) {
       .catch(function() {});
 }
 </script>
+
+{% if current_user.is_authenticated and not is_owner %}
+<div id="harajReportModal" class="haraj-modal-overlay" style="display:none;">
+    <div class="haraj-modal" onclick="event.stopPropagation();">
+        <div class="haraj-modal__head">
+            <h3><i class="fas fa-flag"></i> الإبلاغ عن الإعلان</h3>
+            <button type="button" class="haraj-modal__close" onclick="document.getElementById('harajReportModal').style.display='none';">✕</button>
+        </div>
+        <form method="POST" action="{{ url_for('haraj.report_listing', public_id=listing.public_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="haraj-form-group">
+                <label>سبب البلاغ</label>
+                <select name="reason" class="haraj-input" required>
+                    <option value="">اختر السبب</option>
+                    {% for key, label in reasons.items() %}
+                    <option value="{{ key }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="haraj-form-group">
+                <label>تفاصيل إضافية (اختياري)</label>
+                <textarea name="details" class="haraj-input haraj-textarea" rows="3" maxlength="1000" placeholder="اشرح المشكلة بإيجاز..."></textarea>
+            </div>
+            <button type="submit" class="haraj-submit-btn">
+                <i class="fas fa-paper-plane"></i> إرسال البلاغ
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

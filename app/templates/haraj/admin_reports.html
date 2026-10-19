@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block page_title %}بلاغات حراج أنتر — الإدارة{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<div class="haraj-container" style="max-width:900px;">
+    <a href="{{ url_for('haraj.index') }}" class="haraj-back-link">
+        <i class="fas fa-arrow-right"></i> العودة للحراج
+    </a>
+
+    <div class="haraj-form-card">
+        <div class="haraj-reports-head">
+            <h1 class="haraj-form-title"><i class="fas fa-flag"></i> بلاغات الحراج</h1>
+            <div class="haraj-reports-tabs">
+                <a href="{{ url_for('haraj.admin_reports', status='pending') }}" class="{% if status_filter == 'pending' %}is-active{% endif %}">قيد المراجعة</a>
+                <a href="{{ url_for('haraj.admin_reports', status='resolved') }}" class="{% if status_filter == 'resolved' %}is-active{% endif %}">مقبولة</a>
+                <a href="{{ url_for('haraj.admin_reports', status='rejected') }}" class="{% if status_filter == 'rejected' %}is-active{% endif %}">مرفوضة</a>
+                <a href="{{ url_for('haraj.admin_reports', status='all') }}" class="{% if status_filter == 'all' %}is-active{% endif %}">الكل</a>
+            </div>
+        </div>
+
+        {% if reports %}
+            {% for r in reports %}
+            <div class="haraj-report-card">
+                <div class="haraj-report-card__head">
+                    <div>
+                        <div class="haraj-report-card__title">{{ r.listing.title if r.listing else '(إعلان محذوف)' }}</div>
+                        <span class="haraj-report-card__reason">{{ reasons.get(r.reason, r.reason) }}</span>
+                    </div>
+                    <span class="haraj-report-card__status haraj-report-card__status--{{ r.status }}">
+                        {% if r.status == 'pending' %}قيد المراجعة
+                        {% elif r.status == 'resolved' %}مقبول
+                        {% else %}مرفوض{% endif %}
+                    </span>
+                </div>
+                <div class="haraj-report-card__meta">
+                    <i class="fas fa-user"></i> {{ r.reporter.name or r.reporter.username }}
+                    <span style="margin:0 8px;">·</span>
+                    <i class="fas fa-clock"></i> {{ r.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    {% if r.listing %}
+                    <span style="margin:0 8px;">·</span>
+                    <a href="{{ url_for('haraj.listing_detail', public_id=r.listing.public_id) }}" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> عرض الإعلان
+                    </a>
+                    {% endif %}
+                </div>
+                {% if r.details %}
+                <div class="haraj-report-card__details">{{ r.details }}</div>
+                {% endif %}
+                {% if r.status == 'pending' %}
+                <div class="haraj-report-card__actions">
+                    <form method="POST" action="{{ url_for('haraj.admin_report_action', report_id=r.id, action='resolve') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="haraj-report-btn haraj-report-btn--resolve" onclick="return confirm('قبول البلاغ وإخفاء الإعلان؟')">
+                            <i class="fas fa-check"></i> قبول وإخفاء
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('haraj.admin_report_action', report_id=r.id, action='reject') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="haraj-report-btn haraj-report-btn--reject">
+                            <i class="fas fa-times"></i> رفض
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="haraj-empty">
+                <i class="fas fa-check-circle fa-3x" style="color:#15803d;"></i>
+                <p>لا توجد بلاغات {{ 'قيد المراجعة' if status_filter == 'pending' else '' }}.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

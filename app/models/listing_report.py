@@ -4,6 +4,18 @@ from datetime import datetime
 from app.extensions import db
 
 
+LISTING_REPORT_REASONS = {
+    'fraud': 'احتيال أو نصب',
+    'forbidden': 'سلعة ممنوعة',
+    'wrong_category': 'فئة خاطئة',
+    'duplicate': 'إعلان مكرر',
+    'offensive': 'محتوى غير لائق',
+    'misleading': 'سعر أو وصف مضلل',
+    'sold_but_active': 'مباع ولا يزال نشطًا',
+    'other': 'سبب آخر',
+}
+
+
 class ListingReport(db.Model):
     __tablename__ = 'haraj_listing_reports'
 

@@ -10989,3 +10989,151 @@ a.anter-profile-stat:hover {
         display: none;
     }
 }
+
+
+/* Modal */
+.haraj-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(3, 30, 100, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 1090;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.haraj-modal {
+    background: #fff;
+    border-radius: 18px;
+    padding: 22px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    animation: harajModalIn 0.25s ease-out;
+}
+@keyframes harajModalIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.haraj-modal__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.haraj-modal__head h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #031E64;
+}
+.haraj-modal__head i { color: #dc2626; margin-left: 6px; }
+.haraj-modal__close {
+    background: transparent;
+    border: 0;
+    font-size: 1.4rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+.haraj-modal__close:hover { background: #f3f4f6; color: #dc2626; }
+
+/* صفحة إدارة البلاغات */
+.haraj-reports-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.haraj-reports-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.haraj-reports-tabs a {
+    padding: 6px 14px;
+    border-radius: 8px;
+    color: #003AAB;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.85rem;
+    background: #f3f4f6;
+}
+.haraj-reports-tabs a.is-active {
+    background: #003AAB;
+    color: #fff;
+}
+.haraj-report-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.haraj-report-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.haraj-report-card__title {
+    font-weight: 800;
+    color: #031E64;
+    margin: 0 0 4px;
+    font-size: 1rem;
+}
+.haraj-report-card__reason {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #fee2e2;
+    color: #b91c1c;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.haraj-report-card__meta {
+    font-size: 0.82rem;
+    color: #6b7280;
+    margin-bottom: 10px;
+}
+.haraj-report-card__details {
+    padding: 10px;
+    background: #f9fafb;
+    border-radius: 8px;
+    color: #374151;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+.haraj-report-card__actions {
+    display: flex;
+    gap: 8px;
+}
+.haraj-report-card__actions form { display: inline; }
+.haraj-report-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: 0;
+}
+.haraj-report-btn--resolve { background: #dc2626; color: #fff; }
+.haraj-report-btn--resolve:hover { background: #991b1b; }
+.haraj-report-btn--reject { background: #f3f4f6; color: #6b7280; }
+.haraj-report-btn--reject:hover { background: #e5e7eb; }
+.haraj-report-card__status {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+.haraj-report-card__status--pending { background: #fef3c7; color: #92400e; }
+.haraj-report-card__status--resolved { background: #dcfce7; color: #15803d; }
+.haraj-report-card__status--rejected { background: #e5e7eb; color: #4b5563; }

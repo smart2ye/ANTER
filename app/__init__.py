@@ -245,6 +245,7 @@ def create_app(test_config=None):
         return Markup(
             '<span class="early-member-badge" '
             'tabindex="0" role="button" '
+            'data-early-tooltip="عضو مبكّر — من أوائل من آمنوا بـ ANTER 🌟" '
             'aria-label="عضو مبكّر">'
             '<span class="early-member-badge__star" aria-hidden="true">★</span>'
             '</span>'

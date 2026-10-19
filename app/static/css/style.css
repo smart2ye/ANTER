@@ -11137,3 +11137,54 @@ a.anter-profile-stat:hover {
 .haraj-report-card__status--pending { background: #fef3c7; color: #92400e; }
 .haraj-report-card__status--resolved { background: #dcfce7; color: #15803d; }
 .haraj-report-card__status--rejected { background: #e5e7eb; color: #4b5563; }
+
+
+/* Tooltip لشارة العضو المبكّر */
+.early-tooltip-pop {
+    position: absolute;
+    z-index: 9999;
+    background: linear-gradient(135deg, #92400e 0%, #b45309 100%);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(146, 64, 14, 0.4);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.2s, transform 0.2s;
+    border: 1px solid rgba(255, 215, 0, 0.5);
+}
+.early-tooltip-pop.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.early-tooltip-pop::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 20px;
+    border: 6px solid transparent;
+    border-top-color: #92400e;
+}
+@media (max-width: 768px) {
+    .early-tooltip-pop {
+        position: fixed;
+        top: auto;
+        bottom: 90px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%) translateY(6px);
+        white-space: normal;
+        max-width: 90vw;
+        text-align: center;
+    }
+    .early-tooltip-pop.is-visible {
+        transform: translateX(-50%) translateY(0);
+    }
+    .early-tooltip-pop::after {
+        display: none;
+    }
+}

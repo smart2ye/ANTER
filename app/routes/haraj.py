@@ -539,6 +539,7 @@ def chat(listing_public_id, other_username):
                     user_id=other.id,
                     actor_id=current_user.id,
                     action='haraj_message',
+                    listing_id=listing.id,
                     extra_text=f'رسالة جديدة بخصوص «{listing.title[:60]}»',
                 ))
             except Exception:
@@ -668,6 +669,7 @@ def add_comment(public_id):
                 user_id=listing.user_id,
                 actor_id=current_user.id,
                 action='haraj_comment',
+                listing_id=listing.id,
                 extra_text=f'علّق على إعلانك «{listing.title[:60]}»',
             ))
         # إشعار صاحب التعليق الأصلي (في حالة الرد)
@@ -678,6 +680,7 @@ def add_comment(public_id):
                     user_id=parent_c.author_id,
                     actor_id=current_user.id,
                     action='haraj_comment',
+                    listing_id=listing.id,
                     extra_text=f'ردّ على تعليقك في «{listing.title[:60]}»',
                 ))
     except Exception:
@@ -755,6 +758,7 @@ def rate_seller(public_id):
             user_id=listing.user_id,
             actor_id=current_user.id,
             action='haraj_rating',
+            listing_id=listing.id,
             extra_text=f'قيّمك {stars} ({rating}/5) على «{listing.title[:50]}»',
         ))
     except Exception:

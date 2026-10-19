@@ -74,8 +74,8 @@
                 {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
             {% elif notif.action == 'haraj_message' %}
                 {% set link = url_for('haraj.messages') %}
-            {% elif notif.action in ['haraj_comment', 'haraj_rating'] %}
-                {% set link = url_for('haraj.messages') %}
+            {% elif notif.action in ['haraj_comment', 'haraj_rating'] and notif.listing_id %}
+                {% set link = url_for('haraj.listing_detail', public_id=notif.listing.public_id) if notif.listing else url_for('haraj.index') %}
             {% endif %}
 
             {# تحديد الفئة #}

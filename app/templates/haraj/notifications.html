@@ -20,7 +20,8 @@
         {% if notifications %}
         <div class="haraj-notif-list">
             {% for n in notifications %}
-            <a href="{{ url_for('haraj.index') }}" class="haraj-notif-item {% if not n.is_read %}is-unread{% endif %}" data-id="{{ n.id }}">
+            {% set target_link = url_for('haraj.listing_detail', public_id=n.listing.public_id) if n.listing else url_for('haraj.index') %}
+            <a href="{{ target_link }}" class="haraj-notif-item {% if not n.is_read %}is-unread{% endif %}" data-id="{{ n.id }}">
                 <img src="{{ avatar_url(n.actor) }}" alt="" class="haraj-notif-avatar">
                 <div class="haraj-notif-body">
                     <div class="haraj-notif-title">

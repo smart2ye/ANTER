@@ -70,7 +70,7 @@
                 <a href="{{ url_for('main.privacy') }}" target="_blank">سياسة الخصوصية</a>.
             </div>
 
-            {{ form.submit(value="موافق وإنشاء الحساب", class="btn btn-primary w-100 py-2 fw-bold rounded-pill") }}
+            {{ form.submit(value="موافق وإنشاء الحساب", class="btn btn-primary w-100 py-2 fw-bold rounded-pill", id="registerSubmitBtn", disabled=True) }}
         </form>
 
         <hr class="my-3">
@@ -130,7 +130,7 @@
                 passwordWarning.textContent = '';
                 passwordWarning.className = 'd-block mt-1';
             } else if (strength <= 2) {
-                passwordWarning.textContent = 'تحذير: يمكنك المتابعة بهذه الكلمة، لكن الأفضل استخدام كلمة أطول تتضمن حروفاً وأرقاماً.';
+                passwordWarning.textContent = 'كلمة المرور ضعيفة — يجب أن تحتوي على 8 أحرف على الأقل، وحرف واحد، ورقم واحد.';
                 passwordWarning.className = 'd-block mt-1 text-warning-emphasis';
             } else {
                 passwordWarning.textContent = 'جيد، تبدو كلمة المرور أقوى.';
@@ -138,5 +138,35 @@
             }
         });
     }
+
+    // ANTER: تعطيل زر التسجيل حتى تصبح كلمة المرور صالحة (8+ · حرف · رقم)
+    (function() {
+        const pwd = document.getElementById('passwordInput');
+        const btn = document.getElementById('registerSubmitBtn');
+        if (!pwd || !btn) return;
+        const check = () => {
+            const v = pwd.value || '';
+            const ok = v.length >= 8 && /[a-zA-Z\u0600-\u06FF]/.test(v) && /[0-9]/.test(v);
+            btn.disabled = !ok;
+        };
+        pwd.addEventListener('input', check);
+        check();
+    })();
+
+    // ANTER: منع الإرسال المزدوج — تعطيل الزر فورًا بعد الإرسال
+    (function() {
+        const form = document.querySelector('form[method="POST"]');
+        const btn = document.getElementById('registerSubmitBtn');
+        if (!form || !btn) return;
+        let submitting = false;
+        form.addEventListener('submit', function(e) {
+            if (submitting) { e.preventDefault(); return; }
+            submitting = true;
+            setTimeout(function() {
+                btn.disabled = true;
+                btn.value = 'جارٍ إنشاء الحساب...';
+            }, 0);
+        });
+    })();
 </script>
 {% endblock %}

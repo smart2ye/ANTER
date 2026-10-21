@@ -194,6 +194,10 @@ document.addEventListener('click', function(e) {
                 .then(html => {
                     commentsDiv.innerHTML = html;
                     commentsDiv.dataset.loaded = 'true';
+                    // ANTER: تنسيق التوقيت فور تحميل التعليقات
+                    if (typeof window.ANTERFormatDeviceTimes === 'function') {
+                        window.ANTERFormatDeviceTimes();
+                    }
                 })
                 .catch(() => {
                     commentsDiv.innerHTML = '<p class="text-muted small p-3 mb-0">تعذر تحميل التعليقات الآن.</p>';

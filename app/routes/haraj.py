@@ -227,6 +227,16 @@ def new_listing():
     form = ListingForm()
 
     if request.method == 'GET':
+        # منع فتح النموذج إن كان لديه إعلان نشط
+        has_active = Listing.query.filter(
+            Listing.user_id == current_user.id,
+            Listing.status == 'active',
+            Listing.expires_at.isnot(None),
+            Listing.expires_at > datetime.utcnow(),
+        ).first()
+        if has_active:
+            flash('لديك إعلان نشط بالفعل. أنهِ إعلانك الحالي أو انتظر انتهاءه.', 'info')
+            return redirect(url_for('haraj.my_listings'))
         return render_template(
             'haraj/new.html',
             form=form,
@@ -239,6 +249,21 @@ def new_listing():
         )
 
     if form.validate_on_submit():
+        # منع الإعلان الثانوي: إعلان نشط واحد كحد أقصى
+        existing_active = Listing.query.filter(
+            Listing.user_id == current_user.id,
+            Listing.status == 'active',
+            Listing.expires_at.isnot(None),
+            Listing.expires_at > datetime.utcnow(),
+        ).first()
+        if existing_active:
+            flash('لديك إعلان نشط بالفعل. أنهِ إعلانك الحالي أو انتظر انتهاءه قبل النشر مجددًا.', 'danger')
+            return render_template(
+                'haraj/new.html', form=form, subcategories=LISTING_SUBCATEGORIES,
+                categories=LISTING_CATEGORIES, types=LISTING_TYPES,
+                conditions=LISTING_CONDITIONS, regions=all_regions(),
+                saudi_regions=SAUDI_REGIONS,
+            )
         # المدن تحتاج ملء قبل التحقق
         if form.region.data and form.region.data in SAUDI_REGIONS:
             form.city.choices = [('', 'اختر المدينة')] + [

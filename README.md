@@ -272,7 +272,7 @@ Push: pywebpush + VAPID · جدول push_subscriptions · SW v5.
 - Bootstrap + Cairo + FontAwesome محليًا
 - 96 فهرس
 - WebP (حد 1600px)
-- gunicorn --workers=1 --threads=2 --worker-class=gthread --timeout=120 --max-requests=200 --max-requests-jitter=30
+- gunicorn --workers=1 --threads=2 --worker-class=gthread --timeout=120 --max-requests=5000 --max-requests-jitter=500
 
 ---
 

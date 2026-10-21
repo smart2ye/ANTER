@@ -317,6 +317,10 @@ def report_message(message_id):
         return jsonify({'success': False, 'message': 'يرجى اختيار سبب صحيح للبلاغ.'}), 400
     if len(details) > 1000:
         return jsonify({'success': False, 'message': 'تفاصيل البلاغ طويلة جداً.'}), 400
+    # ANTER: لا يُسمح بالإبلاغ عن رسالتك الخاصة
+    if message.sender_id == current_user.id:
+        return jsonify({'success': False, 'message': 'لا يمكنك الإبلاغ عن رسالتك الخاصة.'}), 400
+
     if Report.query.filter_by(reporter_id=current_user.id, message_id=message.id).first() is not None:
         return jsonify({'success': False, 'message': 'لقد أرسلت بلاغاً عن هذه الرسالة سابقاً.'}), 409
 

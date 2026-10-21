@@ -1054,6 +1054,11 @@ def report_listing(public_id):
         flash('اختر سببًا صالحًا للبلاغ.', 'danger')
         return redirect(url_for('haraj.listing_detail', public_id=public_id))
 
+    # ANTER: لا يُسمح بالإبلاغ عن إعلانك الخاص
+    if listing.user_id == current_user.id:
+        flash('لا يمكنك الإبلاغ عن إعلانك الخاص.', 'warning')
+        return redirect(url_for('haraj.listing_detail', public_id=public_id))
+
     # منع التكرار
     existing = ListingReport.query.filter_by(
         listing_id=listing.id,

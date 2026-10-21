@@ -532,6 +532,14 @@ def report(post_id=None):
         flash(message, 'danger')
         return redirect(url_for('main.index'))
 
+    # ANTER: لا يُسمح بالإبلاغ عن منشورك الخاص
+    if post.author_id == current_user.id:
+        message = 'لا يمكنك الإبلاغ عن منشورك الخاص.'
+        if is_json_request:
+            return jsonify({'success': False, 'message': message}), 400
+        flash(message, 'warning')
+        return redirect(url_for('posts.view_post', public_id=post.public_id))
+
     existing = Report.query.filter_by(reporter_id=current_user.id, post_id=post.id).first()
     if existing:
         message = 'لقد أرسلت بلاغاً سابقاً عن هذا المنشور.'

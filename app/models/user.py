@@ -57,6 +57,13 @@ class User(UserMixin, db.Model):
     # ANTER: عضو مبكّر — أول من آمن بالمنصة.
     is_early_member = db.Column(db.Boolean, nullable=False, default=False, server_default='false', index=True)
     
+    # ANTER: نظام العقوبات المتدرجة
+    warning_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    last_warning_at = db.Column(db.DateTime, nullable=True)
+    suspended_until = db.Column(db.DateTime, nullable=True)
+    restricted_until = db.Column(db.DateTime, nullable=True)
+    is_banned = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     country_code = db.Column(db.String(10), default='+966')

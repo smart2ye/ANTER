@@ -173,6 +173,9 @@
                 {% if current_user.is_authenticated %}
                     {% if is_owner %}
                     <div class="haraj-detail__actions">
+                        <button type="button" class="haraj-action-btn haraj-action-btn--outline" onclick="harajShareListing()">
+                            <i class="fas fa-share-alt"></i> مشاركة
+                        </button>
                         <a href="{{ url_for('haraj.edit_listing', public_id=listing.public_id) }}" class="haraj-action-btn haraj-action-btn--outline"><i class="fas fa-edit"></i> تعديل</a>
                         <form method="POST" action="{{ url_for('haraj.mark_sold', public_id=listing.public_id) }}" style="display:inline;">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -200,13 +203,19 @@
                             <i class="fab fa-whatsapp"></i> واتساب
                         </a>
                         {% endif %}
+                        <button type="button" class="haraj-action-btn haraj-action-btn--outline" onclick="harajShareListing()">
+                            <i class="fas fa-share-alt"></i> مشاركة
+                        </button>
+                        <button type="button" class="haraj-action-btn haraj-action-btn--outline" onclick="document.getElementById('harajReportModal').style.display='flex'; return false;">
+                            <i class="fas fa-flag"></i> إبلاغ عن الإعلان
+                        </button>
                     </div>
                     {% endif %}
                 {% else %}
                 <div class="haraj-detail__contact">
-                    <a href="#" class="haraj-action-btn haraj-action-btn--outline" onclick="document.getElementById('harajReportModal').style.display='flex'; return false;">
-                        <i class="fas fa-flag"></i> إبلاغ عن الإعلان
-                    </a>
+                    <button type="button" class="haraj-action-btn haraj-action-btn--outline" onclick="harajShareListing()">
+                        <i class="fas fa-share-alt"></i> مشاركة
+                    </button>
                 </div>
                 {% endif %}
             {% else %}
@@ -361,4 +370,25 @@ function toggleHarajReaction(btn) {
     </div>
 </div>
 {% endif %}
+<script>
+function harajShareListing() {
+    const url = {{ _listing_url|tojson }};
+    const title = {{ (listing.title ~ ' — حراج أنتر')|tojson }};
+    if (navigator.share) {
+        navigator.share({ title: title, url: url }).catch(() => {});
+        return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            const t = document.createElement('div');
+            t.textContent = '✅ تم نسخ الرابط';
+            t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#031E64;color:#fff;padding:10px 20px;border-radius:8px;z-index:99999;font-family:Cairo,sans-serif;';
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2000);
+        }).catch(() => { prompt('انسخ الرابط:', url); });
+        return;
+    }
+    prompt('انسخ الرابط:', url);
+}
+</script>
 {% endblock %}

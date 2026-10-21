@@ -10,6 +10,75 @@ import os
 admin_bp = Blueprint('admin', __name__)
 
 
+def _apply_auto_sanction(author, current_report):
+    """تصعيد تلقائي: تحذير + تعليق 24h/7d. لا حظر تلقائي."""
+    if not author or author.id == 1 or getattr(author, 'is_founder', False):
+        return
+    try:
+        db.session.flush()
+        now = datetime.utcnow()
+
+        def _count(window_days):
+            since = now - timedelta(days=window_days)
+            return (db.session.query(func.count(Report.id))
+                    .join(Post, Report.post_id == Post.id)
+                    .filter(Post.author_id == author.id,
+                            Report.status == 'resolved',
+                            Report.resolved_at >= since)
+                    .scalar()) or 0
+
+        author.warning_count = (author.warning_count or 0) + 1
+        author.last_warning_at = now
+
+        db.session.add(Notification(
+            user_id=author.id,
+            actor_id=current_user.id,
+            action='warning',
+            extra_text=(f'تحذير رسمي: تمت إزالة محتوى لك بعد مراجعة بلاغ. '
+                        f'السبب: {current_report.reason or "مخالفة معايير المجتمع"}. '
+                        'تكرار المخالفات قد يؤدي إلى تعليق أو حظر.'),
+        ))
+
+        in_30, in_90, in_180 = _count(30), _count(90), _count(180)
+
+        if in_30 >= 2:
+            target = now + timedelta(hours=24)
+            if not author.suspended_until or author.suspended_until < target:
+                author.suspended_until = target
+            db.session.add(Notification(
+                user_id=author.id,
+                actor_id=current_user.id,
+                action='suspended',
+                extra_text=(f'تم تعليق حسابك 24 ساعة لتكرار المخالفات. '
+                            f'ينتهي في {target:%Y-%m-%d %H:%M} UTC.'),
+            ))
+
+        if in_90 >= 3:
+            target = now + timedelta(days=7)
+            if not author.suspended_until or author.suspended_until < target:
+                author.suspended_until = target
+            db.session.add(Notification(
+                user_id=author.id,
+                actor_id=current_user.id,
+                action='suspended',
+                extra_text=(f'تم تعليق حسابك 7 أيام لتكرار المخالفات. '
+                            f'ينتهي في {target:%Y-%m-%d %H:%M} UTC.'),
+            ))
+
+        if in_180 >= 5:
+            founder = User.query.filter_by(id=1).first()
+            if founder and founder.id != author.id:
+                db.session.add(Notification(
+                    user_id=founder.id,
+                    actor_id=current_user.id,
+                    action='sanction_review_needed',
+                    extra_text=(f'مرشح للحظر الدائم: {author.username} (id={author.id}) — '
+                                '5+ مخالفات مؤكدة في 180 يومًا. القرار يدوي.'),
+                ))
+    except Exception:
+        current_app.logger.warning('تعذر تطبيق التصعيد التلقائي', exc_info=True)
+
+
 def _public_link(local_link):
     """تحويل رابط محلي إلى الرابط العام (للإرسال الخارجي)."""
     public = current_app.config.get('ANTER_PUBLIC_URL', '').rstrip('/')
@@ -563,6 +632,9 @@ def resolve_report(report_id):
                     post_id=report.post.id,
                     extra_text=f'تمت مراجعة بلاغ عن منشورك وإزالته لاحقًا. السبب: {report.reason or "مخالفة معايير المجتمع"}',
                 ))
+                # ANTER: تصعيد تلقائي (لا حظر — قرار بشري)
+                _author = db.session.get(User, report.post.author_id)
+                _apply_auto_sanction(_author, report)
     except Exception:
         current_app.logger.warning('تعذر تحديث حالة المنشور (resolve)', exc_info=True)
 

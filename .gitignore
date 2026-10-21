@@ -102,3 +102,12 @@ requirements.txt.pre_upgrade
 # ANTER: نسخ بيئة احتياطية — لا تُدفع
 .env.bak*
 .env.pre_turn
+
+# أرشيفات محلية — لا تُدفع
+_old_files_*.tar.gz
+_old_files_*/
+*.bak
+*.bak_*
+*.bak-*
+*.pre_upgrade
+*.pre_*

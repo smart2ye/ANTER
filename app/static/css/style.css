@@ -11188,3 +11188,28 @@ a.anter-profile-stat:hover {
         display: none;
     }
 }
+
+
+/* ANTER: منطقة كتابة التعليق — تُظهر النص كاملًا للمراجعة قبل النشر */
+.comment-textarea {
+    border-radius: 18px !important;
+    max-height: 400px !important;
+    min-height: 44px;
+    line-height: 1.55;
+    padding: 10px 14px !important;
+    padding-inline-end: 44px !important;
+    background: #f9fafb;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.comment-textarea:focus {
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0, 58, 171, 0.12);
+}
+@media (max-width: 420px) {
+    .comment-textarea {
+        border-radius: 16px !important;
+        max-height: 340px !important;
+        padding: 8px 12px !important;
+        padding-inline-end: 40px !important;
+    }
+}

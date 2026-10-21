@@ -246,6 +246,88 @@ def make_admin(user_id):
     db.session.commit()
     return jsonify({'success': True, 'is_admin': user.is_admin})
 
+
+# ANTER: العقوبات اليدوية — 4 إجراءات
+def _check_sanction_target(user, allow_founder=False):
+    if user.id == current_user.id:
+        return jsonify({'success': False, 'message': 'لا يمكنك تطبيق العقوبة على نفسك'})
+    if not allow_founder and (user.id == 1 or getattr(user, 'is_founder', False)):
+        return jsonify({'success': False, 'message': 'لا يمكن تطبيق العقوبة على المؤسس'})
+    return None
+
+
+@admin_bp.route('/users/suspend-24h/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def suspend_24h(user_id):
+    user = User.query.get_or_404(user_id)
+    err = _check_sanction_target(user)
+    if err: return err
+    until = datetime.utcnow() + timedelta(hours=24)
+    user.suspended_until = until
+    db.session.add(Notification(
+        user_id=user.id, actor_id=current_user.id, action='suspended',
+        extra_text=f'تم تعليق حسابك 24 ساعة بقرار إداري. ينتهي في {until:%Y-%m-%d %H:%M} UTC.',
+    ))
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@admin_bp.route('/users/suspend-7d/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def suspend_7d(user_id):
+    user = User.query.get_or_404(user_id)
+    err = _check_sanction_target(user)
+    if err: return err
+    until = datetime.utcnow() + timedelta(days=7)
+    user.suspended_until = until
+    db.session.add(Notification(
+        user_id=user.id, actor_id=current_user.id, action='suspended',
+        extra_text=f'تم تعليق حسابك 7 أيام بقرار إداري. ينتهي في {until:%Y-%m-%d %H:%M} UTC.',
+    ))
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@admin_bp.route('/users/ban/<int:user_id>', methods=['POST'])
+@login_required
+def ban_user(user_id):
+    # المؤسس فقط — لا admin_required هنا
+    if current_user.id != 1:
+        return jsonify({'success': False, 'message': 'هذا الإجراء للمؤسس فقط'}), 403
+    user = User.query.get_or_404(user_id)
+    err = _check_sanction_target(user)
+    if err: return err
+    user.is_banned = True
+    user.suspended_until = None
+    user.restricted_until = None
+    # إخفاء كل منشورات المستخدم
+    Post.query.filter_by(author_id=user.id).update({'moderation_status': 'removed'})
+    db.session.add(Notification(
+        user_id=user.id, actor_id=current_user.id, action='banned',
+        extra_text='تم حظر حسابك نهائيًا بعد مراجعة الإدارة. للاعتراض راسل الإدارة.',
+    ))
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@admin_bp.route('/users/unban/<int:user_id>', methods=['POST'])
+@login_required
+def unban_user(user_id):
+    if current_user.id != 1:
+        return jsonify({'success': False, 'message': 'هذا الإجراء للمؤسس فقط'}), 403
+    user = User.query.get_or_404(user_id)
+    user.is_banned = False
+    user.suspended_until = None
+    user.restricted_until = None
+    db.session.add(Notification(
+        user_id=user.id, actor_id=current_user.id, action='unbanned',
+        extra_text='تم رفع الحظر عن حسابك. نرجو الالتزام بمعايير المجتمع.',
+    ))
+    db.session.commit()
+    return jsonify({'success': True})
+
 @admin_bp.route('/users/verify/<int:user_id>', methods=['POST'])
 @login_required
 @admin_required

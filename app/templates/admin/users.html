@@ -186,6 +186,27 @@
                             {% if not user.phone %}disabled title="لا يوجد جوال"{% endif %}>
                         <i class="fas fa-mobile-alt"></i> جوال
                     </button>
+                    <div class="mt-1">
+                    {% if user.is_banned %}
+                        <span class="badge bg-dark">محظور</span>
+                        {% if current_user.id == 1 %}
+                            <button class="btn btn-sm btn-outline-success unban-user" data-url="{{ url_for('admin.unban_user', user_id=user.id) }}">رفع الحظر</button>
+                        {% endif %}
+                    {% elif user.suspended_until %}
+                        <span class="badge bg-warning text-dark">معلّق حتى {{ user.suspended_until.strftime('%Y-%m-%d %H:%M') }}</span>
+                        {% if user.is_admin %}
+                            <button class="btn btn-sm btn-outline-secondary suspend-24h" data-url="{{ url_for('admin.suspend_24h', user_id=user.id) }}" {% if user.id == 1 or user.is_founder %}disabled{% endif %}>+24س</button>
+                        {% endif %}
+                    {% else %}
+                        {% if user.is_admin or current_user.id == 1 %}
+                            <button class="btn btn-sm btn-outline-warning suspend-24h" data-url="{{ url_for('admin.suspend_24h', user_id=user.id) }}" {% if user.id == 1 or user.is_founder %}disabled{% endif %}>تعليق 24س</button>
+                            <button class="btn btn-sm btn-outline-warning suspend-7d" data-url="{{ url_for('admin.suspend_7d', user_id=user.id) }}" {% if user.id == 1 or user.is_founder %}disabled{% endif %}>تعليق 7أيام</button>
+                        {% endif %}
+                        {% if current_user.id == 1 and user.id != 1 and not user.is_founder %}
+                            <button class="btn btn-sm btn-outline-danger ban-user" data-url="{{ url_for('admin.ban_user', user_id=user.id) }}">حظر دائم</button>
+                        {% endif %}
+                    {% endif %}
+                    </div>
                     <button class="btn btn-sm btn-outline-danger delete-user" 
                             data-url="{{ url_for('admin.delete_user', user_id=user.id) }}"
                             {% if user.id == current_user.id %}disabled{% endif %}>
@@ -224,6 +245,23 @@
                 .then(data => {
                     if (data.success) location.reload();
                 });
+        });
+    });
+
+    ['suspend-24h', 'suspend-7d', 'ban-user', 'unban-user'].forEach(cls => {
+        document.querySelectorAll('.' + cls).forEach(btn => {
+            btn.addEventListener('click', function() {
+                const url = this.dataset.url;
+                const confirmMsg = cls === 'ban-user' ? 'حظر دائم — سيُخفى كل محتوى المستخدم. متأكد؟' : null;
+                if (confirmMsg && !confirm(confirmMsg)) return;
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+                }).then(res => res.json()).then(data => {
+                    if (data.success) location.reload();
+                    else alert(data.message || 'فشل الإجراء');
+                });
+            });
         });
     });
 

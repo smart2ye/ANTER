@@ -101,7 +101,12 @@
                    onclick="anterMarkRead({{ notif.id }}, event)">
 
                     <div class="anter-notif-item__avatar-wrap">
-                        {% if actor %}
+                        {% if notif.action in ['report_resolved', 'report_rejected', 'verification_approved', 'verification_rejected'] %}
+                            <img src="{{ url_for('static', filename='img/logo.png') }}"
+                                 alt="إدارة أنتر"
+                                 class="anter-notif-item__avatar"
+                                 loading="lazy">
+                        {% elif actor %}
                             <img src="{{ avatar_url(actor) }}"
                                  alt="{{ actor.name or actor.username }}"
                                  class="anter-notif-item__avatar"
@@ -181,7 +186,13 @@
                     <div class="anter-notif-item__body">
                         <p class="anter-notif-item__text">
                             {% if actor %}
-                                <strong class="anter-notif-item__actor">{{ actor.name or actor.username }}{{ verified_badge(actor) }}{{ founder_badge(actor) }}{{ early_member_badge(actor) }}</strong>
+                                <strong class="anter-notif-item__actor">
+                                    {% if notif.action in ['report_resolved', 'report_rejected', 'verification_approved', 'verification_rejected', 'early_member', 'early_member_revoked'] %}
+                                        إدارة أنتر
+                                    {% else %}
+                                        {{ actor.name or actor.username }}{{ verified_badge(actor) }}{{ founder_badge(actor) }}{{ early_member_badge(actor) }}
+                                    {% endif %}
+                                </strong>
                             {% else %}
                                 <strong class="anter-notif-item__actor text-muted">حساب غير متاح</strong>
                             {% endif %}

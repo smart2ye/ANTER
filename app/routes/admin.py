@@ -561,7 +561,7 @@ def resolve_report(report_id):
                     actor_id=current_user.id,
                     action='content_removed',
                     post_id=report.post.id,
-                    extra_text=f'تمت إزالة منشورك بعد مراجعة البلاغ. السبب: {report.reason or "مخالفة"}',
+                    extra_text=f'تمت مراجعة بلاغ عن منشورك وإزالته لاحقًا. السبب: {report.reason or "مخالفة معايير المجتمع"}',
                 ))
     except Exception:
         current_app.logger.warning('تعذر تحديث حالة المنشور (resolve)', exc_info=True)
@@ -610,7 +610,7 @@ def reject_report(report_id):
                     actor_id=current_user.id,
                     action='content_restored',
                     post_id=report.post.id,
-                    extra_text='تمت مراجعة البلاغ وتبيّن أن منشورك لا يخالف القواعد. نعتذر عن الإخفاء المؤقت.',
+                    extra_text='تمت مراجعة البلاغ وتبيّن أن منشورك لا يخالف القواعد. نعتذر عن الإخفاء المؤقت. يمكنك الاعتراض عبر صفحة المساعدة والدعم.',
                 ))
     except Exception:
         current_app.logger.warning('تعذر تحديث حالة المنشور (reject)', exc_info=True)

@@ -593,6 +593,45 @@ def report(post_id=None):
     flash(message, 'success')
     return redirect(url_for('posts.view_post', public_id=post.public_id))
 
+@posts_bp.route('/p/<public_id>/appeal', methods=['POST'])
+@login_required
+def appeal_post(public_id):
+    """صاحب المنشور يطعن على إزالة منشوره."""
+    post = Post.query.filter_by(public_id=public_id).first_or_404()
+
+    if post.author_id != current_user.id:
+        flash('لا يمكنك الاعتراض على منشور ليس لك.', 'danger')
+        return redirect(url_for('posts.view_post', public_id=public_id))
+
+    if getattr(post, 'moderation_status', 'clean') != 'removed':
+        flash('لا يمكن الاعتراض إلا على منشور تمت إزالته.', 'info')
+        return redirect(url_for('posts.view_post', public_id=public_id))
+
+    # منع الاعتراض المكرر
+    existing = Report.query.filter_by(
+        reporter_id=current_user.id,
+        post_id=post.id,
+        reason='content_appeal',
+    ).first()
+    if existing:
+        flash('لديك اعتراض قيد المراجعة بالفعل على هذا المنشور.', 'info')
+        return redirect(url_for('posts.view_post', public_id=public_id))
+
+    details = (request.form.get('details') or '').strip()[:2000]
+
+    db.session.add(Report(
+        reporter_id=current_user.id,
+        post_id=post.id,
+        reason='content_appeal',
+        details=details or 'اعتراض على قرار الإزالة (بلا تفاصيل).',
+        status='pending',
+    ))
+    db.session.commit()
+
+    flash('✅ تم استلام اعتراضك. سيراجعه فريق أنتر خلال 24-48 ساعة.', 'success')
+    return redirect(url_for('posts.view_post', public_id=public_id))
+
+
 @posts_bp.route('/hide/<int:post_id>', methods=['POST'])
 @login_required
 @csrf.exempt

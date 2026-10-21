@@ -189,6 +189,53 @@ ANTER منصة اجتماعية عربية RTL تتيح للمستخدم إنش�
 
 ---
 
+## نظام العقوبات
+
+نظام عقوبات متدرج تلقائي + يدوي، يحمي المجتمع دون إسقاط العقوبة على مستخدم بريء.
+
+### المستويات
+
+| المستوى | الإجراء | المُشغِّل | الأثر |
+|---|---|---|---|
+| 1 | تحذير | تلقائي — أول بلاغ مُدان | إشعار فقط |
+| 2 | تعليق 24 ساعة | تلقائي — 2 مخالفات/30 يومًا | لا POST |
+| 3 | تعليق 7 أيام | تلقائي — 3 مخالفات/90 يومًا | لا POST |
+| 4 | حظر دائم | **يدوي فقط — المؤسس** | لا دخول + إخفاء المحتوى |
+
+### آلية العمل
+
+- عند قبول بلاغ (`resolve_report`): إزالة المنشور + تحذير تلقائي + عدّاد المخالفات.
+- العتبات التلقائية: 2/30، 3/90. عتبة 5/180 → **إشعار للمؤسس فقط** (لا حظر تلقائي).
+- الحظر الدائم: قرار بشري من `/admin/users` بواسطة المؤسس (id=1) — لا admin آخر.
+
+### الأعمدة (جدول `users`)
+
+| العمود | الغرض |
+|---|---|
+| `warning_count` | عدّاد التحذيرات التراكمي |
+| `last_warning_at` | آخر تحذير |
+| `suspended_until` | تعليق مؤقت — يمنع POST فقط |
+| `restricted_until` | تقييد — قراءة فقط |
+| `is_banned` | حظر دائم — يقطع الجلسة |
+
+### البوابة
+
+`before_request` عالمي في `app/__init__.py`:
+- محظور → `logout_user()` + flash + redirect.
+- معلّق/مقيّد → منع POST فقط (GET يمر).
+- استثناءات: `/static/*`, `/health`, `/auth/logout`, `/auth/reset_password*`.
+
+### الإجراءات اليدوية (`/admin/users`)
+
+- تعليق 24 ساعة (admin أو مؤسس)
+- تعليق 7 أيام (admin أو مؤسس)
+- حظر دائم (المؤسس فقط)
+- رفع الحظر (المؤسس فقط)
+
+كل إجراء يُرسل إشعارًا للمستخدم باسم «إدارة أنتر».
+
+---
+
 ## تطبيقات الجوال
 
 ### 1. ANTER WebView APK
@@ -231,7 +278,8 @@ like, comment, reply, follow, message, voice_message, voice_call,
 file_message, wall_post, mention, repost, like_comment, like_video,
 comment_video, reply_video, verification_approved, verification_rejected,
 report_resolved, report_rejected, founder_post, early_member,
-early_member_revoked, story_issue_fixed, video_lost
+early_member_revoked, story_issue_fixed, video_lost,
+warning, suspended, banned, unbanned, sanction_review_needed
 
 Push: pywebpush + VAPID · جدول push_subscriptions · SW v5.
 

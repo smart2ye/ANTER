@@ -578,6 +578,11 @@
 | `mention_privacy` | VARCHAR(20) |  |  |
 | `haraj_whatsapp_number` | VARCHAR(20) | ✓ |  |
 | `haraj_show_whatsapp` | BOOLEAN |  |  |
+| `warning_count` | INTEGER |  |  |
+| `last_warning_at` | TIMESTAMP | ✓ |  |
+| `suspended_until` | TIMESTAMP | ✓ |  |
+| `restricted_until` | TIMESTAMP | ✓ |  |
+| `is_banned` | BOOLEAN |  |  |
 
 ## UserActivity
 

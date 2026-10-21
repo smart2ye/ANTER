@@ -78,6 +78,8 @@
                 {% set link = url_for('haraj.listing_detail', public_id=notif.listing.public_id) if notif.listing else url_for('haraj.index') %}
             {% elif notif.action in ['content_under_review', 'content_restored', 'content_removed'] and notif.post %}
                 {% set link = url_for('posts.view_post', public_id=notif.post.public_id) %}
+            {% elif notif.action in ['warning', 'suspended', 'banned', 'unbanned'] %}
+                {% set link = url_for('users.settings') + '#support' %}
             {% endif %}
 
             {# تحديد الفئة #}
@@ -141,6 +143,10 @@
                             {% elif notif.action == 'content_under_review' %}anter-notif-icon--default
                             {% elif notif.action == 'content_restored' %}anter-notif-icon--verified
                             {% elif notif.action == 'content_removed' %}anter-notif-icon--default
+                            {% elif notif.action == 'warning' %}anter-notif-icon--default
+                            {% elif notif.action == 'suspended' %}anter-notif-icon--default
+                            {% elif notif.action == 'banned' %}anter-notif-icon--default
+                            {% elif notif.action == 'unbanned' %}anter-notif-icon--verified
                             {% elif notif.action == 'repost' %}anter-notif-icon--reply
                             {% elif notif.action == 'verification_approved' %}anter-notif-icon--verified
                             {% elif notif.action == 'terms_update' %}anter-notif-icon--verified
@@ -162,6 +168,10 @@
                                 {% elif notif.action == 'content_under_review' %}fa-eye-slash
                                 {% elif notif.action == 'content_restored' %}fa-check
                                 {% elif notif.action == 'content_removed' %}fa-trash
+                                {% elif notif.action == 'warning' %}fa-exclamation-triangle
+                                {% elif notif.action == 'suspended' %}fa-clock
+                                {% elif notif.action == 'banned' %}fa-ban
+                                {% elif notif.action == 'unbanned' %}fa-unlock
                                 {% elif notif.action == 'founder_post' %}fa-bullhorn
                                 {% elif notif.action == 'early_member' %}fa-star
                                 {% elif notif.action == 'early_member_revoked' %}fa-star-half-alt
@@ -187,7 +197,7 @@
                         <p class="anter-notif-item__text">
                             {% if actor %}
                                 <strong class="anter-notif-item__actor">
-                                    {% if notif.action in ['report_resolved', 'report_rejected', 'verification_approved', 'verification_rejected', 'early_member', 'early_member_revoked'] %}
+                                    {% if notif.action in ['report_resolved', 'report_rejected', 'verification_approved', 'verification_rejected', 'early_member', 'early_member_revoked', 'warning', 'suspended', 'banned', 'unbanned'] %}
                                         إدارة أنتر
                                     {% else %}
                                         {{ actor.name or actor.username }}{{ verified_badge(actor) }}{{ founder_badge(actor) }}{{ early_member_badge(actor) }}

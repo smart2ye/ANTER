@@ -3,7 +3,7 @@
 **آخر تحديث:** 2026-10-21
 
 ## الملفات
-- routes.md — المسارات (230 route · 20 blueprint)
+- routes.md — المسارات (235 route · 20 blueprint)
 - models.md — النماذج (41 موديل)
 - templates.md — القوالب (61 قالب)
 - services.md — الخدمات (22 خدمة)

@@ -1,7 +1,7 @@
 # مرجع المسارات (Routes)
 
 **آخر تحديث:** 2026-10-21
-**المجموع:** 230 route · 20 blueprint
+**المجموع:** 235 route · 20 blueprint
 
 ## admin — `/admin`
 
@@ -18,6 +18,7 @@
 - `POST` `/admin/reports/resolve/<int:report_id>` — _admin.py_
 - `GET` `/admin/support-requests` — _admin.py_
 - `GET` `/admin/users` — _admin.py_
+- `POST` `/admin/users/ban/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/delete/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/early-member/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/email-verify-link/<int:user_id>` — _admin.py_
@@ -25,7 +26,10 @@
 - `POST` `/admin/users/password-reset-link/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/phone-verify-link/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/send-email/<int:user_id>` — _admin.py_
+- `POST` `/admin/users/suspend-24h/<int:user_id>` — _admin.py_
+- `POST` `/admin/users/suspend-7d/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/toggle/<int:user_id>` — _admin.py_
+- `POST` `/admin/users/unban/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/verify/<int:user_id>` — _admin.py_
 - `GET` `/admin/verification-requests` — _admin.py_
 - `POST` `/admin/verification-requests/<int:request_id>/approve` — _admin.py_
@@ -218,6 +222,7 @@
 - `POST` `/like/<int:post_id>` — _posts.py_
 - `POST` `/like_comment/<int:comment_id>` — _posts.py_
 - `GET` `/p/<public_id>` — _posts.py_
+- `POST` `/p/<public_id>/appeal` — _posts.py_
 - `GET` `/post/<int:post_id>` — _posts.py_
 - `POST` `/report` — _posts.py_
 - `POST` `/report/<int:post_id>` — _posts.py_

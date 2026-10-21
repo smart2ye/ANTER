@@ -340,8 +340,18 @@ def reset_password(token):
         identity = (form.identity.data or '').strip().lower()
         user_username = (user.username or '').strip().lower()
         user_email = (user.email or '').strip().lower()
-        if identity not in (user_username, user_email):
-            flash('❌ اسم المستخدم أو البريد غير مطابق للحساب المرتبط بهذا الرابط.', 'danger')
+
+        def _phone_match(raw, phone):
+            if not raw or not phone:
+                return False
+            a = ''.join(c for c in raw if c.isdigit())
+            b = ''.join(c for c in phone if c.isdigit())
+            if len(a) < 7 or not b:
+                return False
+            return b.endswith(a) or a.endswith(b)
+
+        if identity not in (user_username, user_email) and not _phone_match(identity, user.phone):
+            flash('❌ اسم المستخدم أو البريد أو رقم الجوال غير مطابق للحساب المرتبط بهذا الرابط.', 'danger')
             return render_template('auth/reset_password.html', form=form)
         user.set_password(form.password.data)
         log_user_activity(user.id, "password_change")

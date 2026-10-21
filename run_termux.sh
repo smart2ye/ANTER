@@ -8,5 +8,5 @@ fi
 source venv-termux/bin/activate
 echo "📥 تثبيت المتطلبات..."
 pip install -r requirements.txt
-echo "🌐 تشغيل الخادم على http://localhost:5000"
+echo "🌐 تشغيل الخادم على http://localhost:5050"
 python run.py

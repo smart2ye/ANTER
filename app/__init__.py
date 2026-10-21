@@ -531,6 +531,37 @@ def create_app(test_config=None):
         except Exception:
             db.session.rollback()
 
+    # ANTER: بوابة العقوبات — حظر دائم يقطع الجلسة، تعليق/تقييد يمنع POST فقط.
+    @app.before_request
+    def _anter_enforce_sanctions():
+        from flask import request as _req, flash, redirect, url_for
+        from flask_login import current_user, logout_user
+
+        if not current_user.is_authenticated:
+            return
+        path = _req.path
+        if (path.startswith('/static/')
+                or path in ('/health', '/auth/logout', '/auth/reset_password_request')
+                or path.startswith('/auth/reset_password/')):
+            return
+
+        now = datetime.utcnow()
+
+        if getattr(current_user, 'is_banned', False):
+            logout_user()
+            flash('تم حظر حسابك. للاعتراض راسل إدارة ANTER.', 'danger')
+            return redirect(url_for('auth.login'))
+
+        if _req.method == 'POST':
+            su = getattr(current_user, 'suspended_until', None)
+            if su and su > now:
+                flash(f'حسابك معلّق حتى {su:%Y-%m-%d %H:%M} UTC — لا يمكنك النشر أو التفاعل.', 'danger')
+                return redirect(url_for('main.index'))
+            ru = getattr(current_user, 'restricted_until', None)
+            if ru and ru > now:
+                flash(f'حسابك مقيّد حتى {ru:%Y-%m-%d %H:%M} UTC — القراءة فقط.', 'danger')
+                return redirect(url_for('main.index'))
+
     # ANTER: نغمة ترحيب بعد تسجيل الدخول/التسجيل/التبديل — تُقرأ مرة واحدة فقط.
     @app.context_processor
     def _inject_welcome_chime():

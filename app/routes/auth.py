@@ -84,6 +84,9 @@ def login():
             if getattr(user, 'is_deleted', False):
                 flash('هذا الحساب محذوف. للاعتراض تواصل مع إدارة ANTER.', 'danger')
                 return render_template('auth/login.html', form=form, saved_accounts=saved_accounts)
+            if getattr(user, 'is_banned', False):
+                flash('تم حظر حسابك. للاعتراض راسل إدارة ANTER.', 'danger')
+                return render_template('auth/login.html', form=form, saved_accounts=saved_accounts)
             login_user(user, remember=True)
             log_user_activity(user.id, "login")
             session['play_welcome_chime'] = True

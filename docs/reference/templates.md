@@ -1,7 +1,7 @@
 # مرجع القوالب (Templates)
 
-**آخر تحديث:** 2026-10-17
-**المجموع:** 57 قالب
+**آخر تحديث:** 2026-10-21
+**المجموع:** 61 قالب
 
 | المسار | يمتد من |
 |---|---|
@@ -22,6 +22,7 @@
 | `admin/videos.html` | base.html |
 | `auth/accounts.html` | base.html |
 | `auth/confirm_email.html` | base.html |
+| `auth/confirm_phone.html` | base.html |
 | `auth/login.html` | base.html |
 | `auth/register.html` | base.html |
 | `auth/reset_password.html` | base.html |
@@ -31,11 +32,14 @@
 | `explore/hashtag.html` | base.html |
 | `explore.html` | base.html |
 | `followers.html` | base.html |
+| `haraj/admin_reports.html` | base.html |
 | `haraj/chat.html` | base.html |
 | `haraj/index.html` | base.html |
 | `haraj/listing.html` | base.html |
 | `haraj/messages.html` | base.html |
+| `haraj/my_listings.html` | base.html |
 | `haraj/new.html` | base.html |
+| `haraj/notifications.html` | base.html |
 | `haraj/seller.html` | base.html |
 | `haraj/settings.html` | base.html |
 | `haraj/terms.html` | base.html |

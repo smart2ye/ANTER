@@ -1,7 +1,7 @@
 # مرجع المسارات (Routes)
 
-**آخر تحديث:** 2026-10-17
-**المجموع:** 219 route · 20 blueprint
+**آخر تحديث:** 2026-10-21
+**المجموع:** 230 route · 20 blueprint
 
 ## admin — `/admin`
 
@@ -23,6 +23,7 @@
 - `POST` `/admin/users/email-verify-link/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/make_admin/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/password-reset-link/<int:user_id>` — _admin.py_
+- `POST` `/admin/users/phone-verify-link/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/send-email/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/toggle/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/verify/<int:user_id>` — _admin.py_
@@ -71,6 +72,8 @@
 ## haraj
 
 - `GET` `/` — _haraj.py_
+- `GET` `/admin/reports` — _haraj.py_
+- `POST` `/admin/reports/<int:report_id>/<action>` — _haraj.py_
 - `GET` `/api/cities` — _haraj.py_
 - `POST` `/comment/<int:comment_id>/delete` — _haraj.py_
 - `GET` `/listing/<public_id>` — _haraj.py_
@@ -80,15 +83,22 @@
 - `GET,POST` `/listing/<public_id>/edit` — _haraj.py_
 - `POST` `/listing/<public_id>/rate` — _haraj.py_
 - `POST` `/listing/<public_id>/react` — _haraj.py_
+- `POST` `/listing/<public_id>/renew` — _haraj.py_
+- `POST` `/listing/<public_id>/report` — _haraj.py_
 - `POST` `/listing/<public_id>/sold` — _haraj.py_
 - `GET` `/media/listing/<int:image_id>` — _haraj.py_
 - `GET` `/messages` — _haraj.py_
 - `GET,POST` `/messages/<listing_public_id>/<other_username>` — _haraj.py_
 - `GET` `/messages/unread_count` — _haraj.py_
+- `GET` `/my-listings` — _haraj.py_
 - `GET,POST` `/new` — _haraj.py_
+- `GET` `/notifications` — _haraj.py_
+- `POST` `/notifications/mark_all_read` — _haraj.py_
+- `GET` `/notifications/unread_count` — _haraj.py_
 - `GET` `/seller/<username>` — _haraj.py_
 - `GET,POST` `/settings` — _haraj.py_
 - `GET` `/terms` — _haraj.py_
+- `GET` `/unread_total` — _haraj.py_
 
 ## main
 
@@ -257,6 +267,7 @@
 - `POST` `/users/settings/bio` — _users.py_
 - `GET,POST` `/users/settings/email/verify/<token>` — _users.py_
 - `POST` `/users/settings/email/verify/send` — _users.py_
+- `GET,POST` `/users/settings/phone/verify/<token>` — _users.py_
 - `POST` `/users/unfollow/<int:user_id>` — _users.py_
 - `POST` `/users/verification-request` — _users.py_
 

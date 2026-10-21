@@ -1,7 +1,7 @@
 # مرجع الخدمات (Services)
 
-**آخر تحديث:** 2026-10-17
-**المجموع:** 21 خدمة
+**آخر تحديث:** 2026-10-21
+**المجموع:** 22 خدمة
 
 ## account_vault.py
 
@@ -65,6 +65,7 @@
 ## anter_memory.py
 
 **دوال مستقلة:**
+- `_is_system_message()`
 - `_clean_text()`
 - `_load_list()`
 - `_save_list()`
@@ -163,6 +164,12 @@
 
 **دوال الفئات (methods):**
 - `.wrapped()`
+
+## moderation.py
+
+**دوال مستقلة:**
+- `classify_post()`
+- `should_hide()`
 
 ## moment_detector.py
 

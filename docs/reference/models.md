@@ -1,6 +1,6 @@
 # مرجع النماذج (Models)
 
-**آخر تحديث:** 2026-10-17
+**آخر تحديث:** 2026-10-21
 **المجموع:** 41 موديل
 
 ## AssistantDailyPublication
@@ -184,6 +184,7 @@
 | `expires_at` | DATETIME |  |  |
 | `pledge_accepted` | BOOLEAN |  |  |
 | `pledge_at` | TIMESTAMP | ✓ |  |
+| `subcategory` | VARCHAR(50) | ✓ |  |
 
 ## ListingComment
 
@@ -362,6 +363,7 @@
 | `extra_text` | VARCHAR(500) | ✓ |  |
 | `report_id` | INTEGER | ✓ |  |
 | `comment_id` | INTEGER | ✓ |  |
+| `listing_id` | INTEGER | ✓ |  |
 
 ## OwnerAdminBootstrap
 
@@ -398,6 +400,9 @@
 | `visibility` | VARCHAR(20) |  |  |
 | `shared_video_id` | INTEGER | ✓ |  |
 | `wall_owner_id` | INTEGER | ✓ |  |
+| `moderation_status` | VARCHAR(20) |  |  |
+| `moderation_reason` | VARCHAR(500) | ✓ |  |
+| `moderation_at` | TIMESTAMP | ✓ |  |
 
 ## PostHashtag
 

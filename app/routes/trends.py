@@ -3,6 +3,7 @@ from flask_login import login_required
 from app.models import Post, Hashtag, Like, Comment, Repost
 from app.extensions import db
 from sqlalchemy import func, desc
+from sqlalchemy.orm import defer
 from datetime import datetime, timedelta
 import math
 
@@ -28,7 +29,7 @@ def index():
     last_48h = datetime.utcnow() - timedelta(hours=48)
     
     # جلب المنشورات مع عدد التفاعلات
-    posts = Post.query.filter(Post.created_at > last_48h).all()
+    posts = Post.query.options(defer(Post.image_data)).filter(Post.created_at > last_48h).order_by(Post.id.desc()).limit(300).all()
     
     scored_posts = []
     for post in posts:

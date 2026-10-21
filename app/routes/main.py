@@ -56,7 +56,7 @@ def get_user_interests(user_id):
         comments = Comment.query.filter_by(author_id=user_id).limit(30).all()
         for comment in comments:
             interests.extend(extract_keywords(comment.content))
-        own_posts = Post.query.filter_by(author_id=user_id).limit(20).all()
+        own_posts = Post.query.options(defer(Post.image_data)).filter_by(author_id=user_id).limit(20).all()
         for post in own_posts:
             interests.extend(extract_keywords(post.content))
     except Exception:

@@ -370,25 +370,126 @@ function toggleHarajReaction(btn) {
     </div>
 </div>
 {% endif %}
+<div id="harajShareModal" class="haraj-share-modal" aria-hidden="true" role="dialog" aria-modal="true" style="display:none;">
+    <div class="haraj-share-backdrop" onclick="_closeHarajShareModal()"></div>
+    <div class="haraj-share-dialog" role="document">
+        <div class="haraj-share-head">
+            <h3><i class="fas fa-share-alt"></i> مشاركة الإعلان</h3>
+            <button type="button" class="haraj-share-close" onclick="_closeHarajShareModal()" aria-label="إغلاق">✕</button>
+        </div>
+        <div class="haraj-share-grid">
+            <a href="#" target="_blank" rel="noopener" class="haraj-share-opt haraj-share-opt--wa" data-platform="wa">
+                <i class="fab fa-whatsapp"></i><span>واتساب</span>
+            </a>
+            <a href="#" target="_blank" rel="noopener" class="haraj-share-opt haraj-share-opt--tg" data-platform="tg">
+                <i class="fab fa-telegram"></i><span>تيليجرام</span>
+            </a>
+            <a href="#" target="_blank" rel="noopener" class="haraj-share-opt haraj-share-opt--tw" data-platform="tw">
+                <i class="fab fa-twitter"></i><span>X</span>
+            </a>
+            <a href="#" target="_blank" rel="noopener" class="haraj-share-opt haraj-share-opt--fb" data-platform="fb">
+                <i class="fab fa-facebook-f"></i><span>فيسبوك</span>
+            </a>
+            <button type="button" class="haraj-share-opt haraj-share-opt--copy" onclick="_harajCopyLink()">
+                <i class="fas fa-link"></i><span>نسخ الرابط</span>
+            </button>
+        </div>
+    </div>
+</div>
+<style>
+.haraj-share-modal { position: fixed; inset: 0; z-index: 99998; align-items: center; justify-content: center; padding: 20px; }
+.haraj-share-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.55); }
+.haraj-share-dialog { position: relative; background: #fff; border-radius: 16px; width: 100%; max-width: 380px; padding: 18px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); font-family: Cairo, sans-serif; direction: rtl; }
+.haraj-share-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.haraj-share-head h3 { margin: 0; font-size: 16px; color: #031E64; display: flex; align-items: center; gap: 8px; }
+.haraj-share-close { background: none; border: none; font-size: 18px; color: #6b7280; cursor: pointer; padding: 4px 10px; border-radius: 8px; }
+.haraj-share-close:hover { background: #f3f4f6; color: #111; }
+.haraj-share-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.haraj-share-opt { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 14px 8px; border-radius: 12px; text-decoration: none; color: #fff; font-family: Cairo, sans-serif; font-weight: 600; font-size: 13px; border: none; cursor: pointer; transition: transform .15s; }
+.haraj-share-opt:hover { transform: translateY(-2px); }
+.haraj-share-opt i { font-size: 22px; }
+.haraj-share-opt--wa { background: #25D366; }
+.haraj-share-opt--tg { background: #0088cc; }
+.haraj-share-opt--tw { background: #000000; }
+.haraj-share-opt--fb { background: #1877F2; }
+.haraj-share-opt--copy { background: #003AAB; grid-column: span 3; flex-direction: row; gap: 10px; }
+.haraj-share-opt--copy i { font-size: 16px; }
+</style>
+
 <script>
-function harajShareListing() {
+var _harajShareUrl = '';
+var _harajShareTitle = '';
+
+async function harajShareListing() {
     const url = {{ _listing_url|tojson }};
     const title = {{ (listing.title ~ ' — حراج أنتر')|tojson }};
+
+    // 1) مشاركة النظام الأصلية (تعمل في المتصفح)
     if (navigator.share) {
-        navigator.share({ title: title, url: url }).catch(() => {});
-        return;
+        try {
+            await navigator.share({ title: title, text: title, url: url });
+            return;
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            // فشل حقيقي — ننتقل للـ modal
+        }
+    }
+    // 2) Modal بأزرار (يعمل في APK WebView)
+    _harajShareUrl = url;
+    _harajShareTitle = title;
+    _openHarajShareModal(url, title);
+}
+
+function _openHarajShareModal(url, title) {
+    var modal = document.getElementById('harajShareModal');
+    if (!modal) return;
+    var encUrl = encodeURIComponent(url);
+    var encTitle = encodeURIComponent(title);
+
+    var wa = document.querySelector('#harajShareModal [data-platform="wa"]');
+    var tg = document.querySelector('#harajShareModal [data-platform="tg"]');
+    var tw = document.querySelector('#harajShareModal [data-platform="tw"]');
+    var fb = document.querySelector('#harajShareModal [data-platform="fb"]');
+    if (wa) wa.href = 'https://wa.me/?text=' + encTitle + '%20' + encUrl;
+    if (tg) tg.href = 'https://t.me/share/url?url=' + encUrl + '&text=' + encTitle;
+    if (tw) tw.href = 'https://twitter.com/intent/tweet?url=' + encUrl + '&text=' + encTitle;
+    if (fb) fb.href = 'https://www.facebook.com/sharer/sharer.php?u=' + encUrl;
+
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function _closeHarajShareModal() {
+    var modal = document.getElementById('harajShareModal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+function _harajCopyLink() {
+    if (!_harajShareUrl) return;
+    var url = _harajShareUrl;
+    function _toast(msg) {
+        var t = document.createElement('div');
+        t.textContent = msg;
+        t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#031E64;color:#fff;padding:10px 20px;border-radius:8px;z-index:99999;font-family:Cairo,sans-serif;font-size:14px;';
+        document.body.appendChild(t);
+        setTimeout(function() { t.remove(); }, 2200);
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(() => {
-            const t = document.createElement('div');
-            t.textContent = '✅ تم نسخ الرابط';
-            t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#031E64;color:#fff;padding:10px 20px;border-radius:8px;z-index:99999;font-family:Cairo,sans-serif;';
-            document.body.appendChild(t);
-            setTimeout(() => t.remove(), 2000);
-        }).catch(() => { prompt('انسخ الرابط:', url); });
+        navigator.clipboard.writeText(url).then(function() {
+            _toast('✅ تم نسخ الرابط');
+            _closeHarajShareModal();
+        }).catch(function() { prompt('انسخ الرابط:', url); });
         return;
     }
-    prompt('انسخ الرابط:', url);
+    var input = document.createElement('input');
+    input.value = url;
+    document.body.appendChild(input);
+    input.select();
+    try { document.execCommand('copy'); _toast('✅ تم نسخ الرابط'); _closeHarajShareModal(); }
+    catch (e) { prompt('انسخ الرابط:', url); }
+    input.remove();
 }
 </script>
 {% endblock %}

@@ -228,6 +228,27 @@ def build_feed(user):
     _scored.sort(key=lambda x: x[1], reverse=True)
     all_posts = [p for p, _ in _scored]
 
+    # ANTER: حد 2 منشورات لكل مؤلف — تنوع.
+    MAX_PER_AUTHOR = 2
+    _capped = []
+    _author_counts = {}
+    for _p in all_posts:
+        _cnt = _author_counts.get(_p.author_id, 0)
+        if _cnt >= MAX_PER_AUTHOR:
+            continue
+        _author_counts[_p.author_id] = _cnt + 1
+        _capped.append(_p)
+
+    # ANTER: نافذة متغيرة على أفضل 8 — كل فتح ترتيب مختلف.
+    if len(_capped) > page_size:
+        _pool = _capped[:8] if len(_capped) >= 8 else _capped
+        _offset = _random.randint(0, max(0, min(2, len(_pool) - 1)))
+        _rotated = _pool[_offset:] + _pool[:_offset]
+        _rest = _capped[len(_pool):]
+        all_posts = (_rotated + _rest)[:page_size]
+    else:
+        all_posts = _capped
+
     return all_posts, top_suggested
 
 @main_bp.route('/')

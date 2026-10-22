@@ -245,7 +245,7 @@ def build_feed(user):
         _offset = _random.randint(0, max(0, min(2, len(_pool) - 1)))
         _rotated = _pool[_offset:] + _pool[:_offset]
         _rest = _capped[len(_pool):]
-        all_posts = (_rotated + _rest)[:page_size]
+        all_posts = _rotated + _rest  # لا نقصّ — `/` يأخذ `[:page_size]`
     else:
         all_posts = _capped
 
@@ -366,13 +366,18 @@ def settings_alias():
 @main_bp.route('/api/posts')
 @login_required
 def api_posts():
-    page = max(1, request.args.get('page', 1, type=int))
     per_page = current_app.config['FEED_PAGE_SIZE']
+    exclude_raw = request.args.get('exclude', '')
+    exclude_ids = {
+        int(x) for x in exclude_raw.split(',')
+        if x.strip().isdigit()
+    } if exclude_raw else set()
+
     all_posts, top_suggested = build_feed(current_user)
-    start = (page - 1) * per_page
-    end = start + per_page
-    paginated_posts = all_posts[start:end]
-    has_next = len(all_posts) > end
+    # استبعاد ما حمّله المستخدم بالفعل
+    filtered = [p for p in all_posts if p.id not in exclude_ids]
+    paginated_posts = filtered[:per_page]
+    has_next = len(filtered) > per_page
     post_counts = get_post_engagement_counts(
         [post.id for post in paginated_posts]
     )

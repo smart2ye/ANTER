@@ -220,6 +220,14 @@
             </section>
             {% endif %}
         {% endfor %}
+        <div id="feed-load-more-wrap" class="feed-load-more-wrap">
+            <div id="loading-spinner" class="feed-loading-spinner" style="display:none;">
+                <i class="fas fa-circle-notch fa-spin"></i> جارٍ التحميل...
+            </div>
+            <button type="button" id="load-more-btn" class="feed-load-more-btn" onclick="loadMorePosts()">
+                <i class="fas fa-arrow-down"></i> المزيد
+            </button>
+        </div>
     {% else %}
         <div class="text-center text-muted py-5">
             <i class="fas fa-newspaper fa-4x mb-3" style="color: var(--fb-blue); opacity: 0.3;"></i>
@@ -689,4 +697,35 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 {% endif %}
 
+
+<style>
+.feed-load-more-wrap {
+    text-align: center;
+    padding: 20px 10px;
+}
+.feed-load-more-btn {
+    background: #003AAB;
+    color: #fff;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 999px;
+    font-family: Cairo, sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background .2s;
+}
+.feed-load-more-btn:hover {
+    background: #031E64;
+}
+.feed-load-more-btn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+.feed-loading-spinner {
+    color: #003AAB;
+    font-family: Cairo, sans-serif;
+    padding: 8px;
+}
+</style>
 {% endblock %}

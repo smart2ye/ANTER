@@ -1,7 +1,6 @@
 // ==============================
 // تحميل لا نهائي + توصيات داخل الخلاصة
 // ==============================
-let page = 2;
 let loading = false;
 let hasMore = true;
 
@@ -83,9 +82,17 @@ function loadMorePosts() {
     loading = true;
 
     const spinner = document.getElementById('loading-spinner');
+    const btn = document.getElementById('load-more-btn');
     if (spinner) spinner.style.display = 'block';
+    if (btn) btn.disabled = true;
 
-    fetch(`/api/posts?page=${page}`)
+    // استبعاد ما حمّله المستخدم بالفعل
+    const excludeIds = Array.from(
+        document.querySelectorAll('#posts-container .post-card')
+    ).map(el => el.dataset.postId).filter(Boolean);
+    const excludeParam = excludeIds.length ? `?exclude=${excludeIds.join(',')}` : '';
+
+    fetch(`/api/posts${excludeParam}`)
         .then(res => res.json())
         .then(data => {
             if (data.posts && data.posts.length > 0) {
@@ -100,17 +107,21 @@ function loadMorePosts() {
                 });
 
                 hasMore = data.has_next;
-                page++;
             } else {
                 hasMore = false;
             }
 
             loading = false;
             if (spinner) spinner.style.display = 'none';
+            if (btn) {
+                btn.disabled = false;
+                if (!hasMore) btn.style.display = 'none';
+            }
         })
         .catch(() => {
             loading = false;
             if (spinner) spinner.style.display = 'none';
+            if (btn) btn.disabled = false;
         });
 }
 

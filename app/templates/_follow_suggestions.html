@@ -68,9 +68,23 @@
     text-decoration: underline;
 }
 .feed-follow-suggestions__track {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    display: flex;
     gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+}
+.feed-follow-suggestions__track::-webkit-scrollbar {
+    height: 6px;
+}
+.feed-follow-suggestions__track::-webkit-scrollbar-track {
+    background: #e0e7ff;
+    border-radius: 3px;
+}
+.feed-follow-suggestions__track::-webkit-scrollbar-thumb {
+    background: #003AAB;
+    border-radius: 3px;
 }
 .feed-follow-card {
     display: flex;
@@ -82,6 +96,10 @@
     padding: 14px 10px 10px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     transition: box-shadow .2s;
+    min-width: 150px;
+    max-width: 150px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
 }
 .feed-follow-card:hover {
     box-shadow: 0 3px 10px rgba(0,0,0,0.1);

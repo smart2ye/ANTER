@@ -172,7 +172,15 @@ def build_feed(user):
         except Exception:
             top_suggested = []
 
-    all_posts = followed_posts + top_suggested
+    # ANTER: إزالة التكرار بين followed_posts و top_suggested قبل الدمج.
+    _seen_ids = set()
+    _dedup = []
+    for _p in (followed_posts + top_suggested):
+        if _p.id in _seen_ids:
+            continue
+        _seen_ids.add(_p.id)
+        _dedup.append(_p)
+    all_posts = _dedup
     if not all_posts:
         all_posts = post_query.order_by(Post.created_at.desc()).limit(candidate_limit).all()
 

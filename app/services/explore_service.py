@@ -134,6 +134,25 @@ def trending_users(viewer, limit=20):
         suggested_ids = [row[0] for row in active_users]
         mutual_counts = {row[0]: 0 for row in active_users}
 
+    # ANTER fallback 3: المستخدمون الموثقون/المبكرون غير المتابَعين
+    if not suggested_ids:
+        priority_users = User.query.filter(
+            ~User.id.in_(following_ids),
+            User.is_deleted.is_(False),
+            or_(User.is_verified.is_(True), User.is_early_member.is_(True)),
+        ).order_by(User.id.desc()).limit(30).all()
+        suggested_ids = [u.id for u in priority_users]
+        mutual_counts = {u.id: 0 for u in priority_users}
+
+    # ANTER fallback 4: أي مستخدم غير محذوف وغير متابَع (الأحدث أولاً)
+    if not suggested_ids:
+        recent_users = User.query.filter(
+            ~User.id.in_(following_ids),
+            User.is_deleted.is_(False),
+        ).order_by(User.id.desc()).limit(30).all()
+        suggested_ids = [u.id for u in recent_users]
+        mutual_counts = {u.id: 0 for u in recent_users}
+
     users_by_id = {
         u.id: u for u in User.query.filter(
             User.id.in_(suggested_ids),

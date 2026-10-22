@@ -164,6 +164,14 @@ def build_feed(user):
     _sugg_candidates = [post for post, _score in suggested_with_scores[:page_size * 2]]
     top_suggested = visible_posts(_sugg_candidates, user)[:page_size]
 
+    # ANTER: إن كان top_suggested فارغًا (لا مقترحات حديثة)، نستخدم trending_posts.
+    if not top_suggested:
+        try:
+            from app.services.explore_service import trending_posts as _trending_posts
+            top_suggested = _trending_posts(user, limit=page_size)
+        except Exception:
+            top_suggested = []
+
     all_posts = followed_posts + top_suggested
     if not all_posts:
         all_posts = post_query.order_by(Post.created_at.desc()).limit(candidate_limit).all()
@@ -286,6 +294,14 @@ def index():
         except Exception:
             onboarding_users = []
 
+    # ANTER: اقتراحات متابعة دائمة في الفيد (مستقلة عن onboarding).
+    follow_suggestions = []
+    try:
+        from app.services.explore_service import trending_users
+        follow_suggestions = trending_users(current_user, limit=4)
+    except Exception:
+        follow_suggestions = []
+
     return render_template(
         'index.html',
         posts=all_posts[:page_size],
@@ -293,6 +309,7 @@ def index():
         feed_reels=feed_reels,
         share_users=share_users,
         onboarding_users=onboarding_users,
+        follow_suggestions=follow_suggestions,
     )
 
 @main_bp.route('/login')

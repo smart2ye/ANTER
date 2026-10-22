@@ -7,7 +7,7 @@
                 <small id="find-friends-status">اقتراحات مخصصة لك</small>
             </div>
         </div>
-        <button type="button" id="find-friends-btn" class="btn btn-sm btn-primary">
+        <button type="button" id="find-friends-btn" class="btn btn-sm btn-primary" style="display:none;">
             <i class="fas fa-magic"></i> اقترح
         </button>
     </div>
@@ -148,6 +148,27 @@
     var status = document.getElementById('find-friends-status');
     var results = document.getElementById('find-friends-results');
 
+    // ANTER: استدعاء تلقائي — لا ننتظر ضغط زر.
+    function _autoRequestHashes() {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جارٍ البحث';
+        status.textContent = 'نقرأ جهات اتصالك...';
+        try {
+            window.AnterContacts.requestHashes();
+        } catch (e) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-search"></i> ابحث';
+            status.textContent = 'تعذر توليد الاقتراحات.';
+        }
+    }
+
+    // تأخير بسيط لضمان تحميل الجسر بعد DOMContentLoaded
+    if (document.readyState === 'complete') {
+        setTimeout(_autoRequestHashes, 300);
+    } else {
+        window.addEventListener('load', function() { setTimeout(_autoRequestHashes, 300); });
+    }
+
     btn.addEventListener('click', function() {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جارٍ البحث';
@@ -227,6 +248,7 @@
     window.onAnterHashesReceived = async function(hashes) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-magic"></i> إعادة';
+        btn.style.display = '';
 
         if (!Array.isArray(hashes) || hashes.length === 0) {
             status.textContent = 'لا توجد جهات اتصال مطابقة.';

@@ -121,12 +121,21 @@ def build_feed(user):
         defer(Post.image_data),
     )
 
-    followed_posts = post_query.filter(Post.author_id.in_(following_ids)) \
-        .order_by(Post.id.desc()).limit(candidate_limit).all()
+    _mod_filter = or_(
+        Post.moderation_status.is_(None),
+        Post.moderation_status.notin_(['removed', 'under_review']),
+    )
+    _max_age = datetime.utcnow() - timedelta(days=30)
+    followed_posts = post_query.filter(
+        Post.author_id.in_(following_ids),
+        Post.created_at > _max_age,
+        _mod_filter,
+    ).order_by(Post.created_at.desc()).limit(candidate_limit).all()
     suggested_posts = post_query.filter(
         ~Post.author_id.in_(following_ids),
-        Post.created_at > datetime.utcnow() - timedelta(days=7)
-    ).order_by(Post.id.desc()).limit(candidate_limit).all()
+        Post.created_at > datetime.utcnow() - timedelta(days=7),
+        _mod_filter,
+    ).order_by(Post.created_at.desc()).limit(candidate_limit).all()
 
     suggested_counts = get_post_engagement_counts(
         [post.id for post in suggested_posts]
@@ -151,14 +160,15 @@ def build_feed(user):
         suggested_with_scores.append((post, score))
 
     suggested_with_scores.sort(key=lambda item: item[1], reverse=True)
-    top_suggested = [post for post, _score in suggested_with_scores[:page_size]]
+    # ANTER: فلترة قبل القص — لضمان الوصول إلى page_size بعد استبعاد غير المرئي.
+    _sugg_candidates = [post for post, _score in suggested_with_scores[:page_size * 2]]
+    top_suggested = visible_posts(_sugg_candidates, user)[:page_size]
 
     all_posts = followed_posts + top_suggested
     if not all_posts:
         all_posts = post_query.order_by(Post.created_at.desc()).limit(candidate_limit).all()
 
     all_posts = visible_posts(all_posts, user)
-    top_suggested = visible_posts(top_suggested, user)
 
     hidden_ids = {
         post_id for post_id, in db.session.query(HiddenPost.post_id)
@@ -195,22 +205,12 @@ def build_feed(user):
     _scored = []
     for _p in all_posts:
         _base = feed_score(_p)
-        _jitter = _random.uniform(0.85, 1.15)
+        if _base <= 0.0:
+            continue  # أقدم من 10 أيام — مستبعد
+        _jitter = _random.uniform(0.95, 1.05)
         _scored.append((_p, _base * _jitter))
     _scored.sort(key=lambda x: x[1], reverse=True)
     all_posts = [p for p, _ in _scored]
-
-    # ANTER (ج): حقن منشورين عشوائيين من القاع في مواضع أعلى — لكشف منشورات لا تُعرض.
-    if len(all_posts) >= 12:
-        tail = all_posts[10:]
-        if len(tail) >= 2:
-            injected = _random.sample(tail, 2)
-            injected_ids = {p.id for p in injected}
-            all_posts = [p for p in all_posts if p.id not in injected_ids]
-            # مواضع الإدراج: 3 و 8 (إن كان الطول يسمح).
-            positions = sorted([min(3, len(all_posts)), min(8, len(all_posts))], reverse=True)
-            for _pos, _p in zip(positions, injected):
-                all_posts.insert(_pos, _p)
 
     return all_posts, top_suggested
 

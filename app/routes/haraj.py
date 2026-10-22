@@ -53,8 +53,15 @@ def index():
     city = request.args.get('city', '').strip()
     q = request.args.get('q', '').strip()
     listing_type = request.args.get('type', '').strip()
+    country = request.args.get('country', '').strip().upper()  # 'SA' / 'YE' / ''
 
     query = Listing.query.filter(Listing.status == 'active')
+
+    # ANTER: فلترة الدولة (تبويبات)
+    if country == 'SA':
+        query = query.filter(Listing.region.in_(list(SAUDI_REGIONS.keys())))
+    elif country == 'YE':
+        query = query.filter(Listing.region.in_(list(YEMEN_REGIONS.keys())))
 
     if category and category in LISTING_CATEGORIES:
         query = query.filter(Listing.category == category)
@@ -105,7 +112,13 @@ def index():
         reactions_by_listing=reactions_by_listing,
         user_liked=user_liked,
         user_saved=user_saved,
-        regions=all_regions(),
+        regions=(
+            list(SAUDI_REGIONS.keys()) if country == 'SA'
+            else list(YEMEN_REGIONS.keys()) if country == 'YE'
+            else all_regions()
+        ),
+        country_groups={'SA': list(SAUDI_REGIONS.keys()), 'YE': list(YEMEN_REGIONS.keys())},
+        current_country=country,
         categories=LISTING_CATEGORIES,
         subcategories=LISTING_SUBCATEGORIES,
         listing_types=LISTING_TYPES,

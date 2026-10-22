@@ -49,7 +49,56 @@
             {% endif %}
         </div>
 
-        <form method="GET" action="{{ url_for('haraj.index') }}" class="haraj-filters" id="harajFilterForm">
+        <div class="haraj-country-tabs">
+    <input type="hidden" name="country" value="{{ current_country or '' }}">
+
+    <a href="{{ url_for('haraj.index', country='', category=current_category, region=current_region, q=current_q, type=current_type) }}"
+       class="haraj-country-tab {% if not current_country %}is-active{% endif %}">
+        🌍 الكل
+    </a>
+    <a href="{{ url_for('haraj.index', country='SA', category=current_category, region='', q=current_q, type=current_type) }}"
+       class="haraj-country-tab {% if current_country == 'SA' %}is-active{% endif %}">
+        🇸🇦 السعودية
+    </a>
+    <a href="{{ url_for('haraj.index', country='YE', category=current_category, region='', q=current_q, type=current_type) }}"
+       class="haraj-country-tab {% if current_country == 'YE' %}is-active{% endif %}">
+        🇾🇪 اليمن
+    </a>
+</div>
+<style>
+.haraj-country-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 12px 0;
+    margin-bottom: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.haraj-country-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: #374151;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: all .2s;
+    border: 1px solid transparent;
+}
+.haraj-country-tab:hover {
+    background: #e5e7eb;
+}
+.haraj-country-tab.is-active {
+    background: #003AAB;
+    color: #fff;
+    border-color: #003AAB;
+}
+</style>
+
+<form method="GET" action="{{ url_for('haraj.index') }}" class="haraj-filters" id="harajFilterForm">
             <div class="haraj-filter-row">
                 <input type="search"
                        name="q"

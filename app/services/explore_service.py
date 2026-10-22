@@ -160,13 +160,25 @@ def trending_users(viewer, limit=20):
         ).all()
     }
 
+    # ANTER: عدّاد المتابعين دفعة واحدة (استعلام واحد بدل 30).
+    follower_rows = db.session.query(
+        Follow.followed_id,
+        func.count(Follow.id),
+    ).filter(Follow.followed_id.in_(suggested_ids)) \
+     .group_by(Follow.followed_id).all()
+    follower_counts = {uid: cnt for uid, cnt in follower_rows}
+
     def _score(uid):
+        # ترتيب طبقـي: موثق ← مبكر ← عدد المتابعين ← (تعادل: أصدقاء أصدقاء ← geo)
         u = users_by_id.get(uid)
         if not u:
-            return -1.0
+            return (-1, -1, -1, -1, -1)
+        verified = 1 if getattr(u, 'is_verified', False) else 0
+        early = 1 if getattr(u, 'is_early_member', False) else 0
+        followers = follower_counts.get(uid, 0) or 0
         mutual = mutual_counts.get(uid, 0) or 0
         geo = geo_score_for_user(u, viewer)
-        return mutual * 5.0 + geo
+        return (verified, early, followers + mutual * 2, mutual, geo)
 
     ranked_ids = sorted(
         [uid for uid in suggested_ids if uid in users_by_id],

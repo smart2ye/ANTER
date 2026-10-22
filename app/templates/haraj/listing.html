@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% set _listing_url = url_for('haraj.listing_detail', public_id=listing.public_id, _external=True) %}
 {% set _listing_img = url_for('haraj.listing_image', image_id=listing.primary_image().id, _external=True) if listing.primary_image() else url_for('static', filename='img/logo-og.png', _external=True) %}
-{% set _price_text = 'السعر: {:,} ريال'.format(listing.price) if listing.price else 'السعر عند التواصل' %}
+{% set _price_text = 'السعر: {:,} '.format(listing.price) + listing.currency_label if listing.price else 'السعر عند التواصل' %}
 {% set _cat_label = categories.get(listing.category, '') %}
 {% set _type_label = types.get(listing.listing_type, '') %}
 {% set _cond_label = conditions.get(listing.condition, '') %}
@@ -67,7 +67,7 @@
 
             {% if listing.price %}
             <div class="haraj-detail__price">
-                {{ "{:,}".format(listing.price) }} ر.س
+                {{ "{:,}".format(listing.price) }} {{ listing.currency_symbol }}
                 {% if listing.negotiable %}<small>(قابل للتفاوض)</small>{% endif %}
             </div>
             {% else %}

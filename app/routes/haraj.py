@@ -24,7 +24,7 @@ from app.models.seller_rating import SellerRating, seller_rating_stats
 from app.models.notification import Notification
 from app.forms.haraj import ListingForm
 from app.constants.saudi_locations import (
-    SAUDI_REGIONS, all_regions, cities_for_region, region_of_city,
+    SAUDI_REGIONS, YEMEN_REGIONS, all_regions, cities_for_region, region_of_city,
 )
 from app.utils.image_storage import prepare_image_data
 
@@ -61,7 +61,7 @@ def index():
     if subcategory and category:
         if subcategory in LISTING_SUBCATEGORIES.get(category, {}):
             query = query.filter(Listing.subcategory == subcategory)
-    if region and region in SAUDI_REGIONS:
+    if region and (region in SAUDI_REGIONS or region in YEMEN_REGIONS):
         query = query.filter(Listing.region == region)
     if city and region:
         query = query.filter(Listing.city == city)

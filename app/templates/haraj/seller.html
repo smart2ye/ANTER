@@ -76,7 +76,7 @@
                 </div>
                 <h3 class="haraj-card__title">{{ listing.title }}</h3>
                 {% if listing.price %}
-                <p class="haraj-card__price">{{ "{:,}".format(listing.price) }} ر.س</p>
+                <p class="haraj-card__price">{{ "{:,}".format(listing.price) }} {{ listing.currency_symbol }}</p>
                 {% else %}
                 <p class="haraj-card__price" style="font-size:.95rem;color:#6b7280;">سعر عند التواصل</p>
                 {% endif %}

@@ -14,7 +14,7 @@ from app.models.listing import (
     LISTING_CATEGORIES, LISTING_TYPES, LISTING_CONDITIONS,
     LISTING_SUBCATEGORIES,
 )
-from app.constants.saudi_locations import SAUDI_REGIONS, all_regions
+from app.constants.saudi_locations import SAUDI_REGIONS, YEMEN_REGIONS, all_regions
 
 
 class ListingForm(FlaskForm):
@@ -93,7 +93,10 @@ class ListingForm(FlaskForm):
         if self.category.data and self.category.data in LISTING_SUBCATEGORIES:
             subs = LISTING_SUBCATEGORIES[self.category.data]
             self.subcategory.choices = [('', 'اختر الفئة الفرعية')] + [(k, v) for k, v in subs.items()]
-        # تعبئة المدن حسب المنطقة
-        if self.region.data and self.region.data in SAUDI_REGIONS:
-            cities = [(c, c) for c in SAUDI_REGIONS[self.region.data]]
+        # تعبئة المدن حسب المنطقة (سعودية أو يمنية)
+        _region_map = {}
+        _region_map.update(SAUDI_REGIONS)
+        _region_map.update(YEMEN_REGIONS)
+        if self.region.data and self.region.data in _region_map:
+            cities = [(c, c) for c in _region_map[self.region.data]]
             self.city.choices = [('', 'اختر المدينة')] + cities

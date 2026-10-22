@@ -120,6 +120,24 @@ class Listing(db.Model):
             and self.expires_at > datetime.utcnow()
         )
 
+    @property
+    def currency_symbol(self):
+        """ANTER: رمز عملة الإعلان حسب المنطقة (SAR افتراضي، YER لليمن)."""
+        try:
+            from app.constants.saudi_locations import country_of_region
+            return 'ر.ي' if country_of_region(self.region) == 'YE' else 'ر.س'
+        except Exception:
+            return 'ر.س'
+
+    @property
+    def currency_label(self):
+        """ANTER: تسمية العملة الكاملة (ريال يمني / ريال سعودي)."""
+        try:
+            from app.constants.saudi_locations import country_of_region
+            return 'ريال يمني' if country_of_region(self.region) == 'YE' else 'ريال سعودي'
+        except Exception:
+            return 'ريال سعودي'
+
     def primary_image(self):
         return self.images.filter_by(position=1).first() or self.images.first()
 

@@ -207,7 +207,7 @@ def switch_to_assistant():
     return redirect(request.referrer or url_for('main.index'))
 
 
-@auth_bp.route('/switch-back-to-owner', methods=['POST'])
+@auth_bp.route('/switch-back-to-owner', methods=['GET', 'POST'])
 @login_required
 def switch_back_to_owner():
     owner_id = session.get('anter_assistant_switch_owner_id')

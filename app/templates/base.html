@@ -1023,5 +1023,128 @@
 
 
 
+<!-- ANTER: modal إحصاءات المنشور (يظهر مرة واحدة لكل صفحة) -->
+<div id="anterPostStatsModal" class="anter-share-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="anterPostStatsTitle">
+    <div class="anter-share-backdrop" data-pstats-close></div>
+    <div class="anter-share-dialog" role="document">
+        <div class="anter-share-header">
+            <div>
+                <span class="anter-share-kicker">
+                    <i class="fas fa-chart-simple" aria-hidden="true"></i>
+                    إحصاءات المنشور
+                </span>
+                <h2 id="anterPostStatsTitle">أرقام حقيقية</h2>
+            </div>
+            <button type="button" class="anter-share-close" data-pstats-close aria-label="إغلاق">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="post-stats-grid">
+            <div class="post-stats-item">
+                <div class="post-stats-value" id="postStatsViews">—</div>
+                <div class="post-stats-label"><i class="fas fa-eye"></i> مشاهدة</div>
+            </div>
+            <div class="post-stats-item">
+                <div class="post-stats-value" id="postStatsLikes">—</div>
+                <div class="post-stats-label"><i class="fas fa-heart"></i> إعجاب</div>
+            </div>
+            <div class="post-stats-item">
+                <div class="post-stats-value" id="postStatsComments">—</div>
+                <div class="post-stats-label"><i class="fas fa-comment"></i> تعليق</div>
+            </div>
+            <div class="post-stats-item">
+                <div class="post-stats-value" id="postStatsShares">—</div>
+                <div class="post-stats-label"><i class="fas fa-share-alt"></i> مشاركة</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.post-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 8px 0 4px;
+    font-family: Cairo, sans-serif;
+}
+.post-stats-item {
+    text-align: center;
+    padding: 18px 8px;
+    background: linear-gradient(135deg, #f0f4ff 0%, #f8faff 100%);
+    border-radius: 12px;
+    border: 1px solid #e0e7ff;
+}
+.post-stats-value {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: #003AAB;
+    line-height: 1;
+}
+.post-stats-label {
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+.post-stats-label i { color: #94a3b8; }
+</style>
+
+<script>
+(function() {
+    // فتح modal الإحصاءات
+    document.addEventListener('click', async function(e) {
+        var btn = e.target.closest('.post-stats-btn');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        var url = btn.dataset.postStatsUrl;
+        if (!url) return;
+
+        var modal = document.getElementById('anterPostStatsModal');
+        if (!modal) return;
+
+        // نضع علامة تحميل مؤقتة
+        ['postStatsViews', 'postStatsLikes', 'postStatsComments', 'postStatsShares'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = '…';
+        });
+
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+
+        try {
+            var res = await fetch(url, { credentials: 'same-origin' });
+            if (!res.ok) throw new Error('stats failed');
+            var data = await res.json();
+            document.getElementById('postStatsViews').textContent = data.views || 0;
+            document.getElementById('postStatsLikes').textContent = data.likes || 0;
+            document.getElementById('postStatsComments').textContent = data.comments || 0;
+            document.getElementById('postStatsShares').textContent = data.shares || 0;
+        } catch (err) {
+            ['postStatsViews', 'postStatsLikes', 'postStatsComments', 'postStatsShares'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = '—';
+            });
+        }
+    });
+
+    // إغلاق modal
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('[data-pstats-close]')) {
+            var modal = document.getElementById('anterPostStatsModal');
+            if (modal) {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+        }
+    });
+})();
+</script>
+
 </body>
 </html>

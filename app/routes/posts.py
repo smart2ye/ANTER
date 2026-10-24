@@ -829,11 +829,51 @@ def comments_fragment(post_id):
     return render_template('comments.html', post=post)
 
 
+@posts_bp.route('/p/<public_id>/stats')
+def post_stats(public_id):
+    """ANTER: إحصاءات منشور — JSON عام لأي زائر."""
+    from sqlalchemy import func
+    from app.models import Like, Comment, Repost
+
+    post = Post.query.filter_by(public_id=public_id).first_or_404()
+    if not can_view_post(current_user, post):
+        abort(403)
+
+    likes = db.session.query(func.count(Like.id)).filter_by(post_id=post.id).scalar() or 0
+    comments = db.session.query(func.count(Comment.id)).filter_by(post_id=post.id).scalar() or 0
+    reposts = db.session.query(func.count(Repost.id)).filter_by(post_id=post.id).scalar() or 0
+
+    return jsonify({
+        'views': post.views or 0,
+        'likes': likes,
+        'comments': comments,
+        'reposts': reposts,
+        'shares': reposts,
+        'total_engagement': likes + comments + reposts,
+        'is_verified_author': bool(getattr(post.author, 'is_verified', False)),
+    })
+
 @posts_bp.route('/p/<public_id>')
 def view_post(public_id):
     post = Post.query.filter_by(public_id=public_id).first_or_404()
     if not can_view_post(current_user, post):
         abort(403)
+
+    # ANTER: عدّاد مشاهدات — مرة واحدة لكل جلسة لكل منشور.
+    try:
+        from flask import session as _session
+        seen_key = 'viewed_posts'
+        seen = _session.get(seen_key) or []
+        if post.id not in seen:
+            db.session.query(Post).filter_by(id=post.id).update(
+                {Post.views: Post.views + 1}, synchronize_session=False
+            )
+            db.session.commit()
+            seen = (seen + [post.id])[-200:]  # حد 200 لمنع تضخم الجلسة
+            _session[seen_key] = seen
+    except Exception:
+        db.session.rollback()
+
     return render_template('post_detail.html', post=post)
 
 # ============================================================

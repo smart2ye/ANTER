@@ -294,6 +294,14 @@
         <button class="action-btn ai-summarize-btn text-primary" data-post="{{ post.id }}" title="تلخيص بواسطة mini-llm Arabic">
             <i class="fas fa-robot"></i>
         </button>
+        {% if post.author.is_verified %}
+        <!-- زر الإحصاءات (للمنشورات من حسابات موثقة فقط) -->
+        <button type="button" class="action-btn post-stats-btn"
+                data-post-stats-url="{{ url_for('posts.post_stats', public_id=post.public_id) }}"
+                aria-label="إحصاءات المنشور" title="إحصاءات المنشور">
+            <i class="fas fa-chart-simple"></i>
+        </button>
+        {% endif %}
         <!-- زر المشاركة -->
         <button type="button" class="action-btn share-btn"
                 data-post="{{ post.id }}"

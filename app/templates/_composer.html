@@ -238,36 +238,59 @@
         }
 
         if (isImage) {
-            const reader = new FileReader();
-
-            reader.onload = function(event) {
-                if (anterVideoPreview) {
-                    anterVideoPreview.pause();
-                    anterVideoPreview.hidden = true;
-                    anterVideoPreview.removeAttribute('src');
-                    anterVideoPreview.load();
+            (async function() {
+                var compressed = file;
+                try {
+                    if (anterMediaTitle) {
+                        anterMediaTitle.textContent = 'جارٍ ضغط الصورة...';
+                    }
+                    if (anterMediaPreview) {
+                        anterMediaPreview.hidden = false;
+                    }
+                    var result = await window.anterCompressImage(file);
+                    if (result && result.size < file.size) {
+                        compressed = result;
+                        window.anterReplaceMediaFile(compressed);
+                    }
+                } catch (err) {
+                    console.warn('compression failed, using original', err);
+                    compressed = file;
                 }
 
-                if (anterImagePreview) {
-                    anterImagePreview.src = event.target.result;
-                    anterImagePreview.hidden = false;
-                }
+                var origKB = Math.round(file.size / 1024);
+                var newKB = Math.round(compressed.size / 1024);
+                var savedPct = file.size > 0 ? Math.round((1 - compressed.size / file.size) * 100) : 0;
 
-                if (anterMediaTitle) {
-                    anterMediaTitle.textContent = 'صورة مرفقة';
-                }
-
-                if (anterMediaDescription) {
-                    anterMediaDescription.textContent =
-                        'ستظهر الصورة مع منشورك في الفيد.';
-                }
-
-                if (anterMediaPreview) {
-                    anterMediaPreview.hidden = false;
-                }
-            };
-
-            reader.readAsDataURL(file);
+                var reader = new FileReader();
+                reader.onload = function(event) {
+                    if (anterVideoPreview) {
+                        anterVideoPreview.pause();
+                        anterVideoPreview.hidden = true;
+                        anterVideoPreview.removeAttribute('src');
+                        anterVideoPreview.load();
+                    }
+                    if (anterImagePreview) {
+                        anterImagePreview.src = event.target.result;
+                        anterImagePreview.hidden = false;
+                    }
+                    if (anterMediaTitle) {
+                        anterMediaTitle.textContent = 'صورة مرفقة';
+                    }
+                    if (anterMediaDescription) {
+                        if (compressed !== file && compressed.size < file.size) {
+                            anterMediaDescription.textContent =
+                                'تم الضغط: ' + origKB + ' KB → ' + newKB + ' KB (−' + savedPct + '%). ستظهر مع منشورك.';
+                        } else {
+                            anterMediaDescription.textContent =
+                                'ستظهر الصورة مع منشورك في الفيد.';
+                        }
+                    }
+                    if (anterMediaPreview) {
+                        anterMediaPreview.hidden = false;
+                    }
+                };
+                reader.readAsDataURL(compressed);
+            })();
             return;
         }
 
@@ -321,10 +344,74 @@
         anterRemoveMedia.addEventListener('click', clearAnterMedia);
     }
 
-    if (anterPostForm) {
-        anterPostForm.addEventListener('submit', function() {
-            if (!anterPublishButton) return;
+    // ANTER: ضغط الصور قبل الرفع (Canvas + WebP)
+    function anterCompressImage(file, maxDim, quality) {
+        maxDim = maxDim || 1600;
+        quality = quality || 0.85;
+        return new Promise(function(resolve, reject) {
+            var img = new Image();
+            var url = URL.createObjectURL(file);
+            img.onload = function() {
+                URL.revokeObjectURL(url);
+                try {
+                    var w = img.naturalWidth;
+                    var h = img.naturalHeight;
+                    if (w > maxDim || h > maxDim) {
+                        var ratio = Math.min(maxDim / w, maxDim / h);
+                        w = Math.round(w * ratio);
+                        h = Math.round(h * ratio);
+                    }
+                    var canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    canvas.toBlob(function(blob) {
+                        if (!blob) { reject(new Error('compress failed')); return; }
+                        if (blob.size >= file.size) { resolve(file); return; }
+                        var newName = file.name.replace(/\.[^.]+$/, '') + '.webp';
+                        var newFile = new File([blob], newName, {
+                            type: 'image/webp',
+                            lastModified: Date.now(),
+                        });
+                        resolve(newFile);
+                    }, 'image/webp', quality);
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            img.onerror = function() {
+                URL.revokeObjectURL(url);
+                reject(new Error('image load failed'));
+            };
+            img.src = url;
+        });
+    }
 
+    function anterReplaceMediaFile(newFile) {
+        try {
+            var dt = new DataTransfer();
+            dt.items.add(newFile);
+            anterMediaInput.files = dt.files;
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    window.anterCompressImage = anterCompressImage;
+    window.anterReplaceMediaFile = anterReplaceMediaFile;
+
+    // ANTER: منع الإرسال المزدوج + تعطيل الزر
+    var anterSubmitting = false;
+    if (anterPostForm) {
+        anterPostForm.addEventListener('submit', function(e) {
+            if (anterSubmitting) {
+                e.preventDefault();
+                return;
+            }
+            anterSubmitting = true;
+            if (!anterPublishButton) return;
             anterPublishButton.disabled = true;
             anterPublishButton.innerHTML =
                 '<i class="fas fa-spinner fa-spin"></i> جاري النشر...';

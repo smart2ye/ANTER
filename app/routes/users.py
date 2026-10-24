@@ -987,3 +987,117 @@ def change_avatar():
         'avatar_url': fresh_url,
     })
 
+
+# ============================================================
+# لوحة الصانع — للموثقين فقط
+# ============================================================
+@users_bp.route('/creator/dashboard')
+@login_required
+def creator_dashboard():
+    """لوحة إحصاءات احترافية لصنّاع المحتوى الموثقين."""
+    from datetime import datetime, timedelta
+    from sqlalchemy import func
+    from app.models import Post, Video, Follow, Like, Comment, Repost, User
+
+    if not getattr(current_user, 'is_verified', False):
+        flash('هذه اللوحة للحسابات الموثقة فقط. وثّق حسابك للوصول إلى إحصاءاتك.', 'info')
+        return redirect(url_for('users.profile', username=current_user.username))
+
+    now = datetime.utcnow()
+    c7 = now - timedelta(days=7)
+    c30 = now - timedelta(days=30)
+
+    # ---- المتابعون ----
+    followers_total = current_user.follower_count()
+    followers_7 = Follow.query.filter(
+        Follow.followed_id == current_user.id,
+        Follow.created_at >= c7,
+    ).count()
+    followers_30 = Follow.query.filter(
+        Follow.followed_id == current_user.id,
+        Follow.created_at >= c30,
+    ).count()
+
+    # ---- المنشورات ----
+    posts = Post.query.filter_by(author_id=current_user.id).order_by(Post.id.desc()).all()
+    posts_count = len(posts)
+    post_ids = [p.id for p in posts]
+
+    likes_by_post = {}
+    comments_by_post = {}
+    reposts_by_post = {}
+    if post_ids:
+        likes_by_post = dict(
+            db.session.query(Like.post_id, func.count(Like.id))
+            .filter(Like.post_id.in_(post_ids)).group_by(Like.post_id).all()
+        )
+        comments_by_post = dict(
+            db.session.query(Comment.post_id, func.count(Comment.id))
+            .filter(Comment.post_id.in_(post_ids)).group_by(Comment.post_id).all()
+        )
+        reposts_by_post = dict(
+            db.session.query(Repost.post_id, func.count(Repost.id))
+            .filter(Repost.post_id.in_(post_ids)).group_by(Repost.post_id).all()
+        )
+
+    total_likes = sum(likes_by_post.values())
+    total_comments = sum(comments_by_post.values())
+    total_reposts = sum(reposts_by_post.values())
+
+    # Top 5 منشورات بالتفاعل
+    scored_posts = []
+    for p in posts:
+        l = likes_by_post.get(p.id, 0)
+        c = comments_by_post.get(p.id, 0)
+        r = reposts_by_post.get(p.id, 0)
+        engagement = l * 1 + c * 3 + r * 5
+        scored_posts.append({
+            'post': p,
+            'likes': l,
+            'comments': c,
+            'reposts': r,
+            'engagement': engagement,
+        })
+    scored_posts.sort(key=lambda x: x['engagement'], reverse=True)
+    top_posts = scored_posts[:5]
+
+    # ---- الريلز ----
+    reels = Video.query.filter_by(author_id=current_user.id).order_by(Video.id.desc()).all()
+    reels_count = len(reels)
+    total_reel_views = sum((r.views or 0) for r in reels)
+    total_reel_likes = sum(r.like_count() for r in reels)
+    total_reel_comments = sum(r.comment_count() for r in reels)
+
+    top_reels = sorted(
+        reels,
+        key=lambda r: ((r.views or 0) * 0.1 + r.like_count() * 2 + r.comment_count() * 3),
+        reverse=True,
+    )[:5]
+
+    # ---- أحدث المتابعين ----
+    recent_followers = (
+        db.session.query(User, Follow.created_at)
+        .join(Follow, Follow.follower_id == User.id)
+        .filter(Follow.followed_id == current_user.id)
+        .order_by(Follow.created_at.desc())
+        .limit(6).all()
+    )
+
+    return render_template(
+        'creator_dashboard.html',
+        followers_total=followers_total,
+        followers_7=followers_7,
+        followers_30=followers_30,
+        posts_count=posts_count,
+        total_likes=total_likes,
+        total_comments=total_comments,
+        total_reposts=total_reposts,
+        total_engagement=total_likes + total_comments + total_reposts,
+        top_posts=top_posts,
+        reels_count=reels_count,
+        total_reel_views=total_reel_views,
+        total_reel_likes=total_reel_likes,
+        total_reel_comments=total_reel_comments,
+        top_reels=top_reels,
+        recent_followers=recent_followers,
+    )

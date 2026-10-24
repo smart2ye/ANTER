@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block page_title %}لوحة الصانع — {{ current_user.name or current_user.username }}{% endblock %}
+
+{% block content %}
+<div class="creator-dash" dir="rtl">
+
+    <header class="creator-dash__header">
+        <div>
+            <h1 class="creator-dash__title">
+                <i class="fas fa-chart-line"></i>
+                لوحة الصانع
+            </h1>
+            <p class="creator-dash__sub">إحصاءاتك كمؤثر موثّق في أنتر</p>
+        </div>
+        <a href="{{ url_for('users.profile', username=current_user.username) }}" class="creator-dash__back">
+            <i class="fas fa-arrow-right"></i> ملفي
+        </a>
+    </header>
+
+    <section class="creator-dash__grid">
+        <article class="creator-card creator-card--primary">
+            <div class="creator-card__icon"><i class="fas fa-users"></i></div>
+            <div class="creator-card__value">{{ followers_total }}</div>
+            <div class="creator-card__label">متابع</div>
+            {% if followers_7 > 0 %}
+            <div class="creator-card__delta creator-card__delta--up">+{{ followers_7 }} هذا الأسبوع</div>
+            {% elif followers_30 > 0 %}
+            <div class="creator-card__delta">+{{ followers_30 }} هذا الشهر</div>
+            {% endif %}
+        </article>
+        <article class="creator-card">
+            <div class="creator-card__icon"><i class="fas fa-file-alt"></i></div>
+            <div class="creator-card__value">{{ posts_count }}</div>
+            <div class="creator-card__label">منشور</div>
+        </article>
+        <article class="creator-card">
+            <div class="creator-card__icon"><i class="fas fa-heart"></i></div>
+            <div class="creator-card__value">{{ total_likes }}</div>
+            <div class="creator-card__label">إعجاب</div>
+        </article>
+        <article class="creator-card">
+            <div class="creator-card__icon"><i class="fas fa-comment"></i></div>
+            <div class="creator-card__value">{{ total_comments }}</div>
+            <div class="creator-card__label">تعليق</div>
+        </article>
+    </section>
+
+    <section class="creator-section">
+        <h2 class="creator-section__title"><i class="fas fa-fire"></i> التفاعل الإجمالي</h2>
+        <div class="creator-engagement">
+            <div class="creator-engagement__item">
+                <span class="creator-engagement__num">{{ total_engagement }}</span>
+                <span class="creator-engagement__label">تفاعل على منشوراتك</span>
+            </div>
+            {% if total_reposts > 0 %}
+            <div class="creator-engagement__item">
+                <span class="creator-engagement__num">{{ total_reposts }}</span>
+                <span class="creator-engagement__label">إعادة نشر</span>
+            </div>
+            {% endif %}
+            {% if reels_count > 0 %}
+            <div class="creator-engagement__item">
+                <span class="creator-engagement__num">{{ total_reel_views }}</span>
+                <span class="creator-engagement__label">مشاهدة ريلز</span>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    {% if top_posts %}
+    <section class="creator-section">
+        <h2 class="creator-section__title"><i class="fas fa-trophy"></i> أفضل 5 منشورات تفاعلاً</h2>
+        <div class="creator-list">
+            {% for item in top_posts %}
+            <a href="{{ url_for('posts.view_post', public_id=item.post.public_id) }}" class="creator-list__item">
+                <div class="creator-list__rank">{{ loop.index }}</div>
+                <div class="creator-list__body">
+                    <div class="creator-list__text">{{ item.post.content[:80] }}{% if item.post.content|length > 80 %}...{% endif %}</div>
+                    <div class="creator-list__meta">
+                        <span><i class="fas fa-heart"></i> {{ item.likes }}</span>
+                        <span><i class="fas fa-comment"></i> {{ item.comments }}</span>
+                        <span><i class="fas fa-retweet"></i> {{ item.reposts }}</span>
+                    </div>
+                </div>
+                <div class="creator-list__score">{{ item.engagement }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if reels_count > 0 %}
+    <section class="creator-section">
+        <h2 class="creator-section__title"><i class="fas fa-video"></i> إحصاءات الريلز</h2>
+        <div class="creator-engagement">
+            <div class="creator-engagement__item">
+                <span class="creator-engagement__num">{{ reels_count }}</span>
+                <span class="creator-engagement__label">ريل</span>
+            </div>
+            <div class="creator-engagement__item">
+                <span class="creator-engagement__num">{{ total_reel_views }}</span>
+                <span class="creator-engagement__label">مشاهدة</span>
+            </div>
+            <div class="creator-engagement__item">
+                <span class="creator-engagement__num">{{ total_reel_likes }}</span>
+                <span class="creator-engagement__label">إعجاب</span>
+            </div>
+            <div class="creator-engagement__item">
+                <span class="creator-engagement__num">{{ total_reel_comments }}</span>
+                <span class="creator-engagement__label">تعليق</span>
+            </div>
+        </div>
+        {% if top_reels %}
+        <div class="creator-list" style="margin-top: 16px;">
+            {% for reel in top_reels %}
+            <a href="{{ url_for('videos.reels') }}" class="creator-list__item">
+                <div class="creator-list__rank">{{ loop.index }}</div>
+                <div class="creator-list__body">
+                    <div class="creator-list__text">{{ reel.title[:60] }}{% if reel.title|length > 60 %}...{% endif %}</div>
+                    <div class="creator-list__meta">
+                        <span><i class="fas fa-eye"></i> {{ reel.views or 0 }}</span>
+                        <span><i class="fas fa-heart"></i> {{ reel.like_count() }}</span>
+                        <span><i class="fas fa-comment"></i> {{ reel.comment_count() }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    {% if recent_followers %}
+    <section class="creator-section">
+        <h2 class="creator-section__title"><i class="fas fa-user-plus"></i> أحدث المتابعين</h2>
+        <div class="creator-followers">
+            {% for user, followed_at in recent_followers %}
+            <a href="{{ url_for('users.profile', username=user.username) }}" class="creator-follower">
+                <img src="{{ avatar_url(user) }}" alt="" class="creator-follower__avatar">
+                <div class="creator-follower__info">
+                    <strong>{{ user.name or user.username }}</strong>
+                    <small>@{{ user.username }}</small>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if posts_count == 0 and reels_count == 0 %}
+    <section class="creator-section creator-section--empty">
+        <i class="fas fa-seedling fa-3x"></i>
+        <h2>ابدأ رحلتك كصانع محتوى</h2>
+        <p>لم تنشر بعد. انشر أول منشور أو ريل لتبدأ إحصاءاتك في التراكم.</p>
+        <a href="{{ url_for('posts.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> منشور جديد
+        </a>
+    </section>
+    {% endif %}
+
+</div>
+
+<style>
+.creator-dash { max-width: 960px; margin: 0 auto; padding: 16px 12px 40px; font-family: Cairo, sans-serif; }
+.creator-dash__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.creator-dash__title { font-size: 1.4rem; color: #031E64; margin: 0; display: flex; align-items: center; gap: 8px; }
+.creator-dash__title i { color: #003AAB; }
+.creator-dash__sub { color: #6b7280; font-size: 0.9rem; margin: 4px 0 0; }
+.creator-dash__back { color: #003AAB; text-decoration: none; font-weight: 600; padding: 8px 16px; border-radius: 999px; background: #f0f4ff; font-size: 0.9rem; }
+.creator-dash__back:hover { background: #e0e7ff; }
+.creator-dash__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+@media (min-width: 640px) { .creator-dash__grid { grid-template-columns: repeat(4, 1fr); } }
+.creator-card { background: #fff; border-radius: 14px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(3, 30, 100, 0.06); border: 1px solid #e5e9f5; position: relative; }
+.creator-card--primary { background: linear-gradient(135deg, #003AAB, #00C8F8); color: #fff; border: 0; }
+.creator-card--primary .creator-card__icon, .creator-card--primary .creator-card__label { color: rgba(255,255,255,0.9); }
+.creator-card--primary .creator-card__value { color: #fff; }
+.creator-card__icon { font-size: 1.2rem; color: #003AAB; margin-bottom: 6px; }
+.creator-card__value { font-size: 1.8rem; font-weight: 800; color: #031E64; line-height: 1; }
+.creator-card__label { font-size: 0.8rem; color: #6b7280; margin-top: 4px; }
+.creator-card__delta { font-size: 0.72rem; margin-top: 6px; color: #10b981; font-weight: 600; }
+.creator-card__delta--up { color: #fff; }
+.creator-section { background: #fff; border-radius: 16px; padding: 18px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(3, 30, 100, 0.06); border: 1px solid #e5e9f5; }
+.creator-section__title { font-size: 1.05rem; color: #031E64; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+.creator-section__title i { color: #003AAB; }
+.creator-engagement { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+.creator-engagement__item { text-align: center; padding: 12px; background: #f8faff; border-radius: 10px; }
+.creator-engagement__num { display: block; font-size: 1.4rem; font-weight: 800; color: #003AAB; }
+.creator-engagement__label { display: block; font-size: 0.78rem; color: #6b7280; margin-top: 2px; }
+.creator-list { display: flex; flex-direction: column; gap: 8px; }
+.creator-list__item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; text-decoration: none; color: inherit; background: #f8faff; transition: background .15s; }
+.creator-list__item:hover { background: #eef4ff; }
+.creator-list__rank { width: 28px; height: 28px; border-radius: 50%; background: #003AAB; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+.creator-list__body { flex: 1; min-width: 0; }
+.creator-list__text { color: #1f2937; font-size: 0.9rem; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+.creator-list__meta { display: flex; gap: 10px; margin-top: 4px; font-size: 0.75rem; color: #6b7280; }
+.creator-list__meta i { color: #94a3b8; }
+.creator-list__score { font-weight: 800; color: #003AAB; font-size: 1rem; flex-shrink: 0; }
+.creator-followers { display: flex; flex-wrap: wrap; gap: 10px; }
+.creator-follower { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: #f8faff; text-decoration: none; color: inherit; transition: background .15s; }
+.creator-follower:hover { background: #eef4ff; }
+.creator-follower__avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.creator-follower__info strong { display: block; font-size: 0.85rem; color: #031E64; }
+.creator-follower__info small { font-size: 0.72rem; color: #6b7280; }
+.creator-section--empty { text-align: center; padding: 40px 20px; }
+.creator-section--empty i { color: #cbd5e1; margin-bottom: 14px; }
+.creator-section--empty h2 { color: #031E64; font-size: 1.1rem; margin: 0 0 8px; }
+.creator-section--empty p { color: #6b7280; font-size: 0.9rem; margin: 0 0 16px; }
+</style>
+{% endblock %}

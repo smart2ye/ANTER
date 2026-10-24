@@ -667,12 +667,14 @@ def create():
     content = request.form.get('content', '').strip()
     moment_id = request.args.get('moment_id', type=int)
 
-    if not content:
-        flash('المنشور لا يمكن أن يكون فارغاً', 'danger')
-        return redirect(url_for('posts.create'))
-
     # إذا لم يوجد media، استخدم image القديم للتوافق مع الواجهة القديمة.
     media_file = uploaded_media if uploaded_media and getattr(uploaded_media, 'filename', '') else uploaded_image
+
+    # ANTER: السماح بمنشور بلا نص إن كان هناك وسائط.
+    _has_media = bool(media_file and getattr(media_file, 'filename', ''))
+    if not content and not _has_media:
+        flash('اكتب نصًا أو أضف صورة/فيديو.', 'danger')
+        return redirect(url_for('posts.create'))
 
     image_data, image_mime = None, None
     video = None

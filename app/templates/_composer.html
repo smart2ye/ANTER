@@ -44,8 +44,7 @@
                 maxlength="2000"
                 rows="4"
                 placeholder="ما الذي تريد مشاركته مع مجتمع ANTER؟"
-                aria-label="محتوى المنشور"
-                required></textarea>
+                aria-label="محتوى المنشور"></textarea>
 
             <div class="anter-composer-editor-footer">
                 <span class="anter-composer-hint">
@@ -274,15 +273,15 @@
                         anterImagePreview.hidden = false;
                     }
                     if (anterMediaTitle) {
-                        anterMediaTitle.textContent = 'صورة مرفقة';
+                        anterMediaTitle.textContent = '';
                     }
                     if (anterMediaDescription) {
                         if (compressed !== file && compressed.size < file.size) {
                             anterMediaDescription.textContent =
-                                'تم الضغط: ' + origKB + ' KB → ' + newKB + ' KB (−' + savedPct + '%). ستظهر مع منشورك.';
+                                'تم الضغط: ' + origKB + ' KB → ' + newKB + ' KB (−' + savedPct + '%).';
                         } else {
                             anterMediaDescription.textContent =
-                                'ستظهر الصورة مع منشورك في الفيد.';
+                                '';
                         }
                     }
                     if (anterMediaPreview) {
@@ -309,12 +308,12 @@
             }
 
             if (anterMediaTitle) {
-                anterMediaTitle.textContent = 'فيديو مرفق';
+                anterMediaTitle.textContent = '';
             }
 
             if (anterMediaDescription) {
                 anterMediaDescription.textContent =
-                    'سيظهر الفيديو في الفيد تلقائيًا، وسيُضاف أيضًا إلى الريلز.';
+                    '';
             }
 
             if (anterMediaPreview) {
@@ -408,6 +407,14 @@
         anterPostForm.addEventListener('submit', function(e) {
             if (anterSubmitting) {
                 e.preventDefault();
+                return;
+            }
+            var textEl = document.getElementById('anterPostContent');
+            var hasText = textEl && (textEl.value || '').trim().length > 0;
+            var hasMedia = anterMediaInput && anterMediaInput.files && anterMediaInput.files.length > 0;
+            if (!hasText && !hasMedia) {
+                e.preventDefault();
+                alert('اكتب نصًا أو أضف صورة/فيديو.');
                 return;
             }
             anterSubmitting = true;

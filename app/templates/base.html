@@ -87,6 +87,9 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{{ url_for('users.profile', username=current_user.username) }}"><i class="fas fa-user"></i> ملفي</a></li>
+                            {% if current_user.is_verified %}
+                            <li><a class="dropdown-item" href="{{ url_for('users.creator_dashboard') }}"><i class="fas fa-chart-line"></i> لوحة المعلومات</a></li>
+                            {% endif %}
                             <li><a class="dropdown-item" href="{{ url_for('users.settings') }}"><i class="fas fa-cog"></i> الإعدادات</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('users.activity_log') }}"><i class="fas fa-history"></i> سجل النشاط</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.accounts_list') }}"><i class="fas fa-users-cog"></i> تبديل الحساب</a></li>
@@ -104,9 +107,6 @@
                                     <button type="submit" class="dropdown-item text-primary"><i class="fas fa-user-shield"></i> العودة إلى حسابي الشخصي</button>
                                 </form>
                             </li>
-                            {% endif %}
-                            {% if current_user.is_verified %}
-                            <li><a class="dropdown-item" href="{{ url_for('users.creator_dashboard') }}"><i class="fas fa-chart-line"></i> لوحة المعلومات</a></li>
                             {% endif %}
                             <li><a class="dropdown-item" href="{{ url_for('posts.create') }}"><i class="fas fa-plus-circle"></i> منشور جديد</a></li>
                             <li><hr class="dropdown-divider"></li>

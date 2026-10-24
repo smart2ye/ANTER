@@ -314,6 +314,50 @@
 
         <!-- ============ تبويب التوثيق ============ -->
         <div class="tab-pane fade" id="tab-verification" role="tabpanel">
+
+            <style>
+            .verification-benefit-list {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .verification-benefit {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 12px;
+                background: #f8faff;
+                border-radius: 10px;
+                border: 1px solid #e5e9f5;
+            }
+            .verification-benefit-list--soon .verification-benefit {
+                background: #fafafa;
+                border-color: #f0f0f0;
+                opacity: 0.75;
+            }
+            .verification-benefit-icon {
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                font-size: 1rem;
+            }
+            .verification-benefit strong {
+                display: block;
+                color: #031E64;
+                font-size: 0.92rem;
+                margin-bottom: 2px;
+            }
+            .verification-benefit small {
+                display: block;
+                color: #6b7280;
+                font-size: 0.8rem;
+                line-height: 1.5;
+            }
+            </style>
             {% if current_user.is_verified %}
                 <div class="alert alert-success mb-0"><i class="fas fa-check-circle"></i> حسابك موثّق وتظهر العلامة الزرقاء بجوار اسمك.</div>
             {% elif verification_request and verification_request.status == 'pending' %}
@@ -322,6 +366,71 @@
                 {% if verification_request and verification_request.status == 'rejected' %}
                     <div class="alert alert-light border small">لم يُقبل طلبك السابق. يمكنك إرسال طلب جديد بمعلومات أوضح.</div>
                 {% endif %}
+
+                {# ANTER: ميزات التوثيق #}
+                <div class="verification-benefits mb-4">
+                    <h6 class="fw-bold mb-3" style="color:#031E64;">
+                        <i class="fas fa-star" style="color:#003AAB;"></i> ماذا يفتح لك التوثيق؟
+                    </h6>
+                    <div class="verification-benefit-list">
+                        <div class="verification-benefit">
+                            <span class="verification-benefit-icon" style="background:#e0e7ff;color:#003AAB;"><i class="fas fa-chart-line"></i></span>
+                            <div>
+                                <strong>لوحة المعلومات</strong>
+                                <small>إحصاءات كاملة عن محتواك: مشاهدة، تفاعل، متابعون، منشورات — مع نسب التغيير لكل فترة.</small>
+                            </div>
+                        </div>
+                        <div class="verification-benefit">
+                            <span class="verification-benefit-icon" style="background:#e0f2fe;color:#0369a1;"><i class="fas fa-chart-simple"></i></span>
+                            <div>
+                                <strong>إحصاءات على كل منشور</strong>
+                                <small>زر 📈 بجانب كل منشور يعرض لك المشاهدات والإعجابات والتعليقات والمشاركات.</small>
+                            </div>
+                        </div>
+                        <div class="verification-benefit">
+                            <span class="verification-benefit-icon" style="background:#fef3c7;color:#b45309;"><i class="fas fa-user-plus"></i></span>
+                            <div>
+                                <strong>أولوية في الاقتراحات</strong>
+                                <small>يظهر حسابك أولًا في «أشخاص قد تعرفهم» — فرصة أكبر للوصول.</small>
+                            </div>
+                        </div>
+                        <div class="verification-benefit">
+                            <span class="verification-benefit-icon" style="background:#dbeafe;color:#003AAB;"><i class="fas fa-check-circle"></i></span>
+                            <div>
+                                <strong>العلامة الزرقاء</strong>
+                                <small>شارة التحقق تظهر بجوار اسمك في كل منشور وتعليق ورسالة — تمييز بصري فوري.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold mb-2 mt-4" style="color:#6b7280;">
+                        <i class="fas fa-hourglass-half"></i> قيد التطوير
+                    </h6>
+                    <div class="verification-benefit-list verification-benefit-list--soon">
+                        <div class="verification-benefit">
+                            <span class="verification-benefit-icon" style="background:#f3f4f6;color:#9ca3af;"><i class="fas fa-chart-pie"></i></span>
+                            <div>
+                                <strong>تحليلات أعمق</strong>
+                                <small>الوصول، مصادر المتابعين، الأوقات الأفضل للنشر، ديموغرافيا الجمهور.</small>
+                            </div>
+                        </div>
+                        <div class="verification-benefit">
+                            <span class="verification-benefit-icon" style="background:#f3f4f6;color:#9ca3af;"><i class="fas fa-bolt"></i></span>
+                            <div>
+                                <strong>أولوية في المراجعة</strong>
+                                <small>بلاغاتك وطلباتك تُراجَع أولًا عند وجود ضغط.</small>
+                            </div>
+                        </div>
+                        <div class="verification-benefit">
+                            <span class="verification-benefit-icon" style="background:#f3f4f6;color:#9ca3af;"><i class="fas fa-handshake"></i></span>
+                            <div>
+                                <strong>أدوات للمعلنين</strong>
+                                <small>أرقام قابلة للمشاركة مع المعلن المحلي — بلا وسطاء.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <p class="text-muted small">أخبر الإدارة باختصار لماذا ينبغي توثيق حسابك. لا ترسل كلمات مرور أو بيانات حساسة.</p>
                 <form method="POST" action="{{ url_for('users.request_verification') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

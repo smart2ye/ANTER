@@ -276,13 +276,7 @@
                         anterMediaTitle.textContent = '';
                     }
                     if (anterMediaDescription) {
-                        if (compressed !== file && compressed.size < file.size) {
-                            anterMediaDescription.textContent =
-                                'تم الضغط: ' + origKB + ' KB → ' + newKB + ' KB (−' + savedPct + '%).';
-                        } else {
-                            anterMediaDescription.textContent =
-                                '';
-                        }
+                        anterMediaDescription.textContent = '';
                     }
                     if (anterMediaPreview) {
                         anterMediaPreview.hidden = false;

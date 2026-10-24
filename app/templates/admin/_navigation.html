@@ -23,6 +23,12 @@
             <a href="{{ url_for('admin.posts') }}" class="btn btn-sm {% if request.endpoint in ('admin.posts', 'admin.view_post') %}btn-success{% else %}btn-outline-success{% endif %}"><i class="fas fa-file-alt"></i><span>المنشورات</span></a>
             <a href="{{ url_for('admin.videos') }}" class="btn btn-sm {% if request.endpoint == 'admin.videos' %}btn-success{% else %}btn-outline-success{% endif %}"><i class="fas fa-video"></i><span>الريلز</span></a>
             <a href="{{ url_for('admin.reports') }}" class="btn btn-sm {% if request.endpoint == 'admin.reports' %}btn-danger{% else %}btn-outline-danger{% endif %}"><i class="fas fa-flag"></i><span>البلاغات</span></a>
+            <a href="{{ url_for('haraj.admin_reports') }}" class="btn btn-sm {% if request.endpoint == 'haraj.admin_reports' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                <i class="fas fa-tag"></i><span>بلاغات حراج</span>
+                {% if admin_pending_haraj_reports and admin_pending_haraj_reports > 0 %}
+                    <span class="badge bg-danger ms-1">{{ admin_pending_haraj_reports }}</span>
+                {% endif %}
+            </a>
             <a href="{{ url_for('admin.support_requests') }}" class="btn btn-sm {% if request.endpoint == 'admin.support_requests' %}btn-info{% else %}btn-outline-info{% endif %}"><i class="fas fa-headset"></i><span>المساعدة</span></a>
         </div>
         {% if admin_back_url or request.endpoint != 'admin.dashboard' %}

@@ -1,13 +1,14 @@
 # مرجع القوالب (Templates)
 
-**آخر تحديث:** 2026-10-21
-**المجموع:** 61 قالب
+**آخر تحديث:** 2026-10-23
+**المجموع:** 62 قالب
 
 | المسار | يمتد من |
 |---|---|
 | `_composer.html` | — |
 | `_feed_recommendations.html` | — |
 | `_find_friends.html` | — |
+| `_follow_suggestions.html` | — |
 | `_post_card.html` | — |
 | `about.html` | base.html |
 | `activity_log.html` | base.html |

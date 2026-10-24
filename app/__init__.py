@@ -193,6 +193,21 @@ def create_app(test_config=None):
             return {'admin_pending_requests': 0}
 
     @app.context_processor
+    def inject_haraj_pending_reports():
+        """ANTER: عدد بلاغات حراج المعلقة — تُعرض كـ badge في لوحة الإدارة."""
+        from flask_login import current_user
+        try:
+            if not current_user.is_authenticated:
+                return {'admin_pending_haraj_reports': 0}
+            if not getattr(current_user, 'is_admin', False) and current_user.id != 1:
+                return {'admin_pending_haraj_reports': 0}
+            from app.models.listing_report import ListingReport
+            count = ListingReport.query.filter_by(status='pending').count()
+            return {'admin_pending_haraj_reports': count}
+        except Exception:
+            return {'admin_pending_haraj_reports': 0}
+
+    @app.context_processor
     def inject_assistant_account_switching():
         from flask_login import current_user
         from app.services.anter_account_switching import can_switch_back, can_switch_to_assistant

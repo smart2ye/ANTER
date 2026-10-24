@@ -1,6 +1,6 @@
 # مرجع المسارات (Routes)
 
-**آخر تحديث:** 2026-10-21
+**آخر تحديث:** 2026-10-23
 **المجموع:** 235 route · 20 blueprint
 
 ## admin — `/admin`
@@ -63,7 +63,7 @@
 - `GET,POST` `/auth/reset_password/<token>` — _auth.py_
 - `GET,POST` `/auth/reset_password_request` — _auth.py_
 - `POST` `/auth/switch` — _auth.py_
-- `POST` `/auth/switch-back-to-owner` — _auth.py_
+- `GET,POST` `/auth/switch-back-to-owner` — _auth.py_
 - `POST` `/auth/switch-to-assistant` — _auth.py_
 
 ## explore — `/explore`

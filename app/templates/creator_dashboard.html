@@ -5,12 +5,24 @@
 <div class="creator-dash" dir="rtl">
 
     <header class="creator-dash__header">
-        <div>
-            <h1 class="creator-dash__title">
-                <i class="fas fa-chart-line"></i>
-                لوحة المعلومات
-            </h1>
-            <p class="creator-dash__sub">إحصاءاتك كـ منشئ محتوى موثق <i class="fas fa-check-circle" style="color: #003AAB; margin-right: 4px; vertical-align: middle;"></i></p>
+        <div class="creator-dash__profile">
+            <img src="{{ avatar_url(current_user) }}"
+                 alt="{{ current_user.name or current_user.username }}"
+                 class="creator-dash__avatar"
+                 loading="lazy"
+                 decoding="async">
+            <div>
+                <h1 class="creator-dash__title">
+                    <i class="fas fa-chart-line"></i>
+                    {{ current_user.name or current_user.username }}
+                </h1>
+                <p class="creator-dash__sub">
+                    @{{ current_user.username }}
+                    <span style="opacity:0.5;">·</span>
+                    إحصاءاتك كـ منشئ محتوى موثق
+                    <i class="fas fa-check-circle" style="color: #003AAB; margin-right: 4px; vertical-align: middle;"></i>
+                </p>
+            </div>
         </div>
         <a href="{{ url_for('users.profile', username=current_user.username) }}" class="creator-dash__back">
             <i class="fas fa-arrow-right"></i> ملفي
@@ -169,6 +181,27 @@
 <style>
 .creator-dash { max-width: 960px; margin: 0 auto; padding: 16px 12px 40px; font-family: Cairo, sans-serif; }
 .creator-dash__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.creator-dash__profile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.creator-dash__avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(3, 30, 100, 0.15);
+    flex-shrink: 0;
+    background: #f3f4f6;
+}
+@media (min-width: 640px) {
+    .creator-dash__avatar {
+        width: 64px;
+        height: 64px;
+    }
+}
 .creator-dash__title { font-size: 1.4rem; color: #031E64; margin: 0; display: flex; align-items: center; gap: 8px; }
 .creator-dash__title i { color: #003AAB; }
 .creator-dash__sub { color: #6b7280; font-size: 0.9rem; margin: 4px 0 0; }

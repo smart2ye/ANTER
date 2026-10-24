@@ -45,6 +45,93 @@
         </div>
     </section>
 
+    <section class="mb-5" id="verification">
+        <h2 class="h5 fw-bold text-primary mb-3">
+            <i class="fas fa-certificate ms-2" aria-hidden="true"></i>
+            توثيق الحسابات
+        </h2>
+
+        <div class="rounded-4 p-4 border mb-3" style="background: var(--fb-bg);">
+            <p class="mb-3">
+                <strong>ما هو التوثيق؟</strong>
+                شارة زرقاء <i class="fas fa-check-circle" style="color:#003AAB;" aria-hidden="true"></i> تظهر بجوار اسمك في كل مكان على ANTER — منشوراتك، تعليقاتك، ملفك الشخصي، ورسائلك. تميّزك كصانع محتوى موثوق، وتفتح لك أدوات إحصاءات حقيقية.
+            </p>
+            <p class="mb-3">
+                <strong>من يستطيع طلبه؟</strong>
+                أي حساب نشط. تُراجع الطلبات يدويًا لضمان جودة المنصة، وتُمنح للحسابات التي تنشر محتوى أصيلًا وتلتزم بمعايير المجتمع.
+            </p>
+            <p class="mb-0">
+                <strong>كيف أطلبه؟</strong>
+                من
+                <a href="{{ url_for('users.settings') }}" class="fw-bold">إعدادات حسابك</a>
+                → تبويب «التوثيق». اشرح باختصار لماذا ينبغي توثيق حسابك، ثم أرسل الطلب. ستصلك إشعار عند الموافقة أو الرفض.
+            </p>
+        </div>
+
+        <h3 class="h6 fw-bold mb-3" style="color:#031E64;">
+            <i class="fas fa-bullseye ms-2" aria-hidden="true"></i>
+            ماذا يفتح لك التوثيق؟
+        </h3>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="h-100 p-3 rounded-4 border" style="background: var(--fb-bg);">
+                    <i class="fas fa-chart-line fa-lg text-primary mb-2" aria-hidden="true"></i>
+                    <h4 class="h6 fw-bold mb-1">لوحة المعلومات</h4>
+                    <p class="small text-muted mb-0">إحصاءات كاملة عن محتواك: مشاهدة، تفاعل، متابعون، منشورات — مع نسب التغيير لكل فترة (7 / 28 / 90 يومًا).</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="h-100 p-3 rounded-4 border" style="background: var(--fb-bg);">
+                    <i class="fas fa-eye fa-lg text-primary mb-2" aria-hidden="true"></i>
+                    <h4 class="h6 fw-bold mb-1">إحصاءات على كل منشور</h4>
+                    <p class="small text-muted mb-0">زر بجانب كل منشور يعرض لك المشاهدات والإعجابات والتعليقات والمشاركات — أرقام صادقة يمكنك مشاركتها.</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="h-100 p-3 rounded-4 border" style="background: var(--fb-bg);">
+                    <i class="fas fa-user-plus fa-lg text-primary mb-2" aria-hidden="true"></i>
+                    <h4 class="h6 fw-bold mb-1">أولوية في التوصيات</h4>
+                    <p class="small text-muted mb-0">يظهر حسابك أولًا في «أشخاص قد تعرفهم» — فرصة أكبر للوصول إلى جمهور جديد.</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="h-100 p-3 rounded-4 border" style="background: var(--fb-bg);">
+                    <i class="fas fa-check-circle fa-lg text-primary mb-2" aria-hidden="true"></i>
+                    <h4 class="h6 fw-bold mb-1">العلامة الزرقاء</h4>
+                    <p class="small text-muted mb-0">شارة التحقق تظهر بجوار اسمك في كل منشور وتعليق ورسالة — تمييز بصري فوري للزوار والمتابعين.</p>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="h6 fw-bold mb-3 text-muted">
+            <i class="fas fa-clock ms-2" aria-hidden="true"></i>
+            قيد التطوير
+        </h3>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="h-100 p-3 rounded-4 border" style="background: var(--fb-bg); opacity:0.75;">
+                    <i class="fas fa-chart-line fa-lg mb-2" style="color:#9ca3af;" aria-hidden="true"></i>
+                    <h4 class="h6 fw-bold mb-1">تحليلات أعمق</h4>
+                    <p class="small text-muted mb-0">الوصول، مصادر المتابعين، الأوقات الأفضل للنشر، ديموغرافيا الجمهور.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="h-100 p-3 rounded-4 border" style="background: var(--fb-bg); opacity:0.75;">
+                    <i class="fas fa-bolt fa-lg mb-2" style="color:#9ca3af;" aria-hidden="true"></i>
+                    <h4 class="h6 fw-bold mb-1">أولوية في المراجعة</h4>
+                    <p class="small text-muted mb-0">بلاغاتك وطلباتك تُراجَع أولًا عند وجود ضغط.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="h-100 p-3 rounded-4 border" style="background: var(--fb-bg); opacity:0.75;">
+                    <i class="fas fa-handshake fa-lg mb-2" style="color:#9ca3af;" aria-hidden="true"></i>
+                    <h4 class="h6 fw-bold mb-1">أدوات للمعلنين</h4>
+                    <p class="small text-muted mb-0">أرقام قابلة للمشاركة مع المعلن المحلي — بلا وسطاء.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section class="rounded-4 p-4 p-md-5 border" style="background: linear-gradient(135deg, rgba(108,60,225,.12), rgba(11,17,98,.08));">
         <h2 class="h5 fw-bold mb-2"><i class="fas fa-flag ms-2" aria-hidden="true"></i> الإبلاغ عن مشكلة</h2>
         <p class="text-muted mb-3">من قائمة الرسالة أو المنشور، اختر الإبلاغ إذا كان المحتوى مسيئاً أو مخالفاً. تساعدنا البلاغات الدقيقة على مراجعة المشكلة وحماية المجتمع.</p>

@@ -1003,78 +1003,103 @@ def creator_dashboard():
         flash('هذه اللوحة للحسابات الموثقة فقط. وثّق حسابك للوصول إلى إحصاءاتك.', 'info')
         return redirect(url_for('users.profile', username=current_user.username))
 
+    try:
+        period = int(request.args.get('period', 7))
+    except (ValueError, TypeError):
+        period = 7
+    if period not in (7, 28, 90):
+        period = 7
+
     now = datetime.utcnow()
-    c7 = now - timedelta(days=7)
-    c30 = now - timedelta(days=30)
 
-    # ---- المتابعون ----
+    def _period_stats(days, offset=0):
+        end = now - timedelta(days=offset)
+        start = end - timedelta(days=days)
+
+        followers = Follow.query.filter(
+            Follow.followed_id == current_user.id,
+            Follow.created_at >= start,
+            Follow.created_at < end,
+        ).count()
+
+        posts = Post.query.filter(
+            Post.author_id == current_user.id,
+            Post.created_at >= start,
+            Post.created_at < end,
+        ).all()
+        post_ids = [p.id for p in posts]
+        post_views = sum((p.views or 0) for p in posts)
+
+        likes = comments = reposts = 0
+        if post_ids:
+            likes = db.session.query(func.count(Like.id)).filter(Like.post_id.in_(post_ids)).scalar() or 0
+            comments = db.session.query(func.count(Comment.id)).filter(Comment.post_id.in_(post_ids)).scalar() or 0
+            reposts = db.session.query(func.count(Repost.id)).filter(Repost.post_id.in_(post_ids)).scalar() or 0
+
+        reels = Video.query.filter(
+            Video.author_id == current_user.id,
+            Video.created_at >= start,
+            Video.created_at < end,
+        ).all()
+        reel_views = sum((r.views or 0) for r in reels)
+
+        return {
+            'followers': followers,
+            'posts': len(posts),
+            'views': post_views + reel_views,
+            'likes': likes,
+            'comments': comments,
+            'reposts': reposts,
+            'engagement': likes + comments + reposts,
+        }
+
+    current = _period_stats(period, offset=0)
+    previous = _period_stats(period, offset=period)
+
+    def _pct(curr, prev):
+        if prev == 0:
+            if curr == 0:
+                return {'trend': 'flat', 'label': '—'}
+            return {'trend': 'new', 'label': 'جديد'}
+        pct = round((curr - prev) / prev * 100)
+        if pct > 0:
+            return {'trend': 'up', 'label': '+{}%'.format(pct)}
+        if pct < 0:
+            return {'trend': 'down', 'label': '{}%'.format(pct)}
+        return {'trend': 'flat', 'label': '0%'}
+
+    changes = {
+        'followers': _pct(current['followers'], previous['followers']),
+        'views': _pct(current['views'], previous['views']),
+        'engagement': _pct(current['engagement'], previous['engagement']),
+        'posts': _pct(current['posts'], previous['posts']),
+    }
+
     followers_total = current_user.follower_count()
-    followers_7 = Follow.query.filter(
-        Follow.followed_id == current_user.id,
-        Follow.created_at >= c7,
-    ).count()
-    followers_30 = Follow.query.filter(
-        Follow.followed_id == current_user.id,
-        Follow.created_at >= c30,
-    ).count()
 
-    # ---- المنشورات ----
-    posts = Post.query.filter_by(author_id=current_user.id).order_by(Post.id.desc()).all()
-    posts_count = len(posts)
-    post_ids = [p.id for p in posts]
-
+    all_posts = Post.query.filter_by(author_id=current_user.id).all()
+    all_post_ids = [p.id for p in all_posts]
     likes_by_post = {}
     comments_by_post = {}
     reposts_by_post = {}
-    if post_ids:
-        likes_by_post = dict(
-            db.session.query(Like.post_id, func.count(Like.id))
-            .filter(Like.post_id.in_(post_ids)).group_by(Like.post_id).all()
-        )
-        comments_by_post = dict(
-            db.session.query(Comment.post_id, func.count(Comment.id))
-            .filter(Comment.post_id.in_(post_ids)).group_by(Comment.post_id).all()
-        )
-        reposts_by_post = dict(
-            db.session.query(Repost.post_id, func.count(Repost.id))
-            .filter(Repost.post_id.in_(post_ids)).group_by(Repost.post_id).all()
-        )
+    if all_post_ids:
+        likes_by_post = dict(db.session.query(Like.post_id, func.count(Like.id)).filter(Like.post_id.in_(all_post_ids)).group_by(Like.post_id).all())
+        comments_by_post = dict(db.session.query(Comment.post_id, func.count(Comment.id)).filter(Comment.post_id.in_(all_post_ids)).group_by(Comment.post_id).all())
+        reposts_by_post = dict(db.session.query(Repost.post_id, func.count(Repost.id)).filter(Repost.post_id.in_(all_post_ids)).group_by(Repost.post_id).all())
 
-    total_likes = sum(likes_by_post.values())
-    total_comments = sum(comments_by_post.values())
-    total_reposts = sum(reposts_by_post.values())
-
-    # Top 5 منشورات بالتفاعل
     scored_posts = []
-    for p in posts:
+    for p in all_posts:
         l = likes_by_post.get(p.id, 0)
         c = comments_by_post.get(p.id, 0)
         r = reposts_by_post.get(p.id, 0)
-        engagement = l * 1 + c * 3 + r * 5
-        scored_posts.append({
-            'post': p,
-            'likes': l,
-            'comments': c,
-            'reposts': r,
-            'engagement': engagement,
-        })
+        scored_posts.append({'post': p, 'likes': l, 'comments': c, 'reposts': r, 'engagement': l + c * 3 + r * 5})
     scored_posts.sort(key=lambda x: x['engagement'], reverse=True)
     top_posts = scored_posts[:5]
 
-    # ---- الريلز ----
-    reels = Video.query.filter_by(author_id=current_user.id).order_by(Video.id.desc()).all()
-    reels_count = len(reels)
-    total_reel_views = sum((r.views or 0) for r in reels)
-    total_reel_likes = sum(r.like_count() for r in reels)
-    total_reel_comments = sum(r.comment_count() for r in reels)
+    all_reels = Video.query.filter_by(author_id=current_user.id).all()
+    top_reels = sorted(all_reels, key=lambda r: ((r.views or 0) * 0.1 + r.like_count() * 2 + r.comment_count() * 3), reverse=True)[:5]
+    reels_count = len(all_reels)
 
-    top_reels = sorted(
-        reels,
-        key=lambda r: ((r.views or 0) * 0.1 + r.like_count() * 2 + r.comment_count() * 3),
-        reverse=True,
-    )[:5]
-
-    # ---- أحدث المتابعين ----
     recent_followers = (
         db.session.query(User, Follow.created_at)
         .join(Follow, Follow.follower_id == User.id)
@@ -1085,19 +1110,15 @@ def creator_dashboard():
 
     return render_template(
         'creator_dashboard.html',
+        period=period,
+        current=current,
+        previous=previous,
+        changes=changes,
         followers_total=followers_total,
-        followers_7=followers_7,
-        followers_30=followers_30,
-        posts_count=posts_count,
-        total_likes=total_likes,
-        total_comments=total_comments,
-        total_reposts=total_reposts,
-        total_engagement=total_likes + total_comments + total_reposts,
         top_posts=top_posts,
-        reels_count=reels_count,
-        total_reel_views=total_reel_views,
-        total_reel_likes=total_reel_likes,
-        total_reel_comments=total_reel_comments,
         top_reels=top_reels,
+        reels_count=reels_count,
         recent_followers=recent_followers,
     )
+
+

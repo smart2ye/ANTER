@@ -17,56 +17,79 @@
         </a>
     </header>
 
+    {# محدد الفترة #}
+    <div class="creator-periods" role="tablist" aria-label="اختر الفترة">
+        {% for p, label in [(7, 'آخر 7 أيام'), (28, 'آخر 28 يومًا'), (90, 'آخر 90 يومًا')] %}
+        <a href="{{ url_for('users.creator_dashboard', period=p) }}"
+           class="creator-period {% if period == p %}is-active{% endif %}"
+           role="tab"
+           aria-selected="{{ 'true' if period == p else 'false' }}">
+            {{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {# 4 بطاقات #}
     <section class="creator-dash__grid">
         <article class="creator-card creator-card--primary">
-            <div class="creator-card__icon"><i class="fas fa-users"></i></div>
-            <div class="creator-card__value">{{ followers_total }}</div>
-            <div class="creator-card__label">متابع</div>
-            {% if followers_7 > 0 %}
-            <div class="creator-card__delta creator-card__delta--up">+{{ followers_7 }} هذا الأسبوع</div>
-            {% elif followers_30 > 0 %}
-            <div class="creator-card__delta">+{{ followers_30 }} هذا الشهر</div>
-            {% endif %}
+            <div class="creator-card__icon"><i class="fas fa-eye"></i></div>
+            <div class="creator-card__value">{{ "{:,}".format(current.views) }}</div>
+            <div class="creator-card__label">مشاهدة</div>
+            {% set c = changes.views %}
+            <div class="creator-card__delta creator-card__delta--{{ c.trend }}">{{ c.label }}</div>
         </article>
-        <article class="creator-card">
-            <div class="creator-card__icon"><i class="fas fa-file-alt"></i></div>
-            <div class="creator-card__value">{{ posts_count }}</div>
-            <div class="creator-card__label">منشور</div>
-        </article>
+
         <article class="creator-card">
             <div class="creator-card__icon"><i class="fas fa-heart"></i></div>
-            <div class="creator-card__value">{{ total_likes }}</div>
-            <div class="creator-card__label">إعجاب</div>
+            <div class="creator-card__value">{{ "{:,}".format(current.engagement) }}</div>
+            <div class="creator-card__label">تفاعل</div>
+            {% set c = changes.engagement %}
+            <div class="creator-card__delta creator-card__delta--{{ c.trend }}">{{ c.label }}</div>
         </article>
+
         <article class="creator-card">
-            <div class="creator-card__icon"><i class="fas fa-comment"></i></div>
-            <div class="creator-card__value">{{ total_comments }}</div>
-            <div class="creator-card__label">تعليق</div>
+            <div class="creator-card__icon"><i class="fas fa-user-plus"></i></div>
+            <div class="creator-card__value">{{ "{:,}".format(current.followers) }}</div>
+            <div class="creator-card__label">متابع جديد</div>
+            {% set c = changes.followers %}
+            <div class="creator-card__delta creator-card__delta--{{ c.trend }}">{{ c.label }}</div>
+        </article>
+
+        <article class="creator-card">
+            <div class="creator-card__icon"><i class="fas fa-file-alt"></i></div>
+            <div class="creator-card__value">{{ "{:,}".format(current.posts) }}</div>
+            <div class="creator-card__label">منشور</div>
+            {% set c = changes.posts %}
+            <div class="creator-card__delta creator-card__delta--{{ c.trend }}">{{ c.label }}</div>
         </article>
     </section>
 
+    {# تفصيل التفاعل #}
     <section class="creator-section">
-        <h2 class="creator-section__title"><i class="fas fa-fire"></i> التفاعل الإجمالي</h2>
+        <h2 class="creator-section__title">
+            <i class="fas fa-fire"></i> التفاعل — {{ period }} يومًا
+        </h2>
         <div class="creator-engagement">
             <div class="creator-engagement__item">
-                <span class="creator-engagement__num">{{ total_engagement }}</span>
-                <span class="creator-engagement__label">تفاعل على منشوراتك</span>
+                <span class="creator-engagement__num">{{ "{:,}".format(current.likes) }}</span>
+                <span class="creator-engagement__label"><i class="fas fa-heart"></i> إعجاب</span>
             </div>
-            {% if total_reposts > 0 %}
             <div class="creator-engagement__item">
-                <span class="creator-engagement__num">{{ total_reposts }}</span>
-                <span class="creator-engagement__label">إعادة نشر</span>
+                <span class="creator-engagement__num">{{ "{:,}".format(current.comments) }}</span>
+                <span class="creator-engagement__label"><i class="fas fa-comment"></i> تعليق</span>
             </div>
-            {% endif %}
-            {% if reels_count > 0 %}
             <div class="creator-engagement__item">
-                <span class="creator-engagement__num">{{ total_reel_views }}</span>
-                <span class="creator-engagement__label">مشاهدة ريلز</span>
+                <span class="creator-engagement__num">{{ "{:,}".format(current.reposts) }}</span>
+                <span class="creator-engagement__label"><i class="fas fa-retweet"></i> إعادة نشر</span>
             </div>
-            {% endif %}
+            <div class="creator-engagement__item">
+                <span class="creator-engagement__num">{{ "{:,}".format(followers_total) }}</span>
+                <span class="creator-engagement__label"><i class="fas fa-users"></i> إجمالي المتابعين</span>
+            </div>
         </div>
     </section>
 
+    {# أفضل المنشورات #}
     {% if top_posts %}
     <section class="creator-section">
         <h2 class="creator-section__title"><i class="fas fa-trophy"></i> أفضل 5 منشورات تفاعلاً</h2>
@@ -80,6 +103,7 @@
                         <span><i class="fas fa-heart"></i> {{ item.likes }}</span>
                         <span><i class="fas fa-comment"></i> {{ item.comments }}</span>
                         <span><i class="fas fa-retweet"></i> {{ item.reposts }}</span>
+                        <span><i class="fas fa-eye"></i> {{ item.post.views or 0 }}</span>
                     </div>
                 </div>
                 <div class="creator-list__score">{{ item.engagement }}</div>
@@ -89,29 +113,11 @@
     </section>
     {% endif %}
 
+    {# الريلز #}
     {% if reels_count > 0 %}
     <section class="creator-section">
-        <h2 class="creator-section__title"><i class="fas fa-video"></i> إحصاءات الريلز</h2>
-        <div class="creator-engagement">
-            <div class="creator-engagement__item">
-                <span class="creator-engagement__num">{{ reels_count }}</span>
-                <span class="creator-engagement__label">ريل</span>
-            </div>
-            <div class="creator-engagement__item">
-                <span class="creator-engagement__num">{{ total_reel_views }}</span>
-                <span class="creator-engagement__label">مشاهدة</span>
-            </div>
-            <div class="creator-engagement__item">
-                <span class="creator-engagement__num">{{ total_reel_likes }}</span>
-                <span class="creator-engagement__label">إعجاب</span>
-            </div>
-            <div class="creator-engagement__item">
-                <span class="creator-engagement__num">{{ total_reel_comments }}</span>
-                <span class="creator-engagement__label">تعليق</span>
-            </div>
-        </div>
-        {% if top_reels %}
-        <div class="creator-list" style="margin-top: 16px;">
+        <h2 class="creator-section__title"><i class="fas fa-video"></i> الريلز</h2>
+        <div class="creator-list">
             {% for reel in top_reels %}
             <a href="{{ url_for('videos.reels') }}" class="creator-list__item">
                 <div class="creator-list__rank">{{ loop.index }}</div>
@@ -126,10 +132,10 @@
             </a>
             {% endfor %}
         </div>
-        {% endif %}
     </section>
     {% endif %}
 
+    {# أحدث المتابعين #}
     {% if recent_followers %}
     <section class="creator-section">
         <h2 class="creator-section__title"><i class="fas fa-user-plus"></i> أحدث المتابعين</h2>
@@ -147,11 +153,11 @@
     </section>
     {% endif %}
 
-    {% if posts_count == 0 and reels_count == 0 %}
+    {% if current.posts == 0 and current.views == 0 and current.engagement == 0 %}
     <section class="creator-section creator-section--empty">
         <i class="fas fa-seedling fa-3x"></i>
         <h2>ابدأ رحلتك كصانع محتوى</h2>
-        <p>لم تنشر بعد. انشر أول منشور أو ريل لتبدأ إحصاءاتك في التراكم.</p>
+        <p>لم تنشر في هذه الفترة. انشر منشورًا أو ريلًا لتبدأ إحصاءاتك في التراكم.</p>
         <a href="{{ url_for('posts.create') }}" class="btn btn-primary">
             <i class="fas fa-plus"></i> منشور جديد
         </a>
@@ -162,37 +168,53 @@
 
 <style>
 .creator-dash { max-width: 960px; margin: 0 auto; padding: 16px 12px 40px; font-family: Cairo, sans-serif; }
-.creator-dash__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.creator-dash__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .creator-dash__title { font-size: 1.4rem; color: #031E64; margin: 0; display: flex; align-items: center; gap: 8px; }
 .creator-dash__title i { color: #003AAB; }
 .creator-dash__sub { color: #6b7280; font-size: 0.9rem; margin: 4px 0 0; }
 .creator-dash__back { color: #003AAB; text-decoration: none; font-weight: 600; padding: 8px 16px; border-radius: 999px; background: #f0f4ff; font-size: 0.9rem; }
 .creator-dash__back:hover { background: #e0e7ff; }
-.creator-dash__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+
+.creator-periods { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.creator-period { padding: 8px 16px; border-radius: 999px; background: #f3f4f6; color: #374151; text-decoration: none; font-size: 0.85rem; font-weight: 600; white-space: nowrap; transition: all .15s; border: 1px solid transparent; }
+.creator-period:hover { background: #e5e7eb; }
+.creator-period.is-active { background: #003AAB; color: #fff; border-color: #003AAB; }
+
+.creator-dash__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
 @media (min-width: 640px) { .creator-dash__grid { grid-template-columns: repeat(4, 1fr); } }
-.creator-card { background: #fff; border-radius: 14px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(3, 30, 100, 0.06); border: 1px solid #e5e9f5; position: relative; }
+.creator-card { background: #fff; border-radius: 14px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(3, 30, 100, 0.06); border: 1px solid #e5e9f5; }
 .creator-card--primary { background: linear-gradient(135deg, #003AAB, #00C8F8); color: #fff; border: 0; }
-.creator-card--primary .creator-card__icon, .creator-card--primary .creator-card__label { color: rgba(255,255,255,0.9); }
+.creator-card--primary .creator-card__icon,
+.creator-card--primary .creator-card__label { color: rgba(255,255,255,0.9); }
 .creator-card--primary .creator-card__value { color: #fff; }
 .creator-card__icon { font-size: 1.2rem; color: #003AAB; margin-bottom: 6px; }
 .creator-card__value { font-size: 1.8rem; font-weight: 800; color: #031E64; line-height: 1; }
 .creator-card__label { font-size: 0.8rem; color: #6b7280; margin-top: 4px; }
-.creator-card__delta { font-size: 0.72rem; margin-top: 6px; color: #10b981; font-weight: 600; }
-.creator-card__delta--up { color: #fff; }
+.creator-card__delta { font-size: 0.78rem; margin-top: 8px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-block; }
+.creator-card__delta--up { color: #10b981; background: rgba(16,185,129,0.1); }
+.creator-card--primary .creator-card__delta--up { color: #fff; background: rgba(255,255,255,0.2); }
+.creator-card__delta--down { color: #ef4444; background: rgba(239,68,68,0.1); }
+.creator-card--primary .creator-card__delta--down { color: #fff; background: rgba(255,255,255,0.2); }
+.creator-card__delta--new { color: #003AAB; background: #e0e7ff; }
+.creator-card--primary .creator-card__delta--new { color: #fff; background: rgba(255,255,255,0.2); }
+.creator-card__delta--flat { color: #6b7280; background: #f3f4f6; }
+.creator-card--primary .creator-card__delta--flat { color: #fff; background: rgba(255,255,255,0.2); }
+
 .creator-section { background: #fff; border-radius: 16px; padding: 18px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(3, 30, 100, 0.06); border: 1px solid #e5e9f5; }
 .creator-section__title { font-size: 1.05rem; color: #031E64; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
 .creator-section__title i { color: #003AAB; }
 .creator-engagement { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
 .creator-engagement__item { text-align: center; padding: 12px; background: #f8faff; border-radius: 10px; }
 .creator-engagement__num { display: block; font-size: 1.4rem; font-weight: 800; color: #003AAB; }
-.creator-engagement__label { display: block; font-size: 0.78rem; color: #6b7280; margin-top: 2px; }
+.creator-engagement__label { display: block; font-size: 0.78rem; color: #6b7280; margin-top: 4px; }
+.creator-engagement__label i { color: #94a3b8; }
 .creator-list { display: flex; flex-direction: column; gap: 8px; }
 .creator-list__item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; text-decoration: none; color: inherit; background: #f8faff; transition: background .15s; }
 .creator-list__item:hover { background: #eef4ff; }
 .creator-list__rank { width: 28px; height: 28px; border-radius: 50%; background: #003AAB; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
 .creator-list__body { flex: 1; min-width: 0; }
 .creator-list__text { color: #1f2937; font-size: 0.9rem; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
-.creator-list__meta { display: flex; gap: 10px; margin-top: 4px; font-size: 0.75rem; color: #6b7280; }
+.creator-list__meta { display: flex; gap: 10px; margin-top: 4px; font-size: 0.75rem; color: #6b7280; flex-wrap: wrap; }
 .creator-list__meta i { color: #94a3b8; }
 .creator-list__score { font-weight: 800; color: #003AAB; font-size: 1rem; flex-shrink: 0; }
 .creator-followers { display: flex; flex-wrap: wrap; gap: 10px; }

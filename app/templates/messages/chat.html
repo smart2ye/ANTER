@@ -1912,7 +1912,13 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const sendBtn = document.getElementById('sendMessageButton');
 
-        // 1) الصوت — كما كان (JSON → reload)
+        // 0) منع الإرسال أثناء تسجيل نشط (recorded/paused)
+        if (mediaRecorder && (mediaRecorder.state === 'recording' || mediaRecorder.state === 'paused')) {
+            showHelp('أنهِ التسجيل أولاً (اضغط زر الميكروفون) أو ألغِه قبل إرسال نص.', true);
+            return;
+        }
+
+        // 1) الصوت — معاينة جاهزة
         const audioFile = recordedAudioFile || document.getElementById('voiceInput').files[0];
         if (audioFile) {
             if (sendBtn) sendBtn.disabled = true;
@@ -1923,7 +1929,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 2) نص / مرفق — AJAX سلس
+        // 2) نص / مرفق — تحقق حقيقي من الحقل الصحيح
+        const inputEl = document.getElementById('messageInput');
+        const hasText = inputEl && (inputEl.value || '').trim().length > 0;
+        const attachmentInputEl = document.getElementById('attachmentInput');
+        const hasAttachment = attachmentInputEl && attachmentInputEl.files && attachmentInputEl.files.length > 0;
+
+        if (!hasText && !hasAttachment) {
+            showHelp('اكتب نصًا أو أضف مرفقًا.', true);
+            return;
+        }
+
         if (form.dataset.sending === 'true') return;
         form.dataset.sending = 'true';
         if (sendBtn) sendBtn.disabled = true;
@@ -1950,47 +1966,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.last_id && data.last_id > lastMsgId) {
                         lastMsgId = data.last_id;
                     }
-                    // تحديث تنسيق الوقت في الرسالة الجديدة
-                    if (typeof window.anterRefreshLocalTimes === 'function') {
-                        window.anterRefreshLocalTimes();
-                    } else {
-                        // fallback: تحديث يدوي للعناصر data-local-time
-                        document.querySelectorAll('[data-local-time]:not([data-time-done])').forEach(function(el) {
-                            var iso = el.getAttribute('data-local-time');
-                            if (!iso) return;
-                            try {
-                                var d = new Date(iso);
-                                var style = el.getAttribute('data-time-style') || 'time';
-                                var fmt;
-                                if (style === 'date') {
-                                    fmt = d.toLocaleDateString('ar', {year:'numeric', month:'2-digit', day:'2-digit'});
-                                } else {
-                                    fmt = d.toLocaleTimeString('ar', {hour:'2-digit', minute:'2-digit'});
-                                }
-                                el.textContent = fmt;
-                                el.setAttribute('data-time-done', '1');
-                            } catch (e) {}
-                        });
-                    }
                 }
                 form.reset();
                 if (input) {
                     input.value = '';
                     input.style.height = 'auto';
                 }
-                // إخفاء معاينة المرفق إن كانت
                 const ap = document.getElementById('attachmentPreview');
                 if (ap) { ap.textContent = ''; ap.classList.add('d-none'); }
                 const ai = document.getElementById('attachmentInput');
                 if (ai) ai.value = '';
-                // إعلام باقي الكود
                 document.dispatchEvent(new CustomEvent('anter:message-sent'));
             } else {
                 showHelp((data && data.message) || 'تعذر إرسال الرسالة.', true);
             }
         } catch (err) {
             console.error('send failed', err);
-            showHelp('تعذر إرسال الرسالة. تحقق من الاتصال وحاول مجددًا.', true);
+            showHelp('تعذر إرسال الرسالة. تحقق من الاتصال وحاول مجدداً.', true);
         } finally {
             form.dataset.sending = 'false';
             if (sendBtn) sendBtn.disabled = false;

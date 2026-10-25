@@ -800,3 +800,76 @@ def delete_report(report_id):
     db.session.delete(report)
     db.session.commit()
     return jsonify({'success': True})
+
+
+# ============================================================
+# ANTER: معاينة الرسالة المبلَّغ عنها (للمشرفين)
+# ============================================================
+@admin_bp.route('/reports/<int:report_id>/message-preview')
+@login_required
+@admin_required
+def admin_report_message_preview(report_id):
+    """يرجع JSON ببيانات الرسالة المبلَّغ عنها لعرضها في modal."""
+    report = Report.query.get_or_404(report_id)
+    if not report.message_id or not report.message:
+        return jsonify({'success': False, 'message': 'هذا البلاغ ليس عن رسالة، أو الرسالة حُذفت.'}), 404
+    msg = report.message
+    sender = msg.sender
+    receiver = msg.receiver
+    video_url = None
+    if msg.shared_video:
+        try:
+            video_url = url_for('videos.watch', public_id=msg.shared_video.public_id)
+        except Exception:
+            video_url = None
+    return jsonify({
+        'success': True,
+        'message_id': msg.id,
+        'content': msg.content or '',
+        'is_ai': bool(msg.is_ai),
+        'has_audio': bool(msg.audio_data),
+        'audio_url': url_for('admin.admin_message_audio', message_id=msg.id) if msg.audio_data else None,
+        'has_attachment': bool(msg.attachment_data),
+        'attachment_url': url_for('admin.admin_message_attachment', message_id=msg.id) if msg.attachment_data else None,
+        'attachment_kind': msg.attachment_kind or 'file',
+        'attachment_name': msg.attachment_name or 'مرفق',
+        'has_video': bool(msg.shared_video_id),
+        'video_url': video_url,
+        'sender': {'username': sender.username, 'name': sender.name or sender.username},
+        'receiver': {'username': receiver.username, 'name': receiver.name or receiver.username},
+        'created_at': msg.created_at.strftime('%Y-%m-%d %H:%M') if msg.created_at else '',
+        'reason': report.reason or '',
+        'details': report.details or '',
+    })
+
+
+@admin_bp.route('/messages/<int:message_id>/audio')
+@login_required
+@admin_required
+def admin_message_audio(message_id):
+    """يخدم صوت الرسالة للمشرف فقط (بدون شرط المشاركة في المحادثة)."""
+    from flask import Response, abort
+    from app.models import Message
+    msg = Message.query.get_or_404(message_id)
+    if not msg.audio_data:
+        abort(404)
+    return Response(msg.audio_data, mimetype=msg.audio_mime or 'audio/webm')
+
+
+@admin_bp.route('/messages/<int:message_id>/attachment')
+@login_required
+@admin_required
+def admin_message_attachment(message_id):
+    """يخدم مرفق الرسالة للمشرف فقط."""
+    from flask import Response, abort
+    from app.models import Message
+    msg = Message.query.get_or_404(message_id)
+    if not msg.attachment_data:
+        abort(404)
+    disposition = 'inline' if (msg.attachment_kind == 'image') else 'attachment'
+    safe_name = (msg.attachment_name or 'file').replace('"', '')
+    return Response(
+        msg.attachment_data,
+        mimetype=msg.attachment_mime or 'application/octet-stream',
+        headers={'Content-Disposition': f'{disposition}; filename="{safe_name}"'}
+    )

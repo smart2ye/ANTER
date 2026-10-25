@@ -74,7 +74,10 @@
         </form>
 
         <hr class="my-3">
-        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill"><i class="fas fa-sign-in-alt me-2"></i>لديك حساب؟ سجل الدخول</a>
+        <p class="text-center small text-muted mt-4 mb-0">
+            لديك حساب بالفعل؟
+            <a href="{{ url_for('auth.login') }}" class="text-decoration-none fw-semibold">تسجيل الدخول</a>
+        </p>
     </div>
 </div>
 

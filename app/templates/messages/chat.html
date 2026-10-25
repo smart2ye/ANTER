@@ -65,7 +65,7 @@
         <aside class="alert alert-secondary mb-3" role="status"><i class="fas fa-lock me-1"></i>هذه المحادثة غير متاحة حالياً.</aside>
     {% endif %}
 
-    <div class="chat-box" id="chatBox" aria-live="polite">
+    <div class="chat-box" id="chatBox" aria-live="polite" data-last-msg-id="{{ last_msg_id or 0 }}">
         {% if timeline %}
             {% set ns = namespace(last_date=None) %}
             {% for entry in timeline %}
@@ -1758,6 +1758,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (data.html || data.assistant_html) {
                     chatBox.scrollTop = chatBox.scrollHeight;
+                    if (data.last_id && data.last_id > lastMsgId) {
+                        lastMsgId = data.last_id;
+                    }
                     // تحديث تنسيق الوقت في الرسالة الجديدة
                     if (typeof window.anterRefreshLocalTimes === 'function') {
                         window.anterRefreshLocalTimes();
@@ -1815,6 +1818,57 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.getElementById('forwardSearch').oninput = (e) => loadForwardUsers(e.target.value);
+
+    // ============================================================
+    // ANTER: polling للرسائل الجديدة — كل 3 ثوانٍ
+    // ============================================================
+    let lastMsgId = Number(chatBox.dataset.lastMsgId || 0);
+    let msgPollTimer = null;
+    let msgPollInProgress = false;
+
+    async function pollNewMessages() {
+        if (msgPollInProgress) return;
+        if (document.visibilityState === 'hidden') return;
+        msgPollInProgress = true;
+        try {
+            const r = await fetch(`/messages/${otherUserId}/poll?after=${lastMsgId}`, {
+                credentials: 'same-origin',
+            });
+            if (!r.ok) return;
+            const data = await r.json();
+            if (data.messages && data.messages.length > 0) {
+                let appended = false;
+                data.messages.forEach(function(m) {
+                    if (document.getElementById('msg-' + m.id)) return;
+                    if (m.html) {
+                        chatBox.insertAdjacentHTML('beforeend', m.html);
+                        appended = true;
+                    }
+                });
+                if (appended) {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+                if (data.last_id && data.last_id > lastMsgId) {
+                    lastMsgId = data.last_id;
+                }
+            }
+        } catch (e) {
+            // صامت — الاتصال انقطع، سنعيد في الدورة التالية
+        } finally {
+            msgPollInProgress = false;
+        }
+    }
+
+    function startMsgPolling() {
+        if (msgPollTimer) return;
+        msgPollTimer = setInterval(pollNewMessages, 3000);
+    }
+    startMsgPolling();
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            pollNewMessages();
+        }
+    });
 
     // ============================================================
     // ANTER: استطلاع تكيّفي — يسرع عند وجود مكالمة، ويبطؤ في الخلفية.

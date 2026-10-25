@@ -195,12 +195,14 @@ def chat(user_id):
     )
     last_read_id = last_read_msg.id if last_read_msg else None
     last_read_at = last_read_msg.read_at if last_read_msg else None
+    last_msg_id = messages[-1].id if messages else 0
 
     return render_template(
         'messages/chat.html',
         other=other,
         messages=messages,
         timeline=timeline,
+        last_msg_id=last_msg_id,
         last_read_id=last_read_id,
         last_read_at=last_read_at,
         get_status_icon=get_status_icon,
@@ -643,6 +645,7 @@ def send(user_id):
                     'message_id': message.id,
                     'sender_id': current_user.id,
                     'html': msg_html,
+                    'last_id': message.id,
                 }
                 if assistant_msg_obj and getattr(assistant_msg_obj, 'id', None):
                     try:
@@ -652,6 +655,8 @@ def send(user_id):
                             other=other,
                             is_anter_assistant=True,
                         )
+                        payload['assistant_msg_id'] = assistant_msg_obj.id
+                        payload['last_id'] = assistant_msg_obj.id
                     except Exception:
                         current_app.logger.exception('تعذر تصيير HTML رد المساعد')
                 if shared_video:
@@ -738,6 +743,53 @@ def forward_message(message_id):
     db.session.add(forwarded)
     db.session.commit()
     return jsonify({'success': True, 'redirect': url_for('messages.chat', user_id=target_user_id)})
+
+
+@messages_bp.route('/<int:user_id>/poll', methods=['GET'])
+@login_required
+def poll_messages(user_id):
+    """ANTER: استطلاع رسائل جديدة — يرجع فقط الرسائل > after."""
+    other = User.query.get_or_404(user_id)
+    after_id = request.args.get('after', 0, type=int) or 0
+
+    new_msgs = Message.query.filter(
+        or_(
+            (Message.sender_id == current_user.id) & (Message.receiver_id == other.id) & (Message.deleted_by_sender == False),
+            (Message.sender_id == other.id) & (Message.receiver_id == current_user.id) & (Message.deleted_by_receiver == False),
+        ),
+        Message.id > after_id,
+    ).order_by(Message.created_at.asc()).limit(50).all()
+
+    if not new_msgs:
+        return jsonify({'messages': [], 'last_id': after_id})
+
+    from datetime import datetime as _dt
+    changed = False
+    for m in new_msgs:
+        if m.receiver_id == current_user.id and not m.is_read:
+            m.is_read = True
+            m.read_at = _dt.utcnow()
+            changed = True
+    if changed:
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    is_assistant = is_anter_assistant(other)
+    rendered = []
+    for m in new_msgs:
+        try:
+            html = render_template(
+                'messages/_message.html',
+                msg=m, other=other, is_anter_assistant=is_assistant,
+            )
+        except Exception:
+            current_app.logger.exception('poll render failed')
+            html = ''
+        rendered.append({'id': m.id, 'html': html, 'sender_id': m.sender_id})
+
+    return jsonify({'messages': rendered, 'last_id': new_msgs[-1].id})
 
 
 @messages_bp.route('/send-audio/<int:user_id>', methods=['POST'])

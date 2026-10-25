@@ -162,6 +162,27 @@ def create_app(test_config=None):
         name='get_recent_reaction_users'
     )
 
+    # ============================================
+    # تفاعل المستخدم الحالي (لكل بطاقة، عند التحميل)
+    # ============================================
+    def get_user_reaction(post_id):
+        from app.models import Like
+        from flask_login import current_user
+        if not getattr(current_user, 'is_authenticated', False):
+            return None
+        r = Like.query.filter_by(post_id=post_id, user_id=current_user.id).first()
+        return r.reaction_type if r else None
+
+    app.add_template_global(get_user_reaction, name='get_user_reaction')
+
+    # خرائط التفاعل — متاحة لكل القوالب بدون تكرار
+    app.jinja_env.globals['REACTION_ICONS'] = {
+        'like': '👍', 'love': '🥰', 'haha': '🤣', 'angry': '😡', 'sad': '😢'
+    }
+    app.jinja_env.globals['REACTION_NAMES'] = {
+        'like': 'إعجاب', 'love': 'حب', 'haha': 'أضحكني', 'angry': 'أغضبني', 'sad': 'أحزنني'
+    }
+
 
     # ============================================
     # جعل get_status_icon متاحة في جميع القوالب

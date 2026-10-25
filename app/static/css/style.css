@@ -1437,6 +1437,30 @@ body {
 
 .reaction-active .reaction-label {
     color: var(--fb-blue);
+    font-weight: 700;
+}
+
+/* ANTER: تمييز بصري أقوى للتفاعل النشط */
+.reaction-toggle.reaction-active {
+    background: rgba(0, 58, 171, 0.08);
+    border-radius: 999px;
+    padding-inline: 10px;
+}
+
+.reaction-toggle.reaction-active[data-user-reaction="love"] {
+    background: rgba(217, 72, 111, 0.10);
+}
+
+.reaction-toggle.reaction-active[data-user-reaction="haha"] {
+    background: rgba(213, 133, 0, 0.10);
+}
+
+.reaction-toggle.reaction-active[data-user-reaction="angry"] {
+    background: rgba(215, 70, 54, 0.10);
+}
+
+.reaction-toggle.reaction-active[data-user-reaction="sad"] {
+    background: rgba(75, 137, 214, 0.10);
 }
 
 @keyframes reactionPop {

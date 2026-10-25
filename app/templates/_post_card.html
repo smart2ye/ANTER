@@ -267,10 +267,17 @@
     <div class="post-actions">
         <!-- زر التفاعل -->
         <div class="reaction-wrapper">
-            <button type="button" class="action-btn reaction-toggle" data-post="{{ post.id }}" aria-haspopup="true" aria-expanded="false" aria-label="إضافة تفاعل">
+            {% set _ur = get_user_reaction(post.id) %}
+            <button type="button"
+                    class="action-btn reaction-toggle{% if _ur %} reaction-active{% endif %}"
+                    data-post="{{ post.id }}"
+                    data-user-reaction="{{ _ur or '' }}"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    aria-label="إضافة تفاعل">
                 <span class="reaction-display" id="reaction-display-{{ post.id }}">
-                    <span class="reaction-icon" id="reaction-icon-{{ post.id }}">👍</span>
-                    <span class="reaction-label" id="reaction-label-{{ post.id }}">إعجاب</span>
+                    <span class="reaction-icon" id="reaction-icon-{{ post.id }}">{{ REACTION_ICONS.get(_ur, '👍') }}</span>
+                    <span class="reaction-label" id="reaction-label-{{ post.id }}">{{ REACTION_NAMES.get(_ur, 'إعجاب') }}</span>
                 </span>
                 <span class="reaction-count" id="reaction-count-{{ post.id }}">
                 </span>

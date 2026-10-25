@@ -192,6 +192,9 @@
             <span class="recording-label" id="recordingLabel">جارٍ التسجيل</span>
             <strong id="recordingTimer">00:00</strong>
             <div class="recording-actions">
+                <button type="button" class="recording-action-btn recording-action-btn--success" id="stopRecordingButton" title="إنهاء التسجيل">
+                    <i class="fas fa-check"></i>
+                </button>
                 <button type="button" class="recording-action-btn" id="pauseResumeButton" title="إيقاف مؤقت">
                     <i class="fas fa-pause" id="pauseResumeIcon"></i>
                 </button>
@@ -639,6 +642,9 @@
     .recording-action-btn:hover { background: #f3f4f6; }
     .recording-action-btn--danger { color: #dc2626; border-color: #fecaca; }
     .recording-action-btn--danger:hover { background: #fee2e2; }
+    .recording-action-btn--success { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
+    .recording-action-btn--success:hover { background: #dcfce7; }
+    .recording-action-btn--success i { font-weight: 900; }
     .highlight-msg { animation: highlight 2s ease; }
     @keyframes highlight { 0% { background-color: rgba(24, 119, 242, 0.2); } 100% { background-color: transparent; } }
     
@@ -1879,6 +1885,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const icon = pauseIcon();
             if (icon) icon.className = 'fas fa-pause';
             _pBtn.title = 'إيقاف مؤقت';
+        }
+    };
+
+    // زر إنهاء التسجيل (Stop)
+    const _sBtn = document.getElementById('stopRecordingButton');
+    if (_sBtn) _sBtn.onclick = () => {
+        if (!mediaRecorder) return;
+        if (mediaRecorder.state === 'recording' || mediaRecorder.state === 'paused') {
+            recordingCancelled = false;
+            try { mediaRecorder.stop(); } catch (_) {}
         }
     };
 

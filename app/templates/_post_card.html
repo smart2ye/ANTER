@@ -82,7 +82,17 @@
 
     <!-- محتوى المنشور -->
     <div class="post-content">
-        <div class="anter-rich-text">{{ post.content | render_rich_text }}</div>
+        <div class="anter-rich-text post-content__body"
+             data-post-content="{{ post.id }}">
+            {{ post.content | render_rich_text }}
+        </div>
+        <button type="button"
+                class="post-content__toggle"
+                data-post-toggle="{{ post.id }}"
+                aria-expanded="false"
+                style="display:none;">
+            عرض المزيد
+        </button>
     </div>
 
     {% if post.shared_video %}

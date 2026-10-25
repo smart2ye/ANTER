@@ -106,6 +106,8 @@ function loadMorePosts() {
                     maybeInsertRecommendation(container);
                 });
 
+                if (window.setupPostContentToggles) window.setupPostContentToggles();
+
                 hasMore = data.has_next;
             } else {
                 hasMore = false;
@@ -129,7 +131,28 @@ function createPostHtml(post) {
     return post.html || '';
 }
 
+// ANTER: clamp النصوص الطويلة + زر عرض المزيد/أقل
+function setupPostContentToggles() {
+    document.querySelectorAll('.post-content__body[data-post-content]').forEach(function(el) {
+        if (el.dataset.clampSetup === 'true') return;
+        el.dataset.clampSetup = 'true';
+        if (el.scrollHeight > el.clientHeight + 4) {
+            var pid = el.dataset.postContent;
+            var toggle = document.querySelector('[data-post-toggle="' + pid + '"]');
+            if (!toggle) return;
+            toggle.style.display = 'inline-block';
+            toggle.addEventListener('click', function() {
+                var expanded = el.classList.toggle('is-expanded');
+                toggle.textContent = expanded ? 'عرض أقل' : 'عرض المزيد';
+                toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            });
+        }
+    });
+}
+window.setupPostContentToggles = setupPostContentToggles;
+
 document.addEventListener('DOMContentLoaded', function() {
+    if (window.setupPostContentToggles) window.setupPostContentToggles();
     prepareRecommendationPool();
 
     const container = document.getElementById('posts-container');

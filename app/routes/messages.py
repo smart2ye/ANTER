@@ -619,6 +619,11 @@ def send(user_id):
                             parent_id=message.id,
                             is_ai=True,
                         )
+                        # ANTER: المستخدم يرى رده الآن في نفس الصفحة — لا داعي لعدّه غير مقروء.
+                        from datetime import datetime as _dt_a
+                        assistant_msg_obj.is_read = True
+                        if hasattr(assistant_msg_obj, 'read_at'):
+                            assistant_msg_obj.read_at = _dt_a.utcnow()
                         db.session.add(assistant_msg_obj)
                         # ANTER: المساعد لا يقرأ صندوقه يدويًا — نُعلّم رسالة المستخدم مقروءة بعد الرد.
                         message.is_read = True
@@ -760,8 +765,19 @@ def poll_messages(user_id):
         Message.id > after_id,
     ).order_by(Message.created_at.asc()).limit(50).all()
 
+    # نُحسب unread_total في كل استجابة حتى يُحدَّث البادج في الهيدر
+    def _unread_total():
+        hidden = blocked_counterparty_ids(current_user.id) | {
+            row.muted_user_id
+            for row in MutedConversation.query.filter_by(user_id=current_user.id).all()
+        }
+        q = Message.query.filter_by(receiver_id=current_user.id, is_read=False, deleted_by_receiver=False)
+        if hidden:
+            q = q.filter(Message.sender_id.notin_(hidden))
+        return q.count()
+
     if not new_msgs:
-        return jsonify({'messages': [], 'last_id': after_id})
+        return jsonify({'messages': [], 'last_id': after_id, 'unread_total': _unread_total()})
 
     from datetime import datetime as _dt
     changed = False
@@ -789,7 +805,7 @@ def poll_messages(user_id):
             html = ''
         rendered.append({'id': m.id, 'html': html, 'sender_id': m.sender_id})
 
-    return jsonify({'messages': rendered, 'last_id': new_msgs[-1].id})
+    return jsonify({'messages': rendered, 'last_id': new_msgs[-1].id, 'unread_total': _unread_total()})
 
 
 @messages_bp.route('/send-audio/<int:user_id>', methods=['POST'])

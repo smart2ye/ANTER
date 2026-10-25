@@ -1852,6 +1852,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     lastMsgId = data.last_id;
                 }
             }
+            // تحديث بادج الرسائل في الهيدر
+            if (typeof data.unread_total === 'number') {
+                var badge = document.getElementById('msg-badge');
+                if (badge) {
+                    badge.textContent = data.unread_total;
+                    badge.style.display = data.unread_total > 0 ? 'block' : 'none';
+                }
+            }
         } catch (e) {
             // صامت — الاتصال انقطع، سنعيد في الدورة التالية
         } finally {

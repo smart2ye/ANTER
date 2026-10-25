@@ -625,13 +625,27 @@ def send(user_id):
                     db.session.rollback()
                     current_app.logger.exception('تعذر حفظ رد مساعد أنتر')
 
-            if shared_video and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                try:
+                    msg_html = render_template(
+                        'messages/_message.html',
+                        msg=message,
+                        other=other,
+                        is_anter_assistant=is_anter_assistant(other),
+                    )
+                except Exception:
+                    current_app.logger.exception('تعذر تصيير HTML الرسالة')
+                    msg_html = ''
+                payload = {
                     'success': True,
-                    'message': 'تم إرسال الريل إلى الصديق ✓',
                     'message_id': message.id,
-                    'video_id': shared_video.id,
-                })
+                    'sender_id': current_user.id,
+                    'html': msg_html,
+                }
+                if shared_video:
+                    payload['video_id'] = shared_video.id
+                    payload['message'] = 'تم إرسال الريل إلى الصديق ✓'
+                return jsonify(payload)
 
             flash('تم إرسال الرسالة.', 'success')
     else:

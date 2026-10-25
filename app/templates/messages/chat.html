@@ -1752,6 +1752,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 if (data.html) {
                     chatBox.insertAdjacentHTML('beforeend', data.html);
+                }
+                if (data.assistant_html) {
+                    chatBox.insertAdjacentHTML('beforeend', data.assistant_html);
+                }
+                if (data.html || data.assistant_html) {
                     chatBox.scrollTop = chatBox.scrollHeight;
                     // تحديث تنسيق الوقت في الرسالة الجديدة
                     if (typeof window.anterRefreshLocalTimes === 'function') {

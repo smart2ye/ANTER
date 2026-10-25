@@ -594,6 +594,7 @@ def send(user_id):
             current_app.logger.exception('تعذر إرسال الرسالة')
             flash('تعذر إرسال الرسالة حاليًا. حاول مجددًا.', 'danger')
         else:
+            assistant_msg_obj = None
             if is_anter_assistant(other) and not shared_video:
                 try:
                     if audio_data or attachment_data:
@@ -609,13 +610,14 @@ def send(user_id):
                         assistant_reply = assistant_reply or public_error
 
                     if assistant_reply:
-                        db.session.add(Message(
+                        assistant_msg_obj = Message(
                             sender_id=other.id,
                             receiver_id=current_user.id,
                             content=assistant_reply,
                             parent_id=message.id,
                             is_ai=True,
-                        ))
+                        )
+                        db.session.add(assistant_msg_obj)
                         # ANTER: المساعد لا يقرأ صندوقه يدويًا — نُعلّم رسالة المستخدم مقروءة بعد الرد.
                         message.is_read = True
                         db.session.commit()
@@ -642,6 +644,16 @@ def send(user_id):
                     'sender_id': current_user.id,
                     'html': msg_html,
                 }
+                if assistant_msg_obj and getattr(assistant_msg_obj, 'id', None):
+                    try:
+                        payload['assistant_html'] = render_template(
+                            'messages/_message.html',
+                            msg=assistant_msg_obj,
+                            other=other,
+                            is_anter_assistant=True,
+                        )
+                    except Exception:
+                        current_app.logger.exception('تعذر تصيير HTML رد المساعد')
                 if shared_video:
                     payload['video_id'] = shared_video.id
                     payload['message'] = 'تم إرسال الريل إلى الصديق ✓'

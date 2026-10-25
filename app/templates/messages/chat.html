@@ -1526,21 +1526,52 @@ async function sendVoiceAsJson(file) {
     });
     reader.readAsDataURL(file);
     const audioData = await base64Promise;
-    const response = await fetch(`/messages/send-audio/${otherUserId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            audioData,
-            fileName: file.name,
-            content: document.getElementById('messageInput').value.trim(),
-            parent_id: document.getElementById('replyParentId').value
-        })
-    });
-    if (!response.ok) {
+
+    const sendBtn = document.getElementById('sendMessageButton');
+    if (sendBtn) sendBtn.disabled = true;
+
+    try {
+        const response = await fetch(`/messages/send-audio/${otherUserId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                audioData,
+                fileName: file.name,
+                content: document.getElementById('messageInput').value.trim(),
+                parent_id: document.getElementById('replyParentId').value
+            })
+        });
         const data = await response.json();
-        throw new Error(data.message || 'فشل إرسال الصوت');
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'فشل إرسال الصوت');
+        }
+
+        // إضافة الرسالة للـ DOM
+        const chatBox = document.getElementById('chatBox');
+        if (data.html && chatBox) {
+            chatBox.insertAdjacentHTML('beforeend', data.html);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            if (data.last_id && typeof lastMsgId !== 'undefined' && data.last_id > lastMsgId) {
+                lastMsgId = data.last_id;
+            }
+        }
+
+        // مسح المعاينة وحالة التسجيل
+        recordedAudioFile = null;
+        document.getElementById('voicePreview').classList.add('d-none');
+        document.getElementById('voicePreviewAudio').src = '';
+        document.getElementById('voiceInput').value = '';
+        document.getElementById('recordingStatus').classList.add('d-none');
+        document.getElementById('recordVoiceButton').classList.remove('btn-danger', 'is-recording');
+        const input = document.getElementById('messageInput');
+        if (input) { input.value = ''; }
+        document.dispatchEvent(new CustomEvent('anter:message-sent'));
+    } catch (err) {
+        if (sendBtn) sendBtn.disabled = false;
+        throw err;
+    } finally {
+        if (sendBtn) sendBtn.disabled = false;
     }
-    window.location.reload();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

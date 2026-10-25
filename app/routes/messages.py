@@ -860,9 +860,23 @@ def send_audio_message(user_id):
         current_app.logger.exception('تعذر إرسال الرسالة الصوتية عبر JSON')
         return jsonify({'success': False, 'message': 'تعذر إرسال الرسالة الصوتية حاليًا.'}), 500
 
+    try:
+        msg_html = render_template(
+            'messages/_message.html',
+            msg=message,
+            other=other,
+            is_anter_assistant=is_anter_assistant(other),
+        )
+    except Exception:
+        current_app.logger.exception('تعذر تصيير HTML الرسالة الصوتية')
+        msg_html = ''
+
     return jsonify({
         'success': True,
         'messageId': message.id,
+        'sender_id': current_user.id,
+        'html': msg_html,
+        'last_id': message.id,
         'redirect': url_for('messages.chat', user_id=user_id),
     }), 201
 

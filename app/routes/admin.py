@@ -873,3 +873,33 @@ def admin_message_attachment(message_id):
         mimetype=msg.attachment_mime or 'application/octet-stream',
         headers={'Content-Disposition': f'{disposition}; filename="{safe_name}"'}
     )
+
+
+# ============================================================
+# ANTER: استعادة حساب محذوف (حذف منطقي)
+# ============================================================
+@admin_bp.route('/users/restore/<int:user_id>', methods=['POST'])
+@login_required
+def restore_user(user_id):
+    """استعادة حساب محذوف — للمؤسس فقط."""
+    if current_user.id != 1:
+        return jsonify({'success': False, 'message': 'هذا الإجراء للمؤسس فقط'}), 403
+    user = User.query.get_or_404(user_id)
+    if not user.is_deleted:
+        return jsonify({'success': False, 'message': 'هذا الحساب غير محذوف.'})
+    try:
+        user.is_deleted = False
+        user.is_active = True
+        user.deleted_at = None
+        db.session.add(Notification(
+            user_id=user.id,
+            actor_id=current_user.id,
+            action='account_restored',
+            extra_text='تم استعادة حسابك. يمكنك الدخول من جديد بنفس كلمة المرور. إذا نسيتها، استخدم استعادة كلمة المرور.',
+        ))
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('تعذر استعادة الحساب')
+        return jsonify({'success': False, 'message': 'تعذر استعادة الحساب.'}), 500

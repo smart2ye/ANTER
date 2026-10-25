@@ -147,6 +147,7 @@
                             {% elif notif.action == 'suspended' %}anter-notif-icon--default
                             {% elif notif.action == 'banned' %}anter-notif-icon--default
                             {% elif notif.action == 'unbanned' %}anter-notif-icon--verified
+                            {% elif notif.action == 'account_restored' %}anter-notif-icon--verified
                             {% elif notif.action == 'repost' %}anter-notif-icon--reply
                             {% elif notif.action == 'verification_approved' %}anter-notif-icon--verified
                             {% elif notif.action == 'terms_update' %}anter-notif-icon--verified
@@ -172,6 +173,7 @@
                                 {% elif notif.action == 'suspended' %}fa-clock
                                 {% elif notif.action == 'banned' %}fa-ban
                                 {% elif notif.action == 'unbanned' %}fa-unlock
+                                {% elif notif.action == 'account_restored' %}fa-undo
                                 {% elif notif.action == 'sanction_review_needed' %}fa-gavel
                                 {% elif notif.action == 'founder_post' %}fa-bullhorn
                                 {% elif notif.action == 'early_member' %}fa-star
@@ -198,7 +200,7 @@
                         <p class="anter-notif-item__text">
                             {% if actor %}
                                 <strong class="anter-notif-item__actor">
-                                    {% if notif.action in ['report_resolved', 'report_rejected', 'verification_approved', 'verification_rejected', 'early_member', 'early_member_revoked', 'warning', 'suspended', 'banned', 'unbanned', 'sanction_review_needed'] %}
+                                    {% if notif.action in ['report_resolved', 'report_rejected', 'verification_approved', 'verification_rejected', 'early_member', 'early_member_revoked', 'warning', 'suspended', 'banned', 'unbanned', 'sanction_review_needed', 'account_restored'] %}
                                         إدارة أنتر
                                     {% else %}
                                         {{ actor.name or actor.username }}{{ verified_badge(actor) }}{{ founder_badge(actor) }}{{ early_member_badge(actor) }}

@@ -123,7 +123,9 @@
                 </td>
                 <td>{{ user.email }}</td>
                 <td>
-                    {% if user.is_active %}
+                    {% if user.is_deleted %}
+                        <span class="badge bg-dark" title="حذف منطقي — يمكن استعادته">محذوف</span>
+                    {% elif user.is_active %}
                         <span class="badge bg-success">نشط</span>
                     {% else %}
                         <span class="badge bg-danger">محظور</span>
@@ -207,6 +209,13 @@
                         {% endif %}
                     {% endif %}
                     </div>
+                    {% if user.is_deleted and current_user.id == 1 %}
+                    <button class="btn btn-sm btn-outline-success restore-user"
+                            data-url="{{ url_for('admin.restore_user', user_id=user.id) }}"
+                            data-username="{{ user.username }}">
+                        <i class="fas fa-undo"></i> استعادة
+                    </button>
+                    {% endif %}
                     <button class="btn btn-sm btn-outline-danger delete-user" 
                             data-url="{{ url_for('admin.delete_user', user_id=user.id) }}"
                             {% if user.id == current_user.id %}disabled{% endif %}>
@@ -377,6 +386,24 @@
                 .then(data => {
                     if (data.success) location.reload();
                 });
+        });
+    });
+
+    document.querySelectorAll('.restore-user').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const username = this.dataset.username || '';
+            if (!confirm('استعادة حساب @' + username + '؟ سيستطيع الدخول من جديد.')) return;
+            const url = this.dataset.url;
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) location.reload();
+                    else alert(data.message || 'تعذر الاستعادة.');
+                })
+                .catch(() => alert('خطأ في الاتصال.'));
         });
     });
 </script>

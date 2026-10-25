@@ -189,8 +189,16 @@
 
         <div class="recording-status d-none" id="recordingStatus">
             <span class="recording-dot"></span>
-            <span>جارٍ التسجيل</span>
+            <span class="recording-label" id="recordingLabel">جارٍ التسجيل</span>
             <strong id="recordingTimer">00:00</strong>
+            <div class="recording-actions">
+                <button type="button" class="recording-action-btn" id="pauseResumeButton" title="إيقاف مؤقت">
+                    <i class="fas fa-pause" id="pauseResumeIcon"></i>
+                </button>
+                <button type="button" class="recording-action-btn recording-action-btn--danger" id="cancelRecordingButton" title="إلغاء التسجيل">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
         </div>
 
         <div class="composer-row">
@@ -611,6 +619,26 @@
     .chat-attachment img { max-width: 280px; border-radius: 10px; }
     .recording-dot { width: 8px; height: 8px; background: red; border-radius: 50%; display: inline-block; animation: pulse 1s infinite; }
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    .recording-status {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 12px; margin: 6px 0;
+        background: #fff1f1; border: 1px solid #fecaca;
+        border-radius: 12px; font-size: 13px; color: #991b1b;
+    }
+    .recording-status.is-paused { background: #f3f4f6; border-color: #e5e7eb; color: #6b7280; }
+    .recording-status.is-paused .recording-dot { background: #9ca3af; animation: none; }
+    .recording-status .recording-label { flex: 1; font-weight: 600; }
+    .recording-status #recordingTimer { font-variant-numeric: tabular-nums; font-weight: 700; }
+    .recording-actions { display: flex; gap: 6px; align-items: center; }
+    .recording-action-btn {
+        width: 30px; height: 30px; border-radius: 50%;
+        border: 1px solid #d1d5db; background: #fff; color: #374151;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 12px; cursor: pointer; transition: all .15s;
+    }
+    .recording-action-btn:hover { background: #f3f4f6; }
+    .recording-action-btn--danger { color: #dc2626; border-color: #fecaca; }
+    .recording-action-btn--danger:hover { background: #fee2e2; }
     .highlight-msg { animation: highlight 2s ease; }
     @keyframes highlight { 0% { background-color: rgba(24, 119, 242, 0.2); } 100% { background-color: transparent; } }
     
@@ -1722,33 +1750,163 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     document.addEventListener('click', () => document.getElementById('msgContextMenu').classList.add('d-none'));
 
+    // ============================================================
+    // ANTER: نظام تسجيل صوتي محسّن — إيقاف/استئناف/إلغاء
+    // ============================================================
+    let recordingPausedAccum = 0;     // مجموع الوقت المتوقف عنه (ms)
+    let recordingPausedAt = null;     // لحظة الإيقاف الحالي
+    let recordingCancelled = false;   // هل أُلغيت الجلسة؟
+    const recStatusEl = () => document.getElementById('recordingStatus');
+    const recTimerEl = () => document.getElementById('recordingTimer');
+    const recLabelEl = () => document.getElementById('recordingLabel');
+    const pauseBtn = () => document.getElementById('pauseResumeButton');
+    const pauseIcon = () => document.getElementById('pauseResumeIcon');
+
+    function fmtTimer(ms) {
+        const sec = Math.max(0, Math.floor(ms / 1000));
+        return String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0');
+    }
+
+    function recordingElapsedMs() {
+        if (!recordingStartTime) return 0;
+        const now = recordingPausedAt ? recordingPausedAt : Date.now();
+        return (now - recordingStartTime) - recordingPausedAccum;
+    }
+
+    function stopRecorderTracks() {
+        if (mediaStream) {
+            try { mediaStream.getTracks().forEach(t => t.stop()); } catch (_) {}
+            mediaStream = null;
+        }
+    }
+
+    function resetRecordingUI() {
+        const status = recStatusEl();
+        if (status) status.classList.add('d-none');
+        const btn = document.getElementById('recordVoiceButton');
+        if (btn) btn.classList.remove('btn-danger', 'is-recording');
+        if (recordingTimerInterval) {
+            clearInterval(recordingTimerInterval);
+            recordingTimerInterval = null;
+        }
+        recordingStartTime = null;
+        recordingPausedAccum = 0;
+        recordingPausedAt = null;
+    }
+
     document.getElementById('recordVoiceButton').onclick = async () => {
+        // إيقاف التسجيل → حفظ
         if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
             return;
         }
+        // استئناف إذا كان paused
+        if (mediaRecorder && mediaRecorder.state === 'paused') {
+            mediaRecorder.resume();
+            return;
+        }
+        // بدء جديد
+        recordingCancelled = false;
         try {
             mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(mediaStream);
             audioChunks = [];
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
             mediaRecorder.onstop = () => {
+                if (recordingCancelled) {
+                    audioChunks = [];
+                    recordedAudioFile = null;
+                    resetRecordingUI();
+                    return;
+                }
                 const blob = new Blob(audioChunks, { type: 'audio/webm' });
                 recordedAudioFile = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
                 document.getElementById('voicePreviewAudio').src = URL.createObjectURL(blob);
                 document.getElementById('voicePreview').classList.remove('d-none');
-                mediaStream.getTracks().forEach(t => t.stop());
+                stopRecorderTracks();
+                resetRecordingUI();
             };
             mediaRecorder.start();
-            document.getElementById('recordVoiceButton').classList.add('btn-danger', 'is-recording');
-            document.getElementById('recordingStatus').classList.remove('d-none');
             recordingStartTime = Date.now();
+            recordingPausedAccum = 0;
+            recordingPausedAt = null;
+            const status = recStatusEl();
+            if (status) {
+                status.classList.remove('d-none', 'is-paused');
+            }
+            const lbl = recLabelEl();
+            if (lbl) lbl.textContent = 'جارٍ التسجيل';
+            const pIcon = pauseIcon();
+            if (pIcon) pIcon.className = 'fas fa-pause';
+            const pBtn = pauseBtn();
+            if (pBtn) pBtn.title = 'إيقاف مؤقت';
+            document.getElementById('recordVoiceButton').classList.add('btn-danger', 'is-recording');
             recordingTimerInterval = setInterval(() => {
-                const sec = Math.floor((Date.now() - recordingStartTime) / 1000);
-                document.getElementById('recordingTimer').innerText = `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
-            }, 1000);
-        } catch (err) { alert('تعذر الوصول للميكروفون'); }
+                const t = recTimerEl();
+                if (t) t.innerText = fmtTimer(recordingElapsedMs());
+            }, 250);
+        } catch (err) {
+            alert('تعذر الوصول للميكروفون');
+            resetRecordingUI();
+            stopRecorderTracks();
+        }
     };
+
+    // زر إيقاف/استئناف
+    const _pBtn = pauseBtn();
+    if (_pBtn) _pBtn.onclick = () => {
+        if (!mediaRecorder) return;
+        if (mediaRecorder.state === 'recording') {
+            try { mediaRecorder.pause(); } catch (_) {}
+            recordingPausedAt = Date.now();
+            const status = recStatusEl();
+            if (status) status.classList.add('is-paused');
+            const lbl = recLabelEl();
+            if (lbl) lbl.textContent = 'متوقف مؤقتاً';
+            const icon = pauseIcon();
+            if (icon) icon.className = 'fas fa-play';
+            _pBtn.title = 'استئناف';
+        } else if (mediaRecorder.state === 'paused') {
+            try { mediaRecorder.resume(); } catch (_) {}
+            if (recordingPausedAt) {
+                recordingPausedAccum += (Date.now() - recordingPausedAt);
+                recordingPausedAt = null;
+            }
+            const status = recStatusEl();
+            if (status) status.classList.remove('is-paused');
+            const lbl = recLabelEl();
+            if (lbl) lbl.textContent = 'جارٍ التسجيل';
+            const icon = pauseIcon();
+            if (icon) icon.className = 'fas fa-pause';
+            _pBtn.title = 'إيقاف مؤقت';
+        }
+    };
+
+    // زر إلغاء
+    const _cBtn = document.getElementById('cancelRecordingButton');
+    if (_cBtn) _cBtn.onclick = () => {
+        recordingCancelled = true;
+        if (mediaRecorder && (mediaRecorder.state === 'recording' || mediaRecorder.state === 'paused')) {
+            try { mediaRecorder.stop(); } catch (_) {}
+        } else {
+            resetRecordingUI();
+            stopRecorderTracks();
+        }
+        audioChunks = [];
+        recordedAudioFile = null;
+        document.getElementById('voicePreviewAudio').src = '';
+        document.getElementById('voicePreview').classList.add('d-none');
+    };
+
+    // زر إلغاء المعاينة (الموجود)
+    const _clearBtn = document.getElementById('clearVoiceButton');
+    if (_clearBtn) _clearBtn.onclick = () => {
+        recordedAudioFile = null;
+        document.getElementById('voicePreviewAudio').src = '';
+        document.getElementById('voicePreview').classList.add('d-none');
+        document.getElementById('voiceInput').value = '';
+    };
+
 
     form.onsubmit = async function(event) {
         event.preventDefault();

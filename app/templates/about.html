@@ -126,8 +126,8 @@
     <section class="rounded-4 p-4 p-md-5 mb-4 border shadow-sm" style="background: linear-gradient(135deg, rgba(24,119,242,.05), rgba(111,66,193,.05));">
         <div class="d-flex flex-column flex-md-row align-items-md-center gap-4">
             <div class="flex-shrink-0 text-center">
-                <img src="{{ avatar_url(current_user) if current_user.is_authenticated else url_for('static', filename='uploads/default.png') }}" 
-                     alt="عبدالقادر مهدلي" 
+                <img src="{{ url_for('media.avatar', user_id=1) }}"
+                     alt="عبدالقادر مهدلي — مؤسس ANTER" 
                      class="rounded-circle border border-4 border-white shadow-sm" 
                      style="width: 100px; height: 100px; object-fit: cover;">
             </div>

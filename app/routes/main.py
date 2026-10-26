@@ -679,8 +679,3 @@ def api_users():
         'is_verified': u.is_verified,
         'is_admin': u.is_admin
     } for u in users])
-
-# ANTER: ملف تحقق ملكية (نصي، لا يحوي أسرارًا)
-@main_bp.route('/anter-verify-7f3k9.txt')
-def anter_ownership_verify():
-    return 'ANTER-OWNER-VERIFY-2026-7f3k9\n', 200, {'Content-Type': 'text/plain; charset=utf-8'}

@@ -111,3 +111,7 @@ _old_files_*/
 *.bak-*
 *.pre_upgrade
 *.pre_*
+
+# ANTER: نسخ HTML مؤقتة من المتصفح/curl — لا تُدفع
+login.html
+after_login.html

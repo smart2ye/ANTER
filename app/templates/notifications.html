@@ -214,7 +214,7 @@
                                 {% if notif.action == 'like' %}
                                     {% set extras = notification_extras(notif) %}
                                     {% if extras|length == 0 %}
-                                        أعجب بمنشورك
+                                        {{ 'أعجبت بمنشورك' if actor and actor.gender == 'female' else 'أعجب بمنشورك' }}
                                     {% elif extras|length == 1 %}
                                         و <strong>{{ extras[0].name or extras[0].username }}</strong> أعجبا بمنشورك
                                     {% else %}
@@ -222,29 +222,29 @@
                                         <span class="text-muted">و{{ extras|length - 1 }} آخرون</span>
                                         أعجبوا بمنشورك
                                     {% endif %}
-                                {% elif notif.action == 'like_comment' %}أعجب بتعليقك
-                                {% elif notif.action == 'like_video' %}أعجب بمقطعك
-                                {% elif notif.action == 'comment' %}علّق على منشورك
-                                {% elif notif.action == 'comment_video' %}علّق على مقطعك
-                                {% elif notif.action == 'reply' %}رد على تعليقك
-                                {% elif notif.action == 'reply_video' %}رد على تعليقك في مقطع
-                                {% elif notif.action == 'follow' %}بدأ متابعتك
-                                {% elif notif.action == 'message' %}أرسل لك رسالة
-                                {% elif notif.action == 'voice_message' %}أرسل لك رسالة صوتية
-                                {% elif notif.action == 'file_message' %}أرسل لك ملفًا
+                                {% elif notif.action == 'like_comment' %}{{ 'أعجبت بتعليقك' if actor and actor.gender == 'female' else 'أعجب بتعليقك' }}
+                                {% elif notif.action == 'like_video' %}{{ 'أعجبت بمقطعك' if actor and actor.gender == 'female' else 'أعجب بمقطعك' }}
+                                {% elif notif.action == 'comment' %}{{ 'علّقت على منشورك' if actor and actor.gender == 'female' else 'علّق على منشورك' }}
+                                {% elif notif.action == 'comment_video' %}{{ 'علّقت على مقطعك' if actor and actor.gender == 'female' else 'علّق على مقطعك' }}
+                                {% elif notif.action == 'reply' %}{{ 'ردّت على تعليقك' if actor and actor.gender == 'female' else 'رد على تعليقك' }}
+                                {% elif notif.action == 'reply_video' %}{{ 'ردّت على تعليقك في مقطع' if actor and actor.gender == 'female' else 'رد على تعليقك في مقطع' }}
+                                {% elif notif.action == 'follow' %}{{ 'بدأت متابعتك' if actor and actor.gender == 'female' else 'بدأ متابعتك' }}
+                                {% elif notif.action == 'message' %}{{ 'أرسلت لك رسالة' if actor and actor.gender == 'female' else 'أرسل لك رسالة' }}
+                                {% elif notif.action == 'voice_message' %}{{ 'أرسلت لك رسالة صوتية' if actor and actor.gender == 'female' else 'أرسل لك رسالة صوتية' }}
+                                {% elif notif.action == 'file_message' %}{{ 'أرسلت لك ملفًا' if actor and actor.gender == 'female' else 'أرسل لك ملفًا' }}
                                 {% elif notif.action == 'voice_call' %}اتصل بك صوتيًا
-                                {% elif notif.action == 'wall_post' %}كتب على حائطك
+                                {% elif notif.action == 'wall_post' %}{{ 'كتبت على حائطك' if actor and actor.gender == 'female' else 'كتب على حائطك' }}
                                 {% elif notif.action == 'founder_post' %}رسالة جديدة من المؤسس
                                 {% elif notif.action == 'early_member' %}تم تكريمك كعضو مبكّر في ANTER 🌟
                                 {% elif notif.action == 'early_member_revoked' %}تم إلغاء شارة العضو المبكّر من حسابك
-                                {% elif notif.action == 'mention' %}أشار إليك
-                                {% elif notif.action == 'mention_post' %}ذكرك في منشور
-                                {% elif notif.action == 'mention_comment' %}ذكرك في تعليق
+                                {% elif notif.action == 'mention' %}{{ 'أشارت إليك' if actor and actor.gender == 'female' else 'أشار إليك' }}
+                                {% elif notif.action == 'mention_post' %}{{ 'ذكرتك في منشور' if actor and actor.gender == 'female' else 'ذكرك في منشور' }}
+                                {% elif notif.action == 'mention_comment' %}{{ 'ذكرتك في تعليق' if actor and actor.gender == 'female' else 'ذكرك في تعليق' }}
                                 {% elif notif.action == 'mention_group_post' %}ذكر متابعيه في منشور
                                 {% elif notif.action == 'mention_group_comment' %}ذكر متابعيه في تعليق
                                 {% elif notif.action == 'mention_all_post' %}وجه رسالة للجميع في منشور
                                 {% elif notif.action == 'mention_all_comment' %}وجه رسالة للجميع في تعليق
-                                {% elif notif.action == 'haraj_message' %}أرسل لك رسالة في الحراج
+                                {% elif notif.action == 'haraj_message' %}{{ 'أرسلت لك رسالة في الحراج' if actor and actor.gender == 'female' else 'أرسل لك رسالة في الحراج' }}
                                 {% elif notif.action == 'haraj_comment' %}علّق على إعلانك في الحراج
                                 {% elif notif.action == 'haraj_rating' %}قيّمك في الحراج
                                 {% elif notif.action == 'content_under_review' %}منشورك قيد المراجعة

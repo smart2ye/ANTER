@@ -183,6 +183,12 @@ def create_app(test_config=None):
         'like': 'إعجاب', 'love': 'حب', 'haha': 'أضحكني', 'angry': 'أغضبني', 'sad': 'أحزنني'
     }
 
+    @app.template_filter('mf')
+    def mf_filter(gender, masculine, feminine):
+        if (gender or '').lower() == 'female':
+            return feminine
+        return masculine
+
 
     # ============================================
     # جعل get_status_icon متاحة في جميع القوالب

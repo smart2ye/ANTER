@@ -955,18 +955,18 @@ def set_avatar_from_post(post_id):
 @csrf.exempt
 def change_avatar():
     """يستقبل صورة ويُحدّث avatar_data في القاعدة فورًا."""
-    from app.utils.image_storage import prepare_image_data
+    from app.utils.image_storage import prepare_image_data_with_reason
     from app.utils.helpers import log_user_activity
 
     file = request.files.get('avatar')
     if not file or not getattr(file, 'filename', ''):
         return jsonify({'success': False, 'message': 'لم يتم اختيار صورة.'}), 400
 
-    avatar_data, avatar_mime = prepare_image_data(file)
+    avatar_data, avatar_mime, reason = prepare_image_data_with_reason(file)
     if not avatar_data:
         return jsonify({
             'success': False,
-            'message': 'تعذر قراءة الصورة. استخدم JPG/PNG/WEBP بحجم مناسب.'
+            'message': reason or 'تعذر قراءة الصورة. استخدم JPG/PNG/WEBP بحجم مناسب.'
         }), 400
 
     current_user.avatar_data = avatar_data

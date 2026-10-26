@@ -13,11 +13,26 @@ def _legacy_static_url(path, default='default.png'):
     return url_for('static', filename=f'uploads/{default}')
 
 
+_DEFAULT_MALE = 'img/default_avatar_male.png'
+_DEFAULT_FEMALE = 'img/default_avatar_female.png'
+_LEGACY_DEFAULT = 'default.png'
+
+
 def avatar_url(user):
     # ANTER: نفحص avatar_mime بدل avatar_data — يعمل حتى لو لم يُحمَّل الـ BLOB.
     if getattr(user, 'avatar_mime', None):
         return url_for('media.avatar', user_id=user.id)
-    return _legacy_static_url(getattr(user, 'avatar', None) or 'default.png')
+
+    avatar = getattr(user, 'avatar', None)
+    # صورة مخصصة رفعها المستخدم (ليست أي صورة افتراضية)
+    if avatar and avatar not in (_LEGACY_DEFAULT, _DEFAULT_MALE, _DEFAULT_FEMALE):
+        return _legacy_static_url(avatar)
+
+    # افتراضي حسب الجنس
+    gender = (getattr(user, 'gender', '') or '').lower()
+    if gender == 'female':
+        return url_for('static', filename=_DEFAULT_FEMALE)
+    return url_for('static', filename=_DEFAULT_MALE)
 
 
 def post_image_url(post):

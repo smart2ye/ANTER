@@ -569,7 +569,11 @@ def sitemap():
     # أرشفة المنشورات (أحدث 1000 منشور)
     posts = (
         Post.query
-        .filter(Post.visibility == 'public')
+        .filter(
+            Post.visibility == 'public',
+            Post.moderation_status.notin_(['removed', 'under_review']),
+            Post.author.has(User.is_deleted.is_(False)),
+        )
         .order_by(Post.created_at.desc())
         .limit(1000)
         .all()
@@ -583,7 +587,16 @@ def sitemap():
         })
         
     # أرشفة الريلز (أحدث 500 فيديو)
-    videos = Video.query.filter_by(is_reel=True).order_by(Video.created_at.desc()).limit(500).all()
+    videos = (
+        Video.query
+        .filter(
+            Video.is_reel.is_(True),
+            Video.author.has(User.is_deleted.is_(False)),
+        )
+        .order_by(Video.created_at.desc())
+        .limit(500)
+        .all()
+    )
     for video in videos:
         pages.append({
             'loc': url_for('videos.watch', public_id=video.public_id, _external=True),

@@ -553,6 +553,7 @@ def sitemap():
         .filter(
             User.profile_visibility == 'public',
             User.is_deleted.is_(False),
+            User.posts.any(),  # ANTER: صفحات بلا منشورات = محتوى رفيع، لا تُفهرس
         )
         .order_by(User.created_at.desc())
         .limit(200)
@@ -573,6 +574,7 @@ def sitemap():
             Post.visibility == 'public',
             Post.moderation_status.notin_(['removed', 'under_review']),
             Post.author.has(User.is_deleted.is_(False)),
+            func.length(Post.content) >= 50,  # ANTER: استبعاد محتوى رفيع (<50)
         )
         .order_by(Post.created_at.desc())
         .limit(1000)

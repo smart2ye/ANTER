@@ -35,7 +35,7 @@ def post_reactions_json(post_id):
             'id': user.id,
             'username': user.username,
             'name': user.name or user.username,
-            'avatar': url_for('media.avatar', user_id=user.id) if user.avatar_data else url_for('static', filename=(user.avatar or 'img/default_avatar_male.png')),
+            'avatar': url_for('media.avatar', user_id=user.id) if user.avatar_data else url_for('static', filename=(user.avatar or 'img/default_avatar_male.webp')),
             'reaction': rtype,
             'is_me': (current_user.is_authenticated and current_user.id == user.id),
             'is_verified': bool(getattr(user, 'is_verified', False)),

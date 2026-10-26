@@ -13,9 +13,18 @@ def _legacy_static_url(path, default='default.png'):
     return url_for('static', filename=f'uploads/{default}')
 
 
-_DEFAULT_MALE = 'img/default_avatar_male.png'
-_DEFAULT_FEMALE = 'img/default_avatar_female.png'
+_DEFAULT_MALE = 'img/default_avatar_male.webp'
+_DEFAULT_FEMALE = 'img/default_avatar_female.webp'
 _LEGACY_DEFAULT = 'default.png'
+
+# كل مسارات الصور الافتراضية (القديمة والجديدة) — نُجاهلها لاختيار الصورة حسب الجنس.
+_DEFAULT_AVATAR_PATHS = {
+    'default.png',
+    'img/default_avatar_male.png',
+    'img/default_avatar_female.png',
+    'img/default_avatar_male.webp',
+    'img/default_avatar_female.webp',
+}
 
 
 def avatar_url(user):
@@ -25,7 +34,7 @@ def avatar_url(user):
 
     avatar = getattr(user, 'avatar', None)
     # صورة مخصصة رفعها المستخدم (ليست أي صورة افتراضية)
-    if avatar and avatar not in (_LEGACY_DEFAULT, _DEFAULT_MALE, _DEFAULT_FEMALE):
+    if avatar and avatar not in _DEFAULT_AVATAR_PATHS:
         return _legacy_static_url(avatar)
 
     # افتراضي حسب الجنس

@@ -141,7 +141,7 @@ def register():
             username=username,
             email=email,
             name=form.name.data.strip(),
-            avatar='img/default_avatar_male.png',
+            avatar='img/default_avatar_male.webp',
             country_code=country_code,
             phone=country_code + phone if phone else None,
             phone_verified=False,

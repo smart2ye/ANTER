@@ -44,7 +44,7 @@ function renderStoriesBar(users) {
         html += `
             <div class="story-item" onclick="openUserStories(${uIdx})">
                 <div class="story-ring ${ringClass}">
-                    <img src="${userObj.avatar}" class="story-avatar" alt="${userObj.username}">
+                    <img src="${(userObj.stories && userObj.stories[0] && userObj.stories[0].media_url) || userObj.avatar}" class="story-avatar" alt="${userObj.username}">
                 </div>
                 <span class="story-username">${userObj.name}</span>
             </div>

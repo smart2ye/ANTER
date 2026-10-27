@@ -228,8 +228,8 @@ def build_feed(user):
     _scored.sort(key=lambda x: x[1], reverse=True)
     all_posts = [p for p, _ in _scored]
 
-    # ANTER: حد 2 منشورات لكل مؤلف — تنوع.
-    MAX_PER_AUTHOR = 2
+    # ANTER: حد 3 منشورات لكل مؤلف — تنوع.
+    MAX_PER_AUTHOR = 3
     _capped = []
     _author_counts = {}
     for _p in all_posts:

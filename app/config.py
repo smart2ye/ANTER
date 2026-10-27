@@ -86,7 +86,7 @@ class Config:
     MAX_IMAGE_PIXELS = env_int('MAX_IMAGE_PIXELS', 10 * 1024 * 1024, 1 * 1024 * 1024)
     MAX_CHAT_ATTACHMENT_BYTES = 8 * 1024 * 1024
     # Keep the initial HTML response small; additional posts load on scroll.
-    FEED_PAGE_SIZE = env_int('FEED_PAGE_SIZE', 5, 2)
+    FEED_PAGE_SIZE = env_int('FEED_PAGE_SIZE', 15, 2)
     FEED_CANDIDATE_LIMIT = env_int('FEED_CANDIDATE_LIMIT', 30, FEED_PAGE_SIZE)
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'avi', 'mov', 'mkv'}

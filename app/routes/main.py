@@ -626,29 +626,10 @@ def sitemap():
             'changefreq': 'never'
         })
 
-    # أرشفة الهاشتاقات النشطة (التي لديها منشوران أو أكثر)
-    # نستبعد الهاشتاقات الفارغة لأنها محتوى ضعيف لا يفيد الفهرسة.
-    try:
-        from app.models import Hashtag
-        from sqlalchemy import func as _func
-        active_hashtags = (
-            Hashtag.query
-            .join(Hashtag.posts)
-            .group_by(Hashtag.id)
-            .having(_func.count(Post.id) >= 2)
-            .order_by(Hashtag.name.asc())
-            .limit(500)
-            .all()
-        )
-        for tag in active_hashtags:
-            pages.append({
-                'loc': url_for('explore.hashtag', tag=tag.name, _external=True),
-                'priority': 0.6,
-                'changefreq': 'weekly'
-            })
-    except Exception:
-        # لا نُفشل الـ sitemap إن حدث خطأ في الهاشتاقات.
-        current_app.logger.exception('sitemap: hashtags failed (non-fatal)')
+    # ANTER: أُزيلت الهاشتاقات من الـ sitemap (2026-10-27).
+    # السبب: /explore/hashtag/<tag> محمي بـ @login_required → Googlebot يُحوَّل إلى
+    # /auth/login (noindex) → تناقض مع وجودها في sitemap. سابقًا:
+    # Hashtag.query.join(Hashtag.posts).having(count(Post.id) >= 2).limit(500)
         
     # فرض https على كل الروابط (2026-09-27) — يمنع duplicate content
     def _force_https(u):

@@ -44,6 +44,9 @@
         {% endfor %}
     </ul>
     <div class="anter-onboarding-footer">
+        <button type="button" class="btn btn-sm btn-primary" id="anter-start-writing">
+            <i class="fas fa-pen"></i> ابدأ بالكتابة
+        </button>
         <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-outline-secondary">
             تخطّي الآن
         </a>
@@ -165,6 +168,16 @@
         });
     });
 })();
+
+    var startBtn = document.getElementById('anter-start-writing');
+    if (startBtn) {
+        startBtn.addEventListener('click', function() {
+            var composer = document.getElementById('anterComposer');
+            var textarea = document.getElementById('anterPostContent');
+            if (composer) composer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (textarea) setTimeout(function() { textarea.focus(); }, 400);
+        });
+    }
 </script>
 {% endif %}
 

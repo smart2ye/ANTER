@@ -251,6 +251,25 @@ def build_feed(user):
 
     return all_posts, top_suggested
 
+def _is_new_user(user, min_human_follows=3):
+    """مستخدم جديد = يتابع أقل من min_human_follows حسابات بشرية (يُستثنى المساعد)."""
+    try:
+        from app.services.anter_assistant import is_anter_assistant
+        count = 0
+        for f in user.following:
+            target = f.followed
+            if target is None or getattr(target, 'is_deleted', False):
+                continue
+            if is_anter_assistant(target):
+                continue
+            count += 1
+            if count >= min_human_follows:
+                return False
+        return True
+    except Exception:
+        return False
+
+
 @main_bp.route('/')
 def index():
     # الزائر غير المسجّل → صفحة هبوط تسويقية عامة (لعرض ANTER لمحركات البحث والزوار).
@@ -314,9 +333,9 @@ def index():
     except Exception:
         share_users = []
 
-    # ANTER: كتلة ترحيب للمستخدم الجديد — تُعرض مرة واحدة عبر ?welcome=1.
+    # ANTER: كتلة ترحيب — للمستخدم الجديد (أقل من 3 متابعات بشرية) أو عبر ?welcome=1.
     onboarding_users = []
-    if request.args.get('welcome') == '1':
+    if request.args.get('welcome') == '1' or _is_new_user(current_user):
         try:
             from app.services.explore_service import trending_users
             onboarding_users = trending_users(current_user, limit=5)

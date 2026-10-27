@@ -1,7 +1,7 @@
 # مرجع المسارات (Routes)
 
-**آخر تحديث:** 2026-10-23
-**المجموع:** 235 route · 20 blueprint
+**آخر تحديث:** 2026-10-27
+**المجموع:** 242 route · 20 blueprint
 
 ## admin — `/admin`
 
@@ -9,10 +9,13 @@
 - `POST` `/admin/account-requests/<int:request_id>/email-link` — _admin.py_
 - `POST` `/admin/account-requests/<int:request_id>/password-link` — _admin.py_
 - `POST` `/admin/account-requests/<int:request_id>/reject` — _admin.py_
+- `GET` `/admin/messages/<int:message_id>/attachment` — _admin.py_
+- `GET` `/admin/messages/<int:message_id>/audio` — _admin.py_
 - `GET` `/admin/posts` — _admin.py_
 - `POST` `/admin/posts/delete/<int:post_id>` — _admin.py_
 - `GET` `/admin/posts/view/<int:post_id>` — _admin.py_
 - `GET` `/admin/reports` — _admin.py_
+- `GET` `/admin/reports/<int:report_id>/message-preview` — _admin.py_
 - `POST` `/admin/reports/delete/<int:report_id>` — _admin.py_
 - `POST` `/admin/reports/reject/<int:report_id>` — _admin.py_
 - `POST` `/admin/reports/resolve/<int:report_id>` — _admin.py_
@@ -25,6 +28,7 @@
 - `POST` `/admin/users/make_admin/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/password-reset-link/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/phone-verify-link/<int:user_id>` — _admin.py_
+- `POST` `/admin/users/restore/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/send-email/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/suspend-24h/<int:user_id>` — _admin.py_
 - `POST` `/admin/users/suspend-7d/<int:user_id>` — _admin.py_
@@ -141,6 +145,7 @@
 
 - `GET` `/messages` — _messages.py_
 - `GET` `/messages/<int:user_id>` — _messages.py_
+- `GET` `/messages/<int:user_id>/poll` — _messages.py_
 - `POST` `/messages/assistant-memory/<int:user_id>/clear` — _messages.py_
 - `GET` `/messages/attachment/<int:message_id>` — _messages.py_
 - `GET` `/messages/audio/<int:message_id>` — _messages.py_
@@ -223,6 +228,7 @@
 - `POST` `/like_comment/<int:comment_id>` — _posts.py_
 - `GET` `/p/<public_id>` — _posts.py_
 - `POST` `/p/<public_id>/appeal` — _posts.py_
+- `GET` `/p/<public_id>/stats` — _posts.py_
 - `GET` `/post/<int:post_id>` — _posts.py_
 - `POST` `/report` — _posts.py_
 - `POST` `/report/<int:post_id>` — _posts.py_
@@ -262,6 +268,7 @@
 - `GET` `/users/activity` — _users.py_
 - `GET` `/users/api/search` — _users.py_
 - `POST` `/users/change-avatar` — _users.py_
+- `GET` `/users/creator/dashboard` — _users.py_
 - `POST` `/users/delete_account` — _users.py_
 - `GET` `/users/download_data` — _users.py_
 - `GET,POST` `/users/edit` — _users.py_

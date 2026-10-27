@@ -1,6 +1,6 @@
 # مرجع النماذج (Models)
 
-**آخر تحديث:** 2026-10-23
+**آخر تحديث:** 2026-10-27
 **المجموع:** 41 موديل
 
 ## AssistantDailyPublication
@@ -166,6 +166,7 @@
 | `public_id` | VARCHAR(40) |  |  |
 | `user_id` | INTEGER |  |  |
 | `category` | VARCHAR(30) |  |  |
+| `subcategory` | VARCHAR(50) | ✓ |  |
 | `listing_type` | VARCHAR(10) |  |  |
 | `condition` | VARCHAR(10) |  |  |
 | `title` | VARCHAR(120) |  |  |
@@ -177,14 +178,13 @@
 | `status` | VARCHAR(20) |  |  |
 | `show_whatsapp` | BOOLEAN |  |  |
 | `whatsapp_number` | VARCHAR(20) | ✓ |  |
+| `pledge_accepted` | BOOLEAN |  |  |
+| `pledge_at` | DATETIME | ✓ |  |
 | `views_count` | INTEGER |  |  |
 | `reports_count` | INTEGER |  |  |
 | `created_at` | DATETIME | ✓ |  |
 | `updated_at` | DATETIME | ✓ |  |
 | `expires_at` | DATETIME |  |  |
-| `pledge_accepted` | BOOLEAN |  |  |
-| `pledge_at` | TIMESTAMP | ✓ |  |
-| `subcategory` | VARCHAR(50) | ✓ |  |
 
 ## ListingComment
 
@@ -254,6 +254,7 @@
 |---|---|---|---|
 | `id` | INTEGER |  | ✓ |
 | `content` | TEXT |  |  |
+| `is_ai` | BOOLEAN |  |  |
 | `audio_path` | VARCHAR(255) | ✓ |  |
 | `audio_data` | BLOB | ✓ |  |
 | `audio_mime` | VARCHAR(100) | ✓ |  |
@@ -263,6 +264,7 @@
 | `attachment_kind` | VARCHAR(20) | ✓ |  |
 | `created_at` | DATETIME | ✓ |  |
 | `is_read` | BOOLEAN | ✓ |  |
+| `read_at` | DATETIME | ✓ |  |
 | `sender_id` | INTEGER |  |  |
 | `receiver_id` | INTEGER |  |  |
 | `shared_video_id` | INTEGER | ✓ |  |
@@ -270,8 +272,6 @@
 | `is_deleted_everyone` | BOOLEAN | ✓ |  |
 | `deleted_by_sender` | BOOLEAN | ✓ |  |
 | `deleted_by_receiver` | BOOLEAN | ✓ |  |
-| `is_ai` | BOOLEAN |  |  |
-| `read_at` | TIMESTAMP | ✓ |  |
 
 ## MobileAccessToken
 
@@ -358,12 +358,12 @@
 | `actor_id` | INTEGER |  |  |
 | `action` | VARCHAR(50) |  |  |
 | `post_id` | INTEGER | ✓ |  |
-| `is_read` | BOOLEAN | ✓ |  |
-| `created_at` | DATETIME | ✓ |  |
-| `extra_text` | VARCHAR(500) | ✓ |  |
-| `report_id` | INTEGER | ✓ |  |
 | `comment_id` | INTEGER | ✓ |  |
+| `report_id` | INTEGER | ✓ |  |
 | `listing_id` | INTEGER | ✓ |  |
+| `is_read` | BOOLEAN |  |  |
+| `extra_text` | VARCHAR(500) | ✓ |  |
+| `created_at` | DATETIME | ✓ |  |
 
 ## OwnerAdminBootstrap
 
@@ -394,15 +394,16 @@
 | `link_title` | VARCHAR(255) | ✓ |  |
 | `link_description` | TEXT | ✓ |  |
 | `link_image` | VARCHAR(500) | ✓ |  |
+| `views` | INTEGER |  |  |
 | `created_at` | DATETIME | ✓ |  |
 | `updated_at` | DATETIME | ✓ |  |
 | `author_id` | INTEGER |  |  |
-| `visibility` | VARCHAR(20) |  |  |
-| `shared_video_id` | INTEGER | ✓ |  |
 | `wall_owner_id` | INTEGER | ✓ |  |
+| `visibility` | VARCHAR(20) |  |  |
 | `moderation_status` | VARCHAR(20) |  |  |
 | `moderation_reason` | VARCHAR(500) | ✓ |  |
-| `moderation_at` | TIMESTAMP | ✓ |  |
+| `moderation_at` | DATETIME | ✓ |  |
+| `shared_video_id` | INTEGER | ✓ |  |
 
 ## PostHashtag
 
@@ -556,12 +557,23 @@
 | `birth_date` | DATE | ✓ |  |
 | `is_private` | BOOLEAN | ✓ |  |
 | `profile_visibility` | VARCHAR(20) |  |  |
+| `wall_visibility` | VARCHAR(20) |  |  |
 | `hide_followers` | BOOLEAN | ✓ |  |
 | `show_online_status` | BOOLEAN |  |  |
 | `show_email` | BOOLEAN | ✓ |  |
 | `message_privacy` | VARCHAR(20) | ✓ |  |
+| `mention_privacy` | VARCHAR(20) |  |  |
+| `haraj_whatsapp_number` | VARCHAR(20) | ✓ |  |
+| `haraj_show_whatsapp` | BOOLEAN |  |  |
 | `is_admin` | BOOLEAN | ✓ |  |
 | `is_verified` | BOOLEAN | ✓ |  |
+| `is_founder` | BOOLEAN |  |  |
+| `is_early_member` | BOOLEAN |  |  |
+| `warning_count` | INTEGER |  |  |
+| `last_warning_at` | DATETIME | ✓ |  |
+| `suspended_until` | DATETIME | ✓ |  |
+| `restricted_until` | DATETIME | ✓ |  |
+| `is_banned` | BOOLEAN |  |  |
 | `created_at` | DATETIME | ✓ |  |
 | `is_active` | BOOLEAN | ✓ |  |
 | `country_code` | VARCHAR(10) | ✓ |  |
@@ -570,19 +582,8 @@
 | `last_seen` | DATETIME | ✓ |  |
 | `theme_preference` | VARCHAR(20) | ✓ |  |
 | `terms_agreed` | BOOLEAN | ✓ |  |
-| `wall_visibility` | VARCHAR(20) |  |  |
 | `is_deleted` | BOOLEAN |  |  |
-| `deleted_at` | TIMESTAMP | ✓ |  |
-| `is_founder` | BOOLEAN |  |  |
-| `is_early_member` | BOOLEAN |  |  |
-| `mention_privacy` | VARCHAR(20) |  |  |
-| `haraj_whatsapp_number` | VARCHAR(20) | ✓ |  |
-| `haraj_show_whatsapp` | BOOLEAN |  |  |
-| `warning_count` | INTEGER |  |  |
-| `last_warning_at` | TIMESTAMP | ✓ |  |
-| `suspended_until` | TIMESTAMP | ✓ |  |
-| `restricted_until` | TIMESTAMP | ✓ |  |
-| `is_banned` | BOOLEAN |  |  |
+| `deleted_at` | DATETIME | ✓ |  |
 
 ## UserActivity
 

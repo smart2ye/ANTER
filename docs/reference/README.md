@@ -1,11 +1,11 @@
 # فهرس مرجع ANTER
 
-**آخر تحديث:** 2026-10-23
+**آخر تحديث:** 2026-10-27
 
 ## الملفات
-- routes.md — المسارات (235 route · 20 blueprint)
+- routes.md — المسارات (242 route · 20 blueprint)
 - models.md — النماذج (41 موديل)
-- templates.md — القوالب (62 قالب)
+- templates.md — القوالب (64 قالب)
 - services.md — الخدمات (22 خدمة)
 - integrations.md — التكاملات الخارجية (يدوي)
 - identity.md — الهوية البصرية (يدوي)

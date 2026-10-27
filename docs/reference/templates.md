@@ -1,7 +1,7 @@
 # مرجع القوالب (Templates)
 
-**آخر تحديث:** 2026-10-23
-**المجموع:** 62 قالب
+**آخر تحديث:** 2026-10-27
+**المجموع:** 64 قالب
 
 | المسار | يمتد من |
 |---|---|
@@ -30,6 +30,7 @@
 | `auth/reset_password_request.html` | base.html |
 | `base.html` | — |
 | `comments.html` | — |
+| `creator_dashboard.html` | base.html |
 | `explore/hashtag.html` | base.html |
 | `explore.html` | base.html |
 | `followers.html` | base.html |
@@ -47,6 +48,7 @@
 | `help.html` | base.html |
 | `index.html` | base.html |
 | `landing.html` | base.html |
+| `messages/_message.html` | — |
 | `messages/chat.html` | base.html |
 | `messages/inbox.html` | base.html |
 | `moments/detail.html` | base.html |

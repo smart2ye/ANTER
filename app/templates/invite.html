@@ -120,6 +120,21 @@
     if (copyBtn) copyBtn.addEventListener('click', copy);
 
     if (shareBtn) shareBtn.addEventListener('click', async function() {
+        // 1) جسر APK (WebView) — Intent.ACTION_SEND
+        try {
+            if (window.AnterShare && window.AnterShare.isAvailable && window.AnterShare.isAvailable()) {
+                window.AnterShare.share(
+                    'أنتر — شبكة التواصل الاجتماعية',
+                    'انضم إليّ على أنتر — شبكة التواصل الاجتماعي العربية.',
+                    url
+                );
+                return;
+            }
+        } catch (e) {
+            // تجاهل ونجرّب البديل
+        }
+
+        // 2) Web Share API (Chrome/Safari)
         if (navigator.share) {
             try {
                 await navigator.share({
@@ -132,6 +147,8 @@
                 if (e && e.name === 'AbortError') return;
             }
         }
+
+        // 3) نسخ
         copy();
     });
 })();

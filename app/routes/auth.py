@@ -137,6 +137,17 @@ def register():
         phone = (form.phone.data or '').strip()
         country_code = (form.country_code.data or '+967').strip()
         # ANTER: الجنس وتاريخ الميلاد ينتقلان لصفحة إكمال الملف بعد التسجيل.
+        # ANTER: إحالة — أولوية: حقل النموذج (يدوي/تلقائي) → الجلسة (?ref=) → request.form
+        ref_code = (form.ref.data or '').strip() or session.pop('referral_code', None) or (request.form.get('ref') or '').strip()
+        session.pop('referral_code', None)  # تنظيف دائمًا
+        referrer = None
+        if ref_code:
+            try:
+                from app.services.referral import find_by_code
+                referrer = find_by_code(ref_code)
+            except Exception:
+                referrer = None
+
         user = User(
             username=username,
             email=email,
@@ -145,7 +156,8 @@ def register():
             country_code=country_code,
             phone=country_code + phone if phone else None,
             phone_verified=False,
-            terms_agreed=True
+            terms_agreed=True,
+            referred_by_id=referrer.id if referrer else None,
         )
         user.set_password(form.password.data)
         assistant = ensure_anter_assistant_user()
@@ -154,6 +166,12 @@ def register():
         follow_anter_assistant_for_user(user, assistant)
         send_welcome_message(user)
         db.session.commit()
+        # ANTER: توليد كود الإحالة فورًا بعد الحفظ (لتفادي استعلام إضافي لاحقًا)
+        try:
+            from app.services.referral import get_or_create_referral_code
+            get_or_create_referral_code(user)
+        except Exception:
+            current_app.logger.exception('referral code generation failed (non-fatal)')
         log_user_activity(user.id, 'registration')
         login_user(user, remember=True)
         session['play_welcome_chime'] = True
@@ -190,6 +208,15 @@ def register():
         session['onboarding'] = True
         flash('✅ تم إنشاء الحساب. أكمل ملفك الشخصي لتجربة أفضل.', 'success')
         return redirect(url_for('users.edit_profile'))
+    # ANTER: إحالة — إذا وصل المستخدم عبر ?ref=CODE، نحفظه في الجلسة للاستخدام عند POST
+    if request.method == 'GET':
+        ref = (request.args.get('ref') or '').strip()
+        if ref:
+            session['referral_code'] = ref[:12]
+        # تعبئة الحقل تلقائيًا من الجلسة (إن وُجد رمز سابق)
+        if not form.ref.data and session.get('referral_code'):
+            form.ref.data = session['referral_code']
+
     return render_template('auth/register.html', form=form)
 
 @auth_bp.route('/switch-to-assistant', methods=['POST'])

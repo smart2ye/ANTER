@@ -135,7 +135,31 @@
             </div>
         </div>
 
-        <!-- ============ تبويب الأمان ============ -->
+        <!-- ============ قسم دعوة الأصدقاء ============ -->
+            <hr class="my-4">
+            <div class="p-3 rounded-3" style="background: rgba(0,58,171,0.05); border: 1px solid rgba(0,58,171,0.15);">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-gift text-primary"></i>
+                        <strong>ادعُ أصدقاءك</strong>
+                    </div>
+                    <span class="badge bg-primary">
+                        {{ current_user.referral_count or 0 }}{% if not current_user.is_verified %} / 5{% endif %}
+                    </span>
+                </div>
+                <p class="small text-muted mb-2">
+                    {% if current_user.is_verified %}
+                        أنت موثّق. استمر في جمع الإحالات — ستُحتسب نقاط لمكافآت مستقبلية.
+                    {% else %}
+                        5 إحالات مكتملة تمنحك التوثيق التلقائي بالعلامة الزرقاء.
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('users.invite') }}" class="btn btn-primary btn-sm rounded-pill">
+                    <i class="fas fa-link"></i> عرض رابط الإحالة
+                </a>
+            </div>
+
+            <!-- ============ تبويب الأمان ============ -->
         <div class="tab-pane fade" id="tab-security" role="tabpanel">
             <!-- كلمة المرور -->
             <form method="POST" action="{{ url_for('users.settings') }}">

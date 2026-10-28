@@ -52,6 +52,11 @@ class User(UserMixin, db.Model):
 
     is_admin = db.Column(db.Boolean, default=False)
     is_verified = db.Column(db.Boolean, default=False)
+    # ANTER: نظام الإحالة — كود فريد، مَن دعاه، عدد الإحالات المكتملة
+    referral_code = db.Column(db.String(12), unique=True, nullable=True, index=True)
+    referred_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
+    referral_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    referral_credited = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
     # ANTER: شارة المؤسس — خاصة بحساب واحد فقط.
     is_founder = db.Column(db.Boolean, nullable=False, default=False, server_default='false', index=True)
     # ANTER: عضو مبكّر — أول من آمن بالمنصة.
@@ -92,6 +97,13 @@ class User(UserMixin, db.Model):
     following = db.relationship('Follow', foreign_keys='Follow.follower_id', backref='follower', lazy='dynamic', cascade='all, delete-orphan')
     followers = db.relationship('Follow', foreign_keys='Follow.followed_id', backref='followed', lazy='dynamic', cascade='all, delete-orphan')
     likes = db.relationship('Like', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    # ANTER: الإحالة — علاقة ذاتية (مَن دعاني / مَن دعوت)
+    referred_by = db.relationship(
+        'User',
+        remote_side='User.id',
+        foreign_keys='User.referred_by_id',
+        backref=db.backref('referred_users', lazy='dynamic'),
+    )
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

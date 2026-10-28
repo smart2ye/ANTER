@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block content %}
+<div class="container py-3" style="max-width: 640px;">
+
+    <!-- البطاقة الرئيسية -->
+    <div class="card border-0 shadow-sm p-4 mb-3" style="border-radius: 18px;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <div style="width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: linear-gradient(135deg, #003AAB, #00C8F8); color: #fff; font-size: 1.2rem;">
+                <i class="fas fa-gift"></i>
+            </div>
+            <div>
+                <h1 class="h5 mb-0 fw-bold">ادعُ أصدقاءك إلى أنتر</h1>
+                <small class="text-muted">5 إحالات مكتملة = توثيق تلقائي بالعلامة الزرقاء</small>
+            </div>
+        </div>
+
+        <!-- شريط الحالة -->
+        <div class="mb-3 p-3 rounded-3" style="background: rgba(0,58,171,0.06); border: 1px solid rgba(0,58,171,0.15);">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="fw-semibold">إحالاتك المكتملة</span>
+                <span class="fw-bold text-primary">
+                    {{ current_user.referral_count or 0 }}{% if not current_user.is_verified %} / {{ threshold }}{% endif %}
+                </span>
+            </div>
+            {% if not current_user.is_verified %}
+                {% set pct = ((current_user.referral_count or 0) * 100 / threshold)|int %}
+                {% if pct > 100 %}{% set pct = 100 %}{% endif %}
+                <div class="progress" style="height: 8px; border-radius: 999px;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ pct }}%; background: linear-gradient(90deg, #003AAB, #00C8F8);" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    {% if (current_user.referral_count or 0) < threshold %}
+                        تحتاج {{ threshold - (current_user.referral_count or 0) }} إحالة إضافية للحصول على التوثيق.
+                    {% else %}
+                        اكتمل الشرط. جارٍ منح التوثيق تلقائيًا…
+                    {% endif %}
+                </small>
+            {% else %}
+                <small class="text-success fw-semibold d-block">
+                    <i class="fas fa-check-circle"></i> أنت موثّق. استمر في جمع الإحالات — ستُحتسب لك نقاط لمكافآت مستقبلية.
+                </small>
+            {% endif %}
+        </div>
+
+        <!-- رابط الإحالة -->
+        <label class="form-label small fw-semibold text-muted">رابطك الخاص</label>
+        <div class="input-group mb-2">
+            <input type="text" id="anter-invite-url" class="form-control" value="{{ invite_url }}" readonly onclick="this.select()" dir="ltr">
+            <button type="button" class="btn btn-primary" id="anter-invite-copy">
+                <i class="fas fa-copy"></i> <span class="d-none d-sm-inline">نسخ</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="anter-invite-share">
+                <i class="fas fa-share-alt"></i> <span class="d-none d-sm-inline">مشاركة</span>
+            </button>
+        </div>
+        <small class="text-muted d-block">
+            كودك: <strong dir="ltr">{{ referral_code }}</strong>
+        </small>
+    </div>
+
+    <!-- قائمة المُحالين -->
+    <div class="card border-0 shadow-sm p-4 mb-3" style="border-radius: 18px;">
+        <h2 class="h6 fw-bold mb-3">
+            <i class="fas fa-users text-primary"></i>
+            المُحالون ({{ verified_count }} مؤكد{% if referred_users|length != verified_count %} من {{ referred_users|length }}{% endif %})
+        </h2>
+        {% if referred_users %}
+            <div class="list-group list-group-flush">
+                {% for u in referred_users %}
+                <div class="list-group-item px-0 d-flex align-items-center gap-2">
+                    <img src="{{ avatar_url(u) }}" alt="{{ u.name }}" width="38" height="38" style="border-radius: 50%; object-fit: cover;" loading="lazy">
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="fw-semibold text-truncate">{{ u.name or u.username }}</div>
+                        <small class="text-muted">@{{ u.username }}</small>
+                    </div>
+                    {% if u.email_verified or u.phone_verified %}
+                        <span class="badge bg-success"><i class="fas fa-check"></i> مؤكد</span>
+                    {% else %}
+                        <span class="badge bg-secondary">بانتظار التأكيد</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted small mb-0">لم تنضم أي إحالة بعد. شارك رابطك لتبدأ.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+(function() {
+    var input = document.getElementById('anter-invite-url');
+    var copyBtn = document.getElementById('anter-invite-copy');
+    var shareBtn = document.getElementById('anter-invite-share');
+    var url = input ? input.value : '';
+
+    function toast(msg, isError) {
+        var t = document.createElement('div');
+        t.textContent = msg;
+        t.style.cssText = 'position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); padding: 12px 22px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #fff; z-index: 99999; background: ' + (isError ? '#dc2626' : '#059669') + '; box-shadow: 0 8px 24px rgba(0,0,0,0.25);';
+        document.body.appendChild(t);
+        setTimeout(function() { t.remove(); }, 2200);
+    }
+
+    async function copy() {
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(url);
+            } else if (input) {
+                input.select();
+                document.execCommand('copy');
+            }
+            toast('تم نسخ رابط الإحالة');
+        } catch (e) {
+            toast('تعذّر النسخ', true);
+        }
+    }
+
+    if (copyBtn) copyBtn.addEventListener('click', copy);
+
+    if (shareBtn) shareBtn.addEventListener('click', async function() {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'أنتر — شبكة التواصل الاجتماعية',
+                    text: 'انضم إليّ على أنتر — شبكة التواصل الاجتماعي العربية.',
+                    url: url
+                });
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+            }
+        }
+        copy();
+    });
+})();
+</script>
+{% endblock %}

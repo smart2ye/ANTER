@@ -83,6 +83,7 @@ class RegistrationForm(FlaskForm):
     phone = StringField('رقم الجوال', validators=[Optional(), Length(min=6, max=15, message='رقم الجوال يجب أن يكون بين 6 و15 رقماً.')])
     email = StringField('البريد الإلكتروني', validators=[Optional(), Email(message='اكتب بريداً إلكترونياً صحيحاً.')])
     password = PasswordField('كلمة المرور', validators=[DataRequired(), Length(min=8, message='كلمة المرور يجب أن تكون 8 أحرف على الأقل.')])
+    ref = StringField('رمز الدعوة (اختياري)', validators=[Optional(), Length(max=12, message='رمز الدعوة غير صالح.')])
     submit = SubmitField('إنشاء الحساب')
 
     def validate(self, extra_validators=None):

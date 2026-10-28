@@ -59,6 +59,10 @@ def run_startup_schema_upgrades(app) -> bool:
             'mention_privacy': "VARCHAR(20) NOT NULL DEFAULT 'followers_only'",
             'haraj_whatsapp_number': 'VARCHAR(20)',
             'haraj_show_whatsapp': 'BOOLEAN NOT NULL DEFAULT FALSE',
+            'referral_code': 'VARCHAR(12)',
+            'referred_by_id': 'INTEGER',
+            'referral_count': 'INTEGER NOT NULL DEFAULT 0',
+            'referral_credited': 'BOOLEAN NOT NULL DEFAULT FALSE',
         },
         'haraj_listings': {
             'pledge_accepted': 'BOOLEAN NOT NULL DEFAULT FALSE',

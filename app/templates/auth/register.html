@@ -63,6 +63,18 @@
                 {% for error in form.password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
             </div>
 
+            <div class="mb-3">
+                <label class="form-label fw-semibold small" for="refInput">
+                    {{ form.ref.label.text }}
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-gift text-muted"></i></span>
+                    {{ form.ref(class="form-control border-start-0" + (" is-invalid" if form.ref.errors else ""), id="refInput", placeholder="أدخل رمز دعوة إن كان لديك", autocomplete="off", maxlength="12") }}
+                </div>
+                <small class="form-text text-muted">إن دخلت عبر رابط دعوة، يُملأ الرمز تلقائيًا.</small>
+                {% for error in form.ref.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+
             <div class="mb-3 text-muted small text-center">
                 بالضغط على «موافق وإنشاء الحساب»، فإنك توافق على
                 <a href="{{ url_for('main.terms') }}" target="_blank">الشروط والأحكام</a>

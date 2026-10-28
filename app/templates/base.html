@@ -115,7 +115,7 @@
                             </li>
                             {% endif %}
                             <li><a class="dropdown-item" href="{{ url_for('posts.create') }}"><i class="fas fa-plus-circle"></i> منشور جديد</a></li>
-                            <li><a class="dropdown-item" href="#" id="anter-invite-btn"><i class="fas fa-share-alt"></i> دعوة صديق</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('users.invite') }}"><i class="fas fa-gift"></i> ادعُ أصدقاءك</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</a></li>
                         </ul>
@@ -1152,71 +1152,7 @@
     });
 })();
 </script>
-<script>
-(function() {
-    var inviteBtn = document.getElementById('anter-invite-btn');
-    if (!inviteBtn) return;
 
-    var shareUrl = 'https://anter-1.onrender.com';
-    var shareText = 'انضم إليّ على أنتر — شبكة التواصل الاجتماعي العربية.';
-
-    function showToast(message, isError) {
-        var toast = document.createElement('div');
-        toast.textContent = message;
-        toast.style.cssText = 'position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); padding: 12px 22px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #fff; z-index: 99999; pointer-events: none; transition: opacity .3s ease; background: ' + (isError ? '#dc2626' : '#059669') + '; box-shadow: 0 8px 24px rgba(0,0,0,0.25);';
-        document.body.appendChild(toast);
-        setTimeout(function() { toast.style.opacity = '0'; }, 2000);
-        setTimeout(function() { toast.remove(); }, 2400);
-    }
-
-    async function copyToClipboard(text) {
-        try {
-            if (navigator.clipboard && window.isSecureContext) {
-                await navigator.clipboard.writeText(text);
-                return true;
-            }
-            var ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.cssText = 'position: fixed; top: -9999px; opacity: 0;';
-            document.body.appendChild(ta);
-            ta.select();
-            var ok = document.execCommand('copy');
-            ta.remove();
-            return ok;
-        } catch (e) {
-            return false;
-        }
-    }
-
-    inviteBtn.addEventListener('click', async function(e) {
-        e.preventDefault();
-        var dropdown = inviteBtn.closest('.dropdown');
-        if (dropdown) {
-            var toggle = dropdown.querySelector('[data-bs-toggle="dropdown"]');
-            if (toggle && window.bootstrap && window.bootstrap.Dropdown) {
-                var inst = window.bootstrap.Dropdown.getInstance(toggle);
-                if (inst) inst.hide();
-            }
-        }
-
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: 'ANTER — أنتر',
-                    text: shareText,
-                    url: shareUrl
-                });
-                return;
-            } catch (err) {
-                if (err && err.name === 'AbortError') return;
-            }
-        }
-
-        var copied = await copyToClipboard(shareUrl);
-        showToast(copied ? 'تم نسخ رابط أنتر — شاركه مع من تحب' : 'تعذّر النسخ، انسخ الرابط يدويًا: ' + shareUrl, !copied);
-    });
-})();
-</script>
 
 </body>
 </html>

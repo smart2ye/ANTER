@@ -340,6 +340,13 @@ def confirm_email(token):
     session.pop('email_verification_last_sent', None)
     log_user_activity(user.id, 'email_verification')
 
+    # ANTER: احتساب الإحالة (مرة واحدة فقط) — يعمل إذا لم يكن الجوال مؤكدًا سابقًا
+    try:
+        from app.services.referral import credit_referral_if_verified
+        credit_referral_if_verified(user)
+    except Exception:
+        current_app.logger.exception('referral credit after email verify failed (non-fatal)')
+
     if current_user.is_authenticated and current_user.id == user.id:
         flash('تم تأكيد بريدك الإلكتروني بنجاح.', 'success')
         return redirect(url_for('users.settings'))
@@ -373,6 +380,13 @@ def confirm_phone(token):
     user.phone_verified = True
     db.session.commit()
     log_user_activity(user.id, 'phone_verification')
+
+    # ANTER: احتساب الإحالة (مرة واحدة فقط) — يعمل إذا لم يكن البريد مؤكدًا سابقًا
+    try:
+        from app.services.referral import credit_referral_if_verified
+        credit_referral_if_verified(user)
+    except Exception:
+        current_app.logger.exception('referral credit after phone verify failed (non-fatal)')
 
     # إشعار داخلي
     try:
@@ -1122,3 +1136,36 @@ def creator_dashboard():
     )
 
 
+
+
+@users_bp.route('/invite')
+@login_required
+def invite():
+    """صفحة دعوة الأصدقاء: رابط الإحالة، عدّاد، وقائمة المُحالين."""
+    from app.services.referral import get_or_create_referral_code
+    from flask import current_app as _ca
+
+    code = get_or_create_referral_code(current_user)
+    base = _ca.config.get('ANTER_PUBLIC_URL') or request.url_root.rstrip('/')
+    if not base.startswith('http'):
+        base = 'https://anter-1.onrender.com'
+    invite_url = f'{base.rstrip("/")}/auth/register?ref={code}'
+
+    referred_users = (
+        current_user.referred_users
+        .order_by(User.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    verified_referred = sum(
+        1 for u in referred_users if u.email_verified or u.phone_verified
+    )
+
+    return render_template(
+        'invite.html',
+        referral_code=code,
+        invite_url=invite_url,
+        referred_users=referred_users,
+        verified_count=verified_referred,
+        threshold=5,
+    )

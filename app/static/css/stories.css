@@ -343,7 +343,7 @@
     position: absolute;
     left: 16px;
     right: 16px;
-    bottom: 18px;
+    bottom: 34px;
     z-index: 12;
     display: flex;
     align-items: center;
@@ -367,8 +367,8 @@
 
 .story-reaction-buttons {
     display: flex;
-    gap: 5px;
-    padding: 5px 7px;
+    gap: 6px;
+    padding: 6px 9px;
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(8px);
@@ -376,13 +376,14 @@
 }
 
 .story-reaction-btn {
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     padding: 0;
     border: 0;
     border-radius: 50%;
     background: transparent;
-    font-size: 1.25rem;
+    font-size: 1.6rem;
+    line-height: 1;
     cursor: pointer;
     transition: transform 0.18s ease, background 0.18s ease;
 }
@@ -493,15 +494,15 @@
 
 @media (max-width: 576px) {
     .story-reaction-bar {
-        bottom: 12px;
+        bottom: 26px;
         left: 10px;
         right: 10px;
     }
 
     .story-reaction-btn {
-        width: 31px;
-        height: 31px;
-        font-size: 1.1rem;
+        width: 40px;
+        height: 40px;
+        font-size: 1.42rem;
     }
 
     .story-viewers-panel {

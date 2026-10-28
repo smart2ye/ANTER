@@ -697,6 +697,8 @@ function sendStoryReaction(reactionType, e) {
         if (!result.ok) throw new Error(result.data.error || 'تعذر إرسال التفاعل');
         if (result.data.story) {
             Object.assign(story, result.data.story);
+            // ANTER: تحديث الواجهة فورًا (الزر النشط + عدّاد التفاعلات)
+            updateStoryInteractions(story);
         }
     })
     .catch(err => console.error('Story reaction error:', err));

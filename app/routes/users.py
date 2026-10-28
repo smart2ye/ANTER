@@ -1169,3 +1169,27 @@ def invite():
         verified_count=verified_referred,
         threshold=5,
     )
+
+
+@users_bp.route('/verification')
+@login_required
+def verification_progress():
+    """مسار التوثيق — نسبة التقدم والمهام المتبقية."""
+    from app.services.verification_progress import (
+        compute_progress,
+        maybe_grant_progress_verification,
+    )
+
+    # محاولة منح تلقائي عند 100% (لا تأثير إن لم يكن مكتملًا)
+    try:
+        maybe_grant_progress_verification(current_user)
+    except Exception:
+        current_app.logger.exception('verification auto-grant failed (non-fatal)')
+
+    progress = compute_progress(current_user)
+
+    return render_template(
+        'verification_progress.html',
+        progress=progress,
+        user=current_user,
+    )

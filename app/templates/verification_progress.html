@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block content %}
+<div class="container py-3" style="max-width: 680px;">
+
+    {% if user.is_verified %}
+    <!-- ✅ موثّق -->
+    <div class="card border-0 shadow-sm p-4 mb-3 text-center" style="border-radius: 20px; background: linear-gradient(135deg, #003AAB 0%, #00C8F8 100%); color: #fff;">
+        <div style="width: 72px; height: 72px; margin: 0 auto 14px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,0.18); font-size: 2rem;">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h1 class="h4 fw-bold mb-2">أنت موثّق في أنتر</h1>
+        <p class="small mb-0" style="opacity: 0.92;">
+            «حساب موثّق في ANTER — استوفى هذا الحساب متطلبات النشاط والثقة في المنصة.»
+        </p>
+    </div>
+    {% elif user.verification_locked %}
+    <!-- 🔒 مقفل من الأدمن -->
+    <div class="card border-0 shadow-sm p-4 mb-3 text-center" style="border-radius: 20px; background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.25);">
+        <div style="width: 72px; height: 72px; margin: 0 auto 14px; border-radius: 50%; display: grid; place-items: center; background: rgba(220,38,38,0.12); color: #dc2626; font-size: 2rem;">
+            <i class="fas fa-lock"></i>
+        </div>
+        <h1 class="h5 fw-bold mb-2 text-danger">تم إيقاف مسار التوثيق</h1>
+        <p class="small text-muted mb-0">
+            أزال فريق الإدارة التوثيق من حسابك. للتقدّم مجددًا، راسل الإدارة أو قدّم اعتراضًا.
+        </p>
+    </div>
+    {% else %}
+    <!-- 📊 قيد التقدّم -->
+    <div class="card border-0 shadow-sm p-4 mb-3" style="border-radius: 20px;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <div style="width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: linear-gradient(135deg, #003AAB, #00C8F8); color: #fff; font-size: 1.2rem;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+                <h1 class="h5 mb-0 fw-bold">التقدم نحو التوثيق</h1>
+                <small class="text-muted">أكمل المهام للحصول على العلامة الزرقاء</small>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-semibold small">التقدم العام</span>
+            <span class="fw-bold text-primary" style="font-size: 1.15rem;">{{ progress.percent }}%</span>
+        </div>
+        <div class="progress mb-3" style="height: 12px; border-radius: 999px; background: rgba(0,58,171,0.10);">
+            <div class="progress-bar" role="progressbar"
+                 style="width: {{ progress.percent }}%; background: linear-gradient(90deg, #003AAB, #00C8F8); border-radius: 999px;"
+                 aria-valuenow="{{ progress.percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <p class="small text-muted mb-0">
+            {{ progress.done_count }} من {{ progress.total }} مهام مكتملة
+        </p>
+    </div>
+
+    <!-- 📋 المهام -->
+    <div class="d-flex flex-column gap-2 mb-3">
+        {% for task in progress.tasks %}
+        {% set clickable = (not task.done) and task.link %}
+        {% if clickable %}<a href="{{ task.link }}" class="text-decoration-none d-block">{% endif %}
+        <div class="card border-0 shadow-sm p-3" style="border-radius: 14px; cursor: {% if clickable %}pointer{% else %}default{% endif %}; {% if task.done %}background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.22);{% else %}border: 1px solid rgba(0,0,0,0.06);{% endif %}">
+            <div class="d-flex align-items-center gap-3">
+                <div style="flex: 0 0 42px; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+                    background: {% if task.done %}rgba(16,185,129,0.15){% else %}rgba(0,58,171,0.08){% endif %};
+                    color: {% if task.done %}#059669{% else %}#003AAB{% endif %}; font-size: 1.1rem;">
+                    {% if task.done %}
+                        <i class="fas fa-check"></i>
+                    {% else %}
+                        <i class="fas fa-circle"></i>
+                    {% endif %}
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div class="min-w-0">
+                            <strong class="d-block text-truncate" style="font-size: 0.95rem;">{{ task.label }}</strong>
+                            <small class="text-muted d-block">{{ task.hint }}</small>
+                        </div>
+                        {% if task.target > 1 %}
+                        <span class="badge {% if task.done %}bg-success{% else %}bg-primary{% endif %} flex-shrink-0">
+                            {{ task.current }} / {{ task.target }}
+                        </span>
+                        {% else %}
+                        <span class="badge {% if task.done %}bg-success{% else %}bg-secondary{% endif %} flex-shrink-0">
+                            {% if task.done %}✓{% else %}—{% endif %}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% if task.target > 1 %}
+                    <div class="progress mt-2" style="height: 5px; border-radius: 999px; background: rgba(0,0,0,0.06);">
+                        {% set pct = (task.current * 100 / task.target)|int %}
+                        <div class="progress-bar" role="progressbar"
+                             style="width: {{ pct }}%; background: {% if task.done %}#10b981{% else %}#003AAB{% endif %}; border-radius: 999px;"
+                             aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% if clickable %}</a>{% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- 💡 ملاحظة عن العلامة -->
+    <div class="card border-0 p-3 small" style="border-radius: 14px; background: rgba(0,58,171,0.05); border: 1px solid rgba(0,58,171,0.15); color: var(--text-color);">
+        <div class="d-flex align-items-start gap-2">
+            <i class="fas fa-info-circle text-primary mt-1"></i>
+            <div>
+                <strong class="d-block mb-1">عن العلامة الزرقاء</strong>
+                <span class="text-muted">
+                    العلامة الزرقاء تعني: «حساب موثّق في ANTER — استوفى متطلبات النشاط والثقة في المنصة».
+                    ليست إثباتًا حكوميًا للهوية ولا دليلًا على الشهرة.
+                </span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -772,3 +772,19 @@ function formatTimeAgo(isoString) {
     if (hours < 24) return `منذ ${hours}س`;
     return 'منذ يوم';
 }
+
+/* ANTER: فتح مودال إنشاء القصة تلقائيًا عند ?open_story=1 */
+(function() {
+    if (!/^[?&]open_story=1(&|$)/.test(window.location.search || '')) return;
+    if (typeof openCreateStoryModal !== 'function') return;
+    function tryOpen() {
+        if (document.getElementById('anterStoryComposer')) {
+            try { openCreateStoryModal(); } catch (e) {}
+        }
+    }
+    if (document.readyState === 'complete') {
+        setTimeout(tryOpen, 300);
+    } else {
+        window.addEventListener('load', function() { setTimeout(tryOpen, 300); });
+    }
+})();

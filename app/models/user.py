@@ -57,6 +57,9 @@ class User(UserMixin, db.Model):
     referred_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
     referral_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
     referral_credited = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+    # ANTER: مسار التوثيق — المصدر (admin/assistant/referral/progress) + قفل الإدارة
+    verification_source = db.Column(db.String(20), nullable=True)
+    verification_locked = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
     # ANTER: شارة المؤسس — خاصة بحساب واحد فقط.
     is_founder = db.Column(db.Boolean, nullable=False, default=False, server_default='false', index=True)
     # ANTER: عضو مبكّر — أول من آمن بالمنصة.

@@ -116,6 +116,9 @@
                             {% endif %}
                             <li><a class="dropdown-item" href="{{ url_for('posts.create') }}"><i class="fas fa-plus-circle"></i> منشور جديد</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('users.invite') }}"><i class="fas fa-gift"></i> ادعُ أصدقاءك</a></li>
+                            {% if not current_user.is_verified %}
+                            <li><a class="dropdown-item" href="{{ url_for('users.verification_progress') }}"><i class="fas fa-check-circle"></i> مسار التوثيق</a></li>
+                            {% endif %}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</a></li>
                         </ul>

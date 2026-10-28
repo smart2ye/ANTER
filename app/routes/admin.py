@@ -333,7 +333,16 @@ def unban_user(user_id):
 @admin_required
 def toggle_user_verification(user_id):
     user = User.query.get_or_404(user_id)
-    user.is_verified = not user.is_verified
+    if user.is_verified:
+        # إزالة التوثيق → أقفل المسار التلقائي (لن يُعاد من progress/referral)
+        user.is_verified = False
+        user.verification_source = None
+        user.verification_locked = True
+    else:
+        # منح يدوي → افتح القفل، سجّل المصدر
+        user.is_verified = True
+        user.verification_source = 'admin'
+        user.verification_locked = False
     db.session.commit()
     return jsonify({'success': True, 'is_verified': user.is_verified})
 

@@ -83,9 +83,12 @@ def credit_referral_if_verified(user: User) -> None:
             extra_text=f'انضم {user.name or user.username} عبر دعوتك. لديك الآن {referrer.referral_count}/5.',
         ))
 
-        # التوثيق التلقائي عند بلوغ 5 إحالات
-        if referrer.referral_count >= _VERIFY_THRESHOLD and not referrer.is_verified:
+        # التوثيق التلقائي عند بلوغ 5 إحالات — يحترم verification_locked
+        if (referrer.referral_count >= _VERIFY_THRESHOLD
+                and not referrer.is_verified
+                and not referrer.verification_locked):
             referrer.is_verified = True
+            referrer.verification_source = 'referral'
             db.session.add(Notification(
                 user_id=referrer.id,
                 actor_id=referrer.id,

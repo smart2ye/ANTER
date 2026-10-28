@@ -141,3 +141,26 @@
 .fa-facebook-square:before,.fa-square-facebook:before{content:"\f082"}
 .fa-whatsapp:before{content:"\f232"}
 .fa-android:before{content:"\f17b"}
+/* ANTER: أيقونات إضافية مستخدمة في القوالب */
+.fa-box-open:before{content:"\f49e"}
+.fa-chart-simple:before{content:"\e473"}
+.fa-circle-notch:before{content:"\f1ce"}
+.fa-clipboard:before{content:"\f328"}
+.fa-door-open:before{content:"\f52b"}
+.fa-up-right-from-square:before{content:"\f35d"}
+.fa-gavel:before{content:"\f0e3"}
+.fa-gift:before{content:"\f06b"}
+.fa-hand-sparkles:before{content:"\e05d"}
+.fa-list:before{content:"\f03a"}
+.fa-map-marker-alt:before{content:"\f3c5"}
+.fa-save:before{content:"\f0c7"}
+.fa-seedling:before{content:"\f4d8"}
+.fa-star:before{content:"\f005"}
+.fa-star-half-stroke:before{content:"\f5c0"}
+.fa-store:before{content:"\f54e"}
+.fa-tags:before{content:"\f02c"}
+.fa-undo:before{content:"\f0e2"}
+.fa-users-gear:before{content:"\f509"}
+.fa-external-link-alt:before{content:"\f35d"}
+.fa-star-half-alt:before{content:"\f5c0"}
+.fa-users-cog:before{content:"\f509"}

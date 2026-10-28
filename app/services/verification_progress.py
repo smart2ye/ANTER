@@ -190,7 +190,7 @@ def compute_progress(user: User) -> dict:
             'current': min(streak, STREAK_DAYS),
             'target': STREAK_DAYS,
             'done': streak >= STREAK_DAYS,
-            'link': '/posts/create',
+            'link': '/create',
         },
         {
             'key': 'followers',
@@ -199,7 +199,7 @@ def compute_progress(user: User) -> dict:
             'current': min(followers, FOLLOWERS_TARGET),
             'target': FOLLOWERS_TARGET,
             'done': followers >= FOLLOWERS_TARGET,
-            'link': '/explore',
+            'link': '/explore/',
         },
         {
             'key': 'posts',
@@ -208,7 +208,7 @@ def compute_progress(user: User) -> dict:
             'current': min(posts, POSTS_TARGET),
             'target': POSTS_TARGET,
             'done': posts >= POSTS_TARGET,
-            'link': '/posts/create',
+            'link': '/create',
         },
         {
             'key': 'stories',

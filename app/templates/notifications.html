@@ -103,7 +103,7 @@
                    onclick="anterMarkRead({{ notif.id }}, event)">
 
                     <div class="anter-notif-item__avatar-wrap">
-                        {% if notif.action in ['report_resolved', 'report_rejected', 'verification_approved', 'verification_rejected'] %}
+                        {% if notif.action in ['report_resolved', 'report_rejected', 'verification_approved', 'verification_rejected', 'invite_welcome'] %}
                             <img src="{{ url_for('static', filename='img/logo.png') }}"
                                  alt="إدارة أنتر"
                                  class="anter-notif-item__avatar"
@@ -150,7 +150,7 @@
                             {% elif notif.action == 'account_restored' %}anter-notif-icon--verified
                             {% elif notif.action == 'repost' %}anter-notif-icon--reply
                             {% elif notif.action == 'verification_approved' %}anter-notif-icon--verified
-                            {% elif notif.action == 'terms_update' %}anter-notif-icon--verified
+                            {% elif notif.action in ['terms_update', 'invite_welcome'] %}anter-notif-icon--verified
                             {% elif notif.action == 'username_suggestion' %}anter-notif-icon--comment
                             {% elif notif.action == 'report_resolved' %}anter-notif-icon--verified
                             {% elif notif.action == 'report_rejected' %}anter-notif-icon--default
@@ -185,6 +185,7 @@
                                 {% elif notif.action == 'voice_call' %}fa-phone
                                 {% elif notif.action == 'verification_approved' %}fa-check
                                 {% elif notif.action == 'terms_update' %}fa-file-contract
+                                {% elif notif.action == 'invite_welcome' %}fa-envelope-open-text
                                 {% elif notif.action == 'username_suggestion' %}fa-at
                                 {% elif notif.action == 'verification_rejected' %}fa-times
                                 {% elif notif.action == 'report_resolved' %}fa-check-circle
@@ -200,7 +201,7 @@
                         <p class="anter-notif-item__text">
                             {% if actor %}
                                 <strong class="anter-notif-item__actor">
-                                    {% if notif.action in ['report_resolved', 'report_rejected', 'verification_approved', 'verification_rejected', 'early_member', 'early_member_revoked', 'warning', 'suspended', 'banned', 'unbanned', 'sanction_review_needed', 'account_restored'] %}
+                                    {% if notif.action in ['report_resolved', 'report_rejected', 'verification_approved', 'verification_rejected', 'early_member', 'early_member_revoked', 'warning', 'suspended', 'banned', 'unbanned', 'sanction_review_needed', 'account_restored', 'invite_welcome'] %}
                                         إدارة أنتر
                                     {% else %}
                                         {{ actor.name or actor.username }}{{ verified_badge(actor) }}{{ founder_badge(actor) }}{{ early_member_badge(actor) }}
@@ -259,6 +260,7 @@
                                 {% elif notif.action == 'report_rejected' %}تم رفض بلاغك
                                 {% elif notif.action == 'story_issue_fixed' %}إصلاح مشكلة تقنية في القصة
                                 {% elif notif.action == 'video_lost' %}تعذّر عرض أحد مقاطعك
+                                {% elif notif.action == 'invite_welcome' %}رسالة ترحيب من إدارة أنتر
                                 {% else %}لديك إشعار{% endif %}
                             </span>
                         </p>

@@ -1,0 +1,62 @@
+/* ANTER: زر Embossed — يطبق على أزرار تسجيل الدخول والتسجيل فقط. */
+
+.anter-embossed-btn {
+    background: linear-gradient(180deg, #0049D6 0%, #003AAB 100%) !important;
+    border: none !important;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.28) inset,
+        0 -2px 0 rgba(0, 0, 0, 0.20) inset,
+        0 6px 0 #002A7A,
+        0 8px 18px rgba(0, 58, 171, 0.35);
+    transform: translateY(0);
+    transition:
+        transform 0.12s ease,
+        box-shadow 0.12s ease,
+        background 0.12s ease;
+    position: relative;
+}
+
+.anter-embossed-btn:hover:not(:disabled) {
+    background: linear-gradient(180deg, #0054F0 0%, #003CC0 100%) !important;
+    transform: translateY(-1px);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.32) inset,
+        0 -2px 0 rgba(0, 0, 0, 0.20) inset,
+        0 7px 0 #002A7A,
+        0 11px 22px rgba(0, 58, 171, 0.42);
+}
+
+.anter-embossed-btn:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.20) inset,
+        0 -1px 0 rgba(0, 0, 0, 0.15) inset,
+        0 2px 0 #002A7A,
+        0 3px 8px rgba(0, 58, 171, 0.30);
+}
+
+.anter-embossed-btn:disabled {
+    background: linear-gradient(180deg, #7A8AAE 0%, #5A6B95 100%) !important;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.15) inset,
+        0 -1px 0 rgba(0, 0, 0, 0.15) inset,
+        0 3px 0 #3F4A63,
+        0 4px 8px rgba(0, 0, 0, 0.20);
+    cursor: not-allowed;
+    transform: none;
+    opacity: 0.85;
+}
+
+.anter-embossed-btn:focus-visible {
+    outline: 3px solid rgba(0, 200, 248, 0.55);
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .anter-embossed-btn,
+    .anter-embossed-btn:hover,
+    .anter-embossed-btn:active {
+        transition: none !important;
+        transform: none !important;
+    }
+}

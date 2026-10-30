@@ -1217,8 +1217,18 @@ document.addEventListener('click', function(e) {
             const yy = String(d.getFullYear()).slice(-2);
             const hh = String(d.getHours()).padStart(2, '0');
             const mi = String(d.getMinutes()).padStart(2, '0');
-            const extMatch = (src.split('?')[0].match(/\.([a-zA-Z0-9]+)$/) || [])[1];
-            const ext = (extMatch || 'jpg').toLowerCase();
+            // الامتداد من Content-Type (لا من URL — عديم الامتداد)
+            let ext = 'jpg';
+            try {
+                const headResp = await fetch(src, { method: 'HEAD', credentials: 'same-origin' });
+                const ct = (headResp.headers.get('content-type') || '').toLowerCase();
+                if (ct.includes('webp')) ext = 'webp';
+                else if (ct.includes('png')) ext = 'png';
+                else if (ct.includes('gif')) ext = 'gif';
+                else if (ct.includes('jpeg') || ct.includes('jpg')) ext = 'jpg';
+            } catch (_) {
+                // يبقى jpg افتراضيًا
+            }
             const filename = 'anter_' + dd + '_' + mm + '_' + yy + '_' + hh + mi + '.' + ext;
 
             // 1. جسر APK (يُحفظ في Download/ANTER/)

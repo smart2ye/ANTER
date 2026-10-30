@@ -1209,23 +1209,59 @@ document.addEventListener('click', function(e) {
         closeAll();
 
         if (action === 'download') {
+            // اسم الملف: anter_DD_MM_YY.ext من تاريخ نشر المنشور
+            const postDate = img.dataset.postDate || '';
+            const d = postDate ? new Date(postDate) : new Date();
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yy = String(d.getFullYear()).slice(-2);
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mi = String(d.getMinutes()).padStart(2, '0');
+            const extMatch = (src.split('?')[0].match(/\.([a-zA-Z0-9]+)$/) || [])[1];
+            const ext = (extMatch || 'jpg').toLowerCase();
+            const filename = 'anter_' + dd + '_' + mm + '_' + yy + '_' + hh + mi + '.' + ext;
+
+            // 1. جسر APK (يُحفظ في Download/ANTER/)
+            try {
+                if (window.AnterDownload && window.AnterDownload.isAvailable && window.AnterDownload.isAvailable()) {
+                    const resp = await fetch(src, { credentials: 'same-origin' });
+                    if (!resp.ok) throw new Error('fetch failed');
+                    const blob = await resp.blob();
+                    const reader = new FileReader();
+                    reader.onloadend = function() {
+                        const dataUrl = reader.result || '';
+                        const base64 = dataUrl.split(',')[1] || '';
+                        try {
+                            window.AnterDownload.saveImage(base64, filename);
+                            toast('تم حفظ الصورة في مجلد ANTER', 'success');
+                        } catch (e) {
+                            toast('تعذّر الحفظ', 'error');
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                    return;
+                }
+            } catch (_) {
+                // نكمل للـfallback
+            }
+
+            // 2. متصفح (blob download)
             try {
                 const resp = await fetch(src, { credentials: 'same-origin' });
                 const blob = await resp.blob();
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'anter-' + Date.now() + '.jpg';
+                a.download = filename;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
                 setTimeout(() => URL.revokeObjectURL(url), 3000);
                 toast('تم تنزيل الصورة', 'success');
             } catch (_) {
-                // fallback
                 const a = document.createElement('a');
                 a.href = src;
-                a.download = 'anter-image.jpg';
+                a.download = filename;
                 a.target = '_blank';
                 document.body.appendChild(a);
                 a.click();

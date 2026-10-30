@@ -183,6 +183,7 @@
              referrerpolicy="no-referrer"
              data-post-author="{{ post.author.username }}"
              data-is-owner="{{ 'true' if current_user.is_authenticated and current_user.id == post.author_id else 'false' }}"
+             data-post-date="{{ post.created_at.isoformat() }}Z"
              data-fullsrc="{{ post_image_url(post) }}">
 
         {% if current_user.is_authenticated %}

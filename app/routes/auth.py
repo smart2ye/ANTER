@@ -363,6 +363,14 @@ def reset_password(token):
         flash('❌ الرابط غير صالح أو انتهت صلاحيته.', 'danger')
         return redirect(url_for('auth.reset_password_request'))
     form = ResetPasswordForm()
+    # تعبئة حقل الهوية تلقائيًا عند الدخول بالرابط (GET فقط)
+    if request.method == 'GET' and not form.identity.data:
+        if user.email and not user.email.endswith('@phone-only.anter.local'):
+            form.identity.data = user.email
+        elif user.phone:
+            form.identity.data = user.phone
+        else:
+            form.identity.data = user.username
     if form.validate_on_submit():
         identity = (form.identity.data or '').strip().lower()
         user_username = (user.username or '').strip().lower()

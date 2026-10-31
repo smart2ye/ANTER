@@ -11985,3 +11985,12 @@ a.anter-profile-stat:hover {
     background: #00C8F8;
     color: #031E64;
 }
+
+/* ANTER: أصناف ألوان شريط الإعلان (تُستخدم في HTML)
+   الاستخدام: <span class="c-cyan">نص</span> */
+.anter-marquee .c-cyan   { color: #78F7FD; }
+.anter-marquee .c-gold   { color: #FFD700; }
+.anter-marquee .c-white  { color: #FFFFFF; }
+.anter-marquee .c-red    { color: #FF8A8A; }
+.anter-marquee .c-green  { color: #86EFAC; }
+.anter-marquee .c-purple { color: #C4B5FD; }

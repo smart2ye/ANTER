@@ -24,15 +24,33 @@
 
         <div class="mb-3">
             <label for="announcementText" class="form-label fw-semibold">نص الإعلان</label>
+            <div class="anter-format-toolbar mb-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-format="strong" title="عريض">
+                    <b>B</b>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-format="em" title="مائل">
+                    <i>I</i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-format="u" title="تحته خط">
+                    <u>U</u>
+                </button>
+                <span class="mx-1">|</span>
+                <button type="button" class="btn btn-sm" style="background:#00C8F8;color:#fff;" data-class="c-cyan" title="سيان">سيان</button>
+                <button type="button" class="btn btn-sm" style="background:#FFD700;color:#000;" data-class="c-gold" title="ذهبي">ذهبي</button>
+                <button type="button" class="btn btn-sm" style="background:#FFF;color:#000;border:1px solid #ccc;" data-class="c-white" title="أبيض">أبيض</button>
+                <button type="button" class="btn btn-sm" style="background:#FF8A8A;color:#000;" data-class="c-red" title="أحمر">أحمر</button>
+                <button type="button" class="btn btn-sm" style="background:#86EFAC;color:#000;" data-class="c-green" title="أخضر">أخضر</button>
+                <button type="button" class="btn btn-sm" style="background:#C4B5FD;color:#000;" data-class="c-purple" title="بنفسجي">بنفسجي</button>
+            </div>
             <textarea
                 id="announcementText"
                 name="text"
                 rows="3"
                 maxlength="500"
                 class="form-control"
-                placeholder="مثال: ✨ أهلاً بك في أنتر — نعمل على صيانة دورية وتطوير مستمر. شكرًا لصبرك 💙"
+                placeholder="مثال: ✨ أهلاً <strong>بك</strong> في <span class=&quot;c-cyan&quot;>أنتر</span> — نعمل على صيانة دورية. شكرًا لصبرك 💙"
                 required>{{ announcement.text }}</textarea>
-            <small class="text-muted">حتى 500 حرف. النص يظهر في شريط متحرك أعلى كل الصفحات.</small>
+            <small class="text-muted">حتى 500 حرف. يدعم HTML محدود: <code>&lt;strong&gt;</code>، <code>&lt;em&gt;</code>، <code>&lt;u&gt;</code>، <code>&lt;span class="c-cyan"&gt;</code> (أو c-gold/c-white/c-red/c-green/c-purple).</small>
         </div>
 
         <div class="form-check form-switch mb-3">
@@ -71,4 +89,36 @@
     </form>
 
 </div>
+
+<script>
+(function() {
+    'use strict';
+    var ta = document.getElementById('announcementText');
+    if (!ta) return;
+
+    function wrap(before, after) {
+        var start = ta.selectionStart;
+        var end = ta.selectionEnd;
+        var selected = ta.value.substring(start, end) || 'نص';
+        var newValue = ta.value.substring(0, start) + before + selected + after + ta.value.substring(end);
+        ta.value = newValue;
+        ta.focus();
+        ta.setSelectionRange(start + before.length, start + before.length + selected.length);
+    }
+
+    document.querySelectorAll('[data-format]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var tag = btn.dataset.format;
+            wrap('<' + tag + '>', '</' + tag + '>');
+        });
+    });
+
+    document.querySelectorAll('[data-class]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var cls = btn.dataset.class;
+            wrap('<span class="' + cls + '">', '</span>');
+        });
+    });
+})();
+</script>
 {% endblock %}

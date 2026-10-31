@@ -2,6 +2,8 @@
 
 import re
 
+import bleach
+
 from app.extensions import db
 from app.models import SiteSetting
 
@@ -47,6 +49,38 @@ def _set(key: str, value: str) -> None:
         raise
 
 
+# ANTER: قائمة بيضاء صارمة لـHTML في الإعلان (بلا style مباشر — أصناف محددة)
+_ALLOWED_TAGS = ['b', 'strong', 'i', 'em', 'u', 'br', 'span']
+_ALLOWED_ATTRS = {
+    'span': ['class'],
+}
+_ALLOWED_CLASSES = {'c-cyan', 'c-gold', 'c-white', 'c-red', 'c-green', 'c-purple'}
+
+
+def _sanitize_html(raw: str) -> str:
+    """يُنظّف HTML الإعلان ويُبقي التنسيق فقط (بلا XSS، بلا style مباشر)."""
+    if not raw:
+        return ''
+    try:
+        cleaned = bleach.clean(
+            raw,
+            tags=_ALLOWED_TAGS,
+            attributes=_ALLOWED_ATTRS,
+            strip=True,
+        )
+        # نُبقي فقط أصناف الألوان المسموحة (حماية مزدوجة)
+        def _filter_class(match):
+            classes = match.group(1).split()
+            allowed = [c for c in classes if c in _ALLOWED_CLASSES]
+            if not allowed:
+                return ''
+            return ' class="' + ' '.join(allowed) + '"'
+        cleaned = re.sub(r'\s+class="([^"]*)"', _filter_class, cleaned)
+        return cleaned
+    except Exception:
+        return ''
+
+
 def _format_text(raw: str) -> str:
     """يستبدل {name} / {first_name} / {username} بقيم المستخدم الحالي.
 
@@ -54,6 +88,10 @@ def _format_text(raw: str) -> str:
     - للزوار: حذف المتغيرات مع تنظيف الفراغات والشرطات المعلقة.
     - لا يستخدم Jinja — استبدال نصي آمن ضد الحقن.
     """
+    if not raw:
+        return ''
+    # 1. تنظيف HTML أولًا (قبل استبدال المتغيرات — يمنع حقن عبر اسم المستخدم)
+    raw = _sanitize_html(raw)
     if not raw:
         return ''
     try:
@@ -71,18 +109,21 @@ def _format_text(raw: str) -> str:
         text = text.replace('{first_name}', first)
         text = text.replace('{username}', ('@' + uname) if uname else '')
     else:
-        # للزوار: حذف متغير {username} مع الشرطات المحيطة، ثم بقية المتغيرات
+        # للزوار: حذف المتغيرات، ثم حذف الوسوم التي أصبحت فارغة
         text = raw
-        text = re.sub(r'\s*[—\-|/]\s*\{username\}\s*[—\-|/]\s*', ' ', text)
+        text = re.sub(r'\s*[—\\-|/]\s*\{username\}\s*[—\\-|/]\s*', ' ', text)
         text = text.replace('{username}', '')
         text = text.replace('{name}', '')
         text = text.replace('{first_name}', '')
-
-    # تنظيف عام (المسافات + الشرطات المعلقة + المسافة قبل الترقيم)
-    text = re.sub(r'\s+', ' ', text)
-    text = re.sub(r'\s*—\s*—', ' —', text)
-    text = text.strip(' —')
-    text = re.sub(r'\s+([.,!؟…])', r'\1', text)
+        # حذف الوسوم الفارغة (مثل <strong></strong>)
+        for _ in range(3):
+            text = re.sub(r'<(strong|b|em|i|u|span)(\s[^>]*)?>\s*</\1>', '', text)
+        # حذف الشرطات المزدوجة والمعلقة
+        text = re.sub(r'\s*—\s*—\s*', ' — ', text)
+        text = re.sub(r'\s+', ' ', text)
+        text = text.strip(' —')
+    # تنظيف خفيف: مسافات متعددة فقط (داخل النص، لا بين الوسوم)
+    text = re.sub(r'[ \t]+', ' ', text)
     text = text.strip()
     return text
 

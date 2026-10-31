@@ -137,7 +137,7 @@
     {% if _ann.enabled and _ann.text %}
     <div class="anter-marquee" role="status" aria-live="polite" data-announcement>
         <div class="anter-marquee__inner">
-            <span class="anter-marquee__text">{{ _ann.text }}</span>
+            <span class="anter-marquee__text">{{ _ann.text|safe }}</span>
         </div>
     </div>
     {% endif %}

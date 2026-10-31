@@ -393,6 +393,15 @@ def create_app(test_config=None):
     app.add_template_global(early_member_badge, name='early_member_badge')
     app.add_template_global(assistant_badge, name='assistant_badge')
 
+    # ANTER: إعلان الموقع (Marquee) — يُقرأ من قاعدة البيانات
+    try:
+        from app.services.site_settings import get_announcement as _get_announcement
+        app.add_template_global(_get_announcement, name='get_announcement')
+    except Exception:
+        def _empty_announcement():
+            return {'text': '', 'enabled': False}
+        app.add_template_global(_empty_announcement, name='get_announcement')
+
     # ============================================
     # تحديث آخر ظهور للمستخدم عند كل طلب
     # ============================================

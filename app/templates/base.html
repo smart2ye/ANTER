@@ -42,8 +42,8 @@
     <link rel="preload" href="{{ url_for('static', filename='vendor/cairo/cairo-arabic.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link href="{{ url_for('static', filename='vendor/cairo/cairo.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.rtl.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/anter-icons.min.css') }}?v=20261031a">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261031f">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/anter-icons.min.css') }}?v=20261031g">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261031g">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/stories.css') }}?v=20261019a">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth-buttons.css') }}?v=20261029a">
     <!-- Google Tag Manager -->
@@ -131,6 +131,16 @@
             </div>
         </div>
     </nav>
+
+    <!-- شريط إعلان (Marquee) — يُدار من لوحة التحكم -->
+    {% set _ann = get_announcement() %}
+    {% if _ann.enabled and _ann.text %}
+    <div class="anter-marquee" role="status" aria-live="polite" data-announcement>
+        <div class="anter-marquee__inner">
+            <span class="anter-marquee__text">{{ _ann.text }}</span>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- المحتوى الرئيسي -->
     <div class="container-fluid fb-main px-0">

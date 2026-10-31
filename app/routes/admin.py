@@ -912,3 +912,25 @@ def restore_user(user_id):
         db.session.rollback()
         current_app.logger.exception('تعذر استعادة الحساب')
         return jsonify({'success': False, 'message': 'تعذر استعادة الحساب.'}), 500
+
+
+@admin_bp.route('/announcement', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def announcement():
+    """ANTER: إدارة شريط الإعلان (Marquee)."""
+    from app.services.site_settings import get_announcement, save_announcement
+
+    if request.method == 'POST':
+        text = (request.form.get('text') or '').strip()[:500]
+        enabled = request.form.get('enabled') in ('1', 'on', 'true', 'True')
+        try:
+            save_announcement(text, enabled)
+            flash('تم حفظ الإعلان بنجاح.', 'success')
+        except Exception:
+            current_app.logger.exception('announcement save failed')
+            flash('تعذّر حفظ الإعلان. حاول مجددًا.', 'danger')
+        return redirect(url_for('admin.announcement'))
+
+    current = get_announcement()
+    return render_template('admin/announcement.html', announcement=current)

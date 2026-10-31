@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block content %}
+<div class="container py-3" style="max-width: 720px;">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h1 class="h5 fw-bold mb-0">
+            <i class="fas fa-bullhorn text-primary"></i>
+            إدارة شريط الإعلان
+        </h1>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-right"></i> رجوع
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} py-2">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" class="card border-0 shadow-sm p-4" style="border-radius: 16px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="mb-3">
+            <label for="announcementText" class="form-label fw-semibold">نص الإعلان</label>
+            <textarea
+                id="announcementText"
+                name="text"
+                rows="3"
+                maxlength="500"
+                class="form-control"
+                placeholder="مثال: ✨ أهلاً بك في أنتر — نعمل على صيانة دورية وتطوير مستمر. شكرًا لصبرك 💙"
+                required>{{ announcement.text }}</textarea>
+            <small class="text-muted">حتى 500 حرف. النص يظهر في شريط متحرك أعلى كل الصفحات.</small>
+        </div>
+
+        <div class="form-check form-switch mb-3">
+            <input
+                class="form-check-input"
+                type="checkbox"
+                id="announcementEnabled"
+                name="enabled"
+                value="1"
+                {% if announcement.enabled %}checked{% endif %}>
+            <label class="form-check-label fw-semibold" for="announcementEnabled">
+                إظهار الشريط للمستخدمين
+            </label>
+            <div class="small text-muted">إن أُلغي، يختفي الشريط من كل الصفحات (النص يبقى محفوظًا).</div>
+        </div>
+
+        <div class="alert alert-info small mb-3">
+            <i class="fas fa-info-circle me-1"></i>
+            النص الحالي:
+            {% if announcement.enabled and announcement.text %}
+                <span class="badge bg-success">ظاهر</span>
+            {% else %}
+                <span class="badge bg-secondary">مخفي</span>
+            {% endif %}
+            {% if announcement.text %}<div class="mt-2" style="white-space: pre-wrap;">{{ announcement.text }}</div>{% endif %}
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary fw-bold">
+                <i class="fas fa-save me-1"></i> حفظ
+            </button>
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary" target="_blank">
+                <i class="fas fa-eye me-1"></i> معاينة
+            </a>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

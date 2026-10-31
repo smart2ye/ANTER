@@ -30,6 +30,7 @@
                 {% endif %}
             </a>
             <a href="{{ url_for('admin.support_requests') }}" class="btn btn-sm {% if request.endpoint == 'admin.support_requests' %}btn-info{% else %}btn-outline-info{% endif %}"><i class="fas fa-headset"></i><span>المساعدة</span></a>
+            <a href="{{ url_for('admin.announcement') }}" class="btn btn-sm {% if request.endpoint == 'admin.announcement' %}btn-warning{% else %}btn-outline-warning{% endif %}"><i class="fas fa-bullhorn"></i><span>الإعلان</span></a>
         </div>
         {% if admin_back_url or request.endpoint != 'admin.dashboard' %}
         <div class="mt-2 pt-2 border-top">

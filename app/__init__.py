@@ -316,14 +316,17 @@ def create_app(test_config=None):
         except Exception:
             return Markup('')
         try:
-            profile_url = url_for('users.profile', username=user.username)
+            chat_url = url_for('messages.chat', user_id=user.id)
         except Exception:
-            profile_url = ''
+            try:
+                chat_url = url_for('users.profile', username=user.username)
+            except Exception:
+                chat_url = ''
         return Markup(
             '<span class="assistant-badge" '
             'tabindex="0" role="button" '
             'data-assistant-tooltip="مساعد ذكي رسمي داخل أنتر — يجيب عن أسئلتك، يساعدك في صياغة المحتوى، ويفهم سياق حديثك." '
-            'data-assistant-url="' + str(profile_url) + '" '
+            'data-assistant-url="' + str(chat_url) + '" '
             'aria-label="مساعد أنتر">'
             '<i class="fas fa-robot" aria-hidden="true"></i>'
             '<span class="assistant-badge__text">مساعد</span>'

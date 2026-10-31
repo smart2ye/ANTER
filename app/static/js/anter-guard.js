@@ -26,10 +26,21 @@
         el.id = 'anter-loading-overlay';
         el.setAttribute('role', 'status');
         el.setAttribute('aria-live', 'polite');
+        var logoSrc = (document.querySelector('link[rel="icon"]') && '') || '';
+        // نجلب مسار الشعار من meta إن وُجد، وإلا نستخدم default
+        var logoEl = document.querySelector('img[alt*="ANTER"], img[alt*="أنتر"], .navbar-brand img');
+        if (logoEl) logoSrc = logoEl.getAttribute('src') || '';
+        if (!logoSrc) logoSrc = '/static/img/logo.png';
+
         el.innerHTML =
             '<div class="anter-loading-box">' +
-            '  <div class="anter-loading-ring" aria-hidden="true"></div>' +
-            '  <div class="anter-loading-text">لحظة…</div>' +
+            '  <div class="anter-loading-logo-wrap" aria-hidden="true">' +
+            '    <div class="anter-loading-dots">' +
+            '      <span></span><span></span><span></span><span></span>' +
+            '    </div>' +
+            '    <img class="anter-loading-logo" src="' + logoSrc + '" alt="">' +
+            '  </div>' +
+            '  <div class="anter-loading-text">لحظة</div>' +
             '</div>';
         document.body.appendChild(el);
         spinnerEl = el;

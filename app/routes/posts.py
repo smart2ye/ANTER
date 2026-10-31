@@ -670,9 +670,12 @@ def create():
     # إذا لم يوجد media، استخدم image القديم للتوافق مع الواجهة القديمة.
     media_file = uploaded_media if uploaded_media and getattr(uploaded_media, 'filename', '') else uploaded_image
 
-    # ANTER: السماح بمنشور بلا نص إن كان هناك وسائط.
+    # ANTER: قراءة quoted_post_id مبكرًا قبل التحقق من المحتوى
+    quoted_post_id_early = (request.form.get('quoted_post_id') or '').strip()
+
+    # ANTER: السماح بمنشور بلا نص إن كان هناك وسائط أو اقتباس.
     _has_media = bool(media_file and getattr(media_file, 'filename', ''))
-    if not content and not _has_media:
+    if not content and not _has_media and not quoted_post_id_early:
         flash('اكتب نصًا أو أضف صورة/فيديو.', 'danger')
         return redirect(url_for('posts.create'))
 
@@ -738,14 +741,52 @@ def create():
         hashtags = extract_hashtags(content)
         link_url, link_title, link_desc, link_img = extract_safe_link_metadata(content)
 
+        # ANTER: اقتباس منشور (quoted_post_id) — من حقل مخفي أو من رابط في النص
+        quoted_post_id_raw = quoted_post_id_early
+        quoted_post = None
+
+        def _resolve_quoted(qid):
+            try:
+                qid_int = int(qid)
+            except (TypeError, ValueError):
+                return None
+            qp = Post.query.get(qid_int)
+            if not qp:
+                return None
+            if qp.author_id == current_user.id:
+                return None  # منع الاقتباس الذاتي
+            if not can_view_post(current_user, qp):
+                return None
+            if qp.moderation_status in ('removed', 'under_review'):
+                return None
+            return qp
+
+        if quoted_post_id_raw:
+            quoted_post = _resolve_quoted(quoted_post_id_raw)
+
+        # كشف رابط أنتر داخل النص (لو المستخدم لصق رابط ولم يضغط "اقتباس")
+        if not quoted_post and not (image_data or video):
+            import re as _re
+            m = _re.search(r'https?://[^\s]*?/(?:p|posts)/([A-Za-z0-9_\-]+)', content or '')
+            if m:
+                public_id = m.group(1)
+                qp = Post.query.filter_by(public_id=public_id).first()
+                if qp and qp.author_id != current_user.id and can_view_post(current_user, qp) and qp.moderation_status not in ('removed', 'under_review'):
+                    quoted_post = qp
+                    # إزالة رابط المنشور من النص (البطاقة تُغني عنه)
+                    content = _re.sub(r'https?://[^\s]*?/(?:p|posts)/' + _re.escape(public_id) + r'[^\s]*', '', content).strip()
+                    if not content and not (image_data or video):
+                        content = ''  # سيُسمح بمنشور اقتباس بلا نص
+
         visibility = request.form.get('visibility', 'public')
         post = Post(
-            content=content,
+            content=content or '',
             author_id=current_user.id,
             visibility=visibility if visibility in POST_VISIBILITIES else 'public',
             image_data=image_data,
             image_mime=image_mime,
             shared_video_id=video.id if video else None,
+            quoted_post_id=quoted_post.id if quoted_post else None,
             link_url=link_url,
             link_title=link_title,
             link_description=link_desc,

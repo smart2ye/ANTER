@@ -81,6 +81,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
             'shared_video_id': 'INTEGER',
             'wall_owner_id': 'INTEGER',
+            'quoted_post_id': 'INTEGER',
         },
         'story': {
             'media_data': binary_type,

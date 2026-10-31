@@ -37,6 +37,30 @@
             name="csrf_token"
             value="{{ csrf_token() if csrf_token else '' }}">
 
+        <input
+            type="hidden"
+            name="quoted_post_id"
+            id="anterQuotedPostId"
+            value="">
+
+        <div
+            id="anterQuotePreview"
+            class="anter-composer-quote-preview"
+            hidden>
+            <div class="anter-composer-quote-header">
+                <i class="fas fa-quote-right" aria-hidden="true"></i>
+                <span>اقتباس منشور</span>
+                <button
+                    type="button"
+                    class="anter-composer-quote-remove"
+                    id="anterQuoteRemove"
+                    aria-label="إلغاء الاقتباس">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="anterQuotePreviewBody" class="anter-composer-quote-body"></div>
+        </div>
+
         <div class="anter-composer-editor">
             <textarea
                 name="content"

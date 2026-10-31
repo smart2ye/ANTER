@@ -53,6 +53,21 @@ class Post(db.Model):
         backref=db.backref('shared_posts', lazy='dynamic'),
     )
 
+    # ANTER: اقتباس منشور — البطاقة المضمنة
+    quoted_post_id = db.Column(
+        db.Integer,
+        db.ForeignKey('posts.id', ondelete='SET NULL'),
+        nullable=True,
+        index=True,
+    )
+    quoted_post = db.relationship(
+        'Post',
+        remote_side='Post.id',
+        foreign_keys=[quoted_post_id],
+        backref=db.backref('quoted_by', lazy='dynamic'),
+        post_update=True,
+    )
+
     wall_owner = db.relationship(
         'User',
         foreign_keys=[wall_owner_id],

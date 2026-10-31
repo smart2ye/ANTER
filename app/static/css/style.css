@@ -11683,3 +11683,239 @@ a.anter-profile-stat:hover {
     }
     .anter-loading-box { animation: none; }
 }
+
+/* ============================================================
+   ANTER: اقتباس منشور — بطاقة مدمجة (Quoted Post Card)
+   ============================================================ */
+.anter-quoted-post-card {
+    display: block;
+    margin: 10px 0 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, #e4e6eb);
+    border-radius: 14px;
+    background: var(--fb-bg, #f7f8fa);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    direction: rtl;
+}
+.anter-quoted-post-card:hover {
+    border-color: rgba(0, 58, 171, 0.35);
+    background: rgba(0, 58, 171, 0.03);
+    transform: translateY(-1px);
+    text-decoration: none;
+    color: inherit;
+}
+.anter-quoted-post-card--unavailable {
+    cursor: default;
+    text-align: center;
+    padding: 18px;
+    opacity: 0.85;
+}
+.anter-quoted-post-card--unavailable:hover {
+    transform: none;
+    border-color: var(--border-color, #e4e6eb);
+    background: var(--fb-bg, #f7f8fa);
+}
+.anter-quoted-post-header {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 8px;
+}
+.anter-quoted-post-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.anter-quoted-post-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.anter-quoted-post-meta strong {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-color, #050505);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.anter-quoted-post-meta small {
+    font-size: 0.74rem;
+    color: var(--text-muted, #65676b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.anter-quoted-post-content {
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--text-color, #050505);
+    margin: 0;
+    max-height: 180px;
+    overflow: hidden;
+    position: relative;
+}
+.anter-quoted-post-content::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    background: linear-gradient(transparent, var(--fb-bg, #f7f8fa));
+    pointer-events: none;
+}
+.anter-quoted-post-image {
+    margin-top: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #111;
+}
+.anter-quoted-post-image img {
+    display: block;
+    width: 100%;
+    max-height: 240px;
+    object-fit: cover;
+}
+.anter-quoted-post-unavailable {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted, #65676b);
+}
+.anter-quoted-post-unavailable i {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .anter-quoted-post-card,
+[data-bs-theme="dark"] .anter-quoted-post-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .anter-quoted-post-content,
+[data-bs-theme="dark"] .anter-quoted-post-content {
+    color: #e4e6eb;
+}
+[data-theme="dark"] .anter-quoted-post-content::after,
+[data-bs-theme="dark"] .anter-quoted-post-content::after {
+    background: linear-gradient(transparent, rgba(255, 255, 255, 0.03));
+}
+
+/* زر "اقتباس" في شريط الإجراءات */
+.action-btn.quote-btn {
+    color: #6d28d9;
+}
+.action-btn.quote-btn:hover {
+    background: rgba(109, 40, 217, 0.08);
+    color: #5b21b6;
+}
+.action-btn.quote-btn i {
+    color: #6d28d9;
+}
+
+/* ============================================================
+   ANTER: اقتباس منشور — معاينة داخل الكومبوزر
+   ============================================================ */
+.anter-composer-quote-preview {
+    margin: 10px 0 0;
+    padding: 12px 14px;
+    border: 1px solid rgba(0, 58, 171, 0.22);
+    border-right: 4px solid #003AAB;
+    border-radius: 12px;
+    background: rgba(0, 58, 171, 0.04);
+    direction: rtl;
+}
+.anter-composer-quote-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #003AAB;
+}
+.anter-composer-quote-header i {
+    font-size: 0.85rem;
+}
+.anter-composer-quote-remove {
+    margin-inline-start: auto;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.08);
+    color: #dc2626;
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+.anter-composer-quote-remove:hover {
+    background: rgba(220, 38, 38, 0.18);
+}
+.anter-composer-quote-body {
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--text-color, #050505);
+}
+.quote-preview-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.quote-preview-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.quote-preview-author strong {
+    font-size: 0.85rem;
+    color: var(--text-color, #050505);
+}
+.quote-preview-text {
+    margin: 0;
+    color: var(--text-color, #050505);
+    overflow: hidden;
+    max-height: 70px;
+    text-overflow: ellipsis;
+}
+.quote-preview-image {
+    margin-top: 8px;
+    border-radius: 8px;
+    max-height: 180px;
+    object-fit: cover;
+    display: block;
+    width: 100%;
+}
+[data-theme="dark"] .anter-composer-quote-preview,
+[data-bs-theme="dark"] .anter-composer-quote-preview {
+    background: rgba(0, 200, 248, 0.05);
+    border-color: rgba(0, 200, 248, 0.22);
+    border-right-color: #00C8F8;
+}
+[data-theme="dark"] .anter-composer-quote-header,
+[data-bs-theme="dark"] .anter-composer-quote-header {
+    color: #00C8F8;
+}
+[data-theme="dark"] .quote-preview-text,
+[data-bs-theme="dark"] .quote-preview-text,
+[data-theme="dark"] .quote-preview-author strong,
+[data-bs-theme="dark"] .quote-preview-author strong {
+    color: #e4e6eb;
+}

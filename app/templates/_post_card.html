@@ -95,6 +95,45 @@
         </button>
     </div>
 
+    {% if post.quoted_post_id %}
+        {% set qp = post.quoted_post %}
+        {% if qp and qp.moderation_status not in ('removed', 'under_review') and not qp.author.is_deleted %}
+        <a class="anter-quoted-post-card"
+           href="{{ url_for('posts.view_post', public_id=qp.public_id) }}"
+           aria-label="المنشور المقتبس من {{ qp.author.name or qp.author.username }}">
+            <div class="anter-quoted-post-header">
+                <img src="{{ avatar_url(qp.author) }}"
+                     alt="{{ qp.author.name or qp.author.username }}"
+                     class="anter-quoted-post-avatar"
+                     loading="lazy">
+                <div class="anter-quoted-post-meta">
+                    <strong>{{ qp.author.name or qp.author.username }}{{ verified_badge(qp.author) }}{{ founder_badge(qp.author) }}{{ early_member_badge(qp.author) }}{{ assistant_badge(qp.author) }}</strong>
+                    <small>@{{ qp.author.username }} · <time data-local-time="{{ qp.created_at.isoformat() }}" data-time-style="relative">--:--</time></small>
+                </div>
+            </div>
+            {% if qp.content %}
+            <div class="anter-quoted-post-content anter-rich-text">
+                {{ qp.content | render_rich_text }}
+            </div>
+            {% endif %}
+            {% if qp.image_mime or qp.image %}
+            <div class="anter-quoted-post-image">
+                <img src="{{ post_image_url(qp) }}"
+                     alt="صورة المنشور المقتبس"
+                     loading="lazy">
+            </div>
+            {% endif %}
+        </a>
+        {% else %}
+        <div class="anter-quoted-post-card anter-quoted-post-card--unavailable">
+            <div class="anter-quoted-post-unavailable">
+                <i class="fas fa-eye-slash" aria-hidden="true"></i>
+                <span>المنشور الأصلي غير متاح</span>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+
     {% if post.shared_video %}
     <a class="anter-shared-reel-card"
        href="{{ url_for('videos.watch', public_id=post.shared_video.public_id) }}"
@@ -330,6 +369,21 @@
             <i class="fas fa-share-alt"></i>
             <span>مشاركة</span>
         </button>
+
+        <!-- زر اقتباس المنشور -->
+        {% if current_user.is_authenticated and current_user.id != post.author_id and post.author_id != current_user.id %}
+        <button type="button" class="action-btn quote-btn"
+                data-quote-id="{{ post.id }}"
+                data-quote-url="{{ post_url }}"
+                data-quote-author="{{ post.author.name or post.author.username }}"
+                data-quote-avatar="{{ avatar_url(post.author) }}"
+                data-quote-content="{{ (post.content|truncate(140, True, '…')) if post.content else '' }}"
+                data-quote-image="{{ post_image_url(post) if (post.image_mime or post.image) else '' }}"
+                aria-label="اقتباس المنشور" title="اقتباس المنشور">
+            <i class="fas fa-quote-right"></i>
+            <span>اقتباس</span>
+        </button>
+        {% endif %}
     </div>
 
     <!-- تُحمّل التعليقات عند فتحها لتفادي استعلامات متكررة لكل بطاقة في الخلاصة. -->

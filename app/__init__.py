@@ -609,6 +609,43 @@ def create_app(test_config=None):
         except Exception:
             db.session.rollback()
 
+    # ANTER: تحميل متابعات المستخدم الحالي مرة واحدة (لمنع N+1 في القوالب)
+    @app.before_request
+    def _anter_load_following_ids():
+        from flask import g, request as _req
+        from flask_login import current_user
+        if _req.path.startswith('/static/'):
+            return
+        if not current_user.is_authenticated:
+            g.following_ids = set()
+            return
+        try:
+            from app.models import Follow
+            g.following_ids = {
+                fid for (fid,) in db.session.query(Follow.followed_id).filter_by(follower_id=current_user.id).all()
+            }
+        except Exception:
+            g.following_ids = set()
+
+    # ANTER: هل يمكن عرض زر متابعة لهذا المستخدم؟
+    def can_follow(user):
+        """True إذا: مسجل، ليس المستخدم نفسه، غير متابَع، و(is_verified أو is_early_member)."""
+        try:
+            from flask import g
+            from flask_login import current_user
+            if not user or not getattr(current_user, 'is_authenticated', False):
+                return False
+            if user.id == current_user.id:
+                return False
+            if not (getattr(user, 'is_verified', False) or getattr(user, 'is_early_member', False)):
+                return False
+            following = getattr(g, 'following_ids', set()) or set()
+            return user.id not in following
+        except Exception:
+            return False
+
+    app.add_template_global(can_follow, name='can_follow')
+
     # ANTER: بوابة العقوبات — حظر دائم يقطع الجلسة، تعليق/تقييد يمنع POST فقط.
     @app.before_request
     def _anter_enforce_sanctions():

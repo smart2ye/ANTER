@@ -6,6 +6,7 @@
 
     <div class="feed-recommendations-track">
         {% for post in suggested_posts %}
+            {% set is_suggested_post = true %}
             {% include "_post_card.html" %}
         {% endfor %}
     </div>

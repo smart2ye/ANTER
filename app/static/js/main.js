@@ -2264,3 +2264,60 @@ document.addEventListener('click', function(e) {
         }
     });
 })();
+
+// ============================================================
+// ANTER: زر متابعة صغير (في التعليقات والمنشورات المقترحة)
+// ============================================================
+(function() {
+    'use strict';
+
+    document.addEventListener('click', async function(e) {
+        var btn = e.target.closest('.anter-inline-follow-btn');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        var uid = btn.dataset.followUserId;
+        if (!uid || btn.classList.contains('is-loading')) return;
+
+        var isFollowing = btn.dataset.following === 'true';
+        var url = isFollowing ? '/users/unfollow/' + uid : '/users/follow/' + uid;
+
+        btn.classList.add('is-loading');
+        var originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>';
+
+        try {
+            var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            var csrf = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            var resp = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrf,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            var data = await resp.json();
+            if (data && data.success) {
+                var nowFollowing = !!data.following;
+                btn.dataset.following = nowFollowing ? 'true' : 'false';
+                btn.classList.toggle('is-following', nowFollowing);
+                if (nowFollowing) {
+                    btn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i>';
+                    btn.title = 'متابَع';
+                    btn.setAttribute('aria-label', 'متابَع');
+                } else {
+                    btn.innerHTML = '<i class="fas fa-user-plus" aria-hidden="true"></i>';
+                    btn.title = 'متابعة';
+                    btn.setAttribute('aria-label', 'متابعة');
+                }
+            } else {
+                btn.innerHTML = originalHtml;
+            }
+        } catch (err) {
+            btn.innerHTML = originalHtml;
+        } finally {
+            btn.classList.remove('is-loading');
+        }
+    });
+})();

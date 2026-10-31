@@ -11928,3 +11928,60 @@ a.anter-profile-stat:hover {
         text-overflow: ellipsis;
     }
 }
+
+/* ============================================================
+   ANTER: زر متابعة صغير بجانب الاسم (في التعليقات والمنشورات المقترحة)
+   ============================================================ */
+.anter-inline-follow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    margin-inline-start: 6px;
+    border: 1px solid rgba(0, 58, 171, 0.35);
+    border-radius: 50%;
+    background: rgba(0, 58, 171, 0.08);
+    color: #003AAB;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+.anter-inline-follow-btn:hover {
+    background: #003AAB;
+    color: #fff;
+    border-color: #003AAB;
+    transform: scale(1.08);
+}
+.anter-inline-follow-btn.is-following {
+    background: #10b981;
+    border-color: #10b981;
+    color: #fff;
+}
+.anter-inline-follow-btn.is-following i {
+    transform: rotate(-8deg);
+}
+.anter-inline-follow-btn.is-loading {
+    pointer-events: none;
+    opacity: 0.55;
+}
+.anter-inline-follow-btn--sm {
+    width: 20px;
+    height: 20px;
+    font-size: 0.6rem;
+    margin-inline-start: 4px;
+}
+[data-theme="dark"] .anter-inline-follow-btn,
+[data-bs-theme="dark"] .anter-inline-follow-btn {
+    background: rgba(0, 200, 248, 0.12);
+    border-color: rgba(0, 200, 248, 0.35);
+    color: #00C8F8;
+}
+[data-theme="dark"] .anter-inline-follow-btn:hover,
+[data-bs-theme="dark"] .anter-inline-follow-btn:hover {
+    background: #00C8F8;
+    color: #031E64;
+}

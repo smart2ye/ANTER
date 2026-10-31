@@ -21,6 +21,16 @@
                             {{ comment.author.name }}
                             {{ verified_badge(comment.author) }}{{ founder_badge(comment.author) }}{{ early_member_badge(comment.author) }}{{ assistant_badge(comment.author) }}
                         </a>
+                        {% if can_follow(comment.author) %}
+                        <button type="button"
+                                class="anter-inline-follow-btn"
+                                data-follow-user-id="{{ comment.author.id }}"
+                                data-following="false"
+                                aria-label="متابعة {{ comment.author.name or comment.author.username }}"
+                                title="متابعة">
+                            <i class="fas fa-user-plus" aria-hidden="true"></i>
+                        </button>
+                        {% endif %}
                         <div class="comment-header__right">
                             <time class="comment-time text-muted small"
                                   data-local-time="{{ comment.created_at.isoformat() }}"
@@ -134,6 +144,16 @@
                                             {{ reply.author.name }}
                                             {{ verified_badge(reply.author) }}{{ founder_badge(reply.author) }}{{ early_member_badge(reply.author) }}{{ assistant_badge(reply.author) }}
                                         </a>
+                                        {% if can_follow(reply.author) %}
+                                        <button type="button"
+                                                class="anter-inline-follow-btn anter-inline-follow-btn--sm"
+                                                data-follow-user-id="{{ reply.author.id }}"
+                                                data-following="false"
+                                                aria-label="متابعة {{ reply.author.name or reply.author.username }}"
+                                                title="متابعة">
+                                            <i class="fas fa-user-plus" aria-hidden="true"></i>
+                                        </button>
+                                        {% endif %}
                                         <div class="comment-header__right">
                                             <time class="comment-time text-muted small" style="font-size: 0.75rem;"
                                                   data-local-time="{{ reply.created_at.isoformat() }}"

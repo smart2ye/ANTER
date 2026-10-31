@@ -2103,3 +2103,81 @@ document.addEventListener('click', function(e) {
 
     window.addEventListener('scroll', function() { if (tooltip) hide(); }, { passive: true });
 })();
+
+// ============================================================
+// ANTER: بطاقة تعريف مساعد أنتر
+// ============================================================
+(function() {
+    'use strict';
+
+    function openCard(badge) {
+        var url = badge.getAttribute('data-assistant-url') || '';
+        var existing = document.getElementById('anterAssistantCard');
+        if (existing) existing.remove();
+
+        var overlay = document.createElement('div');
+        overlay.className = 'anter-assistant-card-overlay';
+        overlay.id = 'anterAssistantCard';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', 'مساعد أنتر');
+
+        overlay.innerHTML = '' +
+            '<div class="anter-assistant-card">' +
+            '  <button type="button" class="anter-assistant-card__close" aria-label="إغلاق">' +
+            '    <i class="fas fa-times"></i>' +
+            '  </button>' +
+            '  <div class="anter-assistant-card__icon">' +
+            '    <i class="fas fa-robot"></i>' +
+            '  </div>' +
+            '  <h3 class="anter-assistant-card__name">' +
+            '    مساعد أنتر' +
+            '    <i class="fas fa-check-circle" title="حساب موثق"></i>' +
+            '  </h3>' +
+            '  <p class="anter-assistant-card__desc">' +
+            '    مساعد ذكي عربي رسمي داخل شبكة أنتر. يساعدك في صياغة المنشورات، الإجابة عن أسئلتك، وفهم ميزات المنصة.' +
+            '  </p>' +
+            '  <ul class="anter-assistant-card__features">' +
+            '    <li><i class="fas fa-pen"></i> صياغة وتحسين المنشورات</li>' +
+            '    <li><i class="fas fa-lightbulb"></i> اقتراح أفكار وردود</li>' +
+            '    <li><i class="fas fa-question-circle"></i> شرح ميزات أنتر</li>' +
+            '    <li><i class="fas fa-shield-alt"></i> يحفظ سياق حديثك بأمان</li>' +
+            '  </ul>' +
+            '  <a href="' + url + '" class="anter-assistant-card__btn">' +
+            '    <i class="fas fa-comment-dots"></i>' +
+            '    <span>افتح المحادثة</span>' +
+            '  </a>' +
+            '</div>';
+
+        document.body.appendChild(overlay);
+
+        function close() {
+            overlay.classList.remove('is-open');
+            setTimeout(function() {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            }, 220);
+            document.removeEventListener('keydown', onKey);
+        }
+        function onKey(e) {
+            if (e.key === 'Escape') close();
+        }
+
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) close();
+            if (e.target.closest('.anter-assistant-card__close')) close();
+        });
+        document.addEventListener('keydown', onKey);
+
+        requestAnimationFrame(function() {
+            overlay.classList.add('is-open');
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        var badge = e.target.closest('[data-assistant-tooltip]');
+        if (!badge) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openCard(badge);
+    });
+})();

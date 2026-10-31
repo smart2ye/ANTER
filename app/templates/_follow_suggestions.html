@@ -16,7 +16,7 @@
                      class="feed-follow-card__avatar" loading="lazy">
                 <div class="feed-follow-card__info">
                     <strong class="feed-follow-card__name">
-                        {{ user.name or user.username }}{{ verified_badge(user) }}{{ founder_badge(user) }}{{ early_member_badge(user) }}
+                        {{ user.name or user.username }}{{ verified_badge(user) }}{{ founder_badge(user) }}{{ early_member_badge(user) }}{{ assistant_badge(user) }}
                     </strong>
                     <small class="feed-follow-card__meta">@{{ user.username }} · {{ user.follower_count() }} متابع</small>
                 </div>

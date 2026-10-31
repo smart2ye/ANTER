@@ -11299,3 +11299,231 @@ a.anter-profile-stat:hover {
     line-height: 1.6;
     font-size: 0.92rem;
 }
+
+/* ============================================================
+   ANTER: شارة مساعد أنتر (Assistant Badge)
+   ============================================================ */
+.assistant-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    margin-inline-start: 6px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #6d28d9 0%, #00C8F8 100%);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 900;
+    line-height: 1.5;
+    vertical-align: middle;
+    box-shadow: 0 2px 10px rgba(109, 40, 217, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    letter-spacing: 0.3px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    animation: assistantPulse 2.6s ease-in-out infinite;
+}
+
+@keyframes assistantPulse {
+    0%, 100% {
+        box-shadow: 0 2px 10px rgba(109, 40, 217, 0.45),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+    50% {
+        box-shadow: 0 2px 18px rgba(0, 200, 248, 0.65),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+}
+
+.assistant-badge i {
+    font-size: 0.75rem;
+    color: #fff;
+    position: relative;
+    z-index: 1;
+}
+
+.assistant-badge__text {
+    font-family: inherit;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .assistant-badge,
+[data-bs-theme="dark"] .assistant-badge {
+    background: linear-gradient(135deg, #00C8F8 0%, #6d28d9 100%);
+    color: #fff;
+}
+
+@media (max-width: 420px) {
+    .assistant-badge {
+        font-size: 0.62rem;
+        padding: 1px 6px;
+    }
+    .assistant-badge__text {
+        display: none;
+    }
+}
+
+
+/* ============================================================
+   ANTER: بطاقة تعريف مساعد أنتر (Assistant Card)
+   ============================================================ */
+.anter-assistant-card-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(3, 30, 100, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.anter-assistant-card-overlay.is-open {
+    opacity: 1;
+}
+.anter-assistant-card {
+    position: relative;
+    width: min(100%, 380px);
+    padding: 24px 22px 20px;
+    border-radius: 20px;
+    background: #ffffff;
+    color: #1a1a1a;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    text-align: center;
+    transform: translateY(20px) scale(0.96);
+    transition: transform 0.25s cubic-bezier(.22,.9,.35,1.05);
+    direction: rtl;
+}
+.anter-assistant-card-overlay.is-open .anter-assistant-card {
+    transform: translateY(0) scale(1);
+}
+.anter-assistant-card__close {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.06);
+    color: #4b5563;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.anter-assistant-card__close:hover {
+    background: rgba(0, 0, 0, 0.12);
+}
+.anter-assistant-card__icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #6d28d9 0%, #00C8F8 100%);
+    color: #fff;
+    font-size: 1.9rem;
+    box-shadow: 0 8px 24px rgba(109, 40, 217, 0.35);
+    animation: assistantCardPulse 2.6s ease-in-out infinite;
+}
+@keyframes assistantCardPulse {
+    0%, 100% { box-shadow: 0 8px 24px rgba(109, 40, 217, 0.35); }
+    50% { box-shadow: 0 8px 32px rgba(0, 200, 248, 0.55); }
+}
+.anter-assistant-card__name {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #031E64;
+    margin: 0 0 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.anter-assistant-card__name i {
+    color: #003AAB;
+    font-size: 1rem;
+}
+.anter-assistant-card__desc {
+    margin: 0 0 16px;
+    color: #4b5563;
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+.anter-assistant-card__features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 18px;
+    text-align: right;
+    display: grid;
+    gap: 8px;
+}
+.anter-assistant-card__features li {
+    font-size: 0.85rem;
+    color: #4b5563;
+    padding: 8px 12px;
+    background: #f3f5f9;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.anter-assistant-card__features li i {
+    color: #003AAB;
+    width: 18px;
+    flex-shrink: 0;
+}
+.anter-assistant-card__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #003AAB 0%, #00C8F8 100%);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 6px 16px rgba(0, 58, 171, 0.28);
+}
+.anter-assistant-card__btn:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(0, 58, 171, 0.38);
+}
+[data-theme="dark"] .anter-assistant-card,
+[data-bs-theme="dark"] .anter-assistant-card {
+    background: #1e1f22;
+    color: #e4e6eb;
+}
+[data-theme="dark"] .anter-assistant-card__name,
+[data-bs-theme="dark"] .anter-assistant-card__name {
+    color: #e4e6eb;
+}
+[data-theme="dark"] .anter-assistant-card__desc,
+[data-bs-theme="dark"] .anter-assistant-card__features li,
+[data-bs-theme="dark"] .anter-assistant-card__features li i,
+[data-bs-theme="dark"] .anter-assistant-card__close {
+    color: #b0b3b8;
+}
+[data-theme="dark"] .anter-assistant-card__features li,
+[data-bs-theme="dark"] .anter-assistant-card__features li {
+    background: rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .anter-assistant-card__close,
+[data-bs-theme="dark"] .anter-assistant-card__close {
+    background: rgba(255, 255, 255, 0.08);
+}

@@ -43,7 +43,7 @@
     <link href="{{ url_for('static', filename='vendor/cairo/cairo.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.rtl.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/anter-icons.min.css') }}?v=20261028d">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261028c">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261031a">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/stories.css') }}?v=20261019a">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth-buttons.css') }}?v=20261029a">
     <!-- Google Tag Manager -->
@@ -200,7 +200,7 @@
                     <div class="card shadow-sm border-0">
                         <div class="card-body text-center">
                             <img src="{{ avatar_url(current_user) }}" class="fb-avatar-lg mb-2">
-                            <h6 class="fw-bold">{{ current_user.name }} {{ verified_badge(current_user) }}{{ founder_badge(current_user) }}{{ early_member_badge(current_user) }}</h6>
+                            <h6 class="fw-bold">{{ current_user.name }} {{ verified_badge(current_user) }}{{ founder_badge(current_user) }}{{ early_member_badge(current_user) }}{{ assistant_badge(current_user) }}</h6>
                                     <div class="post-status mt-1">
                                         {{ get_status_icon(current_user)|safe }}
                                     </div>
@@ -264,7 +264,7 @@
     </div>
 
     <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=20261019a"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20261031a"></script>
     <script src="{{ url_for('static', filename='js/stories.js') }}?v=20261019a"></script>
     <script>
         // يحتفظ الخادم بتوقيت موحد (UTC)، بينما يعرض كل جهاز التاريخ والساعة وفق منطقته الزمنية.

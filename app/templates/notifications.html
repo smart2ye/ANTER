@@ -204,7 +204,7 @@
                                     {% if notif.action in ['report_resolved', 'report_rejected', 'verification_approved', 'verification_rejected', 'early_member', 'early_member_revoked', 'warning', 'suspended', 'banned', 'unbanned', 'sanction_review_needed', 'account_restored', 'invite_welcome'] %}
                                         إدارة أنتر
                                     {% else %}
-                                        {{ actor.name or actor.username }}{{ verified_badge(actor) }}{{ founder_badge(actor) }}{{ early_member_badge(actor) }}
+                                        {{ actor.name or actor.username }}{{ verified_badge(actor) }}{{ founder_badge(actor) }}{{ early_member_badge(actor) }}{{ assistant_badge(actor) }}
                                     {% endif %}
                                 </strong>
                             {% else %}

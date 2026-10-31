@@ -19,7 +19,7 @@
                     <div class="comment-header d-flex justify-content-between align-items-center mb-1">
                         <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="comment-author fw-bold text-dark text-decoration-none">
                             {{ comment.author.name }}
-                            {{ verified_badge(comment.author) }}{{ founder_badge(comment.author) }}{{ early_member_badge(comment.author) }}
+                            {{ verified_badge(comment.author) }}{{ founder_badge(comment.author) }}{{ early_member_badge(comment.author) }}{{ assistant_badge(comment.author) }}
                         </a>
                         <div class="comment-header__right">
                             <time class="comment-time text-muted small"
@@ -132,7 +132,7 @@
                                     <div class="comment-header d-flex justify-content-between align-items-center mb-1">
                                         <a href="{{ url_for('users.profile', username=reply.author.username) }}" class="comment-author fw-bold text-dark text-decoration-none small">
                                             {{ reply.author.name }}
-                                            {{ verified_badge(reply.author) }}{{ founder_badge(reply.author) }}{{ early_member_badge(reply.author) }}
+                                            {{ verified_badge(reply.author) }}{{ founder_badge(reply.author) }}{{ early_member_badge(reply.author) }}{{ assistant_badge(reply.author) }}
                                         </a>
                                         <div class="comment-header__right">
                                             <time class="comment-time text-muted small" style="font-size: 0.75rem;"

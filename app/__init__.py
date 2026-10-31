@@ -307,6 +307,29 @@ def create_app(test_config=None):
             '</span>'
         )
 
+    def assistant_badge(user):
+        """ANTER: شارة مساعد أنتر — تظهر فقط لحساب المساعد الآلي."""
+        try:
+            from app.services.anter_assistant import is_anter_assistant
+            if not is_anter_assistant(user):
+                return Markup('')
+        except Exception:
+            return Markup('')
+        try:
+            profile_url = url_for('users.profile', username=user.username)
+        except Exception:
+            profile_url = ''
+        return Markup(
+            '<span class="assistant-badge" '
+            'tabindex="0" role="button" '
+            'data-assistant-tooltip="مساعد ذكي رسمي داخل أنتر — يجيب عن أسئلتك، يساعدك في صياغة المحتوى، ويفهم سياق حديثك." '
+            'data-assistant-url="' + str(profile_url) + '" '
+            'aria-label="مساعد أنتر">'
+            '<i class="fas fa-robot" aria-hidden="true"></i>'
+            '<span class="assistant-badge__text">مساعد</span>'
+            '</span>'
+        )
+
     def linkify_hashtags(content):
         escaped_content = str(escape(unescape(content or '')))
 
@@ -365,6 +388,7 @@ def create_app(test_config=None):
     app.add_template_global(notification_total_actors, name='notification_total_actors')
     app.add_template_global(founder_badge, name='founder_badge')
     app.add_template_global(early_member_badge, name='early_member_badge')
+    app.add_template_global(assistant_badge, name='assistant_badge')
 
     # ============================================
     # تحديث آخر ظهور للمستخدم عند كل طلب

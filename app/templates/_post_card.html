@@ -9,7 +9,7 @@
             <div class="post-author-meta">
                 <a href="{{ url_for('users.profile', username=post.author.username) }}" class="post-author-name">
                     {{ post.author.name }}
-                    {{ verified_badge(post.author) }}{{ founder_badge(post.author) }}{{ early_member_badge(post.author) }}
+                    {{ verified_badge(post.author) }}{{ founder_badge(post.author) }}{{ early_member_badge(post.author) }}{{ assistant_badge(post.author) }}
                 </a>
                 {% if post.wall_owner_id and post.wall_owner and post.wall_owner.id != post.author_id %}
                 <div class="post-wall-badge" style="font-size:12px;color:var(--text-muted,#6b7280);margin-top:2px;">
@@ -125,7 +125,7 @@
                     alt="{{ post.shared_video.author.name }}">
                 <span>
                     @{{ post.shared_video.author.username }}
-                    {{ verified_badge(post.shared_video.author) }}{{ founder_badge(post.shared_video.author) }}{{ early_member_badge(post.shared_video.author) }}
+                    {{ verified_badge(post.shared_video.author) }}{{ founder_badge(post.shared_video.author) }}{{ early_member_badge(post.shared_video.author) }}{{ assistant_badge(post.shared_video.author) }}
                 </span>
             </div>
 

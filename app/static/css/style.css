@@ -3917,38 +3917,48 @@ body {
     cursor: pointer;
 }
 
+/* ============================================================
+   ANTER: محرر الكومبوزر — قاعدة موحّدة (نسخة مضغوطة)
+   ============================================================ */
 .anter-composer-editor {
     position: relative;
     z-index: 1;
-    border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: 17px;
-    background: rgba(255, 255, 255, 0.72);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: var(--fb-bg, #f7f8fa);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
-
 .anter-composer-editor:focus-within {
-    border-color: rgba(22, 11, 142, 0.45);
-    box-shadow: 0 0 0 4px rgba(22, 11, 142, 0.08);
+    background: var(--card-bg, #ffffff);
+    border-color: rgba(0, 58, 171, 0.35);
+    box-shadow: 0 0 0 3px rgba(0, 58, 171, 0.10);
 }
-
 .anter-composer-editor textarea {
     display: block;
     width: 100%;
-    min-height: 120px;
-    max-height: 300px;
+    min-height: 56px;
+    max-height: 200px;
+    padding: 10px 13px 4px;
     resize: none;
     border: 0;
     outline: 0;
-    padding: 16px 17px 8px;
     background: transparent;
     color: var(--text-color, #111827);
-    font-size: 1rem;
-    line-height: 1.75;
     font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.55;
 }
-
 .anter-composer-editor textarea::placeholder {
     color: var(--text-muted, #9ca3af);
+}
+[data-bs-theme="dark"] .anter-composer-editor,
+.dark-mode .anter-composer-editor {
+    background: rgba(255, 255, 255, 0.04);
+}
+[data-bs-theme="dark"] .anter-composer-editor:focus-within,
+.dark-mode .anter-composer-editor:focus-within {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(0, 200, 248, 0.45);
 }
 
 .anter-composer-editor-footer {
@@ -3956,7 +3966,7 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 7px 15px 11px;
+    padding: 0 12px 6px;
     color: var(--text-muted, #9ca3af);
     font-size: 0.72rem;
 }
@@ -4219,9 +4229,9 @@ body {
     }
 
     .anter-composer-editor textarea {
-        min-height: 105px;
-        padding: 14px 14px 7px;
-        font-size: 0.95rem;
+        min-height: 52px;
+        padding: 9px 12px 4px;
+        font-size: 0.92rem;
     }
 
     .anter-composer-tools {
@@ -6701,33 +6711,7 @@ body:has(.reels-feed-page--immersive) {
     border: 2px solid rgba(0, 58, 171, 0.15);
 }
 
-.anter-composer-editor {
-    border-radius: 14px;
-    background: var(--fb-bg, #f7f8fa);
-    border-color: transparent;
-}
 
-.anter-composer-editor:focus-within {
-    background: var(--card-bg, #ffffff);
-    border-color: rgba(0, 58, 171, 0.35);
-    box-shadow: 0 0 0 3px rgba(0, 58, 171, 0.10);
-}
-
-.anter-composer-editor textarea {
-    min-height: 96px;
-    padding: 14px 15px 4px;
-    font-size: 0.98rem;
-    line-height: 1.65;
-}
-
-.anter-composer-editor-footer {
-    padding: 6px 15px 10px;
-}
-
-/* إخفاء العدّاد بصريًا فقط — يبقى في DOM لأي JS يعتمد عليه */
-#anterCharCount {
-    display: none !important;
-}
 
 .anter-composer-tools {
     gap: 6px;
@@ -6837,34 +6821,6 @@ body:has(.reels-feed-page--immersive) {
 
 .anter-composer-identity strong {
     font-size: 0.9rem;
-}
-
-.anter-composer-editor {
-    border-radius: 12px;
-}
-
-.anter-composer-editor textarea {
-    min-height: 64px;
-    max-height: 220px;
-    padding: 10px 13px 4px;
-    font-size: 0.95rem;
-    line-height: 1.55;
-}
-
-/* إخفاء تلميحات @ و # */
-.anter-composer-hint {
-    display: none !important;
-}
-
-/* بما أن التلميح والعدّاد كلاهما مخفيان، نصغّر تذييل المحرر */
-.anter-composer-editor-footer {
-    padding: 0 12px 8px;
-    min-height: 8px;
-}
-
-.anter-composer-tools {
-    margin-top: 8px;
-    gap: 5px;
 }
 
 .anter-composer-tool {

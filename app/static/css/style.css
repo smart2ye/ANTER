@@ -3936,9 +3936,9 @@ body {
 .anter-composer-editor textarea {
     display: block;
     width: 100%;
-    min-height: 56px;
+    min-height: 48px;
     max-height: 200px;
-    padding: 10px 13px 4px;
+    padding: 8px 13px 6px;
     resize: none;
     border: 0;
     outline: 0;
@@ -3962,13 +3962,7 @@ body {
 }
 
 .anter-composer-editor-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 0 12px 6px;
-    color: var(--text-muted, #9ca3af);
-    font-size: 0.72rem;
+    display: none !important;
 }
 
 .anter-composer-hint {
@@ -4229,8 +4223,8 @@ body {
     }
 
     .anter-composer-editor textarea {
-        min-height: 52px;
-        padding: 9px 12px 4px;
+        min-height: 44px;
+        padding: 7px 12px 6px;
         font-size: 0.92rem;
     }
 

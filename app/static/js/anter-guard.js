@@ -16,7 +16,7 @@
     var spinnerEl = null;
     var showTimer = null;
     var hideTimer = null;
-    var SHOW_DELAY = 300;     // لا يظهر لطلبات < 300ms
+    var SHOW_DELAY = 1200;    // لا يظهر لطلبات < 1.2s
     var SAFETY_TIMEOUT = 30000; // 30s — يفشل بأمان
 
     function buildSpinner() {
@@ -107,16 +107,29 @@
 
     // ============ اعتراض fetch تلقائيًا ============
     // نقاط polling — لا تُظهر المؤشر (تعمل كل 3s في الخلفية)
+    // استثناءات: طلبات خلفية أو AJAX لها تغذية بصرية خاصة بها
     var POLL_PATTERNS = [
         /\/unread_count/,
         /\/unread_total/,
         /\/calls\/pending/,
         /\/typing\//,
         /\/poll(\?|$)/,
-        /\/stories\/feed/,
-        /\/video-thumb\//,
+        /\/api\/posts/,           // تحميل منشورات جديدة عند التمرير
+        /\/api\/stories\//,       // فتح/تفاعل مع قصة
+        /\/api\/ai\//,            // اقتراح AI
+        /\/api\/mobile\//,        // تطبيق الموبايل
+        /\/stories\//,            // أي مسار قصص
+        /\/repost\//,             // إعادة نشر
+        /\/like/,
+        /\/reaction/,
+        /\/users\/follow\//,
+        /\/users\/unfollow\//,
+        /\/notifications\//,
+        /\/messages\/unread/,
+        /\/haraj\/unread/,
+        /\/media\//,
         /\/avatar\//,
-        /\/media\//
+        /\/video-thumb\//
     ];
 
     function isPolling(url) {

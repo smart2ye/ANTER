@@ -694,3 +694,14 @@ def api_users():
         'is_verified': u.is_verified,
         'is_admin': u.is_admin
     } for u in users])
+
+
+@main_bp.route('/anter-verification.txt')
+def anter_verification():
+    """ملف تحقق من الملكية — يُقرأ من public/."""
+    from pathlib import Path
+    from flask import send_file, abort
+    file_path = Path(__file__).resolve().parent.parent.parent / 'public' / 'anter-verification.txt'
+    if not file_path.exists():
+        abort(404)
+    return send_file(str(file_path), mimetype='text/plain')

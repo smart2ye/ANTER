@@ -43,7 +43,7 @@
     <link href="{{ url_for('static', filename='vendor/cairo/cairo.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.rtl.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/anter-icons.min.css') }}?v=20261031g">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261101a">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261101c">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/stories.css') }}?v=20261019a">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth-buttons.css') }}?v=20261029a">
     <!-- Google Tag Manager -->
@@ -138,7 +138,10 @@
     <div class="anter-marquee" role="status" aria-live="polite" data-announcement>
         <div class="anter-marquee__inner">
             <span class="anter-marquee__text">
-                {% for _a in _anns %}{{ _a|safe }}{% if not loop.last %} <span class="anter-marquee__sep">✦</span> {% endif %}{% endfor %}
+                {% for _a in _anns %}{{ _a|safe }} <span class="anter-marquee__sep">✦</span> {% endfor %}
+            </span>
+            <span class="anter-marquee__text" aria-hidden="true">
+                {% for _a in _anns %}{{ _a|safe }} <span class="anter-marquee__sep">✦</span> {% endfor %}
             </span>
         </div>
     </div>
@@ -277,7 +280,7 @@
 
     <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/anter-guard.js') }}?v=20261031c"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=20261101a"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20261101c"></script>
     <script src="{{ url_for('static', filename='js/stories.js') }}?v=20261019a"></script>
     <script>
         // يحتفظ الخادم بتوقيت موحد (UTC)، بينما يعرض كل جهاز التاريخ والساعة وفق منطقته الزمنية.

@@ -11891,9 +11891,10 @@ a.anter-profile-stat:hover {
     top: 0;
     left: 0;
     white-space: nowrap;
-    animation: anterMarquee 45s linear infinite;
+    animation: anterMarquee 40s linear infinite;
     will-change: transform;
-    padding: 0 1.5rem;
+    display: inline-flex;
+    flex-wrap: nowrap;
 }
 .anter-marquee__text {
     display: inline-block;
@@ -11905,8 +11906,8 @@ a.anter-profile-stat:hover {
     text-shadow: 0 0 6px rgba(0, 200, 248, 0.35);
 }
 @keyframes anterMarquee {
-    0%   { transform: translateX(-100%); }
-    100% { transform: translateX(calc(100vw + 100%)); }
+    0%   { transform: translateX(-50%); }
+    100% { transform: translateX(0); }
 }
 @media (max-width: 576px) {
     .anter-marquee {
@@ -11915,7 +11916,7 @@ a.anter-profile-stat:hover {
         font-size: 0.78rem;
     }
     .anter-marquee__inner {
-        animation-duration: 35s;
+        animation-duration: 40s;
     }
 }
 @media (prefers-reduced-motion: reduce) {

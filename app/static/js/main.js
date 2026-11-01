@@ -2276,3 +2276,40 @@ document.addEventListener('click', function(e) {
         }
     });
 })();
+
+// ============================================================
+// ANTER: سرعة موحدة لشريط الإعلان (بغض النظر عن طول النص)
+// ============================================================
+(function() {
+    'use strict';
+
+    var PIXELS_PER_SECOND = 70;  // سرعة القراءة (قابلة للتعديل)
+
+    function tuneMarquee() {
+        var inner = document.querySelector('.anter-marquee__inner');
+        if (!inner) return;
+        // عرض نسخة واحدة (النصف لأن النص مكرر مرتين)
+        var oneCopyWidth = inner.scrollWidth / 2;
+        if (!oneCopyWidth || oneCopyWidth < 10) return;
+        var duration = Math.max(8, oneCopyWidth / PIXELS_PER_SECOND);
+        inner.style.animationDuration = duration.toFixed(1) + 's';
+    }
+
+    if (document.readyState === 'complete') {
+        tuneMarquee();
+    } else {
+        window.addEventListener('load', tuneMarquee);
+    }
+
+    // إعادة الحساب عند تغيير حجم النافذة (دوران الهاتف مثلًا)
+    var resizeTimer = null;
+    window.addEventListener('resize', function() {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(tuneMarquee, 300);
+    });
+
+    // إعادة الحساب عند تغيير الخط (بعد تحميل Cairo)
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(tuneMarquee);
+    }
+})();

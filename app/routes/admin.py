@@ -918,19 +918,39 @@ def restore_user(user_id):
 @login_required
 @admin_required
 def announcement():
-    """ANTER: إدارة شريط الإعلان (Marquee)."""
-    from app.services.site_settings import get_announcement, save_announcement
+    """ANTER: إدارة إعلانات الشريط المتحرك (متعددة)."""
+    from app.services.site_settings import (
+        save_announcement_item, delete_announcement_item,
+    )
+    from app.models import Announcement
 
     if request.method == 'POST':
-        text = (request.form.get('text') or '').strip()[:500]
-        enabled = request.form.get('enabled') in ('1', 'on', 'true', 'True')
+        action = request.form.get('action', 'save')
         try:
-            save_announcement(text, enabled)
-            flash('تم حفظ الإعلان بنجاح.', 'success')
+            if action == 'delete':
+                item_id = request.form.get('item_id')
+                if item_id and delete_announcement_item(item_id):
+                    flash('تم حذف الإعلان.', 'success')
+                else:
+                    flash('الإعلان غير موجود.', 'warning')
+            else:
+                item_id = request.form.get('item_id') or None
+                text = request.form.get('text') or ''
+                sort_order = request.form.get('sort_order') or 0
+                is_active = request.form.get('is_active') in ('1', 'on', 'true', 'True')
+                if not text.strip():
+                    flash('نص الإعلان مطلوب.', 'danger')
+                else:
+                    save_announcement_item(item_id, text, sort_order, is_active)
+                    flash('تم حفظ الإعلان.', 'success')
         except Exception:
             current_app.logger.exception('announcement save failed')
-            flash('تعذّر حفظ الإعلان. حاول مجددًا.', 'danger')
+            flash('تعذّر الحفظ. حاول مجددًا.', 'danger')
         return redirect(url_for('admin.announcement'))
 
-    current = get_announcement()
-    return render_template('admin/announcement.html', announcement=current)
+    items = (
+        Announcement.query
+        .order_by(Announcement.sort_order.asc(), Announcement.id.asc())
+        .all()
+    )
+    return render_template('admin/announcement.html', items=items)

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block meta_robots %}noindex, nofollow{% endblock %}
 {% block content %}
-<div class="container py-3" style="max-width: 720px;">
+<div class="container py-3" style="max-width: 820px;">
 
     <div class="d-flex align-items-center justify-content-between mb-3">
         <h1 class="h5 fw-bold mb-0">
             <i class="fas fa-bullhorn text-primary"></i>
-            إدارة شريط الإعلان
+            إدارة إعلانات الشريط
         </h1>
         <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">
             <i class="fas fa-arrow-right"></i> رجوع
@@ -19,21 +19,25 @@
       {% endfor %}
     {% endwith %}
 
-    <form method="POST" class="card border-0 shadow-sm p-4" style="border-radius: 16px;">
+    <div class="alert alert-info small mb-3">
+        <i class="fas fa-info-circle me-1"></i>
+        الإعلانات تظهر متسلسلة في شريط واحد، مفصولة بـ ✦. الأقل في <strong>الترتيب</strong> يظهر أولًا.
+    </div>
+
+    <!-- نموذج إضافة/تعديل -->
+    <form method="POST" id="announcementForm" class="card border-0 shadow-sm p-4 mb-3" style="border-radius: 16px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="save">
+        <input type="hidden" name="item_id" id="item_id" value="">
+
+        <h2 class="h6 fw-bold mb-3" id="formTitle">➕ إضافة إعلان جديد</h2>
 
         <div class="mb-3">
             <label for="announcementText" class="form-label fw-semibold">نص الإعلان</label>
             <div class="anter-format-toolbar mb-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-format="strong" title="عريض">
-                    <b>B</b>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-format="em" title="مائل">
-                    <i>I</i>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-format="u" title="تحته خط">
-                    <u>U</u>
-                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-format="strong" title="عريض"><b>B</b></button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-format="em" title="مائل"><i>I</i></button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-format="u" title="تحته خط"><u>U</u></button>
                 <span class="mx-1">|</span>
                 <button type="button" class="btn btn-sm" style="background:#00C8F8;color:#fff;" data-class="c-cyan" title="سيان">سيان</button>
                 <button type="button" class="btn btn-sm" style="background:#FFD700;color:#000;" data-class="c-gold" title="ذهبي">ذهبي</button>
@@ -42,51 +46,78 @@
                 <button type="button" class="btn btn-sm" style="background:#86EFAC;color:#000;" data-class="c-green" title="أخضر">أخضر</button>
                 <button type="button" class="btn btn-sm" style="background:#C4B5FD;color:#000;" data-class="c-purple" title="بنفسجي">بنفسجي</button>
             </div>
-            <textarea
-                id="announcementText"
-                name="text"
-                rows="3"
-                maxlength="500"
-                class="form-control"
-                placeholder="مثال: ✨ أهلاً <strong>بك</strong> في <span class=&quot;c-cyan&quot;>أنتر</span> — نعمل على صيانة دورية. شكرًا لصبرك 💙"
-                required>{{ announcement.text }}</textarea>
-            <small class="text-muted">حتى 500 حرف. يدعم HTML محدود: <code>&lt;strong&gt;</code>، <code>&lt;em&gt;</code>، <code>&lt;u&gt;</code>، <code>&lt;span class="c-cyan"&gt;</code> (أو c-gold/c-white/c-red/c-green/c-purple).</small>
+            <textarea id="announcementText" name="text" rows="2" maxlength="500" class="form-control" required placeholder="مثال: ✨ أهلاً {first_name} في أنتر — صيانة دورية 💙"></textarea>
+            <small class="text-muted">حتى 500 حرف. متغيرات: <code>{name}</code> · <code>{first_name}</code> · <code>{username}</code>.</small>
         </div>
 
-        <div class="form-check form-switch mb-3">
-            <input
-                class="form-check-input"
-                type="checkbox"
-                id="announcementEnabled"
-                name="enabled"
-                value="1"
-                {% if announcement.enabled %}checked{% endif %}>
-            <label class="form-check-label fw-semibold" for="announcementEnabled">
-                إظهار الشريط للمستخدمين
-            </label>
-            <div class="small text-muted">إن أُلغي، يختفي الشريط من كل الصفحات (النص يبقى محفوظًا).</div>
-        </div>
-
-        <div class="alert alert-info small mb-3">
-            <i class="fas fa-info-circle me-1"></i>
-            النص الحالي:
-            {% if announcement.enabled and announcement.text %}
-                <span class="badge bg-success">ظاهر</span>
-            {% else %}
-                <span class="badge bg-secondary">مخفي</span>
-            {% endif %}
-            {% if announcement.text %}<div class="mt-2" style="white-space: pre-wrap;">{{ announcement.text }}</div>{% endif %}
+        <div class="row g-2 mb-3">
+            <div class="col-md-4">
+                <label for="sort_order" class="form-label fw-semibold small">الترتيب</label>
+                <input type="number" id="sort_order" name="sort_order" class="form-control" value="0" step="1">
+            </div>
+            <div class="col-md-8 d-flex align-items-end">
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" checked>
+                    <label class="form-check-label fw-semibold" for="is_active">مفعّل (يظهر للمستخدمين)</label>
+                </div>
+            </div>
         </div>
 
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary fw-bold">
-                <i class="fas fa-save me-1"></i> حفظ
+                <i class="fas fa-save me-1"></i> <span id="submitLabel">إضافة الإعلان</span>
             </button>
-            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary" target="_blank">
+            <button type="button" class="btn btn-outline-secondary d-none" id="cancelEdit">
+                إلغاء التعديل
+            </button>
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary ms-auto" target="_blank">
                 <i class="fas fa-eye me-1"></i> معاينة
             </a>
         </div>
     </form>
+
+    <!-- القائمة -->
+    <div class="card border-0 shadow-sm p-3" style="border-radius: 16px;">
+        <h2 class="h6 fw-bold mb-3">
+            <i class="fas fa-list"></i> الإعلانات الحالية ({{ items|length }})
+        </h2>
+
+        {% if not items %}
+        <p class="text-muted small mb-0">لا توجد إعلانات بعد. أضف أول إعلان من النموذج أعلاه.</p>
+        {% else %}
+        <div class="d-flex flex-column gap-2">
+            {% for item in items %}
+            <div class="d-flex align-items-start gap-2 p-2 rounded-3 border" style="background: {{ 'rgba(0,58,171,0.04)' if item.is_active else 'rgba(0,0,0,0.02)' }};">
+                <div class="flex-grow-1 min-w-0">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge {{ 'bg-success' if item.is_active else 'bg-secondary' }}">{{ 'ظاهر' if item.is_active else 'مخفي' }}</span>
+                        <span class="badge bg-light text-dark">ترتيب: {{ item.sort_order }}</span>
+                    </div>
+                    <div class="small" style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ item.text|safe }}</div>
+                </div>
+                <div class="d-flex gap-1 flex-shrink-0">
+                    <button type="button" class="btn btn-sm btn-outline-primary edit-item"
+                            data-id="{{ item.id }}"
+                            data-text="{{ item.text|e }}"
+                            data-sort="{{ item.sort_order }}"
+                            data-active="{{ '1' if item.is_active else '0' }}"
+                            title="تعديل">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    <form method="POST" class="d-inline" onsubmit="return confirm('حذف هذا الإعلان؟');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
 
 </div>
 
@@ -94,14 +125,19 @@
 (function() {
     'use strict';
     var ta = document.getElementById('announcementText');
-    if (!ta) return;
+    var form = document.getElementById('announcementForm');
+    var itemIdInput = document.getElementById('item_id');
+    var sortInput = document.getElementById('sort_order');
+    var activeInput = document.getElementById('is_active');
+    var formTitle = document.getElementById('formTitle');
+    var submitLabel = document.getElementById('submitLabel');
+    var cancelBtn = document.getElementById('cancelEdit');
 
     function wrap(before, after) {
-        var start = ta.selectionStart;
-        var end = ta.selectionEnd;
+        if (!ta) return;
+        var start = ta.selectionStart, end = ta.selectionEnd;
         var selected = ta.value.substring(start, end) || 'نص';
-        var newValue = ta.value.substring(0, start) + before + selected + after + ta.value.substring(end);
-        ta.value = newValue;
+        ta.value = ta.value.substring(0, start) + before + selected + after + ta.value.substring(end);
         ta.focus();
         ta.setSelectionRange(start + before.length, start + before.length + selected.length);
     }
@@ -112,13 +148,37 @@
             wrap('<' + tag + '>', '</' + tag + '>');
         });
     });
-
     document.querySelectorAll('[data-class]').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var cls = btn.dataset.class;
-            wrap('<span class="' + cls + '">', '</span>');
+            wrap('<span class="' + btn.dataset.class + '">', '</span>');
         });
     });
+
+    function resetForm() {
+        itemIdInput.value = '';
+        ta.value = '';
+        sortInput.value = 0;
+        activeInput.checked = true;
+        formTitle.textContent = '➕ إضافة إعلان جديد';
+        submitLabel.textContent = 'إضافة الإعلان';
+        cancelBtn.classList.add('d-none');
+        ta.focus();
+    }
+
+    document.querySelectorAll('.edit-item').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            itemIdInput.value = btn.dataset.id;
+            ta.value = btn.dataset.text;
+            sortInput.value = btn.dataset.sort;
+            activeInput.checked = btn.dataset.active === '1';
+            formTitle.textContent = '✏️ تعديل الإعلان #' + btn.dataset.id;
+            submitLabel.textContent = 'حفظ التعديل';
+            cancelBtn.classList.remove('d-none');
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    cancelBtn.addEventListener('click', resetForm);
 })();
 </script>
 {% endblock %}

@@ -11994,3 +11994,12 @@ a.anter-profile-stat:hover {
 .anter-marquee .c-red    { color: #FF8A8A; }
 .anter-marquee .c-green  { color: #86EFAC; }
 .anter-marquee .c-purple { color: #C4B5FD; }
+
+/* ANTER: فاصل بين إعلانات الشريط */
+.anter-marquee__sep {
+    color: #FFD700;
+    margin: 0 0.6rem;
+    font-size: 0.9em;
+    opacity: 0.85;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+}

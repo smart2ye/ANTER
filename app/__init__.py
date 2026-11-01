@@ -395,12 +395,19 @@ def create_app(test_config=None):
 
     # ANTER: إعلان الموقع (Marquee) — يُقرأ من قاعدة البيانات
     try:
-        from app.services.site_settings import get_announcement as _get_announcement
+        from app.services.site_settings import (
+            get_announcement as _get_announcement,
+            get_active_announcements as _get_active_announcements,
+        )
         app.add_template_global(_get_announcement, name='get_announcement')
+        app.add_template_global(_get_active_announcements, name='get_active_announcements')
     except Exception:
         def _empty_announcement():
             return {'text': '', 'enabled': False}
+        def _empty_list():
+            return []
         app.add_template_global(_empty_announcement, name='get_announcement')
+        app.add_template_global(_empty_list, name='get_active_announcements')
 
     # ============================================
     # تحديث آخر ظهور للمستخدم عند كل طلب

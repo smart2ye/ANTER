@@ -145,3 +145,54 @@ def save_announcement(text: str, enabled: bool) -> None:
 
 def invalidate_cache() -> None:
     _cache.clear()
+
+
+# ============================================================
+# ANTER: إعلانات الشريط المتحرك (متعددة)
+# ============================================================
+def get_active_announcements():
+    """يعيد قائمة الإعلانات النشطة (مرتبة) كـstrings بعد التنسيق."""
+    try:
+        from app.models import Announcement
+        rows = (
+            Announcement.query
+            .filter(Announcement.is_active.is_(True))
+            .order_by(Announcement.sort_order.asc(), Announcement.id.asc())
+            .all()
+        )
+    except Exception:
+        rows = []
+
+    out = []
+    for row in rows:
+        formatted = _format_text(row.text or '')
+        if formatted:
+            out.append(formatted)
+    return out
+
+
+def save_announcement_item(item_id, text, sort_order, is_active):
+    """يحفظ إعلاناً (جديد أو تعديل). يعيد id."""
+    from app.models import Announcement
+    if item_id:
+        item = Announcement.query.get(int(item_id))
+        if not item:
+            raise ValueError('not found')
+    else:
+        item = Announcement()
+        db.session.add(item)
+    item.text = (text or '').strip()[:500]
+    item.sort_order = int(sort_order or 0)
+    item.is_active = bool(is_active)
+    db.session.commit()
+    return item.id
+
+
+def delete_announcement_item(item_id):
+    from app.models import Announcement
+    item = Announcement.query.get(int(item_id))
+    if not item:
+        return False
+    db.session.delete(item)
+    db.session.commit()
+    return True

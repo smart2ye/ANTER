@@ -40,3 +40,4 @@ from .listing_reaction import ListingReaction
 from .listing_comment import ListingComment
 from .seller_rating import SellerRating, seller_rating_stats
 from .site_setting import SiteSetting
+from .announcement import Announcement

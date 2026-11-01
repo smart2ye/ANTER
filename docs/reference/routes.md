@@ -1,7 +1,7 @@
 # مرجع المسارات (Routes)
 
-**آخر تحديث:** 2026-10-27
-**المجموع:** 242 route · 20 blueprint
+**آخر تحديث:** 2026-11-01
+**المجموع:** 245 route · 20 blueprint
 
 ## admin — `/admin`
 
@@ -9,6 +9,7 @@
 - `POST` `/admin/account-requests/<int:request_id>/email-link` — _admin.py_
 - `POST` `/admin/account-requests/<int:request_id>/password-link` — _admin.py_
 - `POST` `/admin/account-requests/<int:request_id>/reject` — _admin.py_
+- `GET,POST` `/admin/announcement` — _admin.py_
 - `GET` `/admin/messages/<int:message_id>/attachment` — _admin.py_
 - `GET` `/admin/messages/<int:message_id>/audio` — _admin.py_
 - `GET` `/admin/posts` — _admin.py_
@@ -274,6 +275,7 @@
 - `GET,POST` `/users/edit` — _users.py_
 - `POST` `/users/find-friends` — _users.py_
 - `POST` `/users/follow/<int:user_id>` — _users.py_
+- `GET` `/users/invite` — _users.py_
 - `POST` `/users/set-avatar-from-post/<int:post_id>` — _users.py_
 - `GET,POST` `/users/settings` — _users.py_
 - `POST` `/users/settings/bio` — _users.py_
@@ -281,6 +283,7 @@
 - `POST` `/users/settings/email/verify/send` — _users.py_
 - `GET,POST` `/users/settings/phone/verify/<token>` — _users.py_
 - `POST` `/users/unfollow/<int:user_id>` — _users.py_
+- `GET` `/users/verification` — _users.py_
 - `POST` `/users/verification-request` — _users.py_
 
 ## videos — `/videos`

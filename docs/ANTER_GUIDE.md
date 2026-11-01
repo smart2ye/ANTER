@@ -1,225 +1,181 @@
-# 📘 ANTER – الدليل التعريفي الشامل (مع أوامر Termux)
+# 📘 ANTER — الدليل الشامل (Termux + Render + Aiven)
 
-**آخر تحديث:** 2026-09-27
-
----
-
-## 🌐 **ما هي ANTER؟**
-
-**ANTER** هي منصة تواصل اجتماعي عربية حديثة، صُممت لتكون بديلاً عصرياً وآمناً للشبكات الاجتماعية التقليدية. تجمع المنصة بين البساطة والقوة، مع تركيز خاص على الخصوصية، الأداء، وتجربة المستخدم العربية (RTL). تم تطوير ANTER باستخدام **Flask** (Python) وقاعدة بيانات **PostgreSQL** (الإنتاج) و**SQLite** (التطوير)، وهي مصممة للعمل على الهواتف المحمولة عبر **Termux**.
+**آخر تحديث:** 2026-11-01
+**الإنتاج:** https://anter-1.onrender.com
+**المستودع:** https://github.com/smart2ye/ANTER
 
 ---
 
-## 🚀 **الميزات الأساسية**
+## 🌐 ما هي ANTER؟
+
+**ANTER** منصة تواصل اجتماعي عربية حديثة، صُممت لتكون بديلًا عربيًا حقيقيًا للشبكات الاجتماعية التقليدية. تجمع بين البساطة، الخصوصية، والأداء، بواجهة عربية (RTL) كاملة.
+
+- **Backend:** Python 3.14 + Flask 3.1.3 + SQLAlchemy 2.0
+- **قاعدة البيانات:** PostgreSQL (Aiven، البحرين) للإنتاج · SQLite للتطوير
+- **الاستضافة:** Render Free (Oregon)
+- **التطوير:** Termux على Android — بلا كمبيوتر
+
+---
+
+## 🚀 الميزات الأساسية
 
 | الميزة | الوصف |
 |--------|-------|
-| **نظام مستخدمين** | تسجيل، دخول، ملف شخصي، توثيق (علامة زرقاء)، إعدادات خصوصية، سجل نشاط. |
-| **منشورات وتفاعلات** | إنشاء، تعديل، حذف، إعجابات (👍🥰🤣😡😢)، تعليقات متداخلة. |
-| **رسائل خاصة** | محادثات فورية مع إشعارات وحالة قراءة. |
-| **متابعة** | نظام متابعة وإلغاء متابعة مع اقتراحات ذكية. |
-| **إشعارات فورية** | تحديث لحظي عبر Server-Sent Events (SSE). |
-| **فيديوهات وريلزات** | رفع ومشاهدة فيديوهات قصيرة مع صور مصغرة تلقائية. |
-| **لوحة تحكم إدارية** | مسار سري، إدارة المستخدمين، المنشورات، البلاغات. |
-| **تصميم متجاوب** | واجهة عربية (RTL) تعمل على الجوال والكمبيوتر. |
-| **الوضع الليلي** | تجربة مريحة للعينين. |
-| **خوارزميات ذكية** | ترتيب المنشورات حسب التفاعل، اقتراح المستخدمين، وأدوات كتابة عبر mini-llm Arabic. |
-| **تحسين SEO** | Meta Tags، Sitemap، Robots.txt. |
-| **PWA** | دعم تطبيق ويب تقدمي (Manifest، Service Worker، Offline). |
+| **حسابات** | تسجيل، دخول، ملف شخصي، إعدادات خصوصية، سجل نشاط |
+| **منشورات** | إنشاء، تعديل، حذف، صور، اقتباس منشور، جمهور (عام/متابعون/خاص) |
+| **تفاعلات** | إعجابات متعددة (👍🥰🤣😡😢)، تعليقات وردود متداخلة |
+| **ريلز وقصص** | رفع فيديو مع صورة مصغرة، قصص 24 ساعة |
+| **رسائل** | محادثات فورية، تسجيل صوتي، مرفقات، مكالمات WebRTC |
+| **حراج** | سوق بيع/شراء (156 مدينة سعودية + 230 يمنية)، تقييم بائع |
+| **مساعد أنتر** | مساعد ذكي عربي (Groq qwen/qwen3.8-27b) مدمج في المنصة |
+| **إشعارات** | 27+ نوع، فورية عبر SSE + polling كل 3 ثوانٍ |
+| **توثيق** | مسار 7 مهام + إحالة (5 أصدقاء) + مراجعة يدوية → علامة زرقاء |
+| **إحالة** | كود فريد لكل مستخدم، 5 إحالات مؤكدة = توثيق تلقائي |
+| **عقوبات** | تصعيد تلقائي (تحذير → تعليق 24س → 7أ → إشعار مؤسس) |
+| **إدارة** | لوحة تحكم، بلاغات، استعادة حسابات محذوفة، شريط إعلان ديناميكي |
+| **PWA** | Manifest + Service Worker + تثبيت مفتوح (cache فقط) |
 
 ---
 
-## 🛠️ **التقنيات المستخدمة**
+## 🛠️ التقنيات
 
 | الطبقة | التقنية |
 |--------|---------|
-| **الخلفية** | Flask (Python) + SQLAlchemy ORM |
-| **قاعدة البيانات** | PostgreSQL (Aiven) للإنتاج / SQLite للتطوير |
-| **المصادقة** | Flask-Login + Werkzeug |
-| **النماذج** | WTForms + CSRF |
-| **الواجهة** | Bootstrap 5 (RTL) + CSS مخصص |
-| **الأيقونات** | Font Awesome 6 |
-| **الخطوط** | Google Fonts (Cairo, Tajawal) |
-| **التفاعل** | JavaScript (AJAX) |
-| **الإشعارات** | Server-Sent Events (SSE) |
-| **رفع الصور** | Pillow |
-| **الفيديو** | ffmpeg (لإنشاء الصور المصغرة) |
-| **محرك الكتابة العربي** | mini-llm Arabic؛ راجع [الوثيقة التقنية المعتمدة](MINI_LLM_ARABIC.md). |
-| **النشر** | Render (سحابي مجاني) |
+| Backend | Flask 3.1.3 + SQLAlchemy 2.0 + Flask-SQLAlchemy 3.1.1 |
+| المصادقة | Flask-Login + Werkzeug 3.1.8 (scrypt) |
+| النماذج | WTForms + Flask-WTF + CSRF |
+| الواجهة | Bootstrap 5 RTL + CSS مخصص (3 ملفات) |
+| الأيقونات | Font Awesome 6 (subset — 213 أيقونة) |
+| الخط | Cairo (محلي — vendor/cairo) |
+| التفاعل | Vanilla JS + AJAX (3 ملفات) |
+| الإشعارات | SSE + polling (كل 3s) |
+| الصور | Pillow (تحويل WebP، 1600px) |
+| الفيديو | ffmpeg (صور مصغرة) |
+| AI | Groq qwen/qwen3.8-27b |
+| Push | pywebpush + VAPID |
+| البريد | SMTP Gmail + Resend (غير مفعّل) |
+| APK | WebView APK (v1.0.18) — AnterShare + AnterDownload |
+
 
 ---
 
-## 📦 **متطلبات التشغيل**
+## 📦 متطلبات التشغيل
 
-- **Python 3.8+** (يفضل 3.10 أو أحدث)
-- **pip** (مدير حزم Python)
-- **Git** (للاستنساخ)
-- **Termux** (على Android)
-- **اتصال بالإنترنت** (لتحميل المكتبات وللخادم العام)
+- **Python 3.14** (المشروع يعمل على 3.14 — لا 3.8)
+- **Termux** على Android
+- **Git**
+- اتصال إنترنت
 
 ---
 
-## 🔧 **أوامر التثبيت والتشغيل (Termux)**
-
-انسخ الأوامر التالية والصقها في Termux بالترتيب:
+## 🔧 التثبيت (Termux)
 
 ```bash
-# 1. تحديث الحزم الأساسية
 pkg update && pkg upgrade -y
-
-# 2. تثبيت الأدوات اللازمة
 pkg install git python python-pip -y
-
-# 3. استنساخ المشروع من GitHub
 git clone https://github.com/smart2ye/ANTER.git
 cd ANTER
-
-# 4. إنشاء بيئة افتراضية وتفعيلها
-python -m venv venv
-source venv/bin/activate
-
-# 5. تثبيت المتطلبات
+python -m venv venv-termux
+source venv-termux/bin/activate
 pip install -r requirements.txt
-
-# 6. (اختياري) إذا واجهت مشكلة في Pillow، استخدم هذا الأمر
-pip install Pillow --only-binary :all:
-
-# 7. تشغيل التطبيق
-python run.py
 ```
-
-افتح المتصفح على http://localhost:5050 (لاحظ المنفذ 5050).
 
 ---
 
-📂 هيكل المشروع الأساسي
+💻 التشغيل المحلي
+
+الآمن (SQLite إجباريًا — لا يمس Aiven)
+
+```bash
+./run_local.sh
+```
+
+اليدوي
+
+```bash
+source venv-termux/bin/activate
+unset DATABASE_URL
+PORT=5050 python3 run.py
+```
+
+⚠️ لا تشغّل python3 run.py مباشرة بلا unset DATABASE_URL — يتصل بـ Aiven الإنتاجي.
+
+الخلفية والإيقاف
+
+```bash
+nohup ./run_local.sh > ~/anter.log 2>&1 &
+tail -f ~/anter.log
+pkill -f "python3 run.py"
+```
+
+---
+
+🌐 النشر على Render
+
+النشر تلقائي عبر GitHub → Render. ارفع إلى main، Render يبني وينشر.
+
+Procfile
 
 ```
+web: gunicorn --bind 0.0.0.0:$PORT run:app --workers=1 --threads=2 --worker-class=gthread --timeout=120 --max-requests=1000 --max-requests-jitter=100
+```
+
+مهم: Start Command في Render Dashboard يجب أن يكون فارغًا — Procfile يُقرأ تلقائيًا.
+
+متغيرات البيئة (Render)
+
+SECRET_KEY · DATABASE_URL · GROQ_API_KEY · GROQ_MODEL · MAIL_* · WEBRTC_TURN_* · ANTER_ASSISTANT_* · ANTER_APK_*
+
+---
+
+## 📂 البنية
+
+```
+
 ANTER/
-├── app/                     # كود التطبيق الرئيسي
-│   ├── models/              # نماذج قاعدة البيانات
-│   ├── routes/              # مسارات Flask
-│   ├── templates/           # قوالب HTML (Jinja2)
-│   ├── static/              # ملفات ثابتة (CSS, JS, صور)
-│   └── utils/               # دوال مساعدة
-├── instance/                # قاعدة البيانات المحلية (SQLite — للتطوير)
-├── docs/                    # الوثائق (هذا الملف)
-├── requirements.txt         # المكتبات المطلوبة
-├── run.py                   # نقطة الدخول للتشغيل
-└── README.md                # دليل سريع
+├── app/
+│   ├── models/          # 42 موديل
+│   ├── routes/          # 20 blueprint (245 route)
+│   ├── services/        # 25 خدمة
+│   ├── templates/       # 67 قالب
+│   ├── static/          # css, js, img, uploads
+│   ├── forms/           # WTForms
+│   └── utils/           # أدوات مساعدة
+├── instance/anter.db    # SQLite محلي (10 MB)
+├── docs/                # الوثائق
+├── scripts/             # سكربتات صيانة (17)
+├── run.py               # نقطة الدخول
+├── run_local.sh         # تشغيل محلي (SQLite فقط)
+├── Procfile             # أمر التشغيل على Render
+└── requirements.txt
+
 ```
 
 ---
 
-🌐 أوامر النشر على Render (مجاناً)
+## 🧪 أوامر الفحص
 
 ```bash
-# 1. بعد رفع الكود إلى GitHub، افتح Render.com
-# 2. أنشئ Web Service جديد واربطه بالمستودع
-# 3. استخدم الإعدادات التالية:
-#    - Build Command: pip install -r requirements.txt
-#    - Start Command: gunicorn run:app
-# 4. أضف متغيرات البيئة (مثل DATABASE_URL إن وجد)
-# 5. اضغط "Create Web Service"
-```
-
----
-
-📤 أوامر رفع التعديلات إلى GitHub
-
-```bash
-# 1. إضافة جميع التغييرات
-git add .
-
-# 2. إنشاء Commit مع وصف
-git commit -m "وصف التغييرات التي أجريتها"
-
-# 3. رفع إلى GitHub
-git push origin main
-```
-
-ملاحظة: إذا طلب كلمة مرور، استخدم Token وليس كلمة مرور الحساب العادية.
-
----
-
-🧪 أوامر فحص قاعدة البيانات
-
-```bash
-# عرض جميع المستخدمين
 sqlite3 instance/anter.db "SELECT id, username, name, email FROM users;"
-
-# عرض جميع المنشورات
-sqlite3 instance/anter.db "SELECT id, content, author_id, created_at FROM posts ORDER BY created_at DESC;"
-
-# عرض عدد المتابعين لكل مستخدم
-sqlite3 instance/anter.db "SELECT username, (SELECT COUNT(*) FROM follows WHERE followed_id = users.id) AS followers FROM users ORDER BY followers DESC;"
+sqlite3 instance/anter.db "SELECT id, content, author_id FROM posts ORDER BY created_at DESC LIMIT 5;"
 ```
 
 ---
 
-🔑 تغيير كلمة مرور مستخدم (عبر SQLite محليًا)
+🛡️ ملاحظات مهمة
 
-```bash
-python3 -c "
-from werkzeug.security import generate_password_hash
-import sqlite3
-
-username = 'manus_ai'          # غيّر اسم المستخدم حسب الحاجة
-new_password = 'Manus@2026'    # غيّر كلمة المرور
-
-hashed = generate_password_hash(new_password)
-conn = sqlite3.connect('instance/anter.db')
-conn.execute('UPDATE users SET password_hash = ? WHERE username = ?', (hashed, username))
-conn.commit()
-conn.close()
-print(f'✅ تم تغيير كلمة المرور للمستخدم {username} إلى: {new_password}')
-"
-```
-
----
-
-🛠️ إضافة مسار API لعرض المستخدمين (للمشرفين)
-
-أضف هذا الكود في app/routes/main.py:
-
-```python
-@main_bp.route('/api/users')
-@login_required
-def api_users():
-    if not current_user.is_admin:
-        return jsonify({'error': 'غير مصرح'}), 403
-    users = User.query.order_by(User.created_at.desc()).all()
-    return jsonify([{
-        'id': u.id,
-        'username': u.username,
-        'name': u.name,
-        'email': u.email,
-        'created_at': u.created_at.isoformat() if u.created_at else None,
-        'is_verified': u.is_verified,
-        'is_admin': u.is_admin
-    } for u in users])
-```
-
-ثم اختبره عبر:
-
-```
-https://anter-1.onrender.com/api/users
-```
+1. python3 run.py بلا unset DATABASE_URL = اتصال بالإنتاج. استخدم ./run_local.sh دائمًا.
+2. Aiven Free: كل ALTER في transaction مستقلة · TIMESTAMP NULL غير صالح · 5 GB.
+3. Render Free: عامل واحد، 512 MB. Start Command = فارغ.
+4. /health يبقى فوريًا.
+5. fa-*: افحص في subset قبل الاستخدام.
 
 ---
 
 🎯 الخاتمة
 
-ANTER هي منصة متكاملة تجمع بين قوة Flask، ومرونة PostgreSQL، والواجهات العربية. سواء كنت مطوراً تبحث عن مشروع مفتوح المصدر، أو صاحب فكرة تريد بناء شبكة اجتماعية عربية، فإن ANTER توفر لك أساساً قوياً وقابلاً للتوسع.
+ANTER منصة متكاملة: Flask + PostgreSQL + واجهة عربية RTL. تُبنى يوميًا من Termux.
 
-روابط مفيدة:
-
-· المنصة الحية: https://anter-1.onrender.com
+· المنصة: https://anter-1.onrender.com
 · المستودع: https://github.com/smart2ye/ANTER
-
----
-
-شكراً لاستخدامك ANTER! 🌟
-نبني معاً مستقبل التواصل الاجتماعي العربي. 🚀💙
-
-آخر تحديث: 2026-09-27
+· APK: https://github.com/smart2ye/anter-webview-apk/releases/latest/download/ANTER_app.apk

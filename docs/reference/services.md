@@ -1,7 +1,7 @@
 # مرجع الخدمات (Services)
 
-**آخر تحديث:** 2026-10-27
-**المجموع:** 22 خدمة
+**آخر تحديث:** 2026-11-01
+**المجموع:** 25 خدمة
 
 ## account_vault.py
 
@@ -210,11 +210,45 @@
 - `_score_video()`
 - `rank_reels()`
 
+## referral.py
+
+**دوال مستقلة:**
+- `_generate_code()`
+- `get_or_create_referral_code()`
+- `find_by_code()`
+- `credit_referral_if_verified()`
+
+## site_settings.py
+
+**دوال مستقلة:**
+- `_get()`
+- `_set()`
+- `_sanitize_html()`
+- `_format_text()`
+- `get_announcement()`
+- `save_announcement()`
+- `invalidate_cache()`
+
 ## startup_maintenance.py
 
 **دوال مستقلة:**
 - `should_run_schema_upgrades()`
 - `run_startup_schema_upgrades()`
+
+## verification_progress.py
+
+**دوال مستقلة:**
+- `_is_default_avatar()`
+- `_count_consecutive_days()`
+- `_count_valid_followers()`
+- `_count_posts()`
+- `_count_stories()`
+- `_count_comments_on_others()`
+- `_is_profile_complete()`
+- `_is_account_safe()`
+- `compute_progress()`
+- `grant_verification()`
+- `maybe_grant_progress_verification()`
 
 ## year_card.py
 

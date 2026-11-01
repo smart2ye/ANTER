@@ -1,7 +1,7 @@
 # مرجع القوالب (Templates)
 
-**آخر تحديث:** 2026-10-27
-**المجموع:** 64 قالب
+**آخر تحديث:** 2026-11-01
+**المجموع:** 67 قالب
 
 | المسار | يمتد من |
 |---|---|
@@ -13,6 +13,7 @@
 | `about.html` | base.html |
 | `activity_log.html` | base.html |
 | `admin/_navigation.html` | — |
+| `admin/announcement.html` | base.html |
 | `admin/dashboard.html` | base.html |
 | `admin/post_detail.html` | base.html |
 | `admin/posts.html` | base.html |
@@ -47,6 +48,7 @@
 | `haraj/terms.html` | base.html |
 | `help.html` | base.html |
 | `index.html` | base.html |
+| `invite.html` | base.html |
 | `landing.html` | base.html |
 | `messages/_message.html` | — |
 | `messages/chat.html` | base.html |
@@ -64,6 +66,7 @@
 | `settings.html` | base.html |
 | `terms.html` | base.html |
 | `trends/index.html` | base.html |
+| `verification_progress.html` | base.html |
 | `videos/_reel_grid.html` | — |
 | `videos/_reel_stream.html` | — |
 | `videos/reels.html` | base.html |

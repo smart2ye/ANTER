@@ -1,7 +1,7 @@
 # مرجع النماذج (Models)
 
-**آخر تحديث:** 2026-10-27
-**المجموع:** 41 موديل
+**آخر تحديث:** 2026-11-01
+**المجموع:** 42 موديل
 
 ## AssistantDailyPublication
 
@@ -404,6 +404,7 @@
 | `moderation_reason` | VARCHAR(500) | ✓ |  |
 | `moderation_at` | DATETIME | ✓ |  |
 | `shared_video_id` | INTEGER | ✓ |  |
+| `quoted_post_id` | INTEGER | ✓ |  |
 
 ## PostHashtag
 
@@ -480,6 +481,18 @@
 | `rating` | SMALLINT |  |  |
 | `comment` | TEXT | ✓ |  |
 | `created_at` | DATETIME | ✓ |  |
+
+## SiteSetting
+
+- **الجدول:** `site_settings`
+- **الملف:** `site_setting.py`
+
+| العمود | النوع | Nullable | PK |
+|---|---|---|---|
+| `id` | INTEGER | ✓ | ✓ |
+| `key` | VARCHAR(80) |  |  |
+| `value` | TEXT |  |  |
+| `updated_at` | TIMESTAMP | ✓ |  |
 
 ## Story
 
@@ -584,6 +597,12 @@
 | `terms_agreed` | BOOLEAN | ✓ |  |
 | `is_deleted` | BOOLEAN |  |  |
 | `deleted_at` | DATETIME | ✓ |  |
+| `referral_code` | VARCHAR(12) | ✓ |  |
+| `referred_by_id` | INTEGER | ✓ |  |
+| `referral_count` | INTEGER |  |  |
+| `referral_credited` | BOOLEAN |  |  |
+| `verification_source` | VARCHAR(20) | ✓ |  |
+| `verification_locked` | BOOLEAN |  |  |
 
 ## UserActivity
 

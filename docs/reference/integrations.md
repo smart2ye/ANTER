@@ -1,6 +1,6 @@
 # مرجع التكاملات الخارجية
 
-**آخر تحديث:** 2026-09-27
+**آخر تحديث:** 2026-11-01
 
 ## قواعد البيانات
 
@@ -66,8 +66,8 @@
 - smart2ye/anter-twa — تجربة TWA (مهجورة)
 
 ### Releases
-- APK الأخير: v1.0.7 (ANTER_app.apk)
-- الرابط: https://github.com/smart2ye/anter-webview-apk/releases/download/v1.0.7/ANTER_app.apk
+- APK الأخير: v1.0.18 (ANTER_app.apk)
+- الرابط: https://github.com/smart2ye/anter-webview-apk/releases/latest/download/ANTER_app.apk
 
 ## متغيرات البيئة الكاملة
 - SECRET_KEY — Flask sessions

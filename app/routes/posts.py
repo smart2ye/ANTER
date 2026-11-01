@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from app import db, csrf
 from app.models import Post, Comment, CommentLike, Like, Notification, User, Report, Repost, HiddenPost, Hashtag, post_hashtag, Video
 from app.forms.post import PostForm
-from app.utils.helpers import extract_hashtags, allowed_audio_file, verify_audio_magic, extract_link_metadata as extract_safe_link_metadata, log_user_activity, save_video_file, create_thumbnail, allowed_video_file
+from app.utils.helpers import extract_hashtags, allowed_audio_file, verify_audio_magic, extract_link_metadata as extract_safe_link_metadata, log_user_activity, allowed_video_file
 from app.utils.image_storage import prepare_image_data
 from app.services.anter_user_messages import send_report_receipt
 from app.services.privacy import POST_VISIBILITIES, can_view_post
@@ -714,20 +714,50 @@ def create():
                     )
                     return redirect(url_for('posts.create'))
 
-                video_path = save_video_file(media_file, is_reel=True)
-                if not video_path:
+                # ANTER: حفظ الفيديو كـBLOB مباشرة من stream
+                from app.utils.helpers import save_video_bytes, save_thumbnail_bytes, create_thumbnail_from_path
+
+                video_bytes, video_mime, video_path = save_video_bytes(media_file, is_reel=True)
+                if not video_bytes:
                     flash('فشل في حفظ الفيديو. تأكد من الصيغة والحجم.', 'danger')
                     return redirect(url_for('posts.create'))
 
-                thumbnail_path = create_thumbnail(video_path, is_reel=True)
+                thumb_bytes = None
+                thumb_mime = None
+                thumbnail_path = 'default_thumb.png'
+
+                # توليد صورة مصغرة من الفيديو (ffmpeg) عبر ملف مؤقت
+                import tempfile as _tmp
+                try:
+                    with _tmp.NamedTemporaryFile(suffix='.mp4', delete=False) as tmp:
+                        tmp.write(video_bytes)
+                        tmp_path = tmp.name
+                    try:
+                        generated = create_thumbnail_from_path(tmp_path)
+                        if generated:
+                            with open(generated, 'rb') as f:
+                                thumb_bytes = f.read()
+                            thumb_mime = 'image/jpeg'
+                            thumbnail_path = f'thumbnails/{video_path.split("/")[-1].rsplit(".",1)[0]}_thumb.jpg'
+                            import os as _os
+                            _os.unlink(generated)
+                    finally:
+                        import os as _os
+                        _os.unlink(tmp_path)
+                except Exception as _e:
+                    current_app.logger.warning(f'post video thumb failed: {_e}')
 
                 video = Video(
                     title=content[:200] or 'ريل جديد',
                     description=content,
                     file_path=video_path,
-                    thumbnail_path=thumbnail_path or 'default_thumb.png',
+                    thumbnail_path=thumbnail_path,
                     is_reel=True,
                     author_id=current_user.id,
+                    video_data=video_bytes,
+                    video_mime=video_mime,
+                    thumbnail_data=thumb_bytes,
+                    thumbnail_mime=thumb_mime,
                 )
                 db.session.add(video)
                 db.session.flush()

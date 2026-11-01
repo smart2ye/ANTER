@@ -543,3 +543,85 @@ def render_rich_text(content):
 
     return Markup(''.join(out))
 
+
+
+def save_video_bytes(file, is_reel=False):
+    """ANTER: يقرأ الفيديو من stream مباشرة ويحفظه كـBLOB.
+
+    يعيد (bytes, mime, fake_path) أو (None, None, '') عند الفشل.
+    لا يكتب على القرص — يحفظ كل شيء في قاعدة البيانات.
+    """
+    import uuid as _uuid
+    if not file or not hasattr(file, 'filename') or not file.filename:
+        return None, None, ''
+    if not allowed_video_file(file.filename):
+        return None, None, ''
+
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    mime_map = {
+        'mp4': 'video/mp4', 'webm': 'video/webm', 'mov': 'video/quicktime',
+        'avi': 'video/x-msvideo', 'mkv': 'video/x-matroska',
+    }
+    mime = mime_map.get(ext, 'video/mp4')
+
+    try:
+        file.stream.seek(0)
+        data = file.stream.read()
+    except Exception:
+        return None, None, ''
+
+    if not data:
+        return None, None, ''
+
+    subfolder = 'reels' if is_reel else 'videos'
+    fake_path = f"{subfolder}/{_uuid.uuid4()}.{ext}"
+    return data, mime, fake_path
+
+
+def save_thumbnail_bytes(file):
+    """ANTER: يقرأ صورة مصغرة من stream ويحفظها كـBLOB.
+
+    يعيد (bytes, mime) أو (None, None).
+    """
+    if not file or not hasattr(file, 'filename') or not file.filename:
+        return None, None
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    mime_map = {
+        'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png',
+        'webp': 'image/webp', 'gif': 'image/gif',
+    }
+    mime = mime_map.get(ext)
+    if not mime:
+        return None, None
+    try:
+        file.stream.seek(0)
+        data = file.stream.read()
+    except Exception:
+        return None, None
+    if not data:
+        return None, None
+    return data, mime
+
+
+def create_thumbnail_from_path(video_full_path, output_dir=None):
+    """ANTER: يولّد صورة مصغّرة من مسار فيديو (بلا قرص دائم).
+
+    يعيد مسار الملف المؤقت أو ''.
+    """
+    import tempfile as _tempfile
+    if not video_full_path or not os.path.exists(video_full_path):
+        return ''
+    try:
+        if not output_dir:
+            output_dir = _tempfile.mkdtemp(prefix='anter_thumb_')
+        thumb_name = str(uuid.uuid4()) + '.jpg'
+        thumb_path = os.path.join(output_dir, thumb_name)
+        cmd = ['ffmpeg', '-i', video_full_path, '-ss', '00:00:01',
+               '-vframes', '1', '-q:v', '2', thumb_path]
+        subprocess.run(cmd, stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL, check=False)
+        if os.path.exists(thumb_path):
+            return thumb_path
+        return ''
+    except Exception:
+        return ''

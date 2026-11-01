@@ -2,7 +2,7 @@ from flask import Blueprint, current_app, render_template, request, redirect, ur
 from flask_login import login_required, current_user
 from app.extensions import db, csrf
 from app.models import Video, VideoLike, VideoComment, VideoCommentLike, Notification, Report, Follow, UserBlock, User
-from app.utils.helpers import save_video_file, create_thumbnail, log_user_activity
+from app.utils.helpers import create_thumbnail_from_path, log_user_activity
 from app.utils.media_urls import avatar_url
 
 videos_bp = Blueprint('videos', __name__, url_prefix='/videos')
@@ -83,47 +83,44 @@ def upload():
             flash(f'حجم فيديو الريلز أكبر من الحد المسموح ({max_video_mb} MB). اضغط الفيديو ثم أعد المحاولة.', 'danger')
             return redirect(url_for('videos.upload'))
 
-        video_path = save_video_file(video_file, is_reel)
-        if not video_path:
+        # ANTER: حفظ الفيديو كـBLOB مباشرة من stream (بلا قرص)
+        from app.utils.helpers import save_video_bytes, save_thumbnail_bytes
+
+        video_bytes, video_mime, video_path = save_video_bytes(video_file, is_reel)
+        if not video_bytes:
             flash('فشل في حفظ الفيديو. تأكد من الصيغة والحجم.', 'danger')
             return redirect(url_for('videos.upload'))
 
-        thumbnail_path = ''
-        if thumbnail_file and thumbnail_file.filename:
-            from app.utils.helpers import save_uploaded_image
-            thumbnail_path = save_uploaded_image(thumbnail_file, 'thumbnails')
-        else:
-            thumbnail_path = create_thumbnail(video_path, is_reel)
-
-        # ANTER: نقرأ الملفات من القرص ونحفظها في قاعدة البيانات (تخزين دائم)
-        video_bytes = None
+        # الصورة المصغرة: من ملف المستخدم أو من الفيديو
         thumb_bytes = None
+        thumb_mime = None
+        thumbnail_path = 'default_thumb.png'
 
-        try:
-            from pathlib import Path
-            uploads_root = Path(current_app.root_path) / 'static' / 'uploads'
-            disk_video = uploads_root / video_path
-            if disk_video.exists():
-                video_bytes = disk_video.read_bytes()
-        except Exception as e:
-            current_app.logger.warning(f'تعذر قراءة الفيديو من القرص: {e}')
-
-        try:
-            if thumbnail_path and thumbnail_path != 'default_thumb.png':
-                from pathlib import Path
-                uploads_root = Path(current_app.root_path) / 'static' / 'uploads'
-                disk_thumb = uploads_root / thumbnail_path
-                if disk_thumb.exists():
-                    thumb_bytes = disk_thumb.read_bytes()
-        except Exception as e:
-            current_app.logger.warning(f'تعذر قراءة الصورة المصغرة: {e}')
-
-        # تحديد mime الصحيح
-        video_ext = (video_path or '').rsplit('.', 1)[-1].lower()
-        video_mime = {'mp4': 'video/mp4', 'webm': 'video/webm', 'mov': 'video/quicktime', 'avi': 'video/x-msvideo', 'mkv': 'video/x-matroska'}.get(video_ext, 'video/mp4')
-
-        thumb_ext = (thumbnail_path or '').rsplit('.', 1)[-1].lower()
-        thumb_mime = {'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'webp': 'image/webp', 'gif': 'image/gif'}.get(thumb_ext, 'image/jpeg')
+        if thumbnail_file and thumbnail_file.filename:
+            thumb_bytes, thumb_mime = save_thumbnail_bytes(thumbnail_file)
+            if thumb_bytes:
+                thumbnail_path = f'thumbnails/{video_path.split("/")[-1].rsplit(".",1)[0]}_thumb.jpg'
+        else:
+            # توليد من الفيديو (ffmpeg) — يتطلب ملفًا على القرص مؤقتًا
+            import tempfile
+            try:
+                with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as tmp:
+                    tmp.write(video_bytes)
+                    tmp_path = tmp.name
+                try:
+                    generated = create_thumbnail_from_path(tmp_path)
+                    if generated:
+                        with open(generated, 'rb') as f:
+                            thumb_bytes = f.read()
+                        thumb_mime = 'image/jpeg'
+                        thumbnail_path = f'thumbnails/{video_path.split("/")[-1].rsplit(".",1)[0]}_thumb.jpg'
+                        import os as _os
+                        _os.unlink(generated)
+                finally:
+                    import os as _os
+                    _os.unlink(tmp_path)
+            except Exception as e:
+                current_app.logger.warning(f'thumbnail generation failed: {e}')
 
         video = Video(
             title=description,

@@ -2183,64 +2183,12 @@ document.addEventListener('click', function(e) {
 })();
 
 // ============================================================
-// ANTER: اقتباس منشور — زر + معاينة
+// ANTER: اقتباس منشور — معاينة (يُدار من نافذة المشاركة)
 // ============================================================
 (function() {
     'use strict';
 
-    // 1. زر "اقتباس" في بطاقة المنشور
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.quote-btn');
-        if (!btn) return;
-        e.preventDefault();
-        e.stopPropagation();
-
-        var composer = document.getElementById('anterComposer');
-        var hidden = document.getElementById('anterQuotedPostId');
-        var preview = document.getElementById('anterQuotePreview');
-        var body = document.getElementById('anterQuotePreviewBody');
-        var textarea = document.getElementById('anterPostContent');
-
-        if (!composer || !hidden || !preview || !body) return;
-
-        // إن كان المستخدم في صفحة داخلية (post_detail مثلاً)، ننتقل للرئيسية
-        if (!document.getElementById('anterComposer')) {
-            window.location.href = '/?quote=' + encodeURIComponent(btn.dataset.quoteId);
-            return;
-        }
-
-        hidden.value = btn.dataset.quoteId;
-
-        var content = (btn.dataset.quoteContent || '').trim();
-        var imageUrl = (btn.dataset.quoteImage || '').trim();
-        var authorName = (btn.dataset.quoteAuthor || '').trim();
-        var authorAvatar = (btn.dataset.quoteAvatar || '').trim();
-
-        var html = '<div class="quote-preview-author">' +
-            (authorAvatar ? '<img src="' + authorAvatar + '" alt="" class="quote-preview-avatar">' : '') +
-            '<strong>' + escapeHtml(authorName) + '</strong>' +
-            '</div>';
-        if (content) {
-            html += '<p class="quote-preview-text">' + escapeHtml(content) + '</p>';
-        }
-        if (imageUrl) {
-            html += '<img src="' + imageUrl + '" alt="" class="quote-preview-image">';
-        }
-        body.innerHTML = html;
-        preview.hidden = false;
-
-        // التمرير إلى الكومبوزر
-        composer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        if (textarea) setTimeout(function () { textarea.focus(); }, 350);
-    });
-
-    function escapeHtml(s) {
-        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
-        });
-    }
-
-    // 2. زر إلغاء الاقتباس
+    // زر إلغاء الاقتباس
     document.addEventListener('click', function (e) {
         if (!e.target.closest('#anterQuoteRemove')) return;
         e.preventDefault();
@@ -2250,18 +2198,25 @@ document.addEventListener('click', function(e) {
         if (preview) preview.hidden = true;
     });
 
-    // 3. حفظ مسودة الاقتباس عند إعادة التحميل (sessionStorage)
+    // دعم ?quote=ID — يفتح الاقتباس تلقائيًا
     document.addEventListener('DOMContentLoaded', function () {
-        var hidden = document.getElementById('anterQuotedPostId');
         var url = new URL(window.location.href);
         var qid = url.searchParams.get('quote');
-        if (qid && hidden && !hidden.value) {
-            // يُعالج بعد تحميل البطاقات — ننتظر 200ms
-            setTimeout(function () {
-                var fakeBtn = document.querySelector('.quote-btn[data-quote-id="' + qid + '"]');
-                if (fakeBtn) fakeBtn.click();
-            }, 300);
-        }
+        if (!qid) return;
+
+        setTimeout(function () {
+            if (!window.__anterTriggerQuote) return;
+            var btn = document.querySelector('.share-btn[data-quote-id="' + qid + '"]');
+            if (!btn) return;
+            window.__anterTriggerQuote({
+                id: btn.dataset.quoteId,
+                url: btn.dataset.quoteUrl,
+                author: btn.dataset.quoteAuthor,
+                avatar: btn.dataset.quoteAvatar,
+                content: btn.dataset.quoteContent,
+                image: btn.dataset.quoteImage
+            });
+        }, 400);
     });
 })();
 

@@ -375,25 +375,17 @@
                 data-share-url="{{ post_url }}"
                 data-public-id="{{ post.public_id }}"
                 data-share-title="{{ (post.content|truncate(60, True, '…')) if post.content else 'منشور' }}"
-                aria-label="مشاركة المنشور" title="مشاركة المنشور">
-            <i class="fas fa-share-alt"></i>
-            <span>مشاركة</span>
-        </button>
-
-        <!-- زر اقتباس المنشور -->
-        {% if current_user.is_authenticated and current_user.id != post.author_id and post.author_id != current_user.id %}
-        <button type="button" class="action-btn quote-btn"
                 data-quote-id="{{ post.id }}"
                 data-quote-url="{{ post_url }}"
                 data-quote-author="{{ post.author.name or post.author.username }}"
                 data-quote-avatar="{{ avatar_url(post.author) }}"
                 data-quote-content="{{ (post.content|truncate(140, True, '…')) if post.content else '' }}"
                 data-quote-image="{{ post_image_url(post) if (post.image_mime or post.image) else '' }}"
-                aria-label="اقتباس المنشور" title="اقتباس المنشور">
-            <i class="fas fa-quote-right"></i>
-            <span>اقتباس</span>
+                data-can-quote="{{ 'true' if (current_user.is_authenticated and current_user.id != post.author_id) else 'false' }}"
+                aria-label="مشاركة المنشور" title="مشاركة المنشور">
+            <i class="fas fa-share-alt"></i>
+            <span>مشاركة</span>
         </button>
-        {% endif %}
     </div>
 
     <!-- تُحمّل التعليقات عند فتحها لتفادي استعلامات متكررة لكل بطاقة في الخلاصة. -->

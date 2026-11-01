@@ -337,6 +337,19 @@
 
             <button type="button"
                     class="anter-share-option"
+                    id="anterPostQuoteBtn">
+                <span class="anter-share-option-icon">
+                    <i class="fas fa-quote-right" aria-hidden="true"></i>
+                </span>
+                <span class="anter-share-option-copy">
+                    <strong>اقتباس المنشور</strong>
+                    <small>أضف تعليقك مع المنشور الأصلي</small>
+                </span>
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+
+            <button type="button"
+                    class="anter-share-option"
                     id="anterPostSendFriendBtn">
                 <span class="anter-share-option-icon">
                     <i class="fas fa-paper-plane" aria-hidden="true"></i>
@@ -454,6 +467,55 @@ document.addEventListener('DOMContentLoaded', function() {
     var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
     var shareModal = document.getElementById('anterPostShareModal');
+    var quoteBtnEl = document.getElementById('anterPostQuoteBtn');
+
+    if (quoteBtnEl) {
+        quoteBtnEl.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!activeQuoteData) return;
+            closeShareModal();
+            triggerQuote(activeQuoteData);
+        });
+    }
+
+    window.__anterTriggerQuote = triggerQuote;
+
+    function triggerQuote(data) {
+        var composer = document.getElementById('anterComposer');
+        if (!composer) {
+            window.location.href = '/?quote=' + encodeURIComponent(data.id);
+            return;
+        }
+        var hidden = document.getElementById('anterQuotedPostId');
+        var preview = document.getElementById('anterQuotePreview');
+        var body = document.getElementById('anterQuotePreviewBody');
+        var textarea = document.getElementById('anterPostContent');
+        if (!hidden || !preview || !body) return;
+
+        hidden.value = data.id;
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+            });
+        }
+
+        var html = '<div class="quote-preview-author">' +
+            (data.avatar ? '<img src="' + data.avatar + '" alt="" class="quote-preview-avatar">' : '') +
+            '<strong>' + esc(data.author) + '</strong>' +
+            '</div>';
+        if (data.content) {
+            html += '<p class="quote-preview-text">' + esc(data.content) + '</p>';
+        }
+        if (data.image) {
+            html += '<img src="' + data.image + '" alt="" class="quote-preview-image">';
+        }
+        body.innerHTML = html;
+        preview.hidden = false;
+
+        composer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (textarea) setTimeout(function () { textarea.focus(); }, 350);
+    }
     var friendModal = document.getElementById('anterPostFriendModal');
     var friendSearch = document.getElementById('anterPostFriendSearch');
     var friendList = document.getElementById('anterPostFriendList');
@@ -462,10 +524,29 @@ document.addEventListener('DOMContentLoaded', function() {
     var activeShareUrl = null;
     var activeShareTitle = 'منشور';
 
+    var activeQuoteData = null;
+
     function openShareModal(btn) {
         activePostId = btn.dataset.post || null;
         activeShareUrl = btn.dataset.shareUrl || null;
         activeShareTitle = btn.dataset.shareTitle || 'منشور';
+
+        var canQuote = btn.dataset.canQuote === 'true';
+        activeQuoteData = canQuote ? {
+            id: btn.dataset.quoteId,
+            url: btn.dataset.quoteUrl,
+            author: btn.dataset.quoteAuthor,
+            avatar: btn.dataset.quoteAvatar,
+            content: btn.dataset.quoteContent,
+            image: btn.dataset.quoteImage
+        } : null;
+
+        // إظهار/إخفاء خيار الاقتباس
+        var quoteBtn = document.getElementById('anterPostQuoteBtn');
+        if (quoteBtn) {
+            quoteBtn.style.display = activeQuoteData ? '' : 'none';
+        }
+
         if (!activePostId || !activeShareUrl) return;
         shareModal.classList.add('is-open');
         shareModal.setAttribute('aria-hidden', 'false');

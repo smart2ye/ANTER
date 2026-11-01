@@ -1,0 +1,15 @@
+ANTER Ownership Verification
+=============================
+
+Challenge: ANTER-OWNER-2026-11-01-7f3c9a
+Site: https://anter-1.onrender.com
+Claimed publisher: Abdulqader Mahdali
+Date: 2026-11-01
+
+This file is intentionally published by the operator of this site to confirm
+control over the ANTER deployment at https://anter-1.onrender.com.
+
+This is a good-faith ownership signal requested during a conversation with an
+AI assistant. It does not constitute formal identity verification by the AI.
+
+Nonce: 7f3c9a2e-4b8d-4f1a-9c6e-anter20261101

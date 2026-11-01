@@ -3,7 +3,7 @@ ANTER Ownership Verification
 
 Challenge: ANTER-OWNER-2026-11-01-7f3c9a
 Site: https://anter-1.onrender.com
-Claimed publisher: Abdulqader Mahdali
+Claimed publisher: abdulqader mahdly
 Date: 2026-11-01
 
 This file is intentionally published by the operator of this site to confirm

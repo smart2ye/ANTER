@@ -302,6 +302,15 @@ def index():
     except Exception:
         feed_reels = []
 
+    # ANTER: ريلز مفقودة (video_data=NULL) — لعرض حالة بدل صورة مكسورة
+    unavailable_ids = set()
+    try:
+        from app.models import Video as _Video
+        rows = db.session.query(_Video.public_id).filter(_Video.video_data.is_(None)).all()
+        unavailable_ids = {r[0] for r in rows}
+    except Exception:
+        unavailable_ids = set()
+
     # ANTER: قائمة الأصدقاء لنافذة مشاركة المنشور (نفس منطق videos.reels).
     share_users = []
     try:
@@ -355,6 +364,7 @@ def index():
         posts=all_posts[:page_size],
         suggested_posts=top_suggested,
         feed_reels=feed_reels,
+        unavailable_ids=unavailable_ids,
         share_users=share_users,
         onboarding_users=onboarding_users,
         follow_suggestions=follow_suggestions,

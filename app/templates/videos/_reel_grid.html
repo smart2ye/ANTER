@@ -1,16 +1,26 @@
 {% if videos %}
 <div class="reels-grid" role="list" aria-label="ريلزات ANTER">
     {% for video in videos %}
+    {% set _is_broken = unavailable_ids is defined and unavailable_ids and video.public_id in unavailable_ids %}
     <article class="reel-card" role="listitem">
         <a href="{{ url_for('videos.watch', public_id=video.public_id) }}"
-           class="reel-card-link"
-           aria-label="تشغيل ريل: {{ video.title or 'فيديو بدون عنوان' }}">
+           class="reel-card-link{% if _is_broken %} reel-card-link--unavailable{% endif %}"
+           aria-label="{{ 'ريل غير متاح' if _is_broken else 'تشغيل ريل: ' + (video.title or 'فيديو بدون عنوان') }}">
             <div class="reel-card-media">
+                {% if _is_broken %}
+                <div class="reel-card-unavailable">
+                    <div class="reel-card-unavailable__icon">
+                        <i class="fas fa-video-slash" aria-hidden="true"></i>
+                    </div>
+                    <span class="reel-card-unavailable__label">غير متاح</span>
+                </div>
+                {% else %}
                 <img src="{{ url_for('media.video_thumbnail', public_id=video.public_id) }}"
                      alt="صورة معاينة ريل {{ video.title or '' }}"
                      loading="lazy"
                      decoding="async">
                 <span class="reel-play-badge" aria-hidden="true"><i class="fas fa-play"></i></span>
+                {% endif %}
                 <span class="reel-duration" aria-label="ريل عمودي"><i class="fas fa-film"></i> ريل</span>
                 <div class="reel-card-gradient"></div>
                 <div class="reel-card-copy">

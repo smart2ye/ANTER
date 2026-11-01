@@ -12058,3 +12058,48 @@ a.anter-profile-stat:hover {
     .reel-unavailable__title { font-size: 1.05rem; }
     .reel-unavailable__text { font-size: 0.85rem; }
 }
+
+/* ============================================================
+   ANTER: بطاقة ريل غير متاح (شبكة الفيد)
+   ============================================================ */
+.reel-card-unavailable {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background:
+        radial-gradient(circle at 50% 40%, rgba(109, 40, 217, 0.18), transparent 60%),
+        linear-gradient(180deg, #101114 0%, #08090b 100%);
+    color: rgba(255, 255, 255, 0.7);
+}
+.reel-card-unavailable__icon {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 1.4rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+.reel-card-unavailable__label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.85);
+}
+.reel-card-link--unavailable {
+    cursor: pointer;
+    opacity: 0.85;
+}
+.reel-card-link--unavailable:hover {
+    opacity: 1;
+}
+@media (max-width: 576px) {
+    .reel-card-unavailable__icon { width: 48px; height: 48px; font-size: 1.2rem; }
+    .reel-card-unavailable__label { font-size: 0.72rem; }
+}

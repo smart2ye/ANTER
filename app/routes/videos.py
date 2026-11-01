@@ -7,6 +7,20 @@ from app.utils.media_urls import avatar_url
 
 videos_bp = Blueprint('videos', __name__, url_prefix='/videos')
 
+
+def _unavailable_reel_ids():
+    """ANTER: قائمة public_id للريلز التي فقدت video_data (بلا تحميل BLOB)."""
+    try:
+        rows = (
+            db.session.query(Video.public_id)
+            .filter(Video.video_data.is_(None))
+            .all()
+        )
+        return {r[0] for r in rows}
+    except Exception:
+        return set()
+
+
 @videos_bp.route('/reels')
 def reels():
     """صفحة الريلز العامة — تعمل للزوار والمستخدمين المسجّلين.
@@ -14,6 +28,7 @@ def reels():
     الزوار يشاهدون الريلز بدون تسجيل. الإعجاب/التعليق/المشاركة تتطلب تسجيل الدخول.
     """
     videos = Video.query.filter_by(is_reel=True).order_by(Video.created_at.desc()).all()
+    unavailable_ids = _unavailable_reel_ids()
 
     share_users = []
     if current_user.is_authenticated:
@@ -50,6 +65,7 @@ def reels():
         'videos/reels.html',
         videos=videos,
         share_users=share_users,
+        unavailable_ids=unavailable_ids,
     )
 
 @videos_bp.route('/upload', methods=['GET', 'POST'])
@@ -179,6 +195,7 @@ def watch(public_id):
     db.session.commit()
 
     stream_videos = [video]
+    unavailable_ids = _unavailable_reel_ids()
 
     if current_user.is_authenticated:
         # ANTER: بعد الريل المضغوط، نكمل بنفس خوارزمية reels_ranker
@@ -213,6 +230,7 @@ def watch(public_id):
         videos=stream_videos,
         comments=comments,
         focused_video=video,
+        unavailable_ids=unavailable_ids,
     )
 
 @videos_bp.route('/like/<int:video_id>', methods=['POST'])

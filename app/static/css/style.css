@@ -12004,3 +12004,57 @@ a.anter-profile-stat:hover {
     opacity: 0.85;
     text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
 }
+
+/* ============================================================
+   ANTER: ريل غير متاح (فيديو مفقود)
+   ============================================================ */
+.reel-unavailable {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 32px 24px;
+    text-align: center;
+    background:
+        radial-gradient(circle at 50% 30%, rgba(109, 40, 217, 0.18), transparent 60%),
+        linear-gradient(180deg, #08090b 0%, #14151a 100%);
+    color: #fff;
+    direction: rtl;
+}
+.reel-unavailable__icon {
+    width: 84px;
+    height: 84px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #9ca3af;
+    font-size: 2rem;
+    margin-bottom: 4px;
+}
+.reel-unavailable__title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #fff;
+}
+.reel-unavailable__text {
+    margin: 0;
+    max-width: 420px;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.75);
+}
+@media (max-width: 576px) {
+    .reel-unavailable__icon {
+        width: 68px;
+        height: 68px;
+        font-size: 1.6rem;
+    }
+    .reel-unavailable__title { font-size: 1.05rem; }
+    .reel-unavailable__text { font-size: 0.85rem; }
+}

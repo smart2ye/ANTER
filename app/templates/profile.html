@@ -106,7 +106,7 @@
                 {% endif %}
 
                 {% if user.bio %}
-                <p class="anter-profile-bio">{{ user.bio }}</p>
+                <p class="anter-profile-bio anter-rich-text">{{ user.bio | render_rich_text }}</p>
                 {% else %}
                 <p class="anter-profile-bio is-empty">✨ لا توجد سيرة ذاتية</p>
                 {% endif %}

@@ -506,10 +506,11 @@ def _render_plain_segment(text):
         if not url:
             return match.group(0)
         href = url if url.lower().startswith(('http://', 'https://')) else 'https://' + url
+        # ANTER: النص مُهرَّب مسبقًا (escape في بداية الدالة) — لا نُهرّب مرة ثانية (double-escape).
         return (
-            f'<a href="{escape(href)}" target="_blank" '
+            f'<a href="{href}" target="_blank" '
             f'rel="noopener noreferrer nofollow" class="anter-link">'
-            f'{escape(url)}</a>{trailing}'
+            f'{url}</a>{trailing}'
         )
 
     escaped = URL_RE.sub(replace_url, escaped)

@@ -2447,6 +2447,13 @@ document.addEventListener('click', function(e) {
         });
     }
 
+    function getPostText(card) {
+        var body = card.querySelector('.post-content__body, .post-content');
+        if (!body) return '';
+        var text = (body.innerText || body.textContent || '').trim();
+        return text;
+    }
+
     function isInteractive(el) {
         if (!el) return false;
         return !!el.closest('a, button, input, textarea, select, [contenteditable="true"], .reaction-toggle, .reaction-picker, .reaction-option, .action-btn, .comment-form, .share-btn, .quote-btn, .post-image-wrapper, .anter-img-menu-btn, .video, video, audio, img');
@@ -2457,8 +2464,8 @@ document.addEventListener('click', function(e) {
         var card = e.target.closest('.post-card');
         if (!card) return;
         if (isInteractive(e.target)) return;
-        var url = card.dataset.postUrl;
-        if (!url) return;
+        var content = getPostText(card);
+        if (!content) return;
 
         origin = { x: e.clientX, y: e.clientY };
         startTarget = e.target;
@@ -2466,10 +2473,9 @@ document.addEventListener('click', function(e) {
 
         timer = setTimeout(function() {
             timer = null;
-            // نسخ
-            copyText(url).then(function(ok) {
+            copyText(content).then(function(ok) {
                 if (ok) {
-                    showPostCopyToast('تم نسخ رابط المنشور ✓', 'success');
+                    showPostCopyToast('تم نسخ محتوى المنشور ✓', 'success');
                 } else {
                     showPostCopyToast('تعذّر النسخ', 'error');
                 }
@@ -2499,10 +2505,10 @@ document.addEventListener('click', function(e) {
         if (!card) return;
         if (isInteractive(e.target)) return;
         e.preventDefault();
-        var url = card.dataset.postUrl;
-        if (!url) return;
-        copyText(url).then(function(ok) {
-            showPostCopyToast(ok ? 'تم نسخ رابط المنشور ✓' : 'تعذّر النسخ', ok ? 'success' : 'error');
+        var content = getPostText(card);
+        if (!content) return;
+        copyText(content).then(function(ok) {
+            showPostCopyToast(ok ? 'تم نسخ محتوى المنشور ✓' : 'تعذّر النسخ', ok ? 'success' : 'error');
         });
     });
 

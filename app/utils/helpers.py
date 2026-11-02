@@ -320,6 +320,30 @@ def _safe_activity_details(details):
     return safe or None
 
 
+def _client_ip():
+    """ANTER: IP العميل الحقيقي خلف Render/Cloudflare.
+
+    remote_addr = 127.0.0.1 (Render proxy).
+    الترتيب: CF-Connecting-IP (Cloudflare) → X-Forwarded-For (أول عنوان) → X-Real-IP → remote_addr.
+    """
+    try:
+        from flask import request as _req
+        cf = (_req.headers.get('CF-Connecting-IP') or '').strip()
+        if cf:
+            return cf[:64]
+        xff = (_req.headers.get('X-Forwarded-For') or '').strip()
+        if xff:
+            first = xff.split(',')[0].strip()
+            if first:
+                return first[:64]
+        xri = (_req.headers.get('X-Real-IP') or '').strip()
+        if xri:
+            return xri[:64]
+        return (_req.remote_addr or '')[:64]
+    except Exception:
+        return ''
+
+
 def log_user_activity(user_id, action, details=None, *, commit=True):
     """يسجل نشاطاً خاصاً بصاحبه فقط، مع إخفاء القيم الحساسة من التفاصيل."""
     from app.models import UserActivity
@@ -330,7 +354,7 @@ def log_user_activity(user_id, action, details=None, *, commit=True):
     activity = UserActivity(
         user_id=user_id,
         action=action,
-        ip_address=request.remote_addr,
+        ip_address=_client_ip(),
         user_agent=user_agent_string[:500],
         browser=f"{ua.browser.family} {ua.browser.version_string}" if ua and ua.browser else '',
         os=f"{ua.os.family} {ua.os.version_string}" if ua and ua.os else '',

@@ -12278,3 +12278,20 @@ a.anter-profile-stat:hover {
     background: rgba(255, 255, 255, 0.08);
     color: #b0b3b8;
 }
+
+/* ANTER: منع تحديد النص عند long-press على أزرار التفاعل */
+.reaction-toggle,
+.reaction-wrapper,
+.reaction-option,
+.action-btn,
+.action-btn *,
+.reaction-toggle *,
+.post-actions,
+.post-actions * {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}

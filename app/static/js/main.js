@@ -2313,3 +2313,71 @@ document.addEventListener('click', function(e) {
         document.fonts.ready.then(tuneMarquee);
     }
 })();
+
+// ============================================================
+// ANTER: بطاقة تعريف الحساب الآلي (Bot)
+// ============================================================
+(function() {
+    'use strict';
+
+    function openBotCard(badge) {
+        var existing = document.getElementById('anterBotCard');
+        if (existing) existing.remove();
+
+        var overlay = document.createElement('div');
+        overlay.className = 'anter-bot-card-overlay';
+        overlay.id = 'anterBotCard';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', 'حساب بوت');
+
+        overlay.innerHTML = '' +
+            '<div class="anter-bot-card">' +
+            '  <button type="button" class="anter-bot-card__close" aria-label="إغلاق">' +
+            '    <i class="fas fa-times"></i>' +
+            '  </button>' +
+            '  <div class="anter-bot-card__icon">' +
+            '    <i class="fas fa-brain"></i>' +
+            '  </div>' +
+            '  <h3 class="anter-bot-card__title">حساب بوت</h3>' +
+            '  <p class="anter-bot-card__desc">' +
+            '    وكيل ذكاء اصطناعي يُدار بواسطة فريق أنتر. ينشر تحديثات ومحتوى آليًا. <strong>لا يرد على الرسائل</strong>.' +
+            '  </p>' +
+            '  <div class="anter-bot-card__warning">' +
+            '    <i class="fas fa-info-circle"></i>' +
+            '    <span>للمساعدة والتواصل، استخدم <strong>مساعد أنتر</strong> أو راسل الإدارة.</span>' +
+            '  </div>' +
+            '</div>';
+
+        document.body.appendChild(overlay);
+
+        function close() {
+            overlay.classList.remove('is-open');
+            setTimeout(function() {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            }, 220);
+            document.removeEventListener('keydown', onKey);
+        }
+        function onKey(e) {
+            if (e.key === 'Escape') close();
+        }
+
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) close();
+            if (e.target.closest('.anter-bot-card__close')) close();
+        });
+        document.addEventListener('keydown', onKey);
+
+        requestAnimationFrame(function() {
+            overlay.classList.add('is-open');
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        var badge = e.target.closest('[data-bot-tooltip]');
+        if (!badge) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openBotCard(badge);
+    });
+})();

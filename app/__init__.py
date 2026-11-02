@@ -333,6 +333,26 @@ def create_app(test_config=None):
             '</span>'
         )
 
+    def bot_badge(user):
+        """ANTER: شارة بوت — للحسابات الآلية (is_bot=True). لا تظهر للمساعد الرسمي."""
+        try:
+            if not getattr(user, 'is_bot', False):
+                return Markup('')
+            from app.services.anter_assistant import is_anter_assistant
+            if is_anter_assistant(user):
+                return Markup('')
+        except Exception:
+            return Markup('')
+        return Markup(
+            '<span class="bot-badge" '
+            'tabindex="0" role="button" '
+            'data-bot-tooltip="وكيل آلي — يدار بواسطة فريق أنتر. لا يرد على الرسائل." '
+            'aria-label="حساب بوت">'
+            '<i class="fas fa-brain" aria-hidden="true"></i>'
+            '<span class="bot-badge__text">بوت</span>'
+            '</span>'
+        )
+
     def linkify_hashtags(content):
         escaped_content = str(escape(unescape(content or '')))
 
@@ -392,6 +412,7 @@ def create_app(test_config=None):
     app.add_template_global(founder_badge, name='founder_badge')
     app.add_template_global(early_member_badge, name='early_member_badge')
     app.add_template_global(assistant_badge, name='assistant_badge')
+    app.add_template_global(bot_badge, name='bot_badge')
 
     # ANTER: إعلان الموقع (Marquee) — يُقرأ من قاعدة البيانات
     try:

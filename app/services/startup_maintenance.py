@@ -65,6 +65,7 @@ def run_startup_schema_upgrades(app) -> bool:
             'referral_credited': 'BOOLEAN NOT NULL DEFAULT FALSE',
             'verification_source': 'VARCHAR(20)',
             'verification_locked': 'BOOLEAN NOT NULL DEFAULT FALSE',
+            'is_bot': 'BOOLEAN NOT NULL DEFAULT FALSE',
         },
         'haraj_listings': {
             'pledge_accepted': 'BOOLEAN NOT NULL DEFAULT FALSE',

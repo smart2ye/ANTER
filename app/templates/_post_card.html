@@ -9,7 +9,7 @@
             <div class="post-author-meta">
                 <a href="{{ url_for('users.profile', username=post.author.username) }}" class="post-author-name">
                     {{ post.author.name }}
-                    {{ verified_badge(post.author) }}{{ founder_badge(post.author) }}{{ early_member_badge(post.author) }}{{ assistant_badge(post.author) }}
+                    {{ verified_badge(post.author) }}{{ founder_badge(post.author) }}{{ early_member_badge(post.author) }}{{ assistant_badge(post.author) }}{{ bot_badge(post.author) }}
                 </a>
                 {% if is_suggested_post is defined and is_suggested_post and can_follow(post.author) %}
                 <button type="button"
@@ -117,7 +117,7 @@
                      class="anter-quoted-post-avatar"
                      loading="lazy">
                 <div class="anter-quoted-post-meta">
-                    <strong>{{ qp.author.name or qp.author.username }}{{ verified_badge(qp.author) }}{{ founder_badge(qp.author) }}{{ early_member_badge(qp.author) }}{{ assistant_badge(qp.author) }}</strong>
+                    <strong>{{ qp.author.name or qp.author.username }}{{ verified_badge(qp.author) }}{{ founder_badge(qp.author) }}{{ early_member_badge(qp.author) }}{{ assistant_badge(qp.author) }}{{ bot_badge(qp.author) }}</strong>
                     <small>@{{ qp.author.username }} · <time data-local-time="{{ qp.created_at.isoformat() }}" data-time-style="relative">--:--</time></small>
                 </div>
             </div>
@@ -174,7 +174,7 @@
                     alt="{{ post.shared_video.author.name }}">
                 <span>
                     @{{ post.shared_video.author.username }}
-                    {{ verified_badge(post.shared_video.author) }}{{ founder_badge(post.shared_video.author) }}{{ early_member_badge(post.shared_video.author) }}{{ assistant_badge(post.shared_video.author) }}
+                    {{ verified_badge(post.shared_video.author) }}{{ founder_badge(post.shared_video.author) }}{{ early_member_badge(post.shared_video.author) }}{{ assistant_badge(post.shared_video.author) }}{{ bot_badge(post.shared_video.author) }}
                 </span>
             </div>
 

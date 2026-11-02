@@ -634,6 +634,35 @@ def send(user_id):
                     db.session.rollback()
                     current_app.logger.exception('تعذر حفظ رد مساعد أنتر')
 
+            elif getattr(other, 'is_bot', False) and not shared_video:
+                try:
+                    if not (audio_data or attachment_data) and content:
+                        from app.services.bot_reply import get_bot_reply
+                        bot_text, bot_err = get_bot_reply(
+                            content,
+                            current_user.id,
+                            bot_name=other.name or other.username,
+                        )
+                        bot_text = bot_text or bot_err
+                        if bot_text:
+                            assistant_msg_obj = Message(
+                                sender_id=other.id,
+                                receiver_id=current_user.id,
+                                content=bot_text,
+                                parent_id=message.id,
+                                is_ai=True,
+                            )
+                            from datetime import datetime as _dt_b
+                            assistant_msg_obj.is_read = True
+                            if hasattr(assistant_msg_obj, 'read_at'):
+                                assistant_msg_obj.read_at = _dt_b.utcnow()
+                            db.session.add(assistant_msg_obj)
+                            message.is_read = True
+                            db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                    current_app.logger.exception('تعذر حفظ رد البوت')
+
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 try:
                     msg_html = render_template(
@@ -658,7 +687,7 @@ def send(user_id):
                             'messages/_message.html',
                             msg=assistant_msg_obj,
                             other=other,
-                            is_anter_assistant=True,
+                            is_anter_assistant=is_anter_assistant(other),
                         )
                         payload['assistant_msg_id'] = assistant_msg_obj.id
                         payload['last_id'] = assistant_msg_obj.id

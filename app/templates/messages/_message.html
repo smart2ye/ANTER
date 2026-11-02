@@ -124,8 +124,8 @@
 
                             <div class="message-meta">
                                 {% if msg.is_ai %}
-                                    <span class="anter-ai-badge" title="رد مولّد بواسطة مساعد أنتر (ذكاء اصطناعي)">
-                                        <i class="fas fa-robot" aria-hidden="true"></i>
+                                    <span class="anter-ai-badge" title="{{ 'رد مولّد بواسطة مساعد أنتر (ذكاء اصطناعي)' if is_anter_assistant else 'رد مولّد بواسطة حساب آلي' }}">
+                                        <i class="fas {{ 'fa-robot' if is_anter_assistant else 'fa-brain' }}" aria-hidden="true"></i>
                                         <span class="anter-ai-badge__label">AI</span>
                                     </span>
                                 {% endif %}

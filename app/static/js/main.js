@@ -2381,3 +2381,136 @@ document.addEventListener('click', function(e) {
         openBotCard(badge);
     });
 })();
+
+// ============================================================
+// ANTER: Long-press على بطاقة المنشور = نسخ رابط المنشور
+// ============================================================
+(function() {
+    'use strict';
+
+    var HOLD_MS = 500;
+    var MOVE_TOLERANCE = 10; // px
+    var timer = null;
+    var origin = null;
+    var startTarget = null;
+
+    function showPostCopyToast(msg, kind) {
+        var box = document.getElementById('anterPostCopyToast');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'anterPostCopyToast';
+            box.className = 'anter-img-toast';
+            document.body.appendChild(box);
+        }
+        box.textContent = msg;
+        box.className = 'anter-img-toast is-visible ' + (kind || 'success');
+        clearTimeout(box._t);
+        box._t = setTimeout(function() {
+            box.classList.remove('is-visible');
+        }, 2200);
+    }
+
+    function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text).then(function() {
+                return true;
+            }).catch(function() {
+                return legacyCopy(text);
+            });
+        }
+        return Promise.resolve(legacyCopy(text));
+    }
+
+    function legacyCopy(text) {
+        try {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.top = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            var ok = document.execCommand('copy');
+            ta.remove();
+            return ok;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function cancel() {
+        if (timer) { clearTimeout(timer); timer = null; }
+        origin = null;
+        startTarget = null;
+        document.querySelectorAll('.post-card.is-copying').forEach(function(el) {
+            el.classList.remove('is-copying');
+        });
+    }
+
+    function isInteractive(el) {
+        if (!el) return false;
+        return !!el.closest('a, button, input, textarea, select, [contenteditable="true"], .reaction-toggle, .reaction-picker, .reaction-option, .action-btn, .comment-form, .share-btn, .quote-btn, .post-image-wrapper, .anter-img-menu-btn, .video, video, audio, img');
+    }
+
+    document.addEventListener('pointerdown', function(e) {
+        if (e.pointerType === 'mouse') return; // mouse: نستخدم contextmenu/right-click
+        var card = e.target.closest('.post-card');
+        if (!card) return;
+        if (isInteractive(e.target)) return;
+        var url = card.dataset.postUrl;
+        if (!url) return;
+
+        origin = { x: e.clientX, y: e.clientY };
+        startTarget = e.target;
+        card.classList.add('is-copying');
+
+        timer = setTimeout(function() {
+            timer = null;
+            // نسخ
+            copyText(url).then(function(ok) {
+                if (ok) {
+                    showPostCopyToast('تم نسخ رابط المنشور ✓', 'success');
+                } else {
+                    showPostCopyToast('تعذّر النسخ', 'error');
+                }
+                cancel();
+            });
+        }, HOLD_MS);
+    }, true);
+
+    document.addEventListener('pointermove', function(e) {
+        if (!origin) return;
+        var dx = e.clientX - origin.x;
+        var dy = e.clientY - origin.y;
+        if (Math.abs(dx) > MOVE_TOLERANCE || Math.abs(dy) > MOVE_TOLERANCE) {
+            cancel();
+        }
+    }, true);
+
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(ev) {
+        document.addEventListener(ev, function() {
+            if (timer) cancel();
+        }, true);
+    });
+
+    // منع قائمة السياق (right-click / long-press callout)
+    document.addEventListener('contextmenu', function(e) {
+        var card = e.target.closest('.post-card');
+        if (!card) return;
+        if (isInteractive(e.target)) return;
+        e.preventDefault();
+        var url = card.dataset.postUrl;
+        if (!url) return;
+        copyText(url).then(function(ok) {
+            showPostCopyToast(ok ? 'تم نسخ رابط المنشور ✓' : 'تعذّر النسخ', ok ? 'success' : 'error');
+        });
+    });
+
+    // منع تحديد النص على البطاقة نفسها (لا داخل الأزرار/الحقول)
+    document.addEventListener('selectstart', function(e) {
+        var card = e.target.closest('.post-card');
+        if (!card) return;
+        if (isInteractive(e.target)) return;
+        e.preventDefault();
+    });
+})();

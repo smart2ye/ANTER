@@ -12295,3 +12295,22 @@ a.anter-profile-stat:hover {
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
 }
+
+/* ANTER: حالة "جاري النسخ" عند long-press على المنشور */
+.post-card.is-copying {
+    transform: scale(0.98);
+    box-shadow: 0 6px 24px rgba(0, 58, 171, 0.20);
+    background: rgba(0, 58, 171, 0.03);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+.post-card.is-copying::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid rgba(0, 58, 171, 0.35);
+    pointer-events: none;
+}

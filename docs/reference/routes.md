@@ -1,7 +1,7 @@
 # مرجع المسارات (Routes)
 
-**آخر تحديث:** 2026-11-01
-**المجموع:** 245 route · 20 blueprint
+**آخر تحديث:** 2026-11-02
+**المجموع:** 246 route · 20 blueprint
 
 ## admin — `/admin`
 
@@ -114,6 +114,7 @@
 - `GET` `/` — _main.py_
 - `GET` `/about` — _main.py_
 - `GET` `/admin` — _main.py_
+- `GET` `/anter-verification.txt` — _main.py_
 - `GET` `/api/messenger/release` — _main.py_
 - `GET` `/api/posts` — _main.py_
 - `GET` `/api/users` — _main.py_

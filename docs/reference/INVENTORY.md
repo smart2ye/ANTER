@@ -1,6 +1,6 @@
 # جرد شامل — ANTER
 
-**آخر تحديث:** 2026-11-01
+**آخر تحديث:** 2026-11-02
 **الغرض:** مرجع سريع لكل ما هو مهم داخل المشروع، بخلاف `models.md` و `routes.md` و `services.md` و `templates.md`.
 
 ---
@@ -346,12 +346,12 @@ python3 scripts/security_audit_local.py
 
 | العنصر | العدد |
 |---|---|
-| Routes | 245 |
+| Routes | 246 |
 | Blueprints | 20 |
-| Models | 42 |
+| Models | 43 |
 | Templates | 67 |
-| Services | 25 |
-| Python files | 119 |
+| Services | 26 |
+| Python files | 120 |
 | Scripts | 17 |
 | CSS files | 4 (+ vendor) |
 | JS files | 3 (+ vendor) |

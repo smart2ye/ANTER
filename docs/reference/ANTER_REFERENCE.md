@@ -1,6 +1,6 @@
 # ANTER — المرجع الشامل
 
-**آخر تحديث:** 2026-11-01
+**آخر تحديث:** 2026-11-02
 
 ## نظرة عامة
 منصة تواصل اجتماعي عربية مبنية على Flask + SQLAlchemy + Jinja2.
@@ -16,9 +16,9 @@
 - 67 قالب HTML
 - 3 ملفات JS (+ vendor)
 - 3 ملفات CSS (+ vendor)
-- 42 موديل
-- 20 blueprint (245 route)
-- 25 خدمة
+- 43 موديل
+- 20 blueprint (246 route)
+- 26 خدمة
 
 ## البنية
 app/
@@ -26,7 +26,7 @@ app/
   config.py            الإعدادات
   extensions.py        db, csrf, login_manager
   forms/               نماذج WTForms
-  models/              42 موديل
+  models/              43 موديل
   routes/              20 blueprint
   services/            25 خدمة
   templates/           67 قالب

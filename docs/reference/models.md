@@ -1,7 +1,21 @@
 # مرجع النماذج (Models)
 
-**آخر تحديث:** 2026-11-01
-**المجموع:** 42 موديل
+**آخر تحديث:** 2026-11-02
+**المجموع:** 43 موديل
+
+## Announcement
+
+- **الجدول:** `announcements`
+- **الملف:** `announcement.py`
+
+| العمود | النوع | Nullable | PK |
+|---|---|---|---|
+| `id` | INTEGER | ✓ | ✓ |
+| `text` | TEXT |  |  |
+| `sort_order` | INTEGER |  |  |
+| `is_active` | BOOLEAN |  |  |
+| `created_at` | TIMESTAMP | ✓ |  |
+| `updated_at` | TIMESTAMP | ✓ |  |
 
 ## AssistantDailyPublication
 
@@ -603,6 +617,7 @@
 | `referral_credited` | BOOLEAN |  |  |
 | `verification_source` | VARCHAR(20) | ✓ |  |
 | `verification_locked` | BOOLEAN |  |  |
+| `is_bot` | BOOLEAN |  |  |
 
 ## UserActivity
 

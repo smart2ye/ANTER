@@ -1,7 +1,7 @@
 # مرجع الخدمات (Services)
 
-**آخر تحديث:** 2026-11-01
-**المجموع:** 25 خدمة
+**آخر تحديث:** 2026-11-02
+**المجموع:** 26 خدمة
 
 ## account_vault.py
 
@@ -95,6 +95,13 @@
 - `send_report_receipt()`
 - `build_report_resolution_text()`
 - `build_report_rejection_text()`
+
+## bot_reply.py
+
+**دوال مستقلة:**
+- `_check_rate_limit()`
+- `_clean()`
+- `get_bot_reply()`
 
 ## explore_service.py
 
@@ -228,6 +235,9 @@
 - `get_announcement()`
 - `save_announcement()`
 - `invalidate_cache()`
+- `get_active_announcements()`
+- `save_announcement_item()`
+- `delete_announcement_item()`
 
 ## startup_maintenance.py
 

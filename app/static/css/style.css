@@ -12359,3 +12359,88 @@ a.anter-profile-stat:hover {
     padding: 6px 14px !important;
     font-size: 0.82rem !important;
 }
+
+/* ============================================================
+   ANTER: شريط تأكيد البريد (Email Verification Banner)
+   ============================================================ */
+.anter-email-banner {
+    background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
+    border-bottom: 1px solid #fcd34d;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    color: #78350f;
+}
+.anter-email-banner--pending {
+    background: linear-gradient(90deg, #dbeafe 0%, #bfdbfe 100%);
+    border-bottom-color: #93c5fd;
+    color: #1e40af;
+}
+.anter-email-banner__inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 1200px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+}
+.anter-email-banner__inner > i {
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+.anter-email-banner__inner > span {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.anter-email-banner__inner strong {
+    color: inherit;
+    font-weight: 800;
+}
+.anter-email-banner__form {
+    margin: 0;
+    flex-shrink: 0;
+}
+.anter-email-banner__btn {
+    background: #92400e;
+    color: #fff;
+    border: 0;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+.anter-email-banner__btn:hover {
+    background: #78350f;
+    transform: translateY(-1px);
+}
+.anter-email-banner--pending .anter-email-banner__btn {
+    background: #1e40af;
+}
+[data-theme="dark"] .anter-email-banner,
+[data-bs-theme="dark"] .anter-email-banner {
+    background: rgba(180, 83, 9, 0.15);
+    border-bottom-color: rgba(180, 83, 9, 0.3);
+    color: #fbbf24;
+}
+[data-theme="dark"] .anter-email-banner--pending,
+[data-bs-theme="dark"] .anter-email-banner--pending {
+    background: rgba(30, 64, 175, 0.15);
+    border-bottom-color: rgba(30, 64, 175, 0.3);
+    color: #93c5fd;
+}
+@media (max-width: 576px) {
+    .anter-email-banner {
+        font-size: 0.78rem;
+        padding: 6px 10px;
+    }
+    .anter-email-banner__inner {
+        gap: 8px;
+    }
+    .anter-email-banner__btn {
+        font-size: 0.75rem;
+        padding: 5px 11px;
+    }
+}

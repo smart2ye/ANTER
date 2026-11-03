@@ -43,7 +43,7 @@
     <link href="{{ url_for('static', filename='vendor/cairo/cairo.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.rtl.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/anter-icons.min.css') }}?v=20261031g">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261103c">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261103e">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/stories.css') }}?v=20261019a">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth-buttons.css') }}?v=20261029a">
     <!-- Google Tag Manager -->
@@ -133,6 +133,26 @@
     </nav>
 
     <!-- شريط إعلان (Marquee) — يُدار من لوحة التحكم -->
+    {# ANTER: شريط تأكيد البريد #}
+    {% set _email_banner = email_banner_state(current_user) %}
+    {% if _email_banner.show %}
+    <div class="anter-email-banner anter-email-banner--{{ _email_banner.state }}" role="status" aria-live="polite">
+        <div class="anter-email-banner__inner">
+            {% if _email_banner.state == 'pending' %}
+                <i class="fas fa-clock" aria-hidden="true"></i>
+                <span><strong>طلبك قيد المعالجة</strong> — سيصلك رابط التأكيد قريبًا على بريدك.</span>
+            {% else %}
+                <i class="fas fa-envelope-open-text" aria-hidden="true"></i>
+                <span>بريدك <strong>{{ _email_banner.email }}</strong> غير مؤكد. أكده لتأمين حسابك.</span>
+                <form method="POST" action="{{ url_for('users.send_email_verification_request') }}" class="anter-email-banner__form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="anter-email-banner__btn">أرسل طلب التأكيد</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     {% set _anns = get_active_announcements() %}
     {% if _anns %}
     <div class="anter-marquee" role="status" aria-live="polite" data-announcement>

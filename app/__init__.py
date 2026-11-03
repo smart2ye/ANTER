@@ -674,6 +674,15 @@ def create_app(test_config=None):
 
     app.add_template_global(can_follow, name='can_follow')
 
+    # ANTER: شريط تأكيد البريد (إجباري للمستخدمين غير المؤكدين)
+    try:
+        from app.services.email_banner import email_banner_state as _email_banner_state
+        app.add_template_global(_email_banner_state, name='email_banner_state')
+    except Exception:
+        def _empty_email_banner(user):
+            return {'show': False, 'state': 'error', 'email': ''}
+        app.add_template_global(_empty_email_banner, name='email_banner_state')
+
     # ANTER: بوابة العقوبات — حظر دائم يقطع الجلسة، تعليق/تقييد يمنع POST فقط.
     @app.before_request
     def _anter_enforce_sanctions():

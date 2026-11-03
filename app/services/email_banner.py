@@ -13,17 +13,11 @@ def email_banner_state(user):
         if not user or not getattr(user, 'is_authenticated', False):
             return {'show': False, 'state': 'anonymous', 'email': ''}
 
-        # البوتات لا تحتاج تأكيد بريد
-        if getattr(user, 'is_bot', False):
+        # البوتات لا تحتاج تأكيد بريد — إلا لو بريدها غير مؤكد (للاختبار)
+        email_check = (getattr(user, 'email', '') or '').strip().lower()
+        verified_check = bool(getattr(user, 'email_verified', False))
+        if getattr(user, 'is_bot', False) and verified_check:
             return {'show': False, 'state': 'bot', 'email': ''}
-
-        # المساعد الرسمي لا يحتاج تأكيد
-        try:
-            from app.services.anter_assistant import is_anter_assistant
-            if is_anter_assistant(user):
-                return {'show': False, 'state': 'bot', 'email': ''}
-        except Exception:
-            pass
 
         email = (getattr(user, 'email', '') or '').strip().lower()
         verified = bool(getattr(user, 'email_verified', False))

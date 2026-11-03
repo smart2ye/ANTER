@@ -113,3 +113,38 @@ def build_welcome_email(user, unsubscribe_url, base_url):
     html = _build_html(user, body, unsubscribe_url, base_url)
     subject = f"أنتر اشتاق لك يا {first} 💙 — ميزات جديدة تنتظرك"
     return subject, html
+
+def build_confirm_email(user, verification_url, unsubscribe_url, base_url):
+    """بريد تأكيد البريد الإلكتروني لمن سجّل ولم يؤكد."""
+    first = (user.name or user.username or '').strip().split()[0] if (user.name or user.username) else 'صديقنا'
+
+    body = f"""
+    <p style="margin:0 0 16px;">
+        سجّلت في <strong>أنتر</strong>، لكن بريدك الإلكتروني لم يُؤكد بعد.
+    </p>
+
+    <p style="margin:0 0 16px;">
+        خطوة واحدة تفعّل حسابك بالكامل:
+    </p>
+
+    {_cta_button(verification_url, 'تأكيد البريد الآن')}
+
+    <p style="margin:0 0 12px;color:#4b5563;font-size:14px;">
+        <strong>لماذا التأكيد مهم؟</strong>
+    </p>
+
+    <ul style="margin:0 0 16px;padding-right:20px;color:#4b5563;font-size:14px;">
+        <li style="margin-bottom:4px;">استعادة كلمة السر عند نسيانها</li>
+        <li style="margin-bottom:4px;">إشعارات فورية بتفاعل الآخرين معك</li>
+        <li style="margin-bottom:4px;">حماية حسابك من الاختراق</li>
+        <li>المشاركة في ميزة الإحالة (5 أصدقاء = توثيق تلقائي)</li>
+    </ul>
+
+    <p style="margin:16px 0 0;color:#6b7280;font-size:13px;">
+        إن كنت لم تسجّل في أنتر، تجاهل هذه الرسالة — لن نرسل لك شيئًا مجددًا إن تجاهلتها.
+    </p>
+    """
+
+    html = _build_html(user, body, unsubscribe_url, base_url)
+    subject = f"أكمل تسجيلك في أنتر يا {first} — خطوة واحدة ✉️"
+    return subject, html

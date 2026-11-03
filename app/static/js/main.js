@@ -2520,3 +2520,38 @@ document.addEventListener('click', function(e) {
         e.preventDefault();
     });
 })();
+
+// ============================================================
+// ANTER: auto-grow لـ textarea الكومبوزر (يتمدّد مع الكتابة)
+// ============================================================
+(function() {
+    'use strict';
+
+    function setupComposerAutoGrow() {
+        var ta = document.getElementById('anterPostContent');
+        if (!ta || ta.dataset.autoGrowSetup === 'true') return;
+        ta.dataset.autoGrowSetup = 'true';
+
+        var MAX = 200;
+
+        function grow() {
+            ta.style.height = 'auto';
+            var h = Math.min(ta.scrollHeight, MAX);
+            ta.style.height = h + 'px';
+            ta.style.overflowY = ta.scrollHeight > MAX ? 'auto' : 'hidden';
+        }
+
+        ta.addEventListener('input', grow);
+        // في حال كانت هناك قيمة مسبقة (اقتباس)
+        grow();
+    }
+
+    if (document.readyState === 'complete') {
+        setupComposerAutoGrow();
+    } else {
+        window.addEventListener('load', setupComposerAutoGrow);
+    }
+
+    // إعادة الضبط عند إعادة تحميل المحتوى عبر AJAX
+    document.addEventListener('DOMContentLoaded', setupComposerAutoGrow);
+})();

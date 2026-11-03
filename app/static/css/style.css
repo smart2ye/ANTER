@@ -12314,3 +12314,48 @@ a.anter-profile-stat:hover {
     border: 2px solid rgba(0, 58, 171, 0.35);
     pointer-events: none;
 }
+
+/* ANTER: تصغير الكومبوزر — قاعدة نهائية تلغي التراكم السابق */
+.anter-composer {
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+    margin-bottom: 10px !important;
+}
+.anter-composer-header {
+    margin-bottom: 6px !important;
+    gap: 8px !important;
+}
+.anter-composer-avatar {
+    width: 34px !important;
+    height: 34px !important;
+    flex-basis: 34px !important;
+}
+.anter-composer-editor textarea {
+    min-height: 44px !important;
+    max-height: 200px !important;
+    padding: 10px 11px !important;
+    font-size: 0.92rem !important;
+    line-height: 1.5 !important;
+    box-sizing: border-box !important;
+    overflow-y: hidden !important;
+    transition: height 0.1s ease !important;
+}
+.anter-composer-tools {
+    margin-top: 6px !important;
+}
+.anter-composer-tool {
+    min-height: 34px !important;
+    padding: 4px 9px !important;
+}
+.anter-composer-tool small {
+    display: none !important;
+}
+.anter-composer-bottom {
+    margin-top: 8px !important;
+    padding-top: 6px !important;
+}
+.anter-publish-button {
+    min-height: 34px !important;
+    padding: 6px 14px !important;
+    font-size: 0.82rem !important;
+}

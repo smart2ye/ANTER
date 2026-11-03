@@ -89,6 +89,25 @@
                 <button type="submit" class="btn btn-primary" id="save-settings-bio-button"><i class="fas fa-check me-1"></i> حفظ السيرة الذاتية</button>
             </form>
 
+            <!-- إشعارات الخلفية (APK فقط) -->
+            <div class="border-top mt-4 pt-3">
+                <h6 class="fw-semibold mb-2">
+                    <i class="fas fa-bell text-primary"></i> إشعارات الخلفية
+                </h6>
+                <p class="text-muted small mb-3">
+                    عند التفعيل، يصلك إشعار على الهاتف عند أي تفاعل جديد معك — حتى لو كان التطبيق مغلقًا.
+                    <br>
+                    <span class="text-warning small"><i class="fas fa-info-circle"></i> سيظهر إشعار دائم في شريط الهاتف أثناء التفعيل.</span>
+                </p>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="anterBgNotifToggle">
+                    <label class="form-check-label fw-semibold" for="anterBgNotifToggle">
+                        تفعيل إشعارات الخلفية
+                    </label>
+                </div>
+                <small id="anterBgNotifStatus" class="text-muted d-block">جارٍ الفحص…</small>
+            </div>
+
             <!-- منطقة الخطر — حذف الحساب -->
             <div class="border-top mt-4 pt-3">
                 <h6 class="text-danger fw-semibold mb-2">
@@ -680,5 +699,57 @@
             }
         }
     })();
+</script>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function() {
+    'use strict';
+    var toggle = document.getElementById('anterBgNotifToggle');
+    var status = document.getElementById('anterBgNotifStatus');
+    if (!toggle || !status) return;
+
+    // غير متاح في المتصفح
+    if (!window.AnterNotifications) {
+        toggle.disabled = true;
+        status.innerHTML = '<i class="fas fa-info-circle"></i> إشعارات الخلفية متاحة في تطبيق ANTER فقط.';
+        status.className = 'text-muted d-block';
+        return;
+    }
+
+    try {
+        toggle.checked = window.AnterNotifications.isEnabled();
+        status.innerHTML = toggle.checked
+            ? '<i class="fas fa-check-circle text-success"></i> الإشعارات مفعّلة.'
+            : '<i class="fas fa-circle text-muted"></i> الإشعارات غير مفعّلة.';
+    } catch (e) {
+        status.textContent = 'تعذر قراءة الحالة.';
+    }
+
+    toggle.addEventListener('change', function() {
+        try {
+            if (toggle.checked) {
+                var ok = window.AnterNotifications.enable();
+                if (!ok) {
+                    toggle.checked = false;
+                    status.innerHTML = '<i class="fas fa-exclamation-circle text-danger"></i> تعذّر التفعيل — تحقق من أذونات الإشعارات.';
+                    status.className = 'text-danger d-block';
+                    return;
+                }
+                status.innerHTML = '<i class="fas fa-check-circle text-success"></i> الإشعارات مفعّلة.';
+                status.className = 'text-success d-block';
+            } else {
+                window.AnterNotifications.disable();
+                status.innerHTML = '<i class="fas fa-circle text-muted"></i> الإشعارات غير مفعّلة.';
+                status.className = 'text-muted d-block';
+            }
+        } catch (err) {
+            toggle.checked = !toggle.checked;
+            status.textContent = 'خطأ غير متوقع.';
+        }
+    });
+})();
 </script>
 {% endblock %}

@@ -11,6 +11,8 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     email_verified = db.Column(db.Boolean, default=False, nullable=False)
+    email_opted_out = db.Column(db.Boolean, nullable=False, default=False, server_default='false', index=True)
+    unsubscribe_token = db.Column(db.String(64), nullable=True, unique=True, index=True)
     name = db.Column(db.String(100), nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     bio = db.Column(db.String(200), default='')

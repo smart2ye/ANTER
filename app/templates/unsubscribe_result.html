@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width: 480px;">
+    <div class="card border-0 shadow-sm p-4 text-center" style="border-radius: 18px;">
+        {% if success %}
+        <div style="width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 50%; display: grid; place-items: center; background: rgba(16,185,129,0.12); color: #059669; font-size: 1.8rem;">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h1 class="h5 fw-bold mb-2 text-success">تم الإلغاء</h1>
+        {% else %}
+        <div style="width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 50%; display: grid; place-items: center; background: rgba(220,38,38,0.1); color: #dc2626; font-size: 1.6rem;">
+            <i class="fas fa-times-circle"></i>
+        </div>
+        <h1 class="h5 fw-bold mb-2 text-danger">خطأ</h1>
+        {% endif %}
+        <p class="text-muted small mb-4">{{ message }}</p>
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary w-100">العودة إلى أنتر</a>
+    </div>
+</div>
+{% endblock %}

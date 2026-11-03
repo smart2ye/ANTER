@@ -52,6 +52,8 @@ def run_startup_schema_upgrades(app) -> bool:
             'wall_visibility': "VARCHAR(20) NOT NULL DEFAULT 'public'",
             'show_online_status': 'BOOLEAN NOT NULL DEFAULT TRUE',
             'email_verified': 'BOOLEAN NOT NULL DEFAULT FALSE',
+            'email_opted_out': 'BOOLEAN NOT NULL DEFAULT FALSE',
+            'unsubscribe_token': 'VARCHAR(64)',
             'is_deleted': 'BOOLEAN NOT NULL DEFAULT FALSE',
             'deleted_at': 'TIMESTAMP',
             'is_founder': 'BOOLEAN NOT NULL DEFAULT FALSE',

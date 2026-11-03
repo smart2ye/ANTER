@@ -715,3 +715,22 @@ def anter_verification():
     if not file_path.exists():
         abort(404)
     return send_file(str(file_path), mimetype='text/plain')
+
+
+@main_bp.route('/unsubscribe/<token>', methods=['GET', 'POST'])
+def unsubscribe(token):
+    """إلغاء الاشتراك في رسائل البريد."""
+    from app.services.unsubscribe import find_by_token, unsubscribe as do_unsub
+    from flask import render_template, flash, redirect, url_for
+
+    user = find_by_token(token)
+    if not user:
+        return render_template('unsubscribe_result.html', success=False,
+                               message='الرابط غير صالح أو منتهي.'), 404
+
+    if request.method == 'POST':
+        do_unsub(user)
+        return render_template('unsubscribe_result.html', success=True,
+                               message='تم إلغاء اشتراكك في رسائل البريد.')
+
+    return render_template('unsubscribe_confirm.html', user=user, token=token)

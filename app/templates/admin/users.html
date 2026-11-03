@@ -35,12 +35,54 @@
 }
 
 .admin-users-table td:last-child {
-    white-space: normal;
-    min-width: 250px;
+    white-space: nowrap;
+    width: 60px;
+    min-width: 60px;
+    text-align: center;
 }
 
-.admin-users-table td:last-child .btn {
-    margin: 2px;
+.admin-actions-toggle {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.admin-actions-menu {
+    min-width: 240px;
+    max-height: 70vh;
+    overflow-y: auto;
+    font-size: 0.88rem;
+}
+
+.admin-actions-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+}
+
+.admin-actions-menu .dropdown-item i {
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.admin-actions-menu .dropdown-header {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #003AAB;
+    padding: 4px 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.admin-actions-menu .dropdown-item:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 @media (max-width: 575.98px) {
@@ -75,7 +117,8 @@
     }
 
     .admin-users-table td:last-child {
-        min-width: 225px;
+        width: 45px;
+        min-width: 45px;
     }
 
     .admin-users-table td:last-child .btn {
@@ -145,82 +188,161 @@
                         <span class="badge bg-light text-muted border">غير موثّق</span>
                     {% endif %}
                 </td>
-                <td>
-                    <button class="btn btn-sm btn-outline-{% if user.is_active %}danger{% else %}success{% endif %} toggle-user" 
-                            data-url="{{ url_for('admin.toggle_user', user_id=user.id) }}">
-                        {% if user.is_active %}حظر{% else %}تفعيل{% endif %}
-                    </button>
-                    <button class="btn btn-sm btn-outline-warning make-admin" 
-                            data-url="{{ url_for('admin.make_admin', user_id=user.id) }}">
-                        {% if user.is_admin %}إزالة صلاحية{% else %}ترقية{% endif %}
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary toggle-verification"
-                            data-url="{{ url_for('admin.toggle_user_verification', user_id=user.id) }}"
-                            data-verified="{{ 'true' if user.is_verified else 'false' }}">
-                        <i class="fas fa-check-circle"></i> {% if user.is_verified %}إزالة التوثيق{% else %}توثيق{% endif %}
-                    </button>
-                    <button class="btn btn-sm btn-outline-info toggle-early-member"
-                            data-url="{{ url_for('admin.toggle_early_member', user_id=user.id) }}"
-                            data-early="{{ 'true' if user.is_early_member else 'false' }}">
-                        <i class="fas fa-star"></i> {% if user.is_early_member %}إزالة المبكّر{% else %}مبكّر{% endif %}
-                    </button>
-                    <button class="btn btn-sm btn-outline-success gen-verify-link"
-                            data-url="{{ url_for('admin.generate_email_verification_link', user_id=user.id) }}"
-                            {% if user.email_verified %}disabled title="البريد مؤكد بالفعل"{% endif %}>
-                        <i class="fas fa-link"></i> تأكيد
-                    </button>
-                    <button class="btn btn-sm btn-outline-warning gen-reset-link"
-                            data-url="{{ url_for('admin.generate_password_reset_link', user_id=user.id) }}"
-                            data-name="{{ user.username }}"
-                            title="توليد رابط لإعادة تعيين كلمة السر">
-                        <i class="fas fa-key"></i> كلمة السر
-                    </button>
-                    <button class="btn btn-sm btn-outline-info send-email"
-                            data-url="{{ url_for('admin.send_email_to_user', user_id=user.id) }}"
-                            data-email="{{ user.email or '' }}"
-                            data-name="{{ user.username }}">
-                        <i class="fas fa-envelope"></i> بريد
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary gen-phone-verify"
-                            data-url="{{ url_for('admin.generate_phone_verification_link', user_id=user.id) }}"
-                            data-name="{{ user.username }}"
-                            {% if user.phone_verified %}disabled title="الجوال مؤكد"{% endif %}
-                            {% if not user.phone %}disabled title="لا يوجد جوال"{% endif %}>
-                        <i class="fas fa-mobile-alt"></i> جوال
-                    </button>
-                    <div class="mt-1">
-                    {% if user.is_banned %}
-                        <span class="badge bg-dark">محظور</span>
-                        {% if current_user.id == 1 %}
-                            <button class="btn btn-sm btn-outline-success unban-user" data-url="{{ url_for('admin.unban_user', user_id=user.id) }}">رفع الحظر</button>
-                        {% endif %}
-                    {% elif user.suspended_until %}
-                        <span class="badge bg-warning text-dark">معلّق حتى {{ user.suspended_until.strftime('%Y-%m-%d %H:%M') }}</span>
-                        {% if user.is_admin %}
-                            <button class="btn btn-sm btn-outline-secondary suspend-24h" data-url="{{ url_for('admin.suspend_24h', user_id=user.id) }}" {% if user.id == 1 or user.is_founder %}disabled{% endif %}>+24س</button>
-                        {% endif %}
-                    {% else %}
-                        {% if user.is_admin or current_user.id == 1 %}
-                            <button class="btn btn-sm btn-outline-warning suspend-24h" data-url="{{ url_for('admin.suspend_24h', user_id=user.id) }}" {% if user.id == 1 or user.is_founder %}disabled{% endif %}>تعليق 24س</button>
-                            <button class="btn btn-sm btn-outline-warning suspend-7d" data-url="{{ url_for('admin.suspend_7d', user_id=user.id) }}" {% if user.id == 1 or user.is_founder %}disabled{% endif %}>تعليق 7أيام</button>
-                        {% endif %}
-                        {% if current_user.id == 1 and user.id != 1 and not user.is_founder %}
-                            <button class="btn btn-sm btn-outline-danger ban-user" data-url="{{ url_for('admin.ban_user', user_id=user.id) }}">حظر دائم</button>
-                        {% endif %}
-                    {% endif %}
+                <td class="admin-actions-cell">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary admin-actions-toggle"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                data-bs-strategy="fixed"
+                                aria-expanded="false"
+                                aria-label="إجراءات">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end admin-actions-menu">
+
+                            <li><h6 class="dropdown-header">التحقق والشارات</h6></li>
+                            <li>
+                                <button class="dropdown-item toggle-verification"
+                                        data-url="{{ url_for('admin.toggle_user_verification', user_id=user.id) }}"
+                                        data-verified="{{ 'true' if user.is_verified else 'false' }}">
+                                    <i class="fas fa-check-circle text-primary"></i>
+                                    {% if user.is_verified %}إزالة التوثيق{% else %}توثيق{% endif %}
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item toggle-early-member"
+                                        data-url="{{ url_for('admin.toggle_early_member', user_id=user.id) }}"
+                                        data-early="{{ 'true' if user.is_early_member else 'false' }}">
+                                    <i class="fas fa-star text-warning"></i>
+                                    {% if user.is_early_member %}إزالة المبكّر{% else %}منح عضو مبكّر{% endif %}
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item gen-verify-link"
+                                        data-url="{{ url_for('admin.generate_email_verification_link', user_id=user.id) }}"
+                                        {% if user.email_verified %}disabled{% endif %}>
+                                    <i class="fas fa-link text-success"></i> رابط تأكيد البريد
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item gen-phone-verify"
+                                        data-url="{{ url_for('admin.generate_phone_verification_link', user_id=user.id) }}"
+                                        data-name="{{ user.username }}"
+                                        {% if user.phone_verified or not user.phone %}disabled{% endif %}>
+                                    <i class="fas fa-mobile-alt text-primary"></i> رابط تأكيد الجوال
+                                </button>
+                            </li>
+
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">التواصل</h6></li>
+                            <li>
+                                <button class="dropdown-item gen-reset-link"
+                                        data-url="{{ url_for('admin.generate_password_reset_link', user_id=user.id) }}"
+                                        data-name="{{ user.username }}">
+                                    <i class="fas fa-key text-warning"></i> رابط إعادة كلمة السر
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item send-email"
+                                        data-url="{{ url_for('admin.send_email_to_user', user_id=user.id) }}"
+                                        data-email="{{ user.email or '' }}"
+                                        data-name="{{ user.username }}">
+                                    <i class="fas fa-envelope text-info"></i> إرسال بريد
+                                </button>
+                            </li>
+
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">الإدارة</h6></li>
+                            <li>
+                                <button class="dropdown-item make-admin"
+                                        data-url="{{ url_for('admin.make_admin', user_id=user.id) }}">
+                                    <i class="fas fa-user-shield text-warning"></i>
+                                    {% if user.is_admin %}إزالة صلاحية الإشراف{% else %}ترقية إلى مشرف{% endif %}
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item toggle-user"
+                                        data-url="{{ url_for('admin.toggle_user', user_id=user.id) }}">
+                                    <i class="fas fa-ban text-danger"></i>
+                                    {% if user.is_active %}حظر الحساب{% else %}تفعيل الحساب{% endif %}
+                                </button>
+                            </li>
+
+                            {% if user.is_banned %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">العقوبات</h6></li>
+                            <li><span class="dropdown-item-text text-muted small">الحساب محظور حاليًا</span></li>
+                            {% if current_user.id == 1 %}
+                            <li>
+                                <button class="dropdown-item unban-user text-success"
+                                        data-url="{{ url_for('admin.unban_user', user_id=user.id) }}">
+                                    <i class="fas fa-unlock"></i> رفع الحظر
+                                </button>
+                            </li>
+                            {% endif %}
+                            {% elif user.suspended_until %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">العقوبات</h6></li>
+                            <li><span class="dropdown-item-text text-warning small">معلّق حتى {{ user.suspended_until.strftime('%Y-%m-%d %H:%M') }}</span></li>
+                            {% if user.is_admin %}
+                            <li>
+                                <button class="dropdown-item suspend-24h"
+                                        data-url="{{ url_for('admin.suspend_24h', user_id=user.id) }}"
+                                        {% if user.id == 1 or user.is_founder %}disabled{% endif %}>
+                                    <i class="fas fa-clock"></i> +24 ساعة
+                                </button>
+                            </li>
+                            {% endif %}
+                            {% else %}
+                            {% if user.is_admin or current_user.id == 1 %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">العقوبات</h6></li>
+                            <li>
+                                <button class="dropdown-item suspend-24h"
+                                        data-url="{{ url_for('admin.suspend_24h', user_id=user.id) }}"
+                                        {% if user.id == 1 or user.is_founder %}disabled{% endif %}>
+                                    <i class="fas fa-clock"></i> تعليق 24 ساعة
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item suspend-7d"
+                                        data-url="{{ url_for('admin.suspend_7d', user_id=user.id) }}"
+                                        {% if user.id == 1 or user.is_founder %}disabled{% endif %}>
+                                    <i class="fas fa-clock"></i> تعليق 7 أيام
+                                </button>
+                            </li>
+                            {% endif %}
+                            {% if current_user.id == 1 and user.id != 1 and not user.is_founder %}
+                            <li>
+                                <button class="dropdown-item ban-user text-danger"
+                                        data-url="{{ url_for('admin.ban_user', user_id=user.id) }}">
+                                    <i class="fas fa-ban"></i> حظر دائم
+                                </button>
+                            </li>
+                            {% endif %}
+                            {% endif %}
+
+                            {% if user.is_deleted and current_user.id == 1 %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <button class="dropdown-item restore-user text-success"
+                                        data-url="{{ url_for('admin.restore_user', user_id=user.id) }}"
+                                        data-username="{{ user.username }}">
+                                    <i class="fas fa-undo"></i> استعادة الحساب
+                                </button>
+                            </li>
+                            {% endif %}
+
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <button class="dropdown-item delete-user text-danger"
+                                        data-url="{{ url_for('admin.delete_user', user_id=user.id) }}"
+                                        {% if user.id == current_user.id %}disabled{% endif %}>
+                                    <i class="fas fa-trash"></i> حذف الحساب
+                                </button>
+                            </li>
+                        </ul>
                     </div>
-                    {% if user.is_deleted and current_user.id == 1 %}
-                    <button class="btn btn-sm btn-outline-success restore-user"
-                            data-url="{{ url_for('admin.restore_user', user_id=user.id) }}"
-                            data-username="{{ user.username }}">
-                        <i class="fas fa-undo"></i> استعادة
-                    </button>
-                    {% endif %}
-                    <button class="btn btn-sm btn-outline-danger delete-user" 
-                            data-url="{{ url_for('admin.delete_user', user_id=user.id) }}"
-                            {% if user.id == current_user.id %}disabled{% endif %}>
-                        حذف
-                    </button>
                 </td>
             </tr>
             {% endfor %}

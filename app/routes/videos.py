@@ -27,7 +27,15 @@ def reels():
 
     الزوار يشاهدون الريلز بدون تسجيل. الإعجاب/التعليق/المشاركة تتطلب تسجيل الدخول.
     """
-    videos = Video.query.filter_by(is_reel=True).order_by(Video.created_at.desc()).all()
+    # ANTER: نستبعد BLOB الفيديو والصورة المصغرة (يُسبب OOM مع 7 ريلز × 5MB).
+    from sqlalchemy.orm import defer as _defer
+    videos = (
+        Video.query
+        .options(_defer(Video.video_data), _defer(Video.thumbnail_data))
+        .filter_by(is_reel=True)
+        .order_by(Video.created_at.desc())
+        .all()
+    )
     unavailable_ids = _unavailable_reel_ids()
 
     share_users = []
@@ -190,7 +198,13 @@ def watch_legacy(video_id):
 @videos_bp.route('/r/<public_id>')
 def watch(public_id):
     """صفحة عرض الريل — عامة للزوار والمستخدمين."""
-    video = Video.query.filter_by(public_id=public_id).first_or_404()
+    from sqlalchemy.orm import defer as _defer2
+    video = (
+        Video.query
+        .options(_defer2(Video.video_data), _defer2(Video.thumbnail_data))
+        .filter_by(public_id=public_id)
+        .first_or_404()
+    )
     video.views += 1
     db.session.commit()
 

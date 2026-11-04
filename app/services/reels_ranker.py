@@ -100,8 +100,10 @@ def rank_reels(user=None, *, limit=30, exclude_ids=None):
     now = datetime.utcnow()
 
     if user is None or not getattr(user, "is_authenticated", False):
+        from sqlalchemy.orm import defer as _dr1
         videos = (
             Video.query
+            .options(_dr1(Video.video_data), _dr1(Video.thumbnail_data))
             .filter(Video.is_reel.is_(True))
             .order_by(Video.created_at.desc())
             .limit(max(limit, 1) * 3)
@@ -130,7 +132,11 @@ def rank_reels(user=None, *, limit=30, exclude_ids=None):
         {"video_comment_create"},
     )
 
-    query = Video.query.filter(
+    from sqlalchemy.orm import defer as _dr2
+    query = Video.query.options(
+        _dr2(Video.video_data),
+        _dr2(Video.thumbnail_data),
+    ).filter(
         Video.is_reel.is_(True),
         Video.author_id != user.id,
     )

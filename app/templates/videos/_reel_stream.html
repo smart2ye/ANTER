@@ -79,12 +79,13 @@
 
                     {% if _anter_is_auth and video.author.id != _anter_uid %}
                     <button type="button"
-                            class="reel-follow-btn {% if current_user.is_following(video.author) %}is-following{% endif %}"
+                            {% set _isf = (video.author.id in g.following_ids) if (g.following_ids is defined) else current_user.is_following(video.author) %}
+                            class="reel-follow-btn {% if _isf %}is-following{% endif %}"
                             data-user-id="{{ video.author.id }}"
-                            data-following="{{ 'true' if current_user.is_following(video.author) else 'false' }}"
-                            aria-label="{{ 'إلغاء متابعة @' + video.author.username if current_user.is_following(video.author) else 'متابعة @' + video.author.username }}">
-                        <i class="{{ 'fas fa-user-check' if current_user.is_following(video.author) else 'fas fa-user-plus' }}" aria-hidden="true"></i>
-                        <span>{{ 'متابَع' if current_user.is_following(video.author) else 'متابعة' }}</span>
+                            data-following="{{ 'true' if _isf else 'false' }}"
+                            aria-label="{{ 'إلغاء متابعة @' + video.author.username if _isf else 'متابعة @' + video.author.username }}">
+                        <i class="{{ 'fas fa-user-check' if _isf else 'fas fa-user-plus' }}" aria-hidden="true"></i>
+                        <span>{{ 'متابَع' if _isf else 'متابعة' }}</span>
                     </button>
                     {% endif %}
                 </div>
@@ -99,14 +100,17 @@
             </div>
 
             <div class="reel-stream-actions" aria-label="تفاعلات الريل">
+                {% set _liked = (video.id in g.liked_video_ids) if (g.liked_video_ids is defined) else (video.likes.filter_by(user_id=_anter_uid).first() is not none) %}
+                {% set _lc = g.video_like_counts.get(video.id, 0) if (g.video_like_counts is defined) else video.like_count() %}
+                {% set _cc = g.video_comment_counts.get(video.id, 0) if (g.video_comment_counts is defined) else video.comment_count() %}
                 <button type="button"
-        class="reel-stream-action reel-stream-like {% if video.likes.filter_by(user_id=_anter_uid).first() %}is-liked{% endif %}"
+        class="reel-stream-action reel-stream-like {% if _liked %}is-liked{% endif %}"
         data-video-id="{{ video.id }}"
-        aria-label="{% if video.likes.filter_by(user_id=_anter_uid).first() %}إلغاء الإعجاب{% else %}إعجاب{% endif %}"
-        aria-pressed="{{ 'true' if video.likes.filter_by(user_id=_anter_uid).first() else 'false' }}">
-        <i class="{{ 'fas fa-heart' if video.likes.filter_by(user_id=_anter_uid).first() else 'far fa-heart' }}"
+        aria-label="{% if _liked %}إلغاء الإعجاب{% else %}إعجاب{% endif %}"
+        aria-pressed="{{ 'true' if _liked else 'false' }}">
+        <i class="{{ 'fas fa-heart' if _liked else 'far fa-heart' }}"
            aria-hidden="true"></i>
-        <span class="reel-stream-like-count">{{ video.like_count() }}</span>
+        <span class="reel-stream-like-count">{{ _lc }}</span>
     </button>
                 <button type="button"
         class="reel-stream-action reel-stream-comments"
@@ -114,7 +118,7 @@
         data-public-id="{{ video.public_id }}"
         aria-label="فتح التعليقات">
     <i class="far fa-comment" aria-hidden="true"></i>
-    <span>{{ video.comment_count() }}</span>
+    <span>{{ _cc }}</span>
 </button>
                 <button type="button" class="reel-stream-action reel-stream-sound" aria-label="تشغيل الصوت">
                     <i class="fas fa-volume-up" aria-hidden="true"></i>

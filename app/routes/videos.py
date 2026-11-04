@@ -38,6 +38,33 @@ def reels():
     )
     unavailable_ids = _unavailable_reel_ids()
 
+    # ANTER: batch — liked_video_ids + counts دفعة واحدة (بدل 4×8 استعلامًا في القالب)
+    try:
+        from flask import g
+        from sqlalchemy import func as _fn
+        from app.models import VideoLike as _VL, VideoComment as _VC
+        _vids = [v.id for v in videos]
+        g.liked_video_ids = set()
+        g.video_like_counts = {}
+        g.video_comment_counts = {}
+        if _vids and current_user.is_authenticated:
+            g.liked_video_ids = {
+                vid for (vid,) in db.session.query(_VL.video_id).filter(
+                    _VL.video_id.in_(_vids), _VL.user_id == current_user.id
+                ).all()
+            }
+        if _vids:
+            for vid, cnt in db.session.query(_VL.video_id, _fn.count(_VL.id)).filter(
+                _VL.video_id.in_(_vids)
+            ).group_by(_VL.video_id).all():
+                g.video_like_counts[vid] = cnt
+            for vid, cnt in db.session.query(_VC.video_id, _fn.count(_VC.id)).filter(
+                _VC.video_id.in_(_vids)
+            ).group_by(_VC.video_id).all():
+                g.video_comment_counts[vid] = cnt
+    except Exception:
+        pass
+
     share_users = []
     if current_user.is_authenticated:
         # قائمة الأشخاص الذين يتابعهم المستخدم لإرسال الريلز إليهم.

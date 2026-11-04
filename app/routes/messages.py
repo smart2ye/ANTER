@@ -1085,3 +1085,98 @@ def unread_messages_count():
         query = query.filter(Message.sender_id.notin_(hidden_sender_ids))
     count = query.count()
     return jsonify({'count': count})
+
+
+@messages_bp.route('/<int:user_id>/sync', methods=['GET'])
+@login_required
+def sync_chat(user_id):
+    """ANTER: استطلاع موحّد (رسائل + كتابة + مكالمات) — طلب واحد بدل 3."""
+    other = User.query.get_or_404(user_id)
+    after_id = request.args.get('after', 0, type=int) or 0
+    skip_calls = request.args.get('skip_calls') == '1'
+
+    # 1. رسائل جديدة (+ تعليم مقروء)
+    new_msgs = Message.query.filter(
+        or_(
+            (Message.sender_id == current_user.id) & (Message.receiver_id == other.id) & (Message.deleted_by_sender == False),
+            (Message.sender_id == other.id) & (Message.receiver_id == current_user.id) & (Message.deleted_by_receiver == False),
+        ),
+        Message.id > after_id,
+    ).order_by(Message.created_at.asc()).limit(50).all()
+
+    from datetime import datetime as _dt
+
+    changed = False
+    for m in new_msgs:
+        if m.receiver_id == current_user.id and not m.is_read:
+            m.is_read = True
+            m.read_at = _dt.utcnow()
+            changed = True
+
+    is_assistant = is_anter_assistant(other)
+    rendered = []
+    for m in new_msgs:
+        try:
+            html = render_template(
+                'messages/_message.html',
+                msg=m, other=other, is_anter_assistant=is_assistant,
+            )
+        except Exception:
+            current_app.logger.exception('sync render failed')
+            html = ''
+        rendered.append({'id': m.id, 'html': html, 'sender_id': m.sender_id})
+
+    # 2. عدّاد غير المقروء
+    hidden = blocked_counterparty_ids(current_user.id) | {
+        row.muted_user_id
+        for row in MutedConversation.query.filter_by(user_id=current_user.id).all()
+    }
+    uq = Message.query.filter_by(receiver_id=current_user.id, is_read=False, deleted_by_receiver=False)
+    if hidden:
+        uq = uq.filter(Message.sender_id.notin_(hidden))
+    unread_total = uq.count()
+
+    # 3. حالة "يكتب"
+    cutoff = _dt.utcnow() - timedelta(seconds=TYPING_TTL_SECONDS)
+    typing_row = TypingState.query.filter(
+        TypingState.sender_id == other.id,
+        TypingState.receiver_id == current_user.id,
+        TypingState.updated_at >= cutoff,
+    ).first()
+    typing = typing_row is not None
+
+    # 4. إشارات المكالمات (+ تعليم مستلمة)
+    call_signals_out = []
+    if not skip_calls:
+        _expire_stale_ringing_calls()
+        signals = CallSignal.query.filter_by(
+            sender_id=user_id,
+            receiver_id=current_user.id,
+            delivered_at=None,
+        ).order_by(CallSignal.created_at.asc()).limit(50).all()
+        for signal in signals:
+            if is_blocked_between(current_user.id, signal.sender_id):
+                continue
+            try:
+                payload = json.loads(signal.payload or '{}')
+            except (TypeError, ValueError):
+                payload = {}
+            data = signal.to_dict()
+            data['payload'] = payload
+            call_signals_out.append(data)
+            signal.delivered_at = _dt.utcnow()
+            changed = True
+
+    if changed:
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    return jsonify({
+        'messages': rendered,
+        'last_id': new_msgs[-1].id if new_msgs else after_id,
+        'unread_total': unread_total,
+        'typing': typing,
+        'signals': call_signals_out,
+    })

@@ -2017,22 +2017,49 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('forwardSearch').oninput = (e) => loadForwardUsers(e.target.value);
 
     // ============================================================
-    // ANTER: polling للرسائل الجديدة — كل 3 ثوانٍ
+    // ANTER: sync موحّد — طلب واحد (رسائل + كتابة + مكالمات) بدل 3
+    // أثناء مكالمة نشطة: calls/poll منفصل بتردد 800ms.
     // ============================================================
     let lastMsgId = Number(chatBox.dataset.lastMsgId || 0);
-    let msgPollTimer = null;
-    let msgPollInProgress = false;
+    let syncTimer = null;
+    let syncInProgress = false;
 
-    async function pollNewMessages() {
-        if (msgPollInProgress) return;
-        if (document.visibilityState === 'hidden') return;
-        msgPollInProgress = true;
+    function computeSyncDelay() {
+        if (document.visibilityState === 'hidden') return 5000;
+        return 3000;
+    }
+
+    async function syncTick() {
+        clearTimeout(syncTimer);
+
+        if (syncInProgress) {
+            syncTimer = setTimeout(syncTick, 500);
+            return;
+        }
+
+        // أثناء مكالمة نشطة: نعتمد calls/poll فقط
+        if (typeof activeCallId !== 'undefined' && activeCallId) {
+            try {
+                await pollCallSignalsNow();
+            } catch (_) {}
+            syncTimer = setTimeout(syncTick, 800);
+            return;
+        }
+
+        if (document.visibilityState === 'hidden') {
+            syncTimer = setTimeout(syncTick, 5000);
+            return;
+        }
+
+        syncInProgress = true;
         try {
-            const r = await fetch(`/messages/${otherUserId}/poll?after=${lastMsgId}`, {
+            const r = await fetch(`/messages/${otherUserId}/sync?after=${lastMsgId}`, {
                 credentials: 'same-origin',
             });
             if (!r.ok) return;
             const data = await r.json();
+
+            // 1. الرسائل
             if (data.messages && data.messages.length > 0) {
                 let appended = false;
                 data.messages.forEach(function(m) {
@@ -2042,14 +2069,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         appended = true;
                     }
                 });
-                if (appended) {
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
-                if (data.last_id && data.last_id > lastMsgId) {
-                    lastMsgId = data.last_id;
-                }
+                if (appended) chatBox.scrollTop = chatBox.scrollHeight;
+                if (data.last_id && data.last_id > lastMsgId) lastMsgId = data.last_id;
             }
-            // تحديث بادج الرسائل في الهيدر
+
+            // 2. عدّاد
             if (typeof data.unread_total === 'number') {
                 var badge = document.getElementById('msg-badge');
                 if (badge) {
@@ -2057,77 +2081,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     badge.style.display = data.unread_total > 0 ? 'block' : 'none';
                 }
             }
-        } catch (e) {
-            // صامت — الاتصال انقطع، سنعيد في الدورة التالية
-        } finally {
-            msgPollInProgress = false;
-        }
-    }
 
-    function startMsgPolling() {
-        if (msgPollTimer) return;
-        msgPollTimer = setInterval(pollNewMessages, 3000);
-    }
-    startMsgPolling();
-    document.addEventListener('visibilitychange', function() {
-        if (document.visibilityState === 'visible') {
-            pollNewMessages();
-        }
-    });
+            // 3. "يكتب"
+            var typingEl = document.getElementById('typingIndicator');
+            if (typingEl) typingEl.classList.toggle('d-none', !data.typing);
 
-    // ============================================================
-    // ANTER: استطلاع تكيّفي — يسرع عند وجود مكالمة، ويبطؤ في الخلفية.
-    // - مكالمة نشطة أو دعوة معلّقة: 800ms (إشارات فورية).
-    // - الصفحة مخفية: 5000ms (توفير).
-    // - هادئ: 2500ms (الافتراضي).
-    // ============================================================
-    let callPollTimer = null;
-
-    function computeCallPollDelay() {
-        if (activeCallId || incomingInvite) return 800;
-        if (document.visibilityState === 'hidden') return 5000;
-        return 2500;
-    }
-
-    async function callPollTick() {
-        clearTimeout(callPollTimer);
-
-        if (pollingInProgress) {
-            callPollTimer = setTimeout(callPollTick, 400);
-            return;
-        }
-
-        pollingInProgress = true;
-        try {
-            if (document.visibilityState !== 'hidden') {
-                const res = await fetch(`/messages/typing/${otherUserId}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    document.getElementById('typingIndicator').classList.toggle('d-none', !data.typing);
+            // 4. المكالمات
+            if (data.signals && data.signals.length > 0) {
+                for (const signal of data.signals) {
+                    try { await handleCallSignal(signal); } catch (_) {}
                 }
             }
-            if (!isAnterAssistant) {
-                await pollCallSignalsNow();
-            }
-        } catch (error) {
-            console.warn('تعذر الاستعلام عن حالة الاتصال.', error);
+        } catch (e) {
+            // صامت
         } finally {
-            pollingInProgress = false;
-            callPollTimer = setTimeout(callPollTick, computeCallPollDelay());
+            syncInProgress = false;
         }
+
+        syncTimer = setTimeout(syncTick, computeSyncDelay());
     }
 
-    // عند تغيير حالة الصفحة (ظهور/إخفاء): أعد الجدولة فورًا.
-    document.addEventListener('visibilitychange', () => {
-        if (callPollTimer) {
-            clearTimeout(callPollTimer);
-            callPollTimer = setTimeout(callPollTick, 200);
+    function startSyncPolling() {
+        if (syncTimer) return;
+        syncTick();
+    }
+    startSyncPolling();
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            clearTimeout(syncTimer);
+            syncTick();
         }
     });
 
-    // لا ننتظر دورة الاستطلاع الأولى؛ قد تكون دعوة الاتصال وصلت قبل فتح الدردشة.
+    // طلب استطلاع أولي للمكالمات (قد تكون دعوة وصلت قبل فتح الدردشة).
     pollCallSignalsNow().catch(() => {});
-    callPollTick();
 });
 </script>
 {% endblock %}

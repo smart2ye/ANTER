@@ -353,20 +353,21 @@
         let previousMsgCount = null;
 
         function updateBadges() {
-            // تحديث الإشعارات العامة
-            fetch('/notifications/unread_count', {
+            // ANTER: طلب واحد بدل 3 — العدادات مجمّعة في /api/inbox_counts
+            fetch('/api/inbox_counts', {
                 headers: {'Accept': 'application/json'},
                 credentials: 'same-origin',
                 cache: 'no-store'
             })
             .then(res => res.json())
             .then(data => {
+                // 1. الإشعارات
                 var badge = document.getElementById('notif-badge');
                 if (badge) {
-                    badge.textContent = data.count;
-                    badge.style.display = data.count > 0 ? 'block' : 'none';
+                    badge.textContent = data.notifications;
+                    badge.style.display = data.notifications > 0 ? 'block' : 'none';
                 }
-                if (previousNotifCount !== null && data.count > previousNotifCount) {
+                if (previousNotifCount !== null && data.notifications > previousNotifCount) {
                     fetch('/notifications/latest', {
                         headers: {'Accept': 'application/json'},
                         credentials: 'same-origin',
@@ -381,53 +382,37 @@
                         }
                     })
                     .catch(() => showNotifBanner('إشعار جديد', 'لديك إشعار جديد في ANTER'));
-                    window.dispatchEvent(new CustomEvent('anter:notification-count', { detail: { count: data.count } }));
+                    window.dispatchEvent(new CustomEvent('anter:notification-count', { detail: { count: data.notifications } }));
                 }
-                previousNotifCount = data.count;
-            }).catch(() => {});
+                previousNotifCount = data.notifications;
 
-            // تحديث عداد الحراج الموحّد (رسائل + إشعارات)
-            fetch('/haraj/unread_total', {
-                headers: {'Accept': 'application/json'},
-                credentials: 'same-origin',
-                cache: 'no-store'
-            })
-            .then(res => res.json())
-            .then(data => {
+                // 2. الحراج
                 var hbadge = document.getElementById('haraj-badge');
                 if (hbadge) {
-                    hbadge.textContent = data.count;
-                    hbadge.style.display = data.count > 0 ? 'block' : 'none';
+                    hbadge.textContent = data.haraj;
+                    hbadge.style.display = data.haraj > 0 ? 'block' : 'none';
                 }
                 var m = document.getElementById('haraj-msg-count');
                 if (m) {
-                    m.textContent = data.messages;
-                    m.style.display = data.messages > 0 ? 'block' : 'none';
+                    m.textContent = data.haraj_messages;
+                    m.style.display = data.haraj_messages > 0 ? 'block' : 'none';
                 }
                 var n = document.getElementById('haraj-notif-count');
                 if (n) {
-                    n.textContent = data.notifications;
-                    n.style.display = data.notifications > 0 ? 'block' : 'none';
+                    n.textContent = data.haraj_notifications;
+                    n.style.display = data.haraj_notifications > 0 ? 'block' : 'none';
                 }
-            }).catch(() => {});
 
-            // تحديث الرسائل غير المقروءة
-            fetch('/messages/unread_count', {
-                headers: {'Accept': 'application/json'},
-                credentials: 'same-origin',
-                cache: 'no-store'
-            })
-            .then(res => res.json())
-            .then(data => {
+                // 3. الرسائل
                 var msgBadge = document.getElementById('msg-badge');
                 if (msgBadge) {
-                    msgBadge.textContent = data.count;
-                    msgBadge.style.display = data.count > 0 ? 'block' : 'none';
+                    msgBadge.textContent = data.messages;
+                    msgBadge.style.display = data.messages > 0 ? 'block' : 'none';
                 }
-                if (previousMsgCount !== null && data.count > previousMsgCount) {
-                    window.dispatchEvent(new CustomEvent('anter:message-count', { detail: { count: data.count } }));
+                if (previousMsgCount !== null && data.messages > previousMsgCount) {
+                    window.dispatchEvent(new CustomEvent('anter:message-count', { detail: { count: data.messages } }));
                 }
-                previousMsgCount = data.count;
+                previousMsgCount = data.messages;
             }).catch(() => {});
         }
 

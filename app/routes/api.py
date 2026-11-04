@@ -156,3 +156,55 @@ def get_moment(moment_id):
             'comments': p.comment_count()
         } for p in posts]
     })
+
+
+@api_bp.route('/inbox_counts')
+@login_required
+def inbox_counts():
+    """ANTER: عدادات موحّدة (إشعارات + رسائل + حراج) — طلب واحد بدل 3."""
+    from app.models import Notification, Message, HarajMessage, User
+    from app.services.message_safety import blocked_counterparty_ids
+    from app.models import MutedConversation
+    from sqlalchemy import func
+
+    HARAJ_ACTIONS = ['haraj_message', 'haraj_comment', 'haraj_rating']
+    uid = current_user.id
+
+    # 1. إشعارات عامة (بلا إشعارات المحذوفين)
+    notifications = (
+        db.session.query(func.count(Notification.id))
+        .join(User, User.id == Notification.actor_id)
+        .filter(
+            Notification.user_id == uid,
+            Notification.is_read.is_(False),
+            User.is_deleted.is_(False),
+        )
+        .scalar()
+        or 0
+    )
+
+    # 2. رسائل غير مقروءة (نستبعد المحجوبين/الصامتين)
+    hidden_sender_ids = blocked_counterparty_ids(uid) | {
+        row.muted_user_id
+        for row in MutedConversation.query.filter_by(user_id=uid).all()
+    }
+    msg_q = Message.query.filter_by(receiver_id=uid, is_read=False, deleted_by_receiver=False)
+    if hidden_sender_ids:
+        msg_q = msg_q.filter(Message.sender_id.notin_(hidden_sender_ids))
+    messages = msg_q.count()
+
+    # 3. حراج: رسائل + إشعارات
+    haraj_messages = HarajMessage.query.filter_by(receiver_id=uid, is_read=False).count()
+    haraj_notifications = Notification.query.filter(
+        Notification.user_id == uid,
+        Notification.action.in_(HARAJ_ACTIONS),
+        Notification.is_read.is_(False),
+    ).count()
+
+    return jsonify({
+        'notifications': notifications,
+        'messages': messages,
+        'haraj': haraj_messages + haraj_notifications,
+        'haraj_messages': haraj_messages,
+        'haraj_notifications': haraj_notifications,
+    })

@@ -295,9 +295,10 @@
     <!-- إحصائيات التفاعل -->
     <div class="post-stats">
         <div class="reactions-summary" id="reaction-summary-{{ post.id }}">
-            {% set reactions = get_reaction_counts(post.id) %}
+            {% set _pd = post_data(post) %}
+            {% set reactions = _pd.counts %}
             {% set total = reactions.like + reactions.love + reactions.haha + reactions.angry + reactions.sad %}
-            {% set recent_users = get_recent_reaction_users(post.id) %}
+            {% set recent_users = _pd.recent %}
             {% if total > 0 %}
                 <a href="#"
                    data-anter-reactions="{{ post.id }}"
@@ -320,14 +321,14 @@
                 <span class="reaction-summary-text" id="reaction-summary-text-{{ post.id }}"></span>
             {% endif %}
         </div>
-        {% set comment_count = post.comment_count() %}
+        {% set comment_count = _pd.comment_count %}
     </div>
 
     <!-- أزرار التفاعل -->
     <div class="post-actions">
         <!-- زر التفاعل -->
         <div class="reaction-wrapper">
-            {% set _ur = get_user_reaction(post.id) %}
+            {% set _ur = _pd.user_reaction %}
             <button type="button"
                     class="action-btn reaction-toggle{% if _ur %} reaction-active{% endif %}"
                     data-post="{{ post.id }}"

@@ -18,14 +18,15 @@
                     <strong class="feed-follow-card__name">
                         {{ user.name or user.username }}{{ verified_badge(user) }}{{ founder_badge(user) }}{{ early_member_badge(user) }}{{ assistant_badge(user) }}{{ bot_badge(user) }}
                     </strong>
-                    <small class="feed-follow-card__meta">@{{ user.username }} · {{ user.follower_count() }} متابع</small>
+                    <small class="feed-follow-card__meta">@{{ user.username }} · {{ g.follower_counts.get(user.id, 0) if g.follower_counts is defined else user.follower_count() }} متابع</small>
                 </div>
             </a>
             <button type="button"
-                    class="feed-follow-card__btn follow-btn {% if current_user.is_following(user) %}is-following{% endif %}"
+                    {% set _isf = user.id in (g.following_ids if g.following_ids is defined else set()) %}
+                    class="feed-follow-card__btn follow-btn {% if _isf %}is-following{% endif %}"
                     data-user="{{ user.id }}"
-                    data-following="{{ 'true' if current_user.is_following(user) else 'false' }}">
-                {{ 'إلغاء المتابعة' if current_user.is_following(user) else 'متابعة' }}
+                    data-following="{{ 'true' if _isf else 'false' }}">
+                {{ 'إلغاء المتابعة' if _isf else 'متابعة' }}
             </button>
         </article>
         {% endfor %}

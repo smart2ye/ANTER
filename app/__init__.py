@@ -175,6 +175,44 @@ def create_app(test_config=None):
 
     app.add_template_global(get_user_reaction, name='get_user_reaction')
 
+    # ============================================
+    # ANTER: بيانات مجمّعة (batch) — بدل N+1
+    # ============================================
+    def load_post_batch(post_ids):
+        """يحسب بيانات كل المنشورات دفعة واحدة ويخزّنها في g."""
+        try:
+            from flask import g
+            from flask_login import current_user
+            from app.services.post_engagement import batch_post_data
+            uid = current_user.id if getattr(current_user, 'is_authenticated', False) else None
+            g.post_batch = batch_post_data(post_ids, current_user_id=uid)
+        except Exception:
+            try:
+                from flask import g
+                g.post_batch = {}
+            except Exception:
+                pass
+
+    app.add_template_global(load_post_batch, name='load_post_batch')
+
+    def post_data(post_or_id):
+        """يرجع dict بيانات المنشور من batch (أو يجلبه منفردًا إن لم يوجد)."""
+        from flask import g
+        pid = post_or_id.id if hasattr(post_or_id, 'id') else post_or_id
+        batch = getattr(g, 'post_batch', None)
+        if batch and pid in batch:
+            return batch[pid]
+        # fallback: استعلام منفرد
+        try:
+            from flask_login import current_user
+            from app.services.post_engagement import batch_post_data
+            uid = current_user.id if getattr(current_user, 'is_authenticated', False) else None
+            return batch_post_data([pid], current_user_id=uid).get(pid, {})
+        except Exception:
+            return {'counts': {k: 0 for k in ('like','love','haha','angry','sad')}, 'recent': [], 'user_reaction': None, 'comment_count': 0}
+
+    app.add_template_global(post_data, name='post_data')
+
     # خرائط التفاعل — متاحة لكل القوالب بدون تكرار
     app.jinja_env.globals['REACTION_ICONS'] = {
         'like': '👍', 'love': '🥰', 'haha': '🤣', 'angry': '😡', 'sad': '😢'

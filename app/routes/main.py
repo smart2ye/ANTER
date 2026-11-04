@@ -115,9 +115,10 @@ def build_feed(user):
     candidate_limit = current_app.config['FEED_CANDIDATE_LIMIT']
     following_ids = [follow.followed_id for follow in user.following] + [user.id]
     interests = get_user_interests(user.id)
-    # ANTER: نستبعد BLOB الصور من الـ feed (يوفّر ~100MB في الذاكرة عند 60 منشورًا).
+    # ANTER: نستبعد BLOB الصور وصور المؤلف من الـ feed (يوفّر >100MB في الذاكرة).
+    from app.models import User as _UserModel
     post_query = Post.query.options(
-        joinedload(Post.author),
+        joinedload(Post.author).defer(_UserModel.avatar_data),
         defer(Post.image_data),
     )
 
@@ -343,25 +344,54 @@ def index():
         share_users = []
 
     # ANTER: كتلة ترحيب — للمستخدم الجديد (أقل من 3 متابعات بشرية) أو عبر ?welcome=1.
-    onboarding_users = []
-    if request.args.get('welcome') == '1' or _is_new_user(current_user):
-        try:
-            from app.services.explore_service import trending_users
-            onboarding_users = trending_users(current_user, limit=5)
-        except Exception:
-            onboarding_users = []
-
-    # ANTER: اقتراحات متابعة دائمة في الفيد (مستقلة عن onboarding).
-    follow_suggestions = []
+    # ANTER: trending_users مرة واحدة (نفس الاستعلامات) — يُستخدم لـonboarding وfollow_suggestions
+    _trending_pool = []
     try:
         from app.services.explore_service import trending_users
-        follow_suggestions = trending_users(current_user, limit=4)
+        _trending_pool = trending_users(current_user, limit=5)
     except Exception:
-        follow_suggestions = []
+        _trending_pool = []
+
+    onboarding_users = []
+    if request.args.get('welcome') == '1' or _is_new_user(current_user):
+        onboarding_users = _trending_pool[:5]
+
+    follow_suggestions = _trending_pool[:4]
+
+    # ANTER: عدّاد متابعين دفعة (بدل follower_count() لكل مستخدم)
+    try:
+        from flask import g
+        from sqlalchemy import func as _func
+        from app.models import Follow as _Follow
+        _fs_ids = [u.id for u in follow_suggestions] + [u.id for u in onboarding_users]
+        if _fs_ids:
+            _rows = db.session.query(
+                _Follow.followed_id, _func.count(_Follow.id)
+            ).filter(_Follow.followed_id.in_(_fs_ids)).group_by(_Follow.followed_id).all()
+            g.follower_counts = {uid: cnt for uid, cnt in _rows}
+        else:
+            g.follower_counts = {}
+    except Exception:
+        try:
+            from flask import g
+            g.follower_counts = {}
+        except Exception:
+            pass
+
+    # ANTER: بيانات المنشورات دفعة واحدة (بدل N+1 في القالب)
+    _visible_posts = all_posts[:page_size]
+    _all_ids = [p.id for p in _visible_posts] + [p.id for p in top_suggested]
+    try:
+        from flask import g
+        from app.services.post_engagement import batch_post_data
+        g.post_batch = batch_post_data(_all_ids, current_user_id=current_user.id)
+    except Exception:
+        from flask import g
+        g.post_batch = {}
 
     return render_template(
         'index.html',
-        posts=all_posts[:page_size],
+        posts=_visible_posts,
         suggested_posts=top_suggested,
         feed_reels=feed_reels,
         unavailable_ids=unavailable_ids,
@@ -410,6 +440,14 @@ def api_posts():
     post_counts = get_post_engagement_counts(
         [post.id for post in paginated_posts]
     )
+
+    # ANTER: batch للقالب (بدل fallback منفرد لكل منشور)
+    try:
+        from flask import g as _g
+        from app.services.post_engagement import batch_post_data as _bpd
+        _g.post_batch = _bpd([p.id for p in paginated_posts], current_user_id=current_user.id)
+    except Exception:
+        pass
 
     data = []
     for post in paginated_posts:

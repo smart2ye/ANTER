@@ -59,12 +59,33 @@
 
             <h4 class="h6 fw-bold mt-3 mb-2" style="color:#031E64;">ثلاثة مسارات للتوثيق:</h4>
 
-            <p class="mb-2">
-                <strong>1. مسار التقدّم (الأساسي):</strong>
-                من
-                <a href="{{ url_for('users.verification_progress') }}" class="fw-bold">مسار التوثيق</a>
-                — أكمل 7 مهام: منشور يوميًا لـ7 أيام متتالية، 5 متابعين، 10 منشورات، 5 قصص، 10 تعليقات على منشورات الآخرين، إكمال الملف (اسم + سيرة + صورة + جنس)، والسلامة (بلا حظر أو إنذارات). عند 100% يُمنح التوثيق تلقائيًا.
-            </p>
+            <div class="mb-3">
+                <p class="mb-2">
+                    <strong>1. مسار التقدّم (الأساسي، تلقائي):</strong>
+                    من
+                    <a href="{{ url_for('users.verification_progress') }}" class="fw-bold">مسار التوثيق</a>
+                    — أكمل المهام السبع التالية. يُعرض شريط تقدّم عام (0–100%) وعدّاد مستقل لكل مهمة. عند إتمامها جميعًا، يُمنح التوثيق فورًا دون تدخل بشري.
+                </p>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0" style="font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: rgba(0,58,171,0.06);">
+                                <th class="py-2 px-3" style="width:40%;">المهمة</th>
+                                <th class="py-2 px-3">المعيار</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="px-3">الاستمرارية في النشر</td><td class="px-3">منشور واحد على الأقل في كل يوم تقويمي، لمدة <strong>7 أيام متتالية</strong></td></tr>
+                            <tr><td class="px-3">المتابعون</td><td class="px-3"><strong>5 متابعين</strong> حقيقيين (تُستبعد الحسابات المحظورة والمحذوفة)</td></tr>
+                            <tr><td class="px-3">المنشورات</td><td class="px-3"><strong>10 منشورات</strong> نشطة (غير محذوفة ولا مزالة)</td></tr>
+                            <tr><td class="px-3">القصص</td><td class="px-3"><strong>5 قصص</strong></td></tr>
+                            <tr><td class="px-3">التفاعل مع المجتمع</td><td class="px-3"><strong>10 تعليقات</strong> على منشورات مستخدمين آخرين</td></tr>
+                            <tr><td class="px-3">إكمال الملف الشخصي</td><td class="px-3">الاسم، السيرة، الصورة، الجنس</td></tr>
+                            <tr><td class="px-3">سلامة الحساب</td><td class="px-3">خلوّه من الحظر أو التوقيف أو الإنذارات النشطة</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
             <p class="mb-2">
                 <strong>2. مسار الإحالة:</strong>
@@ -81,6 +102,57 @@
             <p class="small text-muted mb-0">
                 إذا أُزيل التوثيق من حسابك بقرار إداري، يُقفل المسار التلقائي حتى تراجعه الإدارة.
             </p>
+        </div>
+
+        <h3 class="h6 fw-bold mt-4 mb-3" style="color:#031E64;">
+            <i class="fas fa-shield-alt ms-2" aria-hidden="true"></i>
+            الحماية من التحايل
+        </h3>
+        <p class="small text-muted mb-2">
+            بما أن المسارين الأولين تلقائيان، يعتمد النظام إجراءات برمجية دقيقة تمنع التلاعب بالعدّادات.
+        </p>
+        <div class="table-responsive mb-4">
+            <table class="table table-sm align-middle mb-0" style="font-size: 0.88rem;">
+                <thead>
+                    <tr style="background: rgba(0,58,171,0.06);">
+                        <th class="py-2 px-3" style="width:22%;">المهمة</th>
+                        <th class="py-2 px-3" style="width:38%;">محاولة التحايل</th>
+                        <th class="py-2 px-3">الإجراء البرمجي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="px-3">الاستمرارية في النشر</td>
+                        <td class="px-3">نشر 7 منشورات في يوم واحد</td>
+                        <td class="px-3">يُحتسب يوم واحد فقط. يجب أن يكون في كل يوم من الأيام السبعة منشور واحد على الأقل. الأيام المتتالية فقط تُحتسب.</td>
+                    </tr>
+                    <tr>
+                        <td class="px-3">التفاعل مع المجتمع</td>
+                        <td class="px-3">التعليق على منشورات المستخدم نفسه</td>
+                        <td class="px-3">لا تُحتسب. التعليقات تُقيَّد بمنشورات مؤلفين آخرين.</td>
+                    </tr>
+                    <tr>
+                        <td class="px-3">المنشورات</td>
+                        <td class="px-3">نشر منشورات ثم حذفها بعد احتسابها</td>
+                        <td class="px-3">تُخصم فورًا. المنشورات المحذوفة أو المزالة من قِبل الإشراف لا تدخل في العدّاد.</td>
+                    </tr>
+                    <tr>
+                        <td class="px-3">القصص</td>
+                        <td class="px-3">نشر قصة ثم حذفها للتحايل</td>
+                        <td class="px-3">تُحتسب بمجرد النشر. حذفها لاحقًا أو انتهاء صلاحيتها (24 ساعة) لا يُسقطها من العدّاد.</td>
+                    </tr>
+                    <tr>
+                        <td class="px-3">المتابعون</td>
+                        <td class="px-3">الاعتماد على حسابات وهمية أو محظورة</td>
+                        <td class="px-3">تُستبعد الحسابات المحظورة والمحذوفة من العدّ.</td>
+                    </tr>
+                    <tr>
+                        <td class="px-3">التوثيق بعد الإزالة</td>
+                        <td class="px-3">محاولة استعادة التوثيق عبر المسار التلقائي</td>
+                        <td class="px-3">يُقفل المسار التلقائي (تقدّم/إحالة) عند إزالة الإدارة للتوثيق، ولا يُفتح إلا بمراجعة بشرية.</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <h3 class="h6 fw-bold mb-3" style="color:#031E64;">

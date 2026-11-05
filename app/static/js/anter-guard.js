@@ -141,22 +141,10 @@
         return false;
     }
 
-    var originalFetch = window.fetch;
-    if (typeof originalFetch === 'function') {
-        window.fetch = function () {
-            var args = Array.prototype.slice.call(arguments);
-            var url = args[0];
-            if (url && typeof url === 'object' && url.url) url = url.url;
-            if (isPolling(url)) {
-                return originalFetch.apply(this, args);
-            }
-            trackStart();
-            var p = originalFetch.apply(this, args);
-            return p.finally(function () {
-                trackEnd();
-            });
-        };
-    }
+    // ANTER: لا مؤشر تلقائي لطلبات fetch.
+    // المؤشر يظهر فقط عند إرسال نموذج (نشر، حفظ، تسجيل، تعديل).
+    // طلبات الخلفية (/sync، polling، تفاعلات AJAX) لا تُظهر شيئًا.
+    // أي قالب يريد مؤشرًا يدويًا: window.__anterTrack.start()/end()
 
     // ============ منع الإرسال المزدوج للنماذج ============
     document.addEventListener('submit', function (e) {

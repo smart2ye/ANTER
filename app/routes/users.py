@@ -5,7 +5,7 @@ from app.extensions import db, csrf
 from app.models import User, Post, Video, Notification, Follow, Report, UserBlock
 from app.forms.profile import ProfileForm
 from app.utils.helpers import log_user_activity, get_user_activity_summary, get_status_icon
-from app.utils.image_storage import prepare_image_data
+from app.utils.image_storage import prepare_image_data, prepare_avatar_data
 from app.utils.profile_text import BIO_MAX_LENGTH, normalize_bio
 from app.services.anter_assistant import is_anter_assistant
 from app.services.privacy import can_view_profile, can_view_post, can_post_on_wall
@@ -254,7 +254,7 @@ def edit_profile():
             current_user.country_code = form.country_code.data
             changed_fields.append('مفتاح الدولة')
         if form.avatar.data:
-            avatar_data, avatar_mime = prepare_image_data(form.avatar.data)
+            avatar_data, avatar_mime, _avatar_err = prepare_avatar_data(form.avatar.data)
             if avatar_data:
                 current_user.avatar_data = avatar_data
                 current_user.avatar_mime = avatar_mime
@@ -948,9 +948,23 @@ def set_avatar_from_post(post_id):
             'message': 'هذا المنشور لا يحتوي على صورة قابلة للتعيين.'
         }), 400
 
-    # نقل البيانات مباشرة (بلا معالجة جديدة، الصورة أصلًا معالَجة عند النشر).
-    current_user.avatar_data = post.image_data
-    current_user.avatar_mime = post.image_mime or 'image/jpeg'
+    # ANTER: نُعيد معالجة الصورة كأفاتار (قص مربع 256px + WebP) بدل نسخ صورة كاملة الحجم.
+    try:
+        from PIL import Image
+        from io import BytesIO
+        from app.utils.image_storage import _avatar_bytes_from_pil
+        _img = Image.open(BytesIO(post.image_data))
+        _img.load()
+        avatar_bytes = _avatar_bytes_from_pil(_img)
+        avatar_mime = 'image/webp'
+    except Exception:
+        return jsonify({
+            'success': False,
+            'message': 'تعذّر معالجة الصورة كصورة بروفايل.'
+        }), 500
+
+    current_user.avatar_data = avatar_bytes
+    current_user.avatar_mime = avatar_mime
     current_user.avatar = 'default.png'  # legacy path — avatar_url يفضّل DB data
     db.session.commit()
 
@@ -976,7 +990,7 @@ def change_avatar():
     if not file or not getattr(file, 'filename', ''):
         return jsonify({'success': False, 'message': 'لم يتم اختيار صورة.'}), 400
 
-    avatar_data, avatar_mime, reason = prepare_image_data_with_reason(file)
+    avatar_data, avatar_mime, reason = prepare_avatar_data(file)
     if not avatar_data:
         return jsonify({
             'success': False,

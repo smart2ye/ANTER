@@ -111,3 +111,60 @@ def prepare_image_data_with_reason(uploaded_file):
         image.save(output, format='WEBP', quality=85, method=4)
         mime_type = 'image/webp'
     return output.getvalue(), mime_type, None
+
+
+# ============================================================
+# ANTER: أفاتارات — معالجة مخصصة (256px، قصّ مربع، WebP)
+# ============================================================
+AVATAR_MAX_DIM = 256
+AVATAR_WEBP_QUALITY = 82
+
+
+def prepare_avatar_data(uploaded_file):
+    """يعالج صورة بروفايل: قصّ مربع مركزي + 256px + WebP.
+
+    يعيد (data_bytes, mime_type, error_reason).
+    """
+    if not uploaded_file or not getattr(uploaded_file, 'filename', ''):
+        return None, None, 'لم يتم اختيار ملف.'
+
+    max_bytes = current_app.config['MAX_IMAGE_BYTES']
+    raw_data = uploaded_file.read(max_bytes + 1)
+    if not raw_data:
+        return None, None, 'الملف فارغ.'
+    if len(raw_data) > max_bytes:
+        max_mb = max_bytes // (1024 * 1024)
+        return None, None, f'حجم الصورة يتجاوز {max_mb} ميجابايت.'
+
+    try:
+        image = Image.open(BytesIO(raw_data))
+        image.verify()
+        image = Image.open(BytesIO(raw_data))
+        if image.width * image.height > current_app.config['MAX_IMAGE_PIXELS']:
+            return None, None, 'أبعاد الصورة كبيرة جدًا.'
+        image.load()
+    except UnidentifiedImageError:
+        return None, None, 'صيغة الصورة غير مدعومة.'
+    except (OSError, ValueError):
+        return None, None, 'الملف تالف أو غير صالح كصورة.'
+
+    return _avatar_bytes_from_pil(image), 'image/webp', None
+
+
+def _avatar_bytes_from_pil(image):
+    """يقصّ الصورة مربعًا من المركز ويصغّرها إلى 256px ويحفظها WebP."""
+    if image.mode in ('RGBA', 'LA', 'P'):
+        image = image.convert('RGBA')
+    else:
+        image = image.convert('RGB')
+
+    w, h = image.size
+    side = min(w, h)
+    left = (w - side) // 2
+    top = (h - side) // 2
+    image = image.crop((left, top, left + side, top + side))
+    image = image.resize((AVATAR_MAX_DIM, AVATAR_MAX_DIM), Image.LANCZOS)
+
+    output = BytesIO()
+    image.save(output, format='WEBP', quality=AVATAR_WEBP_QUALITY, method=5, optimize=True)
+    return output.getvalue()

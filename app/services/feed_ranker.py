@@ -68,9 +68,10 @@ def rank_post(
     relationship = relationship_score(is_following, is_own_post)
     geo = geo_score(country_score)
 
-    # ANTER: بوابة عمرية صريحة — أي منشور أقدم من 10 أيام لا يظهر في الـ feed.
-    # half_life=36h → freshness=0.005 يعادل ~8 أيام. نستخدم 0.01 (~5.5 يوم) للحد.
-    if freshness < 0.01:
+    # ANTER: بوابة عمرية — تمنع منشورات قديمة جدًا من الفيد.
+    # half_life=36h → freshness=0.001 يعادل ~10.4 يوم (كان 0.01 ≈ 6.9 يوم).
+    # التوسيع ضروري لمنصة منخفضة النشر: مستخدم جديد يجب أن يرى تاريخ المنصة.
+    if freshness < 0.001:
         return 0.0
 
     # ANTER: تلاشٍ زمني للتفاعل والعلاقة — منشور قديم بتفاعل عالٍ لا يهزم الجديد.

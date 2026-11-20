@@ -14,16 +14,29 @@ try:
 except Exception:
     app.logger.exception('story_cleanup failed at startup (non-fatal)')
 
-# ANTER: منشور مساعد أنتر اليومي — مرة واحدة عند الإقلاع، لا في كل /health.
+# ANTER: منشور مساعد أنتر اليومي — عند الإقلاع (كحالة أولى).
 try:
     with app.app_context():
         ensure_daily_assistant_post()
 except Exception:
     app.logger.exception('daily_assistant_post failed at startup (non-fatal)')
 
+# ANTER: فحص ساعي في /health — يضمن النشر اليومي دون إثقال /health.
+from datetime import datetime, timedelta, timezone
+_last_daily_check = {'at': None}
+
 @app.route('/health')
 def health_check():
-    # فوري — لا استعلامات، لا أعمال. Render يستعلمه كل 5 ثوانٍ.
+    global _last_daily_check
+    now = datetime.now(timezone.utc)
+    last = _last_daily_check.get('at')
+    if last is None or (now - last) > timedelta(hours=1):
+        _last_daily_check['at'] = now
+        try:
+            with app.app_context():
+                ensure_daily_assistant_post()
+        except Exception:
+            app.logger.exception('daily_assistant_post failed in /health (non-fatal)')
     return make_response('OK', 200)
 
 if __name__ == '__main__':

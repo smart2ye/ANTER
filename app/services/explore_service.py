@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, or_
 
 from app.extensions import db
-from app.models import Post, Video, User, Follow, Repost
+from app.models import Post, Video, User, Follow, Repost, Like, Comment, VideoLike, VideoComment
 from app.services.geo_ranker import geo_score_for_post, geo_score_for_user
 
 
@@ -24,21 +24,27 @@ def _hot_score(engagement, created_at):
     return engagement / math.pow((time_diff + 2), 1.5)
 
 
-def _post_engagement(post):
-    """engagement مرجّح: like=1, comment=3, repost=5."""
-    likes = post.likes.count()
-    comments = post.comments.count()
-    try:
-        reposts = Repost.query.filter_by(post_id=post.id).count()
-    except Exception:
-        reposts = 0
+def _post_engagement(post, likes_map=None, comments_map=None, reposts_map=None):
+    """engagement مرجّح: like=1, comment=3, repost=5.
+
+    يستخدم batch maps إن مُرّرت، وإلا يعود للاستعلام المباشر (توافق خلفي).
+    """
+    likes = (likes_map or {}).get(post.id, 0) if likes_map is not None else post.likes.count()
+    comments = (comments_map or {}).get(post.id, 0) if comments_map is not None else post.comments.count()
+    if reposts_map is not None:
+        reposts = reposts_map.get(post.id, 0)
+    else:
+        try:
+            reposts = Repost.query.filter_by(post_id=post.id).count()
+        except Exception:
+            reposts = 0
     return likes * 1 + comments * 3 + reposts * 5
 
 
-def _reel_engagement(video):
+def _reel_engagement(video, likes_map=None, comments_map=None):
     """engagement مرجّح للريل: view=0.1, like=2, comment=3, share=5."""
-    likes = video.like_count()
-    comments = video.comment_count()
+    likes = (likes_map or {}).get(video.id, 0) if likes_map is not None else video.like_count()
+    comments = (comments_map or {}).get(video.id, 0) if comments_map is not None else video.comment_count()
     views = video.views or 0
     shares = video.shares or 0
     return (views * 0.1) + (likes * 2) + (comments * 3) + (shares * 5)
@@ -60,11 +66,33 @@ def trending_posts(viewer, limit=20, query=None, hours=48):
         q = q.filter(Post.content.ilike(pattern))
 
     posts = q.limit(200).all()
+    post_ids = [p.id for p in posts]
+
+    likes_map = {}
+    comments_map = {}
+    reposts_map = {}
+    if post_ids:
+        likes_map = dict(
+            db.session.query(Like.post_id, func.count(Like.id))
+            .filter(Like.post_id.in_(post_ids))
+            .group_by(Like.post_id).all()
+        )
+        comments_map = dict(
+            db.session.query(Comment.post_id, func.count(Comment.id))
+            .filter(Comment.post_id.in_(post_ids))
+            .group_by(Comment.post_id).all()
+        )
+        reposts_map = dict(
+            db.session.query(Repost.post_id, func.count(Repost.id))
+            .filter(Repost.post_id.in_(post_ids))
+            .group_by(Repost.post_id).all()
+        )
+
     scored = []
     for post in posts:
-        hot = _hot_score(_post_engagement(post), post.created_at)
+        engagement = _post_engagement(post, likes_map, comments_map, reposts_map)
+        hot = _hot_score(engagement, post.created_at)
         geo = geo_score_for_post(post, viewer)
-        # geo بأثر خفيف (0-0.3)، لا يُطغى على hot
         scored.append((post, hot + geo * 0.01))
 
     scored.sort(key=lambda x: x[1], reverse=True)
@@ -90,9 +118,26 @@ def trending_reels(viewer, limit=20, query=None, days=7):
         ))
 
     reels = q.limit(200).all()
+    reel_ids = [v.id for v in reels]
+
+    likes_map = {}
+    comments_map = {}
+    if reel_ids:
+        likes_map = dict(
+            db.session.query(VideoLike.video_id, func.count(VideoLike.id))
+            .filter(VideoLike.video_id.in_(reel_ids))
+            .group_by(VideoLike.video_id).all()
+        )
+        comments_map = dict(
+            db.session.query(VideoComment.video_id, func.count(VideoComment.id))
+            .filter(VideoComment.video_id.in_(reel_ids))
+            .group_by(VideoComment.video_id).all()
+        )
+
     scored = []
     for v in reels:
-        hot = _hot_score(_reel_engagement(v), v.created_at)
+        engagement = _reel_engagement(v, likes_map, comments_map)
+        hot = _hot_score(engagement, v.created_at)
         geo = geo_score_for_post(v, viewer)
         scored.append((v, hot + geo * 0.01))
 

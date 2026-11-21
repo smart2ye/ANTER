@@ -20,6 +20,8 @@ explore_bp = Blueprint('explore', __name__, url_prefix='/explore')
 @login_required
 def explore():
     """صفحة Explore الشاملة — 3 تبويبات + بحث."""
+    from app.models import Like, Comment, VideoLike
+
     # اقتراحات الأشخاص (مع geo)
     suggested_users = trending_users(current_user, limit=20)
 
@@ -29,11 +31,60 @@ def explore():
     # ريلز رائجة
     reels = trending_reels(current_user, limit=15)
 
+    # ANTER: batch — تجميع البيانات بدل N+1 لكل عنصر في القالب
+    following_ids = {f.followed_id for f in current_user.following}
+
+    user_ids = [u.id for u in suggested_users]
+    if user_ids:
+        rows = (
+            db.session.query(Follow.followed_id, func.count(Follow.id))
+            .filter(Follow.followed_id.in_(user_ids))
+            .group_by(Follow.followed_id).all()
+        )
+        follower_counts = {uid: cnt for uid, cnt in rows}
+    else:
+        follower_counts = {}
+
+    post_ids = [p.id for p in posts]
+    if post_ids:
+        rows = (
+            db.session.query(Like.post_id, func.count(Like.id))
+            .filter(Like.post_id.in_(post_ids))
+            .group_by(Like.post_id).all()
+        )
+        post_likes = {pid: cnt for pid, cnt in rows}
+
+        rows = (
+            db.session.query(Comment.post_id, func.count(Comment.id))
+            .filter(Comment.post_id.in_(post_ids))
+            .group_by(Comment.post_id).all()
+        )
+        post_comments = {pid: cnt for pid, cnt in rows}
+    else:
+        post_likes = {}
+        post_comments = {}
+
+    reel_ids = [r.id for r in reels]
+    if reel_ids:
+        rows = (
+            db.session.query(VideoLike.video_id, func.count(VideoLike.id))
+            .filter(VideoLike.video_id.in_(reel_ids))
+            .group_by(VideoLike.video_id).all()
+        )
+        reel_likes = {vid: cnt for vid, cnt in rows}
+    else:
+        reel_likes = {}
+
     return render_template(
         'explore.html',
         users=suggested_users,
         posts=posts,
         reels=reels,
+        following_ids=following_ids,
+        follower_counts=follower_counts,
+        post_likes=post_likes,
+        post_comments=post_comments,
+        reel_likes=reel_likes,
     )
 
 

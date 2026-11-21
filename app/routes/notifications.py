@@ -10,8 +10,17 @@ notifications_bp = Blueprint('notifications', __name__, url_prefix='/notificatio
 @login_required
 def index():
     """صفحة الإشعارات — لا تُعلّم الكل مقروء تلقائيًا (ANTER)."""
+    from sqlalchemy.orm import joinedload, defer
+    from app.models import User, Post
+
     notifs = (
         current_user.notifications
+        .options(
+            joinedload(Notification.actor).defer(User.avatar_data),
+            joinedload(Notification.post).defer(Post.image_data),
+            joinedload(Notification.listing),
+            joinedload(Notification.report),
+        )
         .order_by(Notification.created_at.desc())
         .limit(200)
         .all()
